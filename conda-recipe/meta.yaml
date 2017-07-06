@@ -1,0 +1,29 @@
+package:
+    name: cam_server
+    version: 0.0.1
+
+build:
+  number: 0
+
+source:
+    path: ..
+
+requirements:
+    build:
+        - python
+
+    run:
+        - requests
+        - bsread
+        - bottle
+        - numpy
+        - scipy
+        - pyepics
+        - matplotlib
+
+build:
+  entry_points:
+    - cam_server = camera_server.start
+
+about:
+    home: https://git.psi.ch/controls_highlevel_applications/cam_server
