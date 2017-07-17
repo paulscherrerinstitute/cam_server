@@ -2,7 +2,6 @@ import json
 import logging
 
 import bottle
-from bottle import get
 from bottle import request, response
 
 from cam_server import config
