@@ -20,6 +20,7 @@ requirements:
         - scipy
         - pyepics
         - matplotlib
+        - Pillow
 
 build:
   entry_points:

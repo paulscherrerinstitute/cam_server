@@ -33,5 +33,6 @@ setup(name="cam_server",
           'numpy',
           'scipy',
           'pyepics',
-          'matplotlib'],
+          'matplotlib',
+          'pillow'],
       )

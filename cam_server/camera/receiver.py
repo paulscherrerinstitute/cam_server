@@ -151,9 +151,14 @@ class CameraSimulation:
 
         return dead_pixels
 
-    def get_image(self, dark=False):
+    def get_image(self, raw=False):
+        """
+        Get the simulated image.
+        :param raw: If true, return a simulated camera wihtout the beam (just noise).
+        :return: Camera image.
+        """
 
-        if dark:
+        if raw:
             image = numpy.zeros((self.size_y, self.size_x))
         else:
 

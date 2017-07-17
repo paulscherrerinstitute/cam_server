@@ -80,7 +80,7 @@ def start_rest_interface(host, port, instance_manager, config_manager):
                 "width": width,
                 "height": height}
 
-    @get(api_prefix + '/cam_server/<camera_name>/image')
+    @app.get(api_prefix + '/cam_server/<camera_name>/image')
     def get_camera_image(camera_name):
 
         camera = config_manager.load_camera(camera_name)

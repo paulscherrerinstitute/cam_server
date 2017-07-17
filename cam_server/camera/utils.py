@@ -2,8 +2,9 @@ import tempfile
 from logging import getLogger
 
 import numpy
-import scipy
+
 from matplotlib import cm
+import scipy.misc
 
 from cam_server import config
 
