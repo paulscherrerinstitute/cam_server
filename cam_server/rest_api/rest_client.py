@@ -4,10 +4,11 @@ from cam_server import config
 
 
 class CamClient(object):
-    def __init__(self, address):
+    def __init__(self, address="http://0.0.0.0:8888/"):
         """
         :param address: Address of the cam API, e.g. http://localhost:10000
         """
+
         self.api_address_format = address.rstrip("/") + config.API_PREFIX + "/%s"
 
     def get_server_info(self):
@@ -33,7 +34,7 @@ class CamClient(object):
         :param camera_name: Name of the cam_server.
         :return: Camera configuration.
         """
-        rest_endpoint = "cam_server/%s" % camera_name
+        rest_endpoint = "cam_server/%s/config" % camera_name
         return requests.get(self.api_address_format % rest_endpoint).json()
 
     def set_camera_config(self, camera_name, config):
