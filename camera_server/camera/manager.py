@@ -3,10 +3,9 @@ import json
 import os
 import re
 
-from cam.camera_server import config
-from cam.camera_server.camera.receiver import Camera, CameraSimulation
-
+from camera_server import config
 from camera_server.camera.instance import CameraInstance, process_camera_stream
+from camera_server.camera.receiver import CameraSimulation, Camera
 
 
 def validate_camera_config(camera_config):

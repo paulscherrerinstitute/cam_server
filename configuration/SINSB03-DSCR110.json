@@ -1,0 +1,18 @@
+{
+ "camera": {
+  "mirror_x": true,
+  "calibration": {
+   "horizontal_camera_angle": 8.0,
+   "reference_marker": [
+    585,
+    61,
+    1354,
+    2111
+   ],
+   "reference_marker_width": 6000.0,
+   "reference_marker_height": 16000.0
+  },
+  "prefix": "SINSB03-DSCR110",
+  "mirror_y": true
+ }
+}

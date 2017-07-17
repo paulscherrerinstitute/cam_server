@@ -1,0 +1,15 @@
+{
+  "camera": {
+    "prefix": "S...",
+    "mirror_x": false,
+    "mirror_y": false,
+    "rotate": 0,
+    "calibration": {
+      "reference_marker": [ 0, 0, 100, 100 ],
+      "reference_marker_width": 100,
+      "reference_marker_height": 100,
+      "horizontal_camera_angle": 0.0,
+      "vertical_camera_angle": 0.0
+    }
+  }
+}

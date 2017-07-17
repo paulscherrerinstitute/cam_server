@@ -4,9 +4,9 @@ import logging
 import bottle
 from bottle import get
 from bottle import request, response
-from cam.camera_server.camera.utils import get_image_from_camera
 
 from camera_server import config
+from camera_server.camera.utils import get_image_from_camera
 
 _logger = logging.getLogger(__name__)
 
@@ -138,8 +138,8 @@ def _pick_unused_port():
     s.close()
     return port
 
-
-def get_client(address):
-    """ Factory method for cam client """
-    import cam.client
-    return cam.client.CamClient(address)
+#
+# def get_client(address):
+#     """ Factory method for cam client """
+#     import cam.client
+#     return cam.client.CamClient(address)

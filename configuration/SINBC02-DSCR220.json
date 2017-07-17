@@ -1,0 +1,17 @@
+{
+ "camera": {
+  "mirror_x": true,
+  "calibration": {
+   "reference_marker": [
+    457,
+    476,
+    765,
+    705
+   ],
+   "reference_marker_width": 35728.0,
+   "reference_marker_height": 26564.0
+  },
+  "prefix": "SINBC02-DSCR220",
+  "mirror_y": true
+ }
+}

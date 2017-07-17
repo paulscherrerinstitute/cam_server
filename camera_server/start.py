@@ -2,18 +2,16 @@ import argparse
 import logging
 import os
 
-from cam.camera_server.camera.manager import CameraConfigManager, CameraConfigFileStorage, CameraInstanceManager
-from cam.camera_server.rest_server import start_rest_interface
-
 from camera_server import config
+from camera_server.camera.manager import CameraConfigManager, CameraInstanceManager, CameraConfigFileStorage
+from camera_server.rest_api.rest_server import start_rest_interface
 
 
 def start_camera_server(host, port, config_base):
 
     # Check if config directory exists
     if not os.path.isdir(config_base):
-        print('Configuration directory %s does not exist.' % config_base)
-        exit(-1)
+        logging.error("Configuration directory '%s' does not exist." % config_base)
 
     config_manager = CameraConfigManager(config_provider=CameraConfigFileStorage(config_base))
     instance_manager = CameraInstanceManager()

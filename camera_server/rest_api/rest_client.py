@@ -1,10 +1,14 @@
+import requests
+
+from camera_server import config
+
 
 class CamClient(object):
     def __init__(self, address):
         """
         :param address: Address of the cam API, e.g. http://localhost:10000
         """
-        self.api_address_format = address.rstrip("/") + API_PREFIX + "/%s"
+        self.api_address_format = address.rstrip("/") + config.API_PREFIX + "/%s"
 
     def get_cameras(self):
         """

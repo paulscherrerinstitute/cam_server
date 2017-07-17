@@ -1,0 +1,16 @@
+{
+ "camera": {
+  "mirror_x": true,
+  "calibration": {
+   "reference_marker": [
+    68,
+    46,
+    1655,
+    1594
+   ],
+   "reference_marker_width": 30000.0,
+   "reference_marker_height": 30000.0
+  },
+  "prefix": "SINBD01-DSCR010"
+ }
+}

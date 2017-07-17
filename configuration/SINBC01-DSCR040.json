@@ -1,0 +1,18 @@
+{
+ "camera": {
+  "mirror_x": true,
+  "calibration": {
+   "horizontal_camera_angle": 15.8,
+   "reference_marker": [
+    50,
+    5,
+    1114,
+    1181
+   ],
+   "reference_marker_width": 16000.0,
+   "reference_marker_height": 16000.0
+  },
+  "prefix": "SINBC01-DSCR040",
+  "mirror_y": true
+ }
+}

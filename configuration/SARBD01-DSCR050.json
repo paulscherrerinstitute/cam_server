@@ -1,0 +1,15 @@
+{
+ "camera": {
+  "calibration": {
+   "reference_marker": [
+    0,
+    0,
+    100,
+    100
+   ],
+   "reference_marker_width": 100.0,
+   "reference_marker_height": 100.0
+  },
+  "prefix": "SARBD01-DSCR050"
+ }
+}

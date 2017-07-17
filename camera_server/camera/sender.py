@@ -1,15 +1,14 @@
 import time
 from logging import getLogger
 
-from bsread import bsread
+from bsread import BIND, PUB, bsread
 
 _logger = getLogger(__name__)
 
 
 class Sender(object):
-    def __init__(self, queue_size=10, port=9999, conn_type=bsread.sender.BIND, mode=bsread.sender.PUB, block=True,
-                 start_pulse_id=0):
-        self.sender = bsread.sender.Sender(queue_size=queue_size, port=port, conn_type=conn_type, mode=mode,
+    def __init__(self, queue_size=10, port=9999, conn_type=BIND, mode=PUB, block=True, start_pulse_id=0):
+        self.sender = bsread.Sender(queue_size=queue_size, port=port, conn_type=conn_type, mode=mode,
                                            block=block, start_pulse_id=start_pulse_id)
 
     def open(self):

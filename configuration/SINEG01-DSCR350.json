@@ -1,0 +1,18 @@
+{
+ "camera": {
+  "mirror_x": true,
+  "calibration": {
+   "horizontal_camera_angle": 15.8,
+   "reference_marker": [
+    120,
+    245,
+    1251,
+    1504
+   ],
+   "reference_marker_width": 16000.0,
+   "reference_marker_height": 16000.0
+  },
+  "prefix": "SINEG01-DSCR350",
+  "mirror_y": true
+ }
+}
