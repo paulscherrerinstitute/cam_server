@@ -3,42 +3,16 @@ import time
 from logging import getLogger
 
 from cam_server import config
-from cam_server.camera.sender import Sender
 
 _logger = getLogger(__name__)
 
 
-def process_camera_stream(stop_event, statistics, parameter_queue, camera, port):
-
-    sender = Sender(port=port)
-    sender.open()
-
-    camera.connect()
-    x_axis, y_axis = camera.get_x_y_axis()
-
-    statistics.counter = 0
-
-    collector = pipeline_server.Collector(parameter_queue, x_axis, y_axis, consumer=sender.send,
-                                          number_of_images=number_of_images, stop_event=stop_event)
-
-    camera.add_callback(collector.collect)
-
-    # This signals that the camera has successfully started.
-    stop_event.clear()
-
-    # Wait for termination / update configuration / etc.
-    stop_event.wait()
-    camera.clear_callbacks()
-
-    camera.disconnect()
-    sender.close()
-
-
 class CameraInstance:
-    def __init__(self, process_function, camera_name=None):
+    def __init__(self, process_function, camera_config):
 
         self.process_function = process_function
-        self.camera_name = camera_name
+        self.camera_config = camera_config
+        self.camera_name = camera_config["camera"]["prefix"]
 
         self.process = None
         self.manager = multiprocessing.Manager()
@@ -51,13 +25,15 @@ class CameraInstance:
         self.parameter_queue = multiprocessing.Queue()
         self.stream_address = None
 
-    def start(self, parameter=None, *args):
+    def start(self, parameter=None):
         if self.process and self.process.is_alive():
             _logger.info("Camera instance '%s' already running.", self.camera_name)
             return
 
         if parameter is not None:
             self.parameter_queue.put(parameter)
+
+        camera = CameraInstance
 
         self.process = multiprocessing.Process(target=self.process_function,
                                                args=(self.stop_event, self.statistics, self.parameter_queue, *args))
