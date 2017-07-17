@@ -2,10 +2,13 @@ import glob
 import json
 import os
 import re
+from logging import getLogger
 
 from cam_server import config
 from cam_server.camera.instance import CameraInstance, process_camera_stream
 from cam_server.camera.receiver import CameraSimulation, Camera
+
+_logger = getLogger(__name__)
 
 
 def validate_camera_config(camera_config):
@@ -29,14 +32,23 @@ class CameraInstanceManager(object):
         self.camera_instances = {}
 
     def get_camera_stream(self, camera_config):
+        """
+        Get the camera stream address.
+        :param camera_config: Camera config to use.
+        :return:
+        """
         camera_name = camera_config["camera"]["prefix"]
 
+        # Retrieve or create the camera instance.
         if camera_name not in self.camera_instances:
+            _logger.debug("Creating new camera instance '%s'.", camera_name)
             self.camera_instances[camera_name] = CameraInstance(process_function=process_camera_stream,
                                                                 camera_name=camera_name)
-
         camera_instance = self.camera_instances[camera_name]
-        camera_instance.start()
+
+        # If camera instance is not yet running, start it.
+        if not camera_instance.is_running():
+            camera_instance.start()
 
         return camera_instance.stream_address
 
@@ -45,6 +57,8 @@ class CameraInstanceManager(object):
         return info
 
     def stop_all_cameras(self):
+        _logger.debug("Stopping all camera instances.")
+
         for camera_instance in self.camera_instances:
             camera_instance.stop()
 

@@ -53,7 +53,7 @@ class CameraInstance:
 
     def start(self, parameter=None, *args):
         if self.process and self.process.is_alive():
-            _logger.info("Instance already running")
+            _logger.info("Camera instance '%s' already running.", self.camera_name)
             return
 
         if parameter is not None:
@@ -77,7 +77,7 @@ class CameraInstance:
 
     def stop(self):
         if not self.process:
-            _logger.info("Instance already stopped")
+            _logger.info("Camera instance '%s' already stopped.", self.camera_name)
             return
 
         self.stop_event.set()

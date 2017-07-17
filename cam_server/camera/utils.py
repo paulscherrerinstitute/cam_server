@@ -12,6 +12,16 @@ _logging = getLogger(__name__)
 
 
 def get_image_from_camera(camera, raw, scale, min_value, max_value, colormap_name):
+    """
+    Generate an image from the provided camera.
+    :param camera: Camera instance.
+    :param raw: Display raw or processed image.s
+    :param scale: Scale the image.
+    :param min_value: Min cutoff value.
+    :param max_value: Max cutoff value.
+    :param colormap_name: Colormap to use. See http://matplotlib.org/examples/color/colormaps_reference.html
+    :return: PNG image.
+    """
     camera.connect()
     image = camera.get_image(raw=raw)
     camera.disconnect()

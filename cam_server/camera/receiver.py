@@ -131,8 +131,20 @@ class Camera:
 
 
 class CameraSimulation:
+    """
+    Camera simulation for debugging purposes.
+    """
     def __init__(self, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
                  beam_size_x=100, beam_size_y=20):
+        """
+        Initialize the camera simulation.
+        :param size_x: Image width.
+        :param size_y: Image height.
+        :param number_of_dead_pixels: Number of simulated dead pixels.
+        :param noise: How much noise to introduce.
+        :param beam_size_x: Beam width.
+        :param beam_size_y: Beam height.
+        """
 
         self.size_x = size_x
         self.size_y = size_y
@@ -144,7 +156,7 @@ class CameraSimulation:
     def generate_dead_pixels(self, number_of_dead_pixel):
         dead_pixels = numpy.zeros((self.size_y, self.size_x))
 
-        for i in range(number_of_dead_pixel):
+        for _ in range(number_of_dead_pixel):
             x = numpy.random.randint(0, self.size_y)
             y = numpy.random.randint(0, self.size_x)
             dead_pixels[x, y] = 1
@@ -161,7 +173,6 @@ class CameraSimulation:
         if raw:
             image = numpy.zeros((self.size_y, self.size_x))
         else:
-
             beam_x = numpy.linspace(-self.beam_size_x + numpy.random.rand(),
                                     self.beam_size_x + numpy.random.rand(),
                                     self.size_y)
