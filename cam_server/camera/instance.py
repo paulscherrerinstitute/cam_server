@@ -2,6 +2,7 @@ import multiprocessing
 import time
 from logging import getLogger
 
+from cam_server import config
 from cam_server.camera.sender import Sender
 
 _logger = getLogger(__name__)
@@ -22,6 +23,9 @@ def process_camera_stream(stop_event, statistics, parameter_queue, camera, port)
 
     camera.add_callback(collector.collect)
 
+    # This signals that the camera has successfully started.
+    stop_event.clear()
+
     # Wait for termination / update configuration / etc.
     stop_event.wait()
     camera.clear_callbacks()
@@ -40,11 +44,14 @@ class CameraInstance:
         self.manager = multiprocessing.Manager()
 
         self.stop_event = multiprocessing.Event()
+        # The initial value of the stop event is set -> when the process starts, it un-sets it to signal the start.
+        self.stop_event.set()
+
         self.statistics = self.manager.Namespace()
         self.parameter_queue = multiprocessing.Queue()
         self.stream_address = None
 
-    def start(self, parameter, *args):
+    def start(self, parameter=None, *args):
         if self.process and self.process.is_alive():
             _logger.info("Instance already running")
             return
@@ -56,6 +63,18 @@ class CameraInstance:
                                                args=(self.stop_event, self.statistics, self.parameter_queue, *args))
         self.process.start()
 
+        # Wait for the processor to clear the flag - indication that the process is ready.
+        start_timestamp = time.time()
+        while self.stop_event.is_set():
+            time.sleep(config.PROCESS_POLL_INTERVAL)
+            # Check if the timeout has already elapsed.
+            if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
+                self.process.terminate()
+                error_message = "Could not start the '%s' camera in time. Terminated. See cam_server logs." % \
+                                self.camera_name
+                _logger.error(error_message)
+                raise Exception(error_message)
+
     def stop(self):
         if not self.process:
             _logger.info("Instance already stopped")
@@ -63,11 +82,14 @@ class CameraInstance:
 
         self.stop_event.set()
 
-        # Wait maximum of 10 seconds for process to stop
-        for i in range(100):
-            time.sleep(0.1)
-            if not self.process.is_alive():
-                break
+        # Wait for the processor to clear the flag - indication that the process is ready.
+        start_timestamp = time.time()
+
+        while self.process.is_alive():
+            time.sleep(config.PROCESS_POLL_INTERVAL)
+            # Check if the timeout has already elapsed.
+            if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
+                _logger.warning("Could not stop the '%s' camera in time. Terminated.", self.camera_name)
 
         # Kill process - no-op in case process already terminated
         self.process.terminate()
