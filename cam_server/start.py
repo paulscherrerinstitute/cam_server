@@ -2,9 +2,9 @@ import argparse
 import logging
 import os
 
-from camera_server import config
-from camera_server.camera.manager import CameraConfigManager, CameraInstanceManager, CameraConfigFileStorage
-from camera_server.rest_api.rest_server import start_rest_interface
+from cam_server import config
+from cam_server.camera.manager import CameraConfigManager, CameraInstanceManager, CameraConfigFileStorage
+from cam_server.rest_api.rest_server import start_rest_interface
 
 
 def start_camera_server(host, port, config_base):

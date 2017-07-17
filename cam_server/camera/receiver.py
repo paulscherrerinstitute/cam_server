@@ -8,7 +8,7 @@ class Camera:
         """
         Parameters
         ----------
-        prefix      prefix of camera_server channel
+        prefix      prefix of cam_server channel
         mirror_x    mirror image on x axis
         mirror_y    mirror image on y axis
         rotate      number of 90deg rotation 0=0deg 1=90deg, 2=180deg, ...
@@ -26,7 +26,7 @@ class Camera:
         self.width_raw = 0
         self.height_raw = 0
 
-        # Offsets are given by the ROI set on the camera_server
+        # Offsets are given by the ROI set on the cam_server
         self.reference_offset_x = 0
         self.reference_offset_y = 0
 
@@ -34,14 +34,14 @@ class Camera:
 
     def connect(self):
 
-        # Check camera_server status
+        # Check cam_server status
         channel_init = epics.PV(self.prefix + ":INIT")
         if channel_init.get(as_string=True) != 'INIT':
             raise RuntimeError("Camera {} not online - Status {}".format(self.prefix, channel_init.get(as_string=True)))
 
         channel_init.disconnect()
 
-        # Retrieve with and height of camera_server image
+        # Retrieve with and height of cam_server image
         channel_width = epics.PV(self.prefix + ":WIDTH")
         channel_height = epics.PV(self.prefix + ":HEIGHT")
 
@@ -49,7 +49,7 @@ class Camera:
         self.height_raw = int(channel_height.get(timeout=4))
 
         if not self.width_raw or not self.height_raw:
-            raise RuntimeError("Could not fetch width and height for camera_server:{}".format(self.prefix))
+            raise RuntimeError("Could not fetch width and height for cam_server:{}".format(self.prefix))
 
         channel_width.disconnect()
         channel_height.disconnect()
@@ -122,7 +122,7 @@ class Camera:
     def get_x_y_axis(self):
 
         if not self.width or not self.height:
-            raise RuntimeError('Width and height of the camera_server not known yet - connect first')
+            raise RuntimeError('Width and height of the cam_server not known yet - connect first')
 
         x_axis = numpy.linspace(0, self.width - 1, self.width, dtype='f')
         y_axis = numpy.linspace(0, self.height - 1, self.height, dtype='f')
@@ -185,10 +185,10 @@ class CameraSimulation:
         y_axis = numpy.linspace(0, self.size_x - 1, self.size_x, dtype='f')
         return y_axis, x_axis
 
-    def connect(self):  # NOOP - Just to match signature of camera_server
+    def connect(self):  # NOOP - Just to match signature of cam_server
         pass
 
-    def disconnect(self):  # NOOP - Just to match signature of camera_server
+    def disconnect(self):  # NOOP - Just to match signature of cam_server
         pass
 
 

@@ -5,8 +5,8 @@ import bottle
 from bottle import get
 from bottle import request, response
 
-from camera_server import config
-from camera_server.camera.utils import get_image_from_camera
+from cam_server import config
+from cam_server.camera.utils import get_image_from_camera
 
 _logger = logging.getLogger(__name__)
 
@@ -23,37 +23,37 @@ def start_rest_interface(host, port, instance_manager, config_manager):
     api_prefix = config.API_PREFIX
     app = bottle.Bottle()
 
-    @app.get(api_prefix + '/camera_server')
+    @app.get(api_prefix + '/cam_server')
     def list_cameras():
         """List existing cameras"""
         return {"state": "ok",
                 "status": "List of cameras retrieved.",
                 'cameras': config_manager.get_camera_list()}
 
-    @app.get(api_prefix + "/camera_server/info")
+    @app.get(api_prefix + "/cam_server/info")
     def get_server_info():
         return {"state": "ok",
                 "status": "Server info",
                 "info": instance_manager.get_info()}
 
-    @app.get(api_prefix + "/camera_server/<camera_name>")
+    @app.get(api_prefix + "/cam_server/<camera_name>")
     def get_camera_stream(camera_name):
         return {"state": "ok",
                 "status": "Stream address for camera %s." % camera_name,
                 "stream": instance_manager.get_camera_stream(config_manager.get_camera_config(camera_name))}
 
-    @app.get(api_prefix + '/camera_server/<camera_name>/config')
+    @app.get(api_prefix + '/cam_server/<camera_name>/config')
     def get_camera_config(camera_name):
         """
-        Get camera_server config.
-        :param camera_name: Name of the camera_server to retrieve the config for.
+        Get cam_server config.
+        :param camera_name: Name of the cam_server to retrieve the config for.
         :return: Camera config.
         """
         return {"state": "ok",
                 "status": "Camera %s configuration retrieved." % camera_name,
                 "config": config_manager.get_camera_config(camera_name)}
 
-    @app.post(api_prefix + '/camera_server/<camera_name>/config')
+    @app.post(api_prefix + '/cam_server/<camera_name>/config')
     def set_camera_config(camera_name):
         """
         Set the camera settings.
@@ -67,10 +67,10 @@ def start_rest_interface(host, port, instance_manager, config_manager):
                 "status": "Camera %s configuration saved." % camera_name,
                 "config": config_manager.get_camera_config(camera_name)}
 
-    @app.get(api_prefix + '/camera_server/<camera_name>/geometry')
+    @app.get(api_prefix + '/cam_server/<camera_name>/geometry')
     def get_camera_geometry(camera_name):
         """
-        Return camera_server geometry. This geometry can change when the camera_server is rebooted
+        Return cam_server geometry. This geometry can change when the cam_server is rebooted
         therefor this is a special call.
         """
         width, height = config_manager.get_camera_geometry(camera_name)
@@ -80,7 +80,7 @@ def start_rest_interface(host, port, instance_manager, config_manager):
                 "width": width,
                 "height": height}
 
-    @get(api_prefix + '/camera_server/<camera_name>/image')
+    @get(api_prefix + '/cam_server/<camera_name>/image')
     def get_camera_image(camera_name):
 
         camera = config_manager.load_camera(camera_name)

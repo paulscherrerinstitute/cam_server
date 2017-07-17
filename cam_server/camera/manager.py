@@ -3,14 +3,14 @@ import json
 import os
 import re
 
-from camera_server import config
-from camera_server.camera.instance import CameraInstance, process_camera_stream
-from camera_server.camera.receiver import CameraSimulation, Camera
+from cam_server import config
+from cam_server.camera.instance import CameraInstance, process_camera_stream
+from cam_server.camera.receiver import CameraSimulation, Camera
 
 
 def validate_camera_config(camera_config):
     """
-    Verify if the camera_server config has the mandatory attributes.
+    Verify if the cam_server config has the mandatory attributes.
     :param camera_config:
     :return:
     """
@@ -60,18 +60,18 @@ class CameraConfigManager(object):
         """
         configured_cameras = self.config_provider.get_available_configs()
 
-        # Add simulation camera_server.
+        # Add simulation cam_server.
         configured_cameras.append('simulation')
 
         return configured_cameras
 
     def get_camera_config(self, camera_name):
         """
-        Return the camera_server configuration.
-        :param camera_name: Name of the camera_server to retrieve the config for.
+        Return the cam_server configuration.
+        :param camera_name: Name of the cam_server to retrieve the config for.
         :return: Camera config dictionary.
         """
-        # Simulation camera_server is not defined in the config.
+        # Simulation cam_server is not defined in the config.
         if camera_name.lower() == 'simulation':
             return {"camera": {"prefix": "simulation"}}
 
@@ -82,11 +82,11 @@ class CameraConfigManager(object):
 
     def load_camera(self, camera_name):
         """
-        Load a camera_server with the given name.
+        Load a cam_server with the given name.
         :param camera_name: Camera to load.
         :return: Camera instance.
         """
-        # Simulation camera_server is not defined in the config.
+        # Simulation cam_server is not defined in the config.
         if camera_name.lower() == 'simulation':
             return CameraSimulation()
 
@@ -96,13 +96,13 @@ class CameraConfigManager(object):
 
     def save_camera_config(self, camera_name, config_updates):
         """
-        Save the camera_server config changes.
-        :param camera_name: Name of the camera_server to save the config to.
+        Save the cam_server config changes.
+        :param camera_name: Name of the cam_server to save the config to.
         :param config_updates: Config to save.
         """
 
         if camera_name.lower() == 'simulation':
-            raise ValueError("Cannot save config for simulation camera_server.")
+            raise ValueError("Cannot save config for simulation cam_server.")
 
         # Get either the existing config, or generate a template one.
         try:
@@ -121,10 +121,10 @@ class CameraConfigManager(object):
         # Validate the new config.
         validate_camera_config(camera_config)
 
-        # Verify if the name and the prefix of the camera_server matches.
-        camera_prefix = camera_config["camera_server"]["prefix"]
+        # Verify if the name and the prefix of the cam_server matches.
+        camera_prefix = camera_config["cam_server"]["prefix"]
         if camera_name != camera_prefix:
-            raise ValueError("Provided camera_server name '%s' does not match the config camera_server prefix '%s'." %
+            raise ValueError("Provided cam_server name '%s' does not match the config cam_server prefix '%s'." %
                              (camera_name, camera_prefix))
 
         self.config_provider.save_config(camera_config)
@@ -148,7 +148,7 @@ class CameraConfigFileStorage(object):
     def __init__(self, config_folder=None):
         """
         Initialize the file config provider.
-        :param config_folder: Config folder to search for camera_server definition. If None, default from config.py will
+        :param config_folder: Config folder to search for cam_server definition. If None, default from config.py will
         be used.
         """
         if not config_folder:
@@ -157,8 +157,8 @@ class CameraConfigFileStorage(object):
 
     def get_available_configs(self):
         """
-        Return all available camera_server configurations for instance name.
-        :return: List of available camera_server configs.
+        Return all available cam_server configurations for instance name.
+        :return: List of available cam_server configs.
         """
         cameras = []
         for camera in glob.glob(self.config_folder + '/*.json'):
@@ -172,7 +172,7 @@ class CameraConfigFileStorage(object):
 
     def _get_config_filename(self, camera_name):
         """
-        Construct the filename of the camera_server config.
+        Construct the filename of the cam_server config.
         :param camera_name: Camera name.
         :return:
         """
@@ -180,16 +180,16 @@ class CameraConfigFileStorage(object):
 
     def get_config(self, camera_name):
         """
-        Return config for a camera_server.
+        Return config for a cam_server.
         :param camera_name: Camera config to retrieve.
-        :return: Dict containing the camera_server config.
+        :return: Dict containing the cam_server config.
         """
 
         config_file = self._get_config_filename(camera_name)
 
         # The config file does not exist
         if not os.path.isfile(config_file):
-            raise ValueError("Unable to load camera_server %s. Config '%s' does not exist." %
+            raise ValueError("Unable to load cam_server %s. Config '%s' does not exist." %
                              (camera_name, config_file))
 
         with open(config_file) as data_file:
@@ -199,7 +199,7 @@ class CameraConfigFileStorage(object):
 
     def save_config(self, camera_name, camera_config):
         """
-        Update an existing camera_server config.
+        Update an existing cam_server config.
         :param camera_name: Name of the camera to same the config for.
         :param camera_config: Configuration to persist.
         """

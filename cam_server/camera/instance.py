@@ -2,7 +2,7 @@ import multiprocessing
 import time
 from logging import getLogger
 
-from camera_server.camera.sender import Sender
+from cam_server.camera.sender import Sender
 
 _logger = getLogger(__name__)
 

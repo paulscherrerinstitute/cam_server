@@ -23,7 +23,7 @@ requirements:
 
 build:
   entry_points:
-    - cam_server = camera_server.start
+    - cam_server = cam_server.start
 
 about:
     home: https://git.psi.ch/controls_highlevel_applications/cam_server

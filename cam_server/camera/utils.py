@@ -5,7 +5,7 @@ import numpy
 import scipy
 from matplotlib import cm
 
-from camera_server import config
+from cam_server import config
 
 _logging = getLogger(__name__)
 

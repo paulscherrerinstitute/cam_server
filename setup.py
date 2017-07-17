@@ -20,9 +20,9 @@ setup(name="cam_server",
 
       license="GPL3",
 
-      packages=['camera_server',
-                "camera_server.camera",
-                "camera_server.rest_api.utils"],
+      packages=['cam_server',
+                "cam_server.camera",
+                "cam_server.rest_api"],
 
       long_description=read('Readme.md'),
 
