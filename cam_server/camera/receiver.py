@@ -191,6 +191,9 @@ class CameraSimulation:
     def disconnect(self):  # NOOP - Just to match signature of cam_server
         pass
 
+    def get_info(self):
+        return self.size_x, self.size_y
+
 
 if __name__ == '__main__':
 
