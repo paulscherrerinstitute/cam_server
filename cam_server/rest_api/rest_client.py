@@ -10,6 +10,15 @@ class CamClient(object):
         """
         self.api_address_format = address.rstrip("/") + config.API_PREFIX + "/%s"
 
+    def get_server_info(self):
+        """
+        Return the info of the cam server instance.
+        For administrative purposes only.
+        :return: Status of the server
+        """
+        rest_endpoint = "cam_server/info"
+        return requests.get(self.api_address_format % rest_endpoint).json()
+
     def get_cameras(self):
         """
         List existing cameras.

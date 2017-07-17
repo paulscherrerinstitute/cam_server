@@ -33,7 +33,7 @@ def start_rest_interface(host, port, instance_manager, config_manager):
     @app.get(api_prefix + "/cam_server/info")
     def get_server_info():
         return {"state": "ok",
-                "status": "Server info",
+                "status": "Server info retrieved.",
                 "info": instance_manager.get_info()}
 
     @app.get(api_prefix + "/cam_server/<camera_name>")

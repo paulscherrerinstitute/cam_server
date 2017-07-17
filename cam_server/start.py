@@ -12,6 +12,7 @@ def start_camera_server(host, port, config_base):
     # Check if config directory exists
     if not os.path.isdir(config_base):
         logging.error("Configuration directory '%s' does not exist." % config_base)
+        exit(-1)
 
     config_manager = CameraConfigManager(config_provider=CameraConfigFileStorage(config_base))
     instance_manager = CameraInstanceManager()
