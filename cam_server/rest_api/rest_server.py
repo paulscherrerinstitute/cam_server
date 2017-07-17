@@ -117,8 +117,8 @@ def start_rest_interface(host, port, instance_manager, config_manager):
         response.content_type = 'application/json'
         response.status = 200
 
-        return json.dumps({"status": "error",
-                           "message": str(error.exception)})
+        return json.dumps({"state": "error",
+                           "status": str(error.exception)})
 
     try:
         bottle.run(app=app, host=host, port=port)
