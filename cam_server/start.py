@@ -15,9 +15,9 @@ def start_camera_server(host, port, config_base):
         exit(-1)
 
     config_manager = CameraConfigManager(config_provider=CameraConfigFileStorage(config_base))
-    instance_manager = CameraInstanceManager()
+    instance_manager = CameraInstanceManager(config_manager)
 
-    start_rest_interface(host=host, port=port, instance_manager=instance_manager, config_manager=config_manager)
+    start_rest_interface(host=host, port=port, instance_manager=instance_manager)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Camera processing server')

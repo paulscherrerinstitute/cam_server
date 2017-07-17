@@ -5,7 +5,8 @@ import re
 from logging import getLogger
 
 from cam_server import config
-from cam_server.camera.instance import CameraInstance, process_camera_stream
+from cam_server.camera.instance import CameraInstance
+from cam_server.camera.sender import process_camera_stream
 from cam_server.camera.receiver import CameraSimulation, Camera
 
 _logger = getLogger(__name__)
@@ -28,8 +29,9 @@ def validate_camera_config(camera_config):
 
 
 class CameraInstanceManager(object):
-    def __init__(self):
+    def __init__(self, config_manager):
         self.camera_instances = {}
+        self.config_manager = config_manager
 
     def get_camera_stream(self, camera_config):
         """
@@ -43,7 +45,7 @@ class CameraInstanceManager(object):
         if camera_name not in self.camera_instances:
             _logger.debug("Creating new camera instance '%s'.", camera_name)
             self.camera_instances[camera_name] = CameraInstance(process_function=process_camera_stream,
-                                                                camera_name=camera_name)
+                                                                camera_config=camera_config)
         camera_instance = self.camera_instances[camera_name]
 
         # If camera instance is not yet running, start it.
