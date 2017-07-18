@@ -8,11 +8,11 @@ _logger = getLogger(__name__)
 
 
 class CameraInstance:
-    def __init__(self, process_function, camera_config):
+    def __init__(self, process_function, camera_instance, stream_port):
 
         self.process_function = process_function
-        self.camera_config = camera_config
-        self.camera_name = camera_config["camera"]["prefix"]
+        self.camera_instance = camera_instance
+        self.stream_port = stream_port
 
         self.process = None
         self.manager = multiprocessing.Manager()
@@ -22,21 +22,15 @@ class CameraInstance:
         self.stop_event.set()
 
         self.statistics = self.manager.Namespace()
-        self.parameter_queue = multiprocessing.Queue()
-        self.stream_address = None
 
-    def start(self, parameter=None):
+    def start(self):
         if self.process and self.process.is_alive():
             _logger.info("Camera instance '%s' already running.", self.camera_name)
             return
 
-        if parameter is not None:
-            self.parameter_queue.put(parameter)
-
-        camera = CameraInstance
-
         self.process = multiprocessing.Process(target=self.process_function,
-                                               args=(self.stop_event, self.statistics, self.parameter_queue, *args))
+                                               args=(self.stop_event, self.statistics,
+                                                     self.camera_instance, self.stream_port))
         self.process.start()
 
         # Wait for the processor to clear the flag - indication that the process is ready.
@@ -47,7 +41,7 @@ class CameraInstance:
             if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
                 self.process.terminate()
                 error_message = "Could not start the '%s' camera in time. Terminated. See cam_server logs." % \
-                                self.camera_name
+                                self.camera_instance.prefix
                 _logger.error(error_message)
                 raise Exception(error_message)
 

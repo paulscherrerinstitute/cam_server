@@ -38,8 +38,7 @@ def start_rest_interface(host, port, instance_manager):
     def get_camera_stream(camera_name):
         return {"state": "ok",
                 "status": "Stream address for camera %s." % camera_name,
-                "stream": instance_manager.get_camera_stream(
-                    instance_manager.config_manager.get_camera_config(camera_name))}
+                "stream": instance_manager.get_camera_stream(camera_name)}
 
     @app.get(api_prefix + '/cam_server/<camera_name>/config')
     def get_camera_config(camera_name):

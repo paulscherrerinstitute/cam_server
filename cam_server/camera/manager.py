@@ -31,26 +31,43 @@ def validate_camera_config(camera_config):
 class CameraInstanceManager(object):
     def __init__(self, config_manager):
         self.camera_instances = {}
+        self.port_mapping = {}
         self.config_manager = config_manager
 
-    def get_camera_stream(self, camera_config):
+    def _create_camera_instance(self, camera_name):
+        """
+        Create a new camera instance and add it to the instance pool.
+        :param camera_name: Camera name to instantiate.
+        """
+        stream_port = 10
+
+        _logger.info("Creating camera instance '%s' on port %d.", (camera_name, stream_port))
+
+        self.camera_instances[camera_name] = CameraInstance(
+            process_function=process_camera_stream,
+            camera_instance=self.config_manager.load_camera(camera_name),
+            stream_port=stream_port
+        )
+
+    def get_camera_stream(self, camera_name):
         """
         Get the camera stream address.
-        :param camera_config: Camera config to use.
-        :return:
+        :param camera_name: Name of the camera to get the stream for.
+        :return: Camera stream address.
         """
-        camera_name = camera_config["camera"]["prefix"]
 
-        # Retrieve or create the camera instance.
+        # Check if the requested camera already exists.
         if camera_name not in self.camera_instances:
-            _logger.debug("Creating new camera instance '%s'.", camera_name)
-            self.camera_instances[camera_name] = CameraInstance(process_function=process_camera_stream,
-                                                                camera_config=camera_config)
+            self._create_camera_instance(camera_name)
+
         camera_instance = self.camera_instances[camera_name]
 
         # If camera instance is not yet running, start it.
         if not camera_instance.is_running():
             camera_instance.start()
+        else:
+            # TODO: Signal to the camera to wait for X seconds in case no clients are connected.
+            pass
 
         return camera_instance.stream_address
 

@@ -89,7 +89,7 @@ class Camera:
         # Convert type - we are using f because of better performance
         # floats (32bit-ones) are way faster to calculate than 16 bit ints, actually even faster than native
         # int type (32/64uint) since we can leverage SIMD instructions (SSE/SSE2 on Intels).
-        value = value.astype('u2').astype('f')
+        value = value.astype('u2').astype(numpy.float32)
 
         # Shape image
         value = value[:(self.width_raw * self.height_raw)].reshape((self.height_raw, self.width_raw))
@@ -152,6 +152,9 @@ class CameraSimulation:
         self.dead_pixels = self.generate_dead_pixels(number_of_dead_pixels)
         self.beam_size_x = beam_size_x
         self.beam_size_y = beam_size_y
+
+        # Just to have a consistent camera representation class.
+        self.prefix = "simulation"
 
     def generate_dead_pixels(self, number_of_dead_pixel):
         dead_pixels = numpy.zeros((self.size_y, self.size_x))
