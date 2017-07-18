@@ -23,13 +23,15 @@ class Sender(object):
         self.sender.add_channel("image", metadata={"compression": config.BSREAD_IMAGE_COMPRESSION})
         self.sender.add_channel("timestamp", metadata={"compression": None})
 
-    def open(self):
+    def open(self, no_client_action, no_client_timeout):
+
         exception = None
         # Sometimes on Linux binding to a port fails although the port was probed to be free before.
         # Eventually this has to do with the os not releasing the port (port was bind to for the free probe) in time.
         for unused in range(10):
             try:
-                self.sender.open()
+                self.sender.open(no_client_action=no_client_action,
+                                 no_client_timeout=no_client_timeout)
                 break
             except Exception as e:
                 _logger.info("Unable to bind to port %d" % self.sender.port)
@@ -55,8 +57,15 @@ def process_camera_stream(stop_event, statistics, camera, port):
     :param camera: Camera instance to get the images from.
     :param port: Port to use to bind the output stream.
     """
+    # If there is no client for some time, disconnect.
+    def no_client_timeout():
+        stream.close()
+        stop_event.set()
+        _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %
+                     (camera.prefix, config.MFLOW_NO_CLIENTS_TIMEOUT))
+
     stream = Sender(port=port)
-    stream.open()
+    stream.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
 
     camera.connect()
 

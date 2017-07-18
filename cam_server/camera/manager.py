@@ -33,7 +33,7 @@ class CameraInstanceManager(object):
         self.camera_instances = {}
         self.port_mapping = {}
         self.config_manager = config_manager
-        self.port_generator = range(*config.CAMERA_STREAM_PORT_RANGE)
+        self.port_generator = iter(range(*config.CAMERA_STREAM_PORT_RANGE))
 
     def _create_camera_instance(self, camera_name):
         """
