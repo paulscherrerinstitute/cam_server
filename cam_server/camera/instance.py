@@ -23,6 +23,9 @@ class CameraInstance:
 
         self.statistics = self.manager.Namespace()
 
+        # TODO: Retrieve real address.
+        self.stream_address = "tcp://%s:%d" % ("127.0.0.1", self.stream_port)
+
     def start(self):
         if self.process and self.process.is_alive():
             _logger.info("Camera instance '%s' already running.", self.camera_name)
