@@ -23,12 +23,18 @@ def start_rest_interface(host, port, instance_manager):
 
     @app.get(api_root_address)
     def list_cameras():
+        """
+        List all the cameras running on the server.
+        """
         return {"state": "ok",
                 "status": "List of cameras retrieved.",
                 'cameras': instance_manager.config_manager.get_camera_list()}
 
     @app.delete(api_root_address)
     def stop_all_cameras():
+        """
+        Stop all the cameras running on the server.
+        """
         instance_manager.stop_all_cameras()
 
         return {"state": "ok",
@@ -36,18 +42,30 @@ def start_rest_interface(host, port, instance_manager):
 
     @app.get(api_root_address + "/info")
     def get_server_info():
+        """
+        Return the current camera server instance info.
+        """
         return {"state": "ok",
                 "status": "Server info retrieved.",
                 "info": instance_manager.get_info()}
 
     @app.get(api_root_address + "/<camera_name>")
     def get_camera_stream(camera_name):
+        """
+        Get the camera stream address.
+        :param camera_name: Name of the camera.
+        :return:
+        """
         return {"state": "ok",
                 "status": "Stream address for camera %s." % camera_name,
                 "stream": instance_manager.get_camera_stream(camera_name)}
 
     @app.delete(api_root_address + "/<camera_name>")
     def stop_camera(camera_name):
+        """
+        Stop a specific camera.
+        :param camera_name: Name of the camera.
+        """
         instance_manager.stop_camera(camera_name)
 
         return {"state": "ok",
@@ -93,6 +111,13 @@ def start_rest_interface(host, port, instance_manager):
 
     @app.get(api_root_address + '/<camera_name>/image')
     def get_camera_image(camera_name):
+        """
+        Return a camera image in PNG format. URL parameters available:
+        raw, scale=[float], min_value=[float], max_value[float], colormap[string].
+        Colormap: See http://matplotlib.org/examples/color/colormaps_reference.html
+        :param camera_name: Name of the camera to grab the image from.
+        :return: PNG image.
+        """
 
         camera = instance_manager.config_manager.load_camera(camera_name)
         raw = 'raw' in request.params
@@ -137,20 +162,3 @@ def start_rest_interface(host, port, instance_manager):
     finally:
         # Close the external processor when terminating the web server.
         instance_manager.stop_all_cameras()
-
-
-def _pick_unused_port():
-    # Recipe from: http://code.activestate.com/recipes/531822-pick-unused-port/
-    # There is a chance that the port returned by this code might be taken before the calling code can bind to this port
-    import socket
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.bind(('localhost', 0))
-    _, port = s.getsockname()
-    s.close()
-    return port
-
-#
-# def get_client(address):
-#     """ Factory method for cam client """
-#     import cam.client
-#     return cam.client.CamClient(address)
