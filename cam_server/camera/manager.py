@@ -33,13 +33,14 @@ class CameraInstanceManager(object):
         self.camera_instances = {}
         self.port_mapping = {}
         self.config_manager = config_manager
+        self.port_generator = range(*config.CAMERA_STREAM_PORT_RANGE)
 
     def _create_camera_instance(self, camera_name):
         """
         Create a new camera instance and add it to the instance pool.
         :param camera_name: Camera name to instantiate.
         """
-        stream_port = 10
+        stream_port = next(self.port_generator)
 
         _logger.info("Creating camera instance '%s' on port %d.", (camera_name, stream_port))
 
