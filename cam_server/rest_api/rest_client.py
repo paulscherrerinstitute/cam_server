@@ -74,3 +74,20 @@ class CamClient(object):
         rest_endpoint = "cam_server/%s" % camera_name
         return requests.get(self.api_address_format % rest_endpoint).json()
 
+    def stop_camera(self, camera_name):
+        """
+        Stop the camera.
+        :param camera_name: Name of the camera to stop.
+        :return: Response.
+        """
+        rest_endpoint = "cam_server/%s" % camera_name
+        return requests.delete(self.api_address_format % rest_endpoint).json()
+
+    def stop_all_cameras(self):
+        """
+        Stop all the cameras on the server.
+        :return: Response.
+        """
+        rest_endpoint = "cam_server"
+        return requests.delete(self.api_address_format % rest_endpoint).json()
+

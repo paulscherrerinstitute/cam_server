@@ -72,14 +72,32 @@ class CameraInstanceManager(object):
         return camera_instance.stream_address
 
     def get_info(self):
+        """
+        Return the instance manager info.
+        :return: Dictionary with the info.
+        """
         info = {"active_cameras": [camera for camera in self.camera_instances if camera.is_running()]}
         return info
 
-    def stop_all_cameras(self):
-        _logger.debug("Stopping all camera instances.")
+    def stop_camera(self, camera_name):
+        """
+        Terminate the stream of the specified camera.
+        :param camera_name: Name of the camera to stop.
+        """
+        _logger.info("Stopping camera '%s' instances.", camera_name)
 
-        for camera_instance in self.camera_instances:
-            camera_instance.stop()
+        if camera_name in self.camera_instances:
+            self.camera_instances[camera_name].stop()
+
+    def stop_all_cameras(self):
+        """
+        Terminate the streams of all cameras.
+        :return:
+        """
+        _logger.info("Stopping all camera instances.")
+
+        for camera_name in self.camera_instances:
+            self.stop_camera(camera_name)
 
 
 class CameraConfigManager(object):

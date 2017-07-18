@@ -18,29 +18,42 @@ def start_rest_interface(host, port, instance_manager):
     :param instance_manager: Manager for camera instances.
     """
 
-    api_prefix = config.API_PREFIX
+    api_root_address = config.API_PREFIX + "/cam_server"
     app = bottle.Bottle()
 
-    @app.get(api_prefix + '/cam_server')
+    @app.get(api_root_address)
     def list_cameras():
-        """List existing cameras"""
         return {"state": "ok",
                 "status": "List of cameras retrieved.",
                 'cameras': instance_manager.config_manager.get_camera_list()}
 
-    @app.get(api_prefix + "/cam_server/info")
+    @app.delete(api_root_address)
+    def stop_all_cameras():
+        instance_manager.stop_all_cameras()
+
+        return {"state": "ok",
+                "status": "All camera streams have been stopped."}
+
+    @app.get(api_root_address + "/info")
     def get_server_info():
         return {"state": "ok",
                 "status": "Server info retrieved.",
                 "info": instance_manager.get_info()}
 
-    @app.get(api_prefix + "/cam_server/<camera_name>")
+    @app.get(api_root_address + "/<camera_name>")
     def get_camera_stream(camera_name):
         return {"state": "ok",
                 "status": "Stream address for camera %s." % camera_name,
                 "stream": instance_manager.get_camera_stream(camera_name)}
 
-    @app.get(api_prefix + '/cam_server/<camera_name>/config')
+    @app.delete(api_root_address + "/<camera_name>")
+    def stop_camera(camera_name):
+        instance_manager.stop_camera(camera_name)
+
+        return {"state": "ok",
+                "status": "Camera '%s' stopped." % camera_name}
+
+    @app.get(api_root_address + '/<camera_name>/config')
     def get_camera_config(camera_name):
         """
         Get cam_server config.
@@ -51,7 +64,7 @@ def start_rest_interface(host, port, instance_manager):
                 "status": "Camera %s configuration retrieved." % camera_name,
                 "config": instance_manager.config_manager.get_camera_config(camera_name)}
 
-    @app.post(api_prefix + '/cam_server/<camera_name>/config')
+    @app.post(api_root_address + '/<camera_name>/config')
     def set_camera_config(camera_name):
         """
         Set the camera settings.
@@ -65,7 +78,7 @@ def start_rest_interface(host, port, instance_manager):
                 "status": "Camera %s configuration saved." % camera_name,
                 "config": instance_manager.config_manager.get_camera_config(camera_name)}
 
-    @app.get(api_prefix + '/cam_server/<camera_name>/geometry')
+    @app.get(api_root_address + '/<camera_name>/geometry')
     def get_camera_geometry(camera_name):
         """
         Return cam_server geometry. This geometry can change when the cam_server is rebooted
@@ -78,7 +91,7 @@ def start_rest_interface(host, port, instance_manager):
                 "width": width,
                 "height": height}
 
-    @app.get(api_prefix + '/cam_server/<camera_name>/image')
+    @app.get(api_root_address + '/<camera_name>/image')
     def get_camera_image(camera_name):
 
         camera = instance_manager.config_manager.load_camera(camera_name)
