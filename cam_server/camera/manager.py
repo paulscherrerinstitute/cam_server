@@ -5,7 +5,8 @@ import re
 from logging import getLogger
 
 from cam_server import config
-from cam_server.camera.instance import CameraInstance
+from cam_server.camera.wrapper import CameraInstanceWrapper
+from cam_server.instance_management.manager import InstanceManager
 from cam_server.camera.sender import process_camera_stream
 from cam_server.camera.receiver import CameraSimulation, Camera
 
@@ -28,27 +29,15 @@ def validate_camera_config(camera_config):
         raise ValueError("'prefix' attribute is mandatory in 'camera' section.\nConfig: %s" % camera_config)
 
 
-class CameraInstanceManager(object):
+class CameraInstanceManager(InstanceManager):
     def __init__(self, config_manager):
-        self.camera_instances = {}
-        self.port_mapping = {}
+        super(CameraInstanceManager, self).__init__()
+
         self.config_manager = config_manager
         self.port_generator = iter(range(*config.CAMERA_STREAM_PORT_RANGE))
 
-    def _create_camera_instance(self, camera_name):
-        """
-        Create a new camera instance and add it to the instance pool.
-        :param camera_name: Camera name to instantiate.
-        """
-        stream_port = next(self.port_generator)
-
-        _logger.info("Creating camera instance '%s' on port %d.", camera_name, stream_port)
-
-        self.camera_instances[camera_name] = CameraInstance(
-            process_function=process_camera_stream,
-            camera=self.config_manager.load_camera(camera_name),
-            stream_port=stream_port
-        )
+    def get_camera_list(self):
+        return self.config_manager.get_camera_list()
 
     def get_camera_stream(self, camera_name):
         """
@@ -58,10 +47,19 @@ class CameraInstanceManager(object):
         """
 
         # Check if the requested camera already exists.
-        if camera_name not in self.camera_instances:
-            self._create_camera_instance(camera_name)
+        if not self.is_instance_present(camera_name):
 
-        camera_instance = self.camera_instances[camera_name]
+            stream_port = next(self.port_generator)
+
+            _logger.info("Creating camera instance '%s' on port %d.", camera_name, stream_port)
+
+            self.add_instance(camera_name, CameraInstanceWrapper(
+                process_function=process_camera_stream,
+                camera=self.config_manager.load_camera(camera_name),
+                stream_port=stream_port
+            ))
+
+        camera_instance = self.get_instance(camera_name)
 
         # If camera instance is not yet running, start it.
         if not camera_instance.is_running():
@@ -71,35 +69,6 @@ class CameraInstanceManager(object):
             pass
 
         return camera_instance.stream_address
-
-    def get_info(self):
-        """
-        Return the instance manager info.
-        :return: Dictionary with the info.
-        """
-        info = {"active_cameras": [camera_instance.get_info() for camera_instance in self.camera_instances.values()
-                                   if camera_instance.is_running()]}
-        return info
-
-    def stop_camera(self, camera_name):
-        """
-        Terminate the stream of the specified camera.
-        :param camera_name: Name of the camera to stop.
-        """
-        _logger.info("Stopping camera '%s' instances.", camera_name)
-
-        if camera_name in self.camera_instances:
-            self.camera_instances[camera_name].stop()
-
-    def stop_all_cameras(self):
-        """
-        Terminate the streams of all cameras.
-        :return:
-        """
-        _logger.info("Stopping all camera instances.")
-
-        for camera_name in self.camera_instances:
-            self.stop_camera(camera_name)
 
 
 class CameraConfigManager(object):

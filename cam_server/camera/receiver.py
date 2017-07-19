@@ -162,7 +162,6 @@ class CameraSimulation:
         self.callback_functions = []
         self.simulation_thread = None
 
-
     def generate_dead_pixels(self, number_of_dead_pixel):
         dead_pixels = numpy.zeros((self.size_y, self.size_x))
 

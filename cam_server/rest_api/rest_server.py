@@ -6,6 +6,7 @@ from bottle import request, response
 
 from cam_server import config
 from cam_server.camera.utils import get_image_from_camera
+from cam_server.instance_management import rest_api
 
 _logger = logging.getLogger(__name__)
 
@@ -23,33 +24,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     api_root_address = config.API_PREFIX + interface_prefix
 
-    @app.get(api_root_address)
-    def list_cameras():
-        """
-        List all the cameras running on the server.
-        """
-        return {"state": "ok",
-                "status": "List of cameras retrieved.",
-                'cameras': instance_manager.config_manager.get_camera_list()}
-
-    @app.delete(api_root_address)
-    def stop_all_cameras():
-        """
-        Stop all the cameras running on the server.
-        """
-        instance_manager.stop_all_cameras()
-
-        return {"state": "ok",
-                "status": "All camera streams have been stopped."}
-
-    @app.get(api_root_address + "/info")
-    def get_server_info():
-        """
-        Return the current camera server instance info.
-        """
-        return {"state": "ok",
-                "status": "Server info retrieved.",
-                "info": instance_manager.get_info()}
+    # Register instance management API.
+    rest_api.register_rest_interface(app, instance_manager, api_root_address)
 
     @app.get(api_root_address + "/<camera_name>")
     def get_camera_stream(camera_name):
