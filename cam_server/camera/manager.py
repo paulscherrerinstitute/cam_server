@@ -42,7 +42,7 @@ class CameraInstanceManager(object):
         """
         stream_port = next(self.port_generator)
 
-        _logger.info("Creating camera instance '%s' on port %d.", (camera_name, stream_port))
+        _logger.info("Creating camera instance '%s' on port %d.", camera_name, stream_port)
 
         self.camera_instances[camera_name] = CameraInstance(
             process_function=process_camera_stream,
@@ -67,7 +67,7 @@ class CameraInstanceManager(object):
         if not camera_instance.is_running():
             camera_instance.start()
         else:
-            # TODO: Signal to the camera to wait for X seconds in case no clients are connected.
+            # TODO: Signal to the camera to wait for X seconds in case no clients are connected - in mflow.
             pass
 
         return camera_instance.stream_address
