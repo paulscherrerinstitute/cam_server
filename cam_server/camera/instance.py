@@ -28,7 +28,7 @@ class CameraInstance:
 
     def start(self):
         if self.process and self.process.is_alive():
-            _logger.info("Camera instance '%s' already running.", self.camera_name)
+            _logger.info("Camera instance '%s' already running.", self.camera.get_name())
             return
 
         self.process = multiprocessing.Process(target=self.process_function,
@@ -50,7 +50,7 @@ class CameraInstance:
 
     def stop(self):
         if not self.process:
-            _logger.info("Camera instance '%s' already stopped.", self.camera_name)
+            _logger.info("Camera instance '%s' already stopped.", self.camera.get_name())
             return
 
         self.stop_event.set()
@@ -62,7 +62,7 @@ class CameraInstance:
             time.sleep(config.PROCESS_POLL_INTERVAL)
             # Check if the timeout has already elapsed.
             if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
-                _logger.warning("Could not stop the '%s' camera in time. Terminated.", self.camera_name)
+                _logger.warning("Could not stop the '%s' camera in time. Terminated.", self.camera.get_name())
 
         # Kill process - no-op in case process already terminated
         self.process.terminate()
