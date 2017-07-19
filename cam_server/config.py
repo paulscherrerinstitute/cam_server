@@ -12,8 +12,10 @@ DEFAULT_CAMERA_CONFIG_FOLDER = "configuration"
 # Default colormap to use when getting an image from the camera.
 DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 
-# Camera API prefix.
+# API prefix.
 API_PREFIX = "/api/v1"
+# Camera server prefix.
+CAMERA_REST_INTERFACE_PREFIX = "/cam_server"
 # Default logging level.
 DEFAULT_LOGGING_LEVEL = "WARNING"
 

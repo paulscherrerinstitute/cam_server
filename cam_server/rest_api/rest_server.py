@@ -10,16 +10,18 @@ from cam_server.camera.utils import get_image_from_camera
 _logger = logging.getLogger(__name__)
 
 
-def start_rest_interface(host, port, instance_manager):
+def register_rest_interface(app, instance_manager, interface_prefix=None):
     """
-    Start the rest api server.
-    :param host: Interface to start the rest server on.
-    :param port: Port to start the rest server on.
+    Get the rest api server.
+    :param app: Bottle app to register the interface to.
     :param instance_manager: Manager for camera instances.
+    :param interface_prefix: Prefix to put before commands, and after api prefix.
     """
 
-    api_root_address = config.API_PREFIX + "/cam_server"
-    app = bottle.Bottle()
+    if interface_prefix is None:
+        interface_prefix = config.CAMERA_REST_INTERFACE_PREFIX
+
+    api_root_address = config.API_PREFIX + interface_prefix
 
     @app.get(api_root_address)
     def list_cameras():
@@ -156,9 +158,3 @@ def start_rest_interface(host, port, instance_manager):
 
         return json.dumps({"state": "error",
                            "status": str(error.exception)})
-
-    try:
-        bottle.run(app=app, host=host, port=port)
-    finally:
-        # Close the external processor when terminating the web server.
-        instance_manager.stop_all_cameras()
