@@ -8,10 +8,10 @@ _logger = getLogger(__name__)
 
 
 class CameraInstance:
-    def __init__(self, process_function, camera_instance, stream_port):
+    def __init__(self, process_function, camera, stream_port):
 
         self.process_function = process_function
-        self.camera_instance = camera_instance
+        self.camera = camera
         self.stream_port = stream_port
 
         self.process = None
@@ -33,7 +33,7 @@ class CameraInstance:
 
         self.process = multiprocessing.Process(target=self.process_function,
                                                args=(self.stop_event, self.statistics,
-                                                     self.camera_instance, self.stream_port))
+                                                     self.camera, self.stream_port))
         self.process.start()
 
         # Wait for the processor to clear the flag - indication that the process is ready.
@@ -44,7 +44,7 @@ class CameraInstance:
             if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
                 self.process.terminate()
                 error_message = "Could not start the '%s' camera in time. Terminated. See cam_server logs." % \
-                                self.camera_instance.prefix
+                                self.camera.prefix
                 _logger.error(error_message)
                 raise Exception(error_message)
 
@@ -76,3 +76,10 @@ class CameraInstance:
 
     def is_running(self):
         return self.process and self.process.is_alive()
+
+    def get_info(self):
+        return {"stream_address": self.stream_address,
+                "is_stream_active": self.is_running(),
+                "camera_geometry": self.camera.get_geometry(),
+                "camera_prefix": self.camera.prefix}
+

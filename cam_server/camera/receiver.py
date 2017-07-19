@@ -113,7 +113,7 @@ class Camera:
         value = self.channel_image.get()
         return self._get_image(value, raw=raw)
 
-    def get_info(self):
+    def get_geometry(self):
         return self.width, self.height
 
     def clear_callbacks(self):
@@ -135,7 +135,7 @@ class CameraSimulation:
     Camera simulation for debugging purposes.
     """
     def __init__(self, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
-                 beam_size_x=100, beam_size_y=20):
+                 beam_size_x=100, beam_size_y=20, frame_rate=10):
         """
         Initialize the camera simulation.
         :param size_x: Image width.
@@ -144,14 +144,20 @@ class CameraSimulation:
         :param noise: How much noise to introduce.
         :param beam_size_x: Beam width.
         :param beam_size_y: Beam height.
+        :param frame_rate: How many frames, in mhz, does the simulation outputs.
         """
 
+        self.frame_rate = frame_rate
         self.size_x = size_x
         self.size_y = size_y
         self.noise = noise  # double {0,1} noise amplification factor
         self.dead_pixels = self.generate_dead_pixels(number_of_dead_pixels)
         self.beam_size_x = beam_size_x
         self.beam_size_y = beam_size_y
+
+        # Functions to call in simulation.
+        self.callback_functions = []
+        self.simulation_thread = None
 
         # Just to have a consistent camera representation class.
         self.prefix = "simulation"
@@ -210,8 +216,14 @@ class CameraSimulation:
     def disconnect(self):  # NOOP - Just to match signature of cam_server
         pass
 
-    def get_info(self):
+    def get_geometry(self):
         return self.size_x, self.size_y
+
+    def add_callback(self, callback_function):
+        self.callback_functions.append(callback_function)
+
+    def clear_callbacks(self):
+        self.callback_functions.clear()
 
 
 if __name__ == '__main__':

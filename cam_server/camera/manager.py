@@ -46,7 +46,7 @@ class CameraInstanceManager(object):
 
         self.camera_instances[camera_name] = CameraInstance(
             process_function=process_camera_stream,
-            camera_instance=self.config_manager.load_camera(camera_name),
+            camera=self.config_manager.load_camera(camera_name),
             stream_port=stream_port
         )
 
@@ -77,7 +77,8 @@ class CameraInstanceManager(object):
         Return the instance manager info.
         :return: Dictionary with the info.
         """
-        info = {"active_cameras": [camera for camera in self.camera_instances if camera.is_running()]}
+        info = {"active_cameras": [camera_instance.get_info() for camera_instance in self.camera_instances.values()
+                                   if camera_instance.is_running()]}
         return info
 
     def stop_camera(self, camera_name):
@@ -190,7 +191,7 @@ class CameraConfigManager(object):
         camera = self.load_camera(camera_name)
 
         camera.connect()
-        width, height = camera.get_info()
+        width, height = camera.get_geometry()
         camera.disconnect()
 
         return width, height
