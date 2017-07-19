@@ -175,9 +175,9 @@ class CameraConfigManager(object):
         validate_camera_config(camera_config)
 
         # Verify if the name and the prefix of the cam_server matches.
-        camera_prefix = camera_config["cam_server"]["prefix"]
+        camera_prefix = camera_config["camera"]["prefix"]
         if camera_name != camera_prefix:
-            raise ValueError("Provided cam_server name '%s' does not match the config cam_server prefix '%s'." %
+            raise ValueError("Provided camera name '%s' does not match the config camera prefix '%s'." %
                              (camera_name, camera_prefix))
 
         self.config_provider.save_config(camera_config)
@@ -242,7 +242,7 @@ class CameraConfigFileStorage(object):
 
         # The config file does not exist
         if not os.path.isfile(config_file):
-            raise ValueError("Unable to load cam_server %s. Config '%s' does not exist." %
+            raise ValueError("Unable to load camera '%s'. Config '%s' does not exist." %
                              (camera_name, config_file))
 
         with open(config_file) as data_file:
