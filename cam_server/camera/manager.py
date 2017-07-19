@@ -120,7 +120,7 @@ class CameraConfigManager(object):
 
     def get_camera_config(self, camera_name):
         """
-        Return the cam_server configuration.
+        Return the camera configuration.
         :param camera_name: Name of the cam_server to retrieve the config for.
         :return: Camera config dictionary.
         """
@@ -135,7 +135,7 @@ class CameraConfigManager(object):
 
     def load_camera(self, camera_name):
         """
-        Load a cam_server with the given name.
+        Load a camera with the given name.
         :param camera_name: Camera to load.
         :return: Camera instance.
         """
@@ -149,7 +149,7 @@ class CameraConfigManager(object):
 
     def save_camera_config(self, camera_name, config_updates):
         """
-        Save the cam_server config changes.
+        Save the camera config changes.
         :param camera_name: Name of the cam_server to save the config to.
         :param config_updates: Config to save.
         """
@@ -201,7 +201,7 @@ class CameraConfigFileStorage(object):
     def __init__(self, config_folder=None):
         """
         Initialize the file config provider.
-        :param config_folder: Config folder to search for cam_server definition. If None, default from config.py will
+        :param config_folder: Config folder to search for camera definition. If None, default from config.py will
         be used.
         """
         if not config_folder:
@@ -210,7 +210,7 @@ class CameraConfigFileStorage(object):
 
     def get_available_configs(self):
         """
-        Return all available cam_server configurations for instance name.
+        Return all available camera configurations for instance name.
         :return: List of available cam_server configs.
         """
         cameras = []
@@ -225,7 +225,7 @@ class CameraConfigFileStorage(object):
 
     def _get_config_filename(self, camera_name):
         """
-        Construct the filename of the cam_server config.
+        Construct the filename of the camera config.
         :param camera_name: Camera name.
         :return:
         """
@@ -233,9 +233,9 @@ class CameraConfigFileStorage(object):
 
     def get_config(self, camera_name):
         """
-        Return config for a cam_server.
+        Return config for a camera.
         :param camera_name: Camera config to retrieve.
-        :return: Dict containing the cam_server config.
+        :return: Dict containing the camera config.
         """
 
         config_file = self._get_config_filename(camera_name)
@@ -252,7 +252,7 @@ class CameraConfigFileStorage(object):
 
     def save_config(self, camera_name, camera_config):
         """
-        Update an existing cam_server config.
+        Update an existing camera config.
         :param camera_name: Name of the camera to same the config for.
         :param camera_config: Configuration to persist.
         """
