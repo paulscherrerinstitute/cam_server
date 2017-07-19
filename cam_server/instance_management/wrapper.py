@@ -2,7 +2,7 @@ import multiprocessing
 import time
 from logging import getLogger
 
-from cam_server import config
+from cam_server.instance_management import config
 
 _logger = getLogger(__name__)
 

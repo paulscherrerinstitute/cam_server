@@ -18,9 +18,3 @@ API_PREFIX = "/api/v1"
 CAMERA_REST_INTERFACE_PREFIX = "/cam_server"
 # Default logging level.
 DEFAULT_LOGGING_LEVEL = "WARNING"
-
-# Time to wait for the process to execute the requested action.
-PROCESS_COMMUNICATION_TIMEOUT = 3
-# Interval used when polling the state from the process.
-PROCESS_POLL_INTERVAL = 0.1
-
