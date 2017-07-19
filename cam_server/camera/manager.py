@@ -59,16 +59,9 @@ class CameraInstanceManager(InstanceManager):
                 stream_port=stream_port
             ))
 
-        camera_instance = self.get_instance(camera_name)
+        self.start_instance(camera_name)
 
-        # If camera instance is not yet running, start it.
-        if not camera_instance.is_running():
-            camera_instance.start()
-        else:
-            # TODO: Signal to the camera to wait for X seconds in case no clients are connected - in mflow.
-            pass
-
-        return camera_instance.stream_address
+        return self.get_instance(camera_name).stream_address
 
 
 class CameraConfigManager(object):

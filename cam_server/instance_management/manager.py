@@ -40,6 +40,18 @@ class InstanceManager(object):
         """
         return self.instances[instance_name]
 
+    def start_instance(self, instance_name):
+        """
+        Start the instance.
+        :param instance_name: Instance to start.
+        """
+        instance = self.get_instance(instance_name)
+
+        if not instance.is_running():
+            instance.start()
+
+        instance.start()
+
     def stop_instance(self, instance_name):
         """
         Terminate the instance of the specified name.
