@@ -44,7 +44,7 @@ class CameraInstance:
             if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
                 self.process.terminate()
                 error_message = "Could not start the '%s' camera in time. Terminated. See cam_server logs." % \
-                                self.camera.prefix
+                                self.camera.get_name()
                 _logger.error(error_message)
                 raise Exception(error_message)
 
@@ -81,5 +81,5 @@ class CameraInstance:
         return {"stream_address": self.stream_address,
                 "is_stream_active": self.is_running(),
                 "camera_geometry": self.camera.get_geometry(),
-                "camera_prefix": self.camera.prefix}
+                "camera_name": self.camera.get_name()}
 

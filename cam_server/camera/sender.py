@@ -60,9 +60,9 @@ def process_camera_stream(stop_event, statistics, camera, port):
     # If there is no client for some time, disconnect.
     def no_client_timeout():
         stream.close()
-        stop_event.set()
         _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %
-                     (camera.prefix, config.MFLOW_NO_CLIENTS_TIMEOUT))
+                     (camera.get_name(), config.MFLOW_NO_CLIENTS_TIMEOUT))
+        stop_event.set()
 
     stream = Sender(port=port)
     stream.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)

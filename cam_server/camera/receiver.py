@@ -116,6 +116,9 @@ class Camera:
     def get_geometry(self):
         return self.width, self.height
 
+    def get_name(self):
+        return self.prefix
+
     def clear_callbacks(self):
         self.channel_image.clear_callbacks()
 
@@ -159,8 +162,6 @@ class CameraSimulation:
         self.callback_functions = []
         self.simulation_thread = None
 
-        # Just to have a consistent camera representation class.
-        self.prefix = "simulation"
 
     def generate_dead_pixels(self, number_of_dead_pixel):
         dead_pixels = numpy.zeros((self.size_y, self.size_x))
@@ -218,6 +219,9 @@ class CameraSimulation:
 
     def get_geometry(self):
         return self.size_x, self.size_y
+
+    def get_name(self):
+        return "simulation"
 
     def add_callback(self, callback_function):
         self.callback_functions.append(callback_function)
