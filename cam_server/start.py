@@ -32,7 +32,7 @@ def start_camera_server(host, port, config_base):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Camera processing server')
+    parser = argparse.ArgumentParser(description='Camera acquisition server')
     parser.add_argument('-p', '--port', default=8888, help="Server port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
     parser.add_argument('-b', '--base', default=config.DEFAULT_CAMERA_CONFIG_FOLDER,
