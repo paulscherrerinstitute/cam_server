@@ -1,4 +1,3 @@
-import time
 from logging import getLogger
 
 from bsread import BIND, PUSH, sender
@@ -24,22 +23,7 @@ class Sender(object):
         self.sender.add_channel("timestamp", metadata={"compression": None})
 
     def open(self, no_client_action, no_client_timeout):
-
-        exception = None
-        # Sometimes on Linux binding to a port fails although the port was probed to be free before.
-        # Eventually this has to do with the os not releasing the port (port was bind to for the free probe) in time.
-        for unused in range(10):
-            try:
-                self.sender.open(no_client_action=no_client_action,
-                                 no_client_timeout=no_client_timeout)
-                break
-            except Exception as e:
-                _logger.info("Unable to bind to port %d" % self.sender.port)
-                exception = e
-                time.sleep(1)
-
-        if exception is not None:
-            raise exception
+        self.sender.open(no_client_action=no_client_action, no_client_timeout=no_client_timeout)
 
     def send(self, data):
         # Speed up - do not need to check data, since we set the channels correctly.
@@ -59,7 +43,6 @@ def process_camera_stream(stop_event, statistics, camera, port):
     """
     # If there is no client for some time, disconnect.
     def no_client_timeout():
-        stream.close()
         _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %
                      (camera.get_name(), config.MFLOW_NO_CLIENTS_TIMEOUT))
         stop_event.set()
