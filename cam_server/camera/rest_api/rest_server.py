@@ -5,8 +5,8 @@ import bottle
 from bottle import request, response
 
 from cam_server import config
-from cam_server.data_processing.functions import get_png_from_image
 from cam_server.instance_management import rest_api
+from cam_server.pipeline.data_processing.functions import get_png_from_image
 
 _logger = logging.getLogger(__name__)
 

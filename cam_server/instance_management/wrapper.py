@@ -2,9 +2,13 @@ import multiprocessing
 import time
 from logging import getLogger
 
-from cam_server.instance_management import config
-
 _logger = getLogger(__name__)
+
+
+# Time to wait for the process to execute the requested action.
+PROCESS_COMMUNICATION_TIMEOUT = 3
+# Interval used when polling the state from the process.
+PROCESS_POLL_INTERVAL = 0.1
 
 
 class InstanceWrapper:
@@ -38,9 +42,9 @@ class InstanceWrapper:
         # Wait for the processor to clear the flag - indication that the process is ready.
         start_timestamp = time.time()
         while self.stop_event.is_set():
-            time.sleep(config.PROCESS_POLL_INTERVAL)
+            time.sleep(PROCESS_POLL_INTERVAL)
             # Check if the timeout has already elapsed.
-            if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
+            if time.time() - start_timestamp > PROCESS_COMMUNICATION_TIMEOUT:
                 self.process.terminate()
                 error_message = "Could not start the '%s' camera in time. Terminated. See cam_server logs." % \
                                 self.instance_name
@@ -58,9 +62,9 @@ class InstanceWrapper:
         start_timestamp = time.time()
 
         while self.process.is_alive():
-            time.sleep(config.PROCESS_POLL_INTERVAL)
+            time.sleep(PROCESS_POLL_INTERVAL)
             # Check if the timeout has already elapsed.
-            if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
+            if time.time() - start_timestamp > PROCESS_COMMUNICATION_TIMEOUT:
                 _logger.warning("Could not stop the '%s' camera in time. Terminated.", self.instance_name)
 
         # Kill process - no-op in case process already terminated
