@@ -4,11 +4,13 @@ import os
 
 import bottle
 
-from cam_server.pipeline.manager import PipelineInstanceManager
+from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
 
 from cam_server import config
-from cam_server.camera.manager import CameraConfigManager, CameraInstanceManager, CameraConfigFileStorage
+from cam_server.camera.management import CameraInstanceManager
+from cam_server.camera.configuration import CameraConfigManager
+from cam_server.instance_management.configuration import CameraConfigFileStorage
 from cam_server.camera.rest_api.rest_server import register_rest_interface as register_camera_rest_interface
 
 _logger = logging.getLogger(__name__)
