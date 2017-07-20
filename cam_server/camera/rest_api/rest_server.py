@@ -38,17 +38,6 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Stream address for camera %s." % camera_name,
                 "stream": instance_manager.get_camera_stream(camera_name)}
 
-    @app.delete(api_root_address + "/<camera_name>")
-    def stop_camera(camera_name):
-        """
-        Stop a specific camera.
-        :param camera_name: Name of the camera.
-        """
-        instance_manager.stop_camera(camera_name)
-
-        return {"state": "ok",
-                "status": "Camera '%s' stopped." % camera_name}
-
     @app.get(api_root_address + '/<camera_name>/config')
     def get_camera_config(camera_name):
         """
