@@ -2,8 +2,8 @@ from logging import getLogger
 
 from cam_server import config
 from cam_server.camera.sender import process_camera_stream
-from cam_server.camera.wrapper import CameraInstanceWrapper
 from cam_server.instance_management.manager import InstanceManager
+from cam_server.instance_management.wrapper import InstanceWrapper
 
 _logger = getLogger(__name__)
 
@@ -41,3 +41,20 @@ class CameraInstanceManager(InstanceManager):
         self.start_instance(camera_name)
 
         return self.get_instance(camera_name).stream_address
+
+
+class CameraInstanceWrapper(InstanceWrapper):
+    def __init__(self, process_function, camera, stream_port):
+
+        super(CameraInstanceWrapper, self).__init__(camera.get_name(), process_function,
+                                                    camera, stream_port)
+
+        self.camera = camera
+        # TODO: Retrieve real address.
+        self.stream_address = "tcp://%s:%d" % ("127.0.0.1", self.stream_port)
+
+    def get_info(self):
+        return {"stream_address": self.stream_address,
+                "is_stream_active": self.is_running(),
+                "camera_geometry": self.camera.get_geometry(),
+                "camera_name": self.camera.get_name()}
