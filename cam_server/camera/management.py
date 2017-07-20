@@ -1,3 +1,4 @@
+import socket
 from logging import getLogger
 
 from cam_server import config
@@ -50,8 +51,7 @@ class CameraInstanceWrapper(InstanceWrapper):
                                                     camera, stream_port)
 
         self.camera = camera
-        # TODO: Retrieve real address.
-        self.stream_address = "tcp://%s:%d" % ("127.0.0.1", self.stream_port)
+        self.stream_address = "tcp://%s:%d" % (socket.gethostname(), self.stream_port)
 
     def get_info(self):
         return {"stream_address": self.stream_address,
