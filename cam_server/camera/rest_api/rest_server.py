@@ -5,7 +5,7 @@ import bottle
 from bottle import request, response
 
 from cam_server import config
-from cam_server.camera.utils import get_image_from_camera
+from cam_server.data_processing.functions import get_png_from_image
 from cam_server.instance_management import rest_api
 
 _logger = logging.getLogger(__name__)
@@ -93,7 +93,12 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         max_value = float(request.params["max_value"]) if "max_value" in request.params else None
         colormap_name = request.params.get("colormap")
 
-        image = get_image_from_camera(camera, raw, scale, min_value, max_value, colormap_name)
+        # Retrieve a single image from the camera.
+        camera.connect()
+        image_raw_bytes = camera.get_image(raw=raw)
+        camera.disconnect()
+
+        image = get_png_from_image(image_raw_bytes, scale, min_value, max_value, colormap_name)
 
         response.set_header('Content-type', 'image/png')
         return image
