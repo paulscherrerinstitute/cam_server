@@ -227,27 +227,3 @@ class CameraSimulation:
 
     def clear_callbacks(self):
         self.callback_functions.clear()
-
-
-if __name__ == '__main__':
-
-    import matplotlib.pyplot as plt
-
-    source = CameraSimulation()
-
-    images = []
-    for i in range(100):
-        images.append(source.get_image())
-
-    print('Image generation done')
-
-    # image = source.get_image()
-    im = plt.imshow(images[0])
-
-    plt.ion()
-    plt.show()
-
-    for image in images:
-        image = source.get_image()
-        im.set_data(image)
-        plt.pause(0.01)
