@@ -1,36 +1,9 @@
 from logging import getLogger
-
-from bsread import BIND, PUSH, sender
+from bsread.sender import Sender
 
 from cam_server import config
 
 _logger = getLogger(__name__)
-
-
-class Sender(object):
-    """
-    Helper object to simplify the interaction with bsread.
-    """
-    def __init__(self, queue_size=10, port=9999, conn_type=BIND, mode=PUSH, block=True,
-                 start_pulse_id=0):
-
-        self.sender = sender.Sender(queue_size=queue_size, port=port, conn_type=conn_type, mode=mode,
-                                    block=block, start_pulse_id=start_pulse_id,
-                                    data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
-
-        # Register the bsread channels - compress only the image.
-        self.sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION})
-        self.sender.add_channel("timestamp", metadata={"compression": None})
-
-    def open(self, no_client_action, no_client_timeout):
-        self.sender.open(no_client_action=no_client_action, no_client_timeout=no_client_timeout)
-
-    def send(self, data):
-        # Speed up - do not need to check data, since we set the channels correctly.
-        self.sender.send(data=data, check_data=False)
-
-    def close(self):
-        self.sender.close()
 
 
 def process_camera_stream(stop_event, statistics, camera, port):
@@ -47,8 +20,13 @@ def process_camera_stream(stop_event, statistics, camera, port):
                      (camera.get_name(), config.MFLOW_NO_CLIENTS_TIMEOUT))
         stop_event.set()
 
-    stream = Sender(port=port)
-    stream.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
+    sender = Sender(port=port)
+
+    # Register the bsread channels - compress only the image.
+    sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION})
+    sender.add_channel("timestamp", metadata={"compression": None})
+
+    sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
 
     camera.connect()
 
@@ -59,7 +37,7 @@ def process_camera_stream(stop_event, statistics, camera, port):
         data = {"image": image,
                 "timestamp": timestamp}
 
-        stream.send(data)
+        sender.send(data, check_data=False)
 
     camera.add_callback(collect_and_send)
 
@@ -72,4 +50,4 @@ def process_camera_stream(stop_event, statistics, camera, port):
     camera.clear_callbacks()
     camera.disconnect()
 
-    stream.close()
+    sender.close()
