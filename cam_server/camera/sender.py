@@ -16,10 +16,10 @@ class Sender(object):
 
         self.sender = sender.Sender(queue_size=queue_size, port=port, conn_type=conn_type, mode=mode,
                                     block=block, start_pulse_id=start_pulse_id,
-                                    data_header_compression=config.BSREAD_DATA_HEADER_COMPRESSION)
+                                    data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
 
         # Register the bsread channels - compress only the image.
-        self.sender.add_channel("image", metadata={"compression": config.BSREAD_IMAGE_COMPRESSION})
+        self.sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION})
         self.sender.add_channel("timestamp", metadata={"compression": None})
 
     def open(self, no_client_action, no_client_timeout):

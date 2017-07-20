@@ -7,10 +7,7 @@ class CameraInstanceWrapper(InstanceWrapper):
         super(CameraInstanceWrapper, self).__init__(camera.get_name(), process_function,
                                                     camera, stream_port)
 
-        self.process_function = process_function
         self.camera = camera
-        self.stream_port = stream_port
-
         # TODO: Retrieve real address.
         self.stream_address = "tcp://%s:%d" % ("127.0.0.1", self.stream_port)
 

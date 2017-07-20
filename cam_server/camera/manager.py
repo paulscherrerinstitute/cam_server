@@ -5,10 +5,10 @@ import re
 from logging import getLogger
 
 from cam_server import config
+from cam_server.camera.receiver import CameraSimulation, Camera
+from cam_server.camera.sender import process_camera_stream
 from cam_server.camera.wrapper import CameraInstanceWrapper
 from cam_server.instance_management.manager import InstanceManager
-from cam_server.camera.sender import process_camera_stream
-from cam_server.camera.receiver import CameraSimulation, Camera
 
 _logger = getLogger(__name__)
 
