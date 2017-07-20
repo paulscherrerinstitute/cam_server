@@ -26,7 +26,7 @@ DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 
 # We have only 2 channels: Image and timestamp. Header compression is not really needed.
 CAMERA_BSREAD_DATA_HEADER_COMPRESSION = None
-# Compression here might be a good idea. Use "bithuffle_lz4" or None.
+# Compression here might be a good idea. Use "bitshuffle_lz4" or None.
 CAMERA_BSREAD_IMAGE_COMPRESSION = None
 
 #####################
