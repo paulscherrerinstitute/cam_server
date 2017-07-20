@@ -1,20 +1,37 @@
-# Camera stream port range.
-CAMERA_STREAM_PORT_RANGE = (10100, 11100)
-# Data header compression
-BSREAD_DATA_HEADER_COMPRESSION = None
-# Camera image compression
-BSREAD_IMAGE_COMPRESSION = None
+########################
+# Interface parameters #
+########################
+
+# API prefix.
+API_PREFIX = "/api/v1"
+# Camera server prefix.
+CAMERA_REST_INTERFACE_PREFIX = "/cam"
+# Pipeline server prefix
+PIPELINE_REST_INTERFACE_PREFIX = "/pipeline"
+# Default logging level.
+DEFAULT_LOGGING_LEVEL = "WARNING"
 # How many seconds do we wait before disconnecting a stream without clients.
 MFLOW_NO_CLIENTS_TIMEOUT = 3
 
+###################
+# Camera settings #
+###################
+
+# Each camera config gets assigned one port. 1000 cameras per server should be enough.
+CAMERA_STREAM_PORT_RANGE = (10100, 11100)
 # Default folder for cam_server configs.
 DEFAULT_CAMERA_CONFIG_FOLDER = "configuration"
 # Default colormap to use when getting an image from the camera.
 DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 
-# API prefix.
-API_PREFIX = "/api/v1"
-# Camera server prefix.
-CAMERA_REST_INTERFACE_PREFIX = "/cam_server"
-# Default logging level.
-DEFAULT_LOGGING_LEVEL = "WARNING"
+# We have only 2 channels: Image and timestamp. Header compression is not really needed.
+CAMERA_BSREAD_DATA_HEADER_COMPRESSION = None
+# Compression here might be a good idea. Use "bithuffle_lz4" or None.
+CAMERA_BSREAD_IMAGE_COMPRESSION = None
+
+#####################
+# Pipeline settings #
+#####################
+
+# Every time you open a pipeline it gets the next port. 1000 rotating ports should be enough.
+PIPELINE_STREAM_PORT_RANGE = (11100, 12100)
