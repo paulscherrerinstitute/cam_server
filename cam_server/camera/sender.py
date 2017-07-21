@@ -6,7 +6,8 @@ from cam_server import config
 _logger = getLogger(__name__)
 
 
-def process_camera_stream(stop_event, statistics, camera, port):
+def process_camera_stream(stop_event, statistics, parameter_queue,
+                          camera, port):
     """
     Start the camera stream and listen for image monitors. This function blocks until stop_event is set.
     :param stop_event: Event when to stop the process.
@@ -14,6 +15,7 @@ def process_camera_stream(stop_event, statistics, camera, port):
     :param camera: Camera instance to get the images from.
     :param port: Port to use to bind the output stream.
     """
+
     # If there is no client for some time, disconnect.
     def no_client_timeout():
         _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %

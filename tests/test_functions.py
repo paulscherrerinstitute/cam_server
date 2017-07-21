@@ -6,11 +6,8 @@ from scipy import signal
 from cam_server.pipeline.data_processing.functions import gauss_fit, calculate_slices, linear_fit, find_index
 
 
-class CamtoolTestCase(unittest.TestCase):
-    """Tests for `cam_server.py`."""
-
+class FunctionsTest(unittest.TestCase):
     def test_gauss_fit(self):
-
         size = 101
         standart_deviation_set = 6.3
         center_set = 5
@@ -26,7 +23,7 @@ class CamtoolTestCase(unittest.TestCase):
         logging.info("Retrieved center: %f" % center)
 
         self.assertAlmostEqual(standart_deviation_set, standard_deviation, delta=0.0001)
-        self.assertAlmostEqual(int(size/2)+center_set, center, delta=0.0001)
+        self.assertAlmostEqual(int(size / 2) + center_set, center, delta=0.0001)
 
     def test_calculate_slices(self):
         size = 1000
@@ -50,7 +47,7 @@ class CamtoolTestCase(unittest.TestCase):
         # Use of different axis, less slices
 
         # move the axis values to the left
-        axis = numpy.array(range(100, 100+size)).astype('f')
+        axis = numpy.array(range(100, 100 + size)).astype('f')
 
         indexes, n_indices_half_slice = calculate_slices(axis, center, standard_deviation,
                                                          scaling=2, number_of_slices=5)
@@ -112,7 +109,6 @@ class CamtoolTestCase(unittest.TestCase):
         pass
 
     def test_linear_fit(self):
-
         x = numpy.array([0., 1., 2., 3., 4.])
         y = numpy.array([0., 1., 2., 3., 4.])
         slope, offset = linear_fit(x, y)
@@ -143,8 +139,8 @@ class CamtoolTestCase(unittest.TestCase):
 
         x = [605.0, 609.0, 613.0, 617.0, 621.0, 625.0, 629.0, 633.0, 637.0, 641.0, 645.0]
         y = [476.65531378025469, 476.55426997267142, 476.60364191555584, 476.54863572007542, 476.56270299019877,
-         476.54710034527858, 476.54197609352912, 476.57245390887124, 476.50808807086082, 476.57282667093847,
-         476.56745922293777]
+             476.54710034527858, 476.54197609352912, 476.57245390887124, 476.50808807086082, 476.57282667093847,
+             476.56745922293777]
         slope, offset = linear_fit(x, y)
         logging.info("xx slope: %f offset: %f" % (slope, offset))
 

@@ -51,7 +51,7 @@ class CameraInstanceWrapper(InstanceWrapper):
                                                     camera, stream_port)
 
         self.camera = camera
-        self.stream_address = "tcp://%s:%d" % (socket.gethostname(), self.stream_port)
+        self.stream_address = "tcp://%s:%d" % (socket.gethostname(), stream_port)
 
     def get_info(self):
         return {"stream_address": self.stream_address,
