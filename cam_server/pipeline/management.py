@@ -94,3 +94,9 @@ class PipelineInstance(InstanceWrapper):
 
     def get_stream_address(self):
         return self.stream_address
+
+    def set_parameter(self, parameters):
+        super().set_parameter(parameters)
+
+        # Update the parameters on the local instance as well.
+        self.pipeline.parameters = parameters
