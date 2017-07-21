@@ -83,6 +83,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     @app.post(api_root_address + '/instance/<instance_id>/config')
     def set_instance_config(instance_id):
         configuration = request.json
+        # TODO: This call is to coupled. Remove the validation logic from the rest api.
+        # TODO: Get instance current config and update it.
         instance_manager.config_manager.validate_pipeline_config(configuration)
 
         pipeline = instance_manager.get_instance(instance_id)
