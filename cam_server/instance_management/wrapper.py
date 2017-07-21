@@ -4,7 +4,6 @@ from logging import getLogger
 
 _logger = getLogger(__name__)
 
-
 # Time to wait for the process to execute the requested action.
 PROCESS_COMMUNICATION_TIMEOUT = 3
 # Interval used when polling the state from the process.
@@ -27,6 +26,7 @@ class InstanceWrapper:
         self.stop_event.set()
 
         self.statistics = self.manager.Namespace()
+        self.parameter_queue = multiprocessing.Queue()
 
     def start(self):
         if self.process and self.process.is_alive():
@@ -34,8 +34,7 @@ class InstanceWrapper:
             return
 
         self.process = multiprocessing.Process(target=self.process_function,
-                                               args=(self.stop_event,
-                                                     self.statistics,
+                                               args=(self.stop_event, self.statistics, self.parameter_queue,
                                                      *self.args))
         self.process.start()
 
