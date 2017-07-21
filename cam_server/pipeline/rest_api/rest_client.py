@@ -6,7 +6,7 @@ from cam_server import config
 class PipelineClient(object):
     def __init__(self, address="http://0.0.0.0:8888/"):
         """
-        :param address: Address of the cam API, e.g. http://localhost:10000
+        :param address: Address of the pipeline API, e.g. http://localhost:10000
         """
 
         self.api_address_format = address.rstrip("/") + config.API_PREFIX + config.PIPELINE_REST_INTERFACE_PREFIX + "%s"
@@ -20,72 +20,64 @@ class PipelineClient(object):
         rest_endpoint = "/info"
         return requests.get(self.api_address_format % rest_endpoint).json()
 
-    def get_cameras(self):
+    def get_pipelines(self):
         """
-        List existing cameras.
+        List existing pipelines.
         :return: Currently existing cameras.
         """
         rest_endpoint = ""
         return requests.get(self.api_address_format % rest_endpoint).json()
 
-    def get_camera_config(self, camera_name):
+    def get_pipeline_config(self, pipeline_name):
         """
-        Return the cam_server configuration.
-        :param camera_name: Name of the cam_server.
-        :return: Camera configuration.
+        Return the pipeline configuration.
+        :param pipeline_name: Name of the pipeline.
+        :return: Pipeline configuration.
         """
-        rest_endpoint = "/%s/config" % camera_name
+        rest_endpoint = "/%s/config" % pipeline_name
         return requests.get(self.api_address_format % rest_endpoint).json()
 
-    def set_camera_config(self, camera_name, config):
+    def get_instance_config(self, instance_id):
         """
-        Set config on cam_server.
-        :param camera_name: Camera to set the config to.
-        :param config: Config to set, in dictionary format.
+        Return the instance configuration.
+        :param instance_id: Id of the instance.
+        :return: Pipeline configuration.
+        """
+        rest_endpoint = "/instance/%s/config" % instance_id
+        return requests.get(self.api_address_format % rest_endpoint).json()
+
+    def set_pipeline_config(self, pipeline_name, configuration):
+        """
+        Set config of the pipeline.
+        :param pipeline_name: Pipeline to save the config for.
+        :param configuration: Config to save, in dictionary format.
         :return: Actual applied config.
         """
-        rest_endpoint = "/%s" % camera_name
-        return requests.post(self.api_address_format % rest_endpoint, json=config).json()
+        rest_endpoint = "/%s/config" % pipeline_name
+        return requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
 
-    def get_camera_geometry(self, camera_name):
+    def set_instance_config(self, instance_id, configuration):
         """
-        Get cam_server geometry.
-        :param camera_name: Name of the cam_server.
-        :return: Camera geometry.
+        Set config of the instance.
+        :param instance_id: Instance to apply the config for.
+        :param configuration: Config to apply, in dictionary format.
+        :return: Actual applied config.
         """
-        rest_endpoint = "/%s/geometry" % camera_name
-        return requests.get(self.api_address_format % rest_endpoint).json()
+        rest_endpoint = "/instance/%s/config" % instance_id
+        return requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
 
-    def get_camera_image(self, camera_name):
+    def stop_instance(self, pipeline_id):
         """
-        Return the cam_server image in PNG format.
-        :param camera_name: Camera name.
-        :return: Response content (PNG).
-        """
-        rest_endpoint = "/%s/image" % camera_name
-        return requests.get(self.api_address_format % rest_endpoint).content
-
-    def get_camera_stream(self, camera_name):
-        """
-        Get the camera stream address.
-        :param camera_name: Name of the camera to get the address for.
-        :return: Stream address.
-        """
-        rest_endpoint = "/%s" % camera_name
-        return requests.get(self.api_address_format % rest_endpoint).json()
-
-    def stop_camera(self, camera_name):
-        """
-        Stop the camera.
-        :param camera_name: Name of the camera to stop.
+        Stop the pipeline.
+        :param pipeline_id: Name of the pipeline to stop.
         :return: Response.
         """
-        rest_endpoint = "/%s" % camera_name
+        rest_endpoint = "/%s" % pipeline_id
         return requests.delete(self.api_address_format % rest_endpoint).json()
 
-    def stop_all_cameras(self):
+    def stop_all_instances(self):
         """
-        Stop all the cameras on the server.
+        Stop all the pipelines on the server.
         :return: Response.
         """
         rest_endpoint = ""
