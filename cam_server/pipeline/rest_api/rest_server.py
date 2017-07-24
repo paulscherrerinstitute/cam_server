@@ -72,7 +72,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     def get_instance_info(instance_id):
         return {"state": "ok",
                 "status": "Pipeline instance %s info retrieved." % instance_id,
-                "info": instance_manager.get_instance(instance_id).get_info(),}
+                "info": instance_manager.get_instance(instance_id).get_info()}
 
     @app.get(api_root_address + '/instance/<instance_id>/config')
     def get_instance_config(instance_id):

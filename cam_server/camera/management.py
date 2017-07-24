@@ -59,5 +59,8 @@ class CameraInstanceWrapper(InstanceWrapper):
                 "camera_geometry": self.camera.get_geometry(),
                 "camera_name": self.camera.get_name()}
 
+    def get_config(self):
+        self.camera_config.to_dict()
+
     def get_name(self):
         return self.camera.get_name()

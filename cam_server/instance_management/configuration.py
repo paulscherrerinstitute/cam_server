@@ -69,19 +69,3 @@ class CameraConfigFileStorage(object):
 
         with open(target_config_file, 'w') as data_file:
             json.dump(camera_config, data_file, indent=True)
-
-
-def validate_camera_config(camera_config):
-    """
-    Verify if the cam_server config has the mandatory attributes.
-    :param camera_config:
-    :return:
-    """
-    if not camera_config:
-        raise ValueError("Config object cannot be empty.\nConfig: %s" % camera_config)
-
-    if "camera" not in camera_config:
-        raise ValueError("'camera' section is mandatory in camera_config.\nConfig: %s" % camera_config)
-
-    if "prefix" not in camera_config["camera"]:
-        raise ValueError("'prefix' attribute is mandatory in 'camera' section.\nConfig: %s" % camera_config)
