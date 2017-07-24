@@ -14,7 +14,7 @@ class MockConfigStorage:
         self.configs = {}
 
     def get_available_configs(self):
-        return self.configs.keys()
+        return list(self.configs.keys())
 
     def get_config(self, config_name):
         if config_name not in self.configs:
