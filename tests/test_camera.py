@@ -1,7 +1,12 @@
+import imghdr
 import unittest
 from time import sleep
 
+from PIL import Image
+from io import BytesIO
+
 from cam_server import config
+from cam_server.pipeline.data_processing.functions import get_png_from_image
 from tests.helpers.camera import get_test_instance_manager
 
 
@@ -57,6 +62,24 @@ class CameraTest(unittest.TestCase):
         # Revert back.
         config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
 
+    def test_camera_image(self):
+        instance_manager = get_test_instance_manager()
+
+        camera = instance_manager.config_manager.load_camera(self.simulation_camera)
+
+        # Retrieve a single image from the camera.
+        camera.connect()
+        image_raw_bytes = camera.get_image()
+        camera.disconnect()
+
+        image = get_png_from_image(image_raw_bytes)
+
+        self.assertEqual("png", imghdr.test_png(image, None), "Image is not a valid PNG.")
+
+        camera_size = camera.get_geometry()
+        png_size = Image.open(BytesIO(image)).size
+
+        self.assertEqual(camera_size, png_size, "Camera and image size are not the same.")
 
 if __name__ == '__main__':
     unittest.main()
