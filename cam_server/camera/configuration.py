@@ -26,11 +26,11 @@ class CameraConfigManager(object):
         """
         # Simulation cam_server is not defined in the config.
         if camera_name.lower() == 'simulation':
-            return {"camera": {"prefix": "simulation"}}
+            camera_config = {"camera": {"prefix": "simulation"}}
+        else:
+            camera_config = self.config_provider.get_config(camera_name)
 
-        camera_config = self.config_provider.get_config(camera_name)
         validate_camera_config(camera_config)
-
         return camera_config
 
     def load_camera(self, camera_name):
