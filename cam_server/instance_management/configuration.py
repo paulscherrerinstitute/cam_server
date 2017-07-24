@@ -6,7 +6,7 @@ import re
 from cam_server import config
 
 
-class CameraConfigFileStorage(object):
+class ConfigFileStorage(object):
     def __init__(self, config_folder=None):
         """
         Initialize the file config provider.
