@@ -12,8 +12,9 @@ class InstanceManager(object):
         Return the instance manager info.
         :return: Dictionary with the info.
         """
-        info = {"active_instances": [instance.get_info() for instance in self.instances.values()
-                                     if instance.is_running()]}
+        info = {"active_instances": dict((instance.get_name(), instance.get_info())
+                                         for instance in self.instances.values() if instance.is_running())}
+
         return info
 
     def add_instance(self, instance_name, instance_wrapper):
