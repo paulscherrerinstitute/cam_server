@@ -58,3 +58,6 @@ class CameraInstanceWrapper(InstanceWrapper):
                 "is_stream_active": self.is_running(),
                 "camera_geometry": self.camera.get_geometry(),
                 "camera_name": self.camera.get_name()}
+
+    def get_name(self):
+        return self.camera.get_name()

@@ -39,7 +39,7 @@ class PipelineConfigManager(object):
         :return: Pipeline instance.
         """
         configuration = self.get_pipeline_config(pipeline_name)
-        return Pipeline(configuration)
+        return Pipeline(pipeline_name, configuration)
 
     def save_pipeline_config(self, pipeline_name, configuration):
         """
@@ -53,7 +53,9 @@ class PipelineConfigManager(object):
 
 
 class Pipeline:
-    def __init__(self, parameters=None):
+    def __init__(self, pipeline_name, parameters=None):
+
+        self.pipeline_name = pipeline_name
 
         if parameters is not None:
             self.parameters = parameters
@@ -92,3 +94,6 @@ class Pipeline:
     def validate_pipeline_config(config):
         # TODO: implement validation.
         pass
+
+    def get_name(self):
+        return self.pipeline_name

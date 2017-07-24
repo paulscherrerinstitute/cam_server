@@ -35,7 +35,7 @@ class PipelineInstanceManager(InstanceManager):
 
         if configuration:
             self.config_manager.validate_config(configuration)
-            pipeline = Pipeline(configuration)
+            pipeline = Pipeline(pipeline_name, configuration)
         else:
             pipeline = self.config_manager.load_pipeline(pipeline_name)
 
@@ -100,3 +100,6 @@ class PipelineInstance(InstanceWrapper):
 
         # Update the parameters on the local instance as well.
         self.pipeline.parameters = parameters
+
+    def get_name(self):
+        return self.pipeline.get_name()
