@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from cam_server.camera.receiver import CameraSimulation, Camera
 from cam_server.instance_management.configuration import validate_camera_config
 
@@ -95,3 +97,22 @@ class CameraConfigManager(object):
         camera.disconnect()
 
         return width, height
+
+
+class CameraConfig:
+
+    def __init__(self, camera_name, parameters=None):
+        self.camera_name = camera_name
+        self.parameters = {}
+
+        if parameters:
+            self.parameters = parameters
+        else:
+            self.parameters = OrderedDict({
+                "prefix": camera_name
+            })
+
+    @staticmethod
+    def validate_config(config):
+        # TODO: Implement validation.
+        pass
