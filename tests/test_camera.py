@@ -40,12 +40,22 @@ class CameraTest(unittest.TestCase):
         config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
 
     def test_stop_stream(self):
-        pass
+        instance_manager = get_test_instance_manager()
 
+        old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
+        # We need a high timeout to be sure the stream does not disconnect by itself.
+        config.MFLOW_NO_CLIENTS_TIMEOUT = 30
 
+        instance_manager.get_camera_stream(self.simulation_camera)
+        self.assertTrue(self.simulation_camera in instance_manager.get_info()["active_instances"],
+                        "Simulation camera instance is not running.")
 
+        instance_manager.stop_instance(self.simulation_camera)
+        self.assertTrue(self.simulation_camera not in instance_manager.get_info()["active_instances"],
+                        "Simulation camera instance should not be running.")
 
-
+        # Revert back.
+        config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
 
 
 if __name__ == '__main__':
