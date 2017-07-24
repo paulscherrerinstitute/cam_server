@@ -48,5 +48,5 @@ class CameraConfigTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Cannot save config for simulation camera."):
             instance_manager.config_manager.save_camera_config("simulation", camera_config)
 
-
-
+if __name__ == '__main__':
+    unittest.main()
