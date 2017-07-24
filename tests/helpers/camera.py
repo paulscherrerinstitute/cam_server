@@ -14,10 +14,14 @@ class MockConfigStorage:
         self.configs = {}
 
     def get_available_configs(self):
-        return []
+        return self.configs.keys()
 
     def get_config(self, config_name):
-        return None
+        if config_name not in self.configs:
+            # Replicate the error in the real config provider.
+            raise ValueError("Unable to load config '%s'" % config_name)
+
+        return self.configs[config_name]
 
     def save_config(self, config_name, configuration):
-        pass
+        self.configs[config_name] = configuration
