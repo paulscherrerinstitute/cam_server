@@ -115,14 +115,16 @@ class CameraConfig:
     @staticmethod
     def validate_camera_config(configuration):
         """
-        Verify if the cam_server config has the mandatory attributes.
-        :param configuration:
+        Verify if the camera config has the mandatory attributes.
+        :param configuration: Configuration to verify.
         :return:
         """
         if not configuration:
             raise ValueError("Config object cannot be empty.\nConfig: %s" % configuration)
 
-        if "prefix" not in configuration:
-            raise ValueError("'prefix' attribute is mandatory in 'camera' section.\nConfig: %s" % configuration)
+        mandatory_attributes = ["prefix", "mirror_x", "mirror_y", "rotate"]
+        missing_attributes = [attr for attr in mandatory_attributes if attr not in configuration]
 
-        # TODO: Improve this validation.
+        if missing_attributes:
+            raise ValueError("The following mandatory attributes were not found in the configuration: %s" %
+                             missing_attributes)
