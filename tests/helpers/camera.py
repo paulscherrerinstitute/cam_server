@@ -16,8 +16,8 @@ class MockConfigStorage:
     def get_available_configs(self):
         return []
 
-    def get_config(self, camera_name):
+    def get_config(self, config_name):
         return None
 
-    def save_config(self, camera_name, camera_config):
+    def save_config(self, config_name, configuration):
         pass

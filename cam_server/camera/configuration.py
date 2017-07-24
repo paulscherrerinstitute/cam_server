@@ -47,7 +47,7 @@ class CameraConfigManager(object):
 
         camera_config = self.get_camera_config(camera_name)
 
-        return Camera(**camera_config.to_dict())
+        return Camera(camera_config)
 
     def save_camera_config(self, camera_name, config_updates):
         """
@@ -61,14 +61,14 @@ class CameraConfigManager(object):
 
         # Get either the existing config, or generate a template one.
         try:
-            camera_config = self.config_provider.get_camera_config(camera_name)
+            camera_config = self.get_camera_config(camera_name)
         except ValueError:
             # Config does not exist, create an empty template.
             camera_config = CameraConfig(camera_name)
 
         camera_config.parameters.update(config_updates)
 
-        self.config_provider.save_config(camera_config.to_dict())
+        self.config_provider.save_config(camera_name, camera_config.to_dict())
 
     def get_camera_geometry(self, camera_name):
         """
