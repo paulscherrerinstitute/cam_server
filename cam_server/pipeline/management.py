@@ -6,7 +6,7 @@ from logging import getLogger
 from cam_server import config
 from cam_server.instance_management.manager import InstanceManager
 from cam_server.instance_management.wrapper import InstanceWrapper
-from cam_server.pipeline.configuration import Pipeline
+from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
 
 _logger = getLogger(__name__)
@@ -35,7 +35,7 @@ class PipelineInstanceManager(InstanceManager):
 
         if configuration:
             self.config_manager.validate_config(configuration)
-            pipeline = Pipeline(pipeline_name, configuration)
+            pipeline = PipelineConfig(pipeline_name, configuration)
         else:
             pipeline = self.config_manager.load_pipeline(pipeline_name)
 

@@ -28,7 +28,7 @@ class PipelineConfigManager(object):
         # if os.path.isfile(background_file):
         #     parameter.background_image = numpy.load(background_file)
 
-        Pipeline.validate_pipeline_config(configuration)
+        PipelineConfig.validate_pipeline_config(configuration)
 
         return configuration
 
@@ -39,7 +39,7 @@ class PipelineConfigManager(object):
         :return: Pipeline instance.
         """
         configuration = self.get_pipeline_config(pipeline_name)
-        return Pipeline(pipeline_name, configuration)
+        return PipelineConfig(pipeline_name, configuration)
 
     def save_pipeline_config(self, pipeline_name, configuration):
         """
@@ -48,11 +48,11 @@ class PipelineConfigManager(object):
         :param configuration: Config to save.
         """
 
-        Pipeline.validate_pipeline_config(configuration)
+        PipelineConfig.validate_pipeline_config(configuration)
         self.config_provider.save_config(pipeline_name, configuration)
 
 
-class Pipeline:
+class PipelineConfig:
     def __init__(self, pipeline_name, parameters=None):
 
         self.pipeline_name = pipeline_name
