@@ -4,7 +4,7 @@ import numpy
 
 class Camera:
 
-    def __init__(self, prefix, mirror_x=False, mirror_y=False, rotate=0):
+    def __init__(self, camera_config):
         """
         Parameters
         ----------
@@ -14,10 +14,7 @@ class Camera:
         rotate      number of 90deg rotation 0=0deg 1=90deg, 2=180deg, ...
         """
 
-        self.prefix = prefix
-        self.mirror_x = mirror_x
-        self.mirror_y = mirror_y
-        self.rotate = rotate
+        self.camera_config = camera_config
 
         # Width and height of the corrected image
         self.width = 0
@@ -26,24 +23,20 @@ class Camera:
         self.width_raw = 0
         self.height_raw = 0
 
-        # Offsets are given by the ROI set on the cam_server
-        self.reference_offset_x = 0
-        self.reference_offset_y = 0
-
         self.channel_image = None
 
     def connect(self):
 
         # Check cam_server status
-        channel_init = epics.PV(self.prefix + ":INIT")
+        channel_init = epics.PV(self.camera_config.camera_config.parameters["prefix"] + ":INIT")
         if channel_init.get(as_string=True) != 'INIT':
             raise RuntimeError("Camera {} not online - Status {}".format(self.prefix, channel_init.get(as_string=True)))
 
         channel_init.disconnect()
 
         # Retrieve with and height of cam_server image
-        channel_width = epics.PV(self.prefix + ":WIDTH")
-        channel_height = epics.PV(self.prefix + ":HEIGHT")
+        channel_width = epics.PV(self.camera_config.parameters["prefix"] + ":WIDTH")
+        channel_height = epics.PV(self.camera_config.parameters["prefix"] + ":HEIGHT")
 
         self.width_raw = int(channel_width.get(timeout=4))
         self.height_raw = int(channel_height.get(timeout=4))
@@ -55,7 +48,7 @@ class Camera:
         channel_height.disconnect()
 
         # Connect image channel
-        self.channel_image = epics.PV(self.prefix + ":FPICTURE", auto_monitor=True)
+        self.channel_image = epics.PV(self.camera_config.parameters["prefix"] + ":FPICTURE", auto_monitor=True)
         self.channel_image.wait_for_connection(1.0)  # 1 second default connection timeout
 
         if not self.channel_image.connected:
@@ -99,13 +92,13 @@ class Camera:
             return value
 
         # Correct image
-        if self.mirror_x:
+        if self.camera_config.parameters["mirror_x"]:
             value = numpy.fliplr(value)
 
-        if self.mirror_y:
+        if self.camera_config.parameters["mirror_y"]:
             value = numpy.flipud(value)
 
-        value = numpy.rot90(value, self.rotate)
+        value = numpy.rot90(value, self.camera_config.parameters["rotate"])
 
         return value
 
@@ -117,7 +110,7 @@ class Camera:
         return self.width, self.height
 
     def get_name(self):
-        return self.prefix
+        return self.self.camera_config.get_name()
 
     def clear_callbacks(self):
         self.channel_image.clear_callbacks()

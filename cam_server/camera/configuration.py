@@ -95,7 +95,10 @@ class CameraConfig:
             self.parameters = parameters
         else:
             self.parameters = OrderedDict({
-                "prefix": camera_name
+                "prefix": camera_name,
+                "mirror_x": False,
+                "mirror_y": False,
+                "rotate": 0
             })
 
         self.validate_camera_config(self.parameters)
@@ -105,6 +108,9 @@ class CameraConfig:
         self.validate_camera_config(self.parameters)
         # We do not want to pass by reference - someone might change the dictionary.
         return copy.deepcopy(self.parameters)
+
+    def get_name(self):
+        return self.camera_name
 
     @staticmethod
     def validate_camera_config(configuration):
