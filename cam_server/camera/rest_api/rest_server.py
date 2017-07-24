@@ -61,7 +61,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         return {"state": "ok",
                 "status": "Camera %s configuration saved." % camera_name,
-                "config": instance_manager.config_manager.get_camera_config(camera_name)}
+                "config": instance_manager.config_manager.set_camera_config(camera_name)}
 
     @app.get(api_root_address + '/<camera_name>/geometry')
     def get_camera_geometry(camera_name):
