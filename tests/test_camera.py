@@ -35,11 +35,36 @@ class CameraTest(unittest.TestCase):
         self.assertTrue(n_active_instances == 1, "Number of active instances is not correct.")
 
         # Lets wait for the stream to dies.
-        sleep(config.MFLOW_NO_CLIENTS_TIMEOUT + 1.5)
+        sleep(config.MFLOW_NO_CLIENTS_TIMEOUT + 1)
 
         # The simulation camera should disconnect, since the no client timeout has passed.
         n_active_instances = len(instance_manager.get_info()["active_instances"])
         self.assertTrue(n_active_instances == 0, "All instances should be dead by now.")
+
+        # Restore the old timeout.
+        config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
+
+    def test_multiple_stream_requests(self):
+        instance_manager = get_test_instance_manager()
+
+        # Shorten the time to make the tests run faster.
+        old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
+        config.MFLOW_NO_CLIENTS_TIMEOUT = 0.5
+
+        stream_address = instance_manager.get_camera_stream(self.simulation_camera)
+
+        for _ in range(5):
+            # The camera stream address should always be the same.
+            self.assertEqual(stream_address, instance_manager.get_camera_stream(self.simulation_camera))
+
+        for _ in range(5):
+            # The camera stream address should be the same even after restarting the camera instance.
+            self.assertEqual(stream_address, instance_manager.get_camera_stream(self.simulation_camera))
+
+            sleep(config.MFLOW_NO_CLIENTS_TIMEOUT + 1.5)
+
+            n_active_instances = len(instance_manager.get_info()["active_instances"])
+            self.assertTrue(n_active_instances == 0, "All instances should be dead by now.")
 
         # Restore the old timeout.
         config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
@@ -80,6 +105,9 @@ class CameraTest(unittest.TestCase):
         png_size = Image.open(BytesIO(image)).size
 
         self.assertEqual(camera_size, png_size, "Camera and image size are not the same.")
+
+    def test_camera_settings_change(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()
