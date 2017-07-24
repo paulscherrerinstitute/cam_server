@@ -25,10 +25,19 @@ class CameraTest(unittest.TestCase):
         stream_address = camera_instance_manager.get_camera_stream("simulation")
         stream_address_copy = camera_instance_manager.get_camera_stream("simulation")
 
+        # We should get the same stream both times.
         self.assertEqual(stream_address, stream_address_copy,
                          "Got 2 stream addresses, instead of the same one twice.")
 
-        sleep(config.MFLOW_NO_CLIENTS_TIMEOUT + 0.5)
+        n_active_instances = len(camera_instance_manager.get_info()["active_instances"])
+        self.assertTrue(n_active_instances == 1, "Number of active instances is not correct.")
+
+        # Lets wait for the stream to dies.
+        sleep(config.MFLOW_NO_CLIENTS_TIMEOUT + 1.5)
+
+        # The simulation camera should disconnect, since the no client timeout has passed.
+        n_active_instances = len(camera_instance_manager.get_info()["active_instances"])
+        self.assertTrue(n_active_instances == 0, "All instances should be dead by now.")
 
         # Restore the old timeout.
         config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
