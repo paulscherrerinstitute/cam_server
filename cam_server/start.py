@@ -23,7 +23,8 @@ def start_camera_server(host, port, config_base):
         _logger.error("Configuration directory '%s' does not exist." % config_base)
         exit(-1)
 
-    config_manager = CameraConfigManager(config_provider=ConfigFileStorage(config_base))
+    config_manager = CameraConfigManager(config_section=config.CAMERA_CONFIG_SECTION,
+                                         config_provider=ConfigFileStorage(config_base))
     camera_instance_manager = CameraInstanceManager(config_manager)
     # TODO: Fix this.
     cam_server_client = CamClient()

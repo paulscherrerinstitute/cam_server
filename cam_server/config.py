@@ -29,9 +29,15 @@ CAMERA_BSREAD_DATA_HEADER_COMPRESSION = None
 # Compression here might be a good idea. Use "bitshuffle_lz4" or None.
 CAMERA_BSREAD_IMAGE_COMPRESSION = None
 
+# Section in the config to be used as camera config.
+CAMERA_CONFIG_SECTION = "camera"
+
 #####################
 # Pipeline settings #
 #####################
 
 # Every time you open a pipeline it gets the next port. 1000 rotating ports should be enough.
 PIPELINE_STREAM_PORT_RANGE = (11100, 12100)
+
+# Section in the config to be used as pipeline config.
+PIPELINE_CONFIG_SECTION = "pipeline"

@@ -7,7 +7,7 @@ from cam_server import config
 
 
 class ConfigFileStorage(object):
-    def __init__(self, config_folder=None):
+    def __init__(self, config_section, config_folder=None):
         """
         Initialize the file config provider.
         :param config_folder: Config folder to search for camera definition. If None, default from config.py will
@@ -16,6 +16,8 @@ class ConfigFileStorage(object):
         if not config_folder:
             config_folder = config.DEFAULT_CAMERA_CONFIG_FOLDER
         self.config_folder = config_folder
+
+        self.config_section = config_section
 
     def get_available_configs(self):
         """
@@ -40,13 +42,12 @@ class ConfigFileStorage(object):
         """
         return self.config_folder + '/' + config_name + '.json'
 
-    def get_config(self, config_name):
+    def _get_named_configuration(self, config_name):
         """
-        Return config for a camera.
-        :param config_name: Camera config to retrieve.
-        :return: Dict containing the camera config.
+        Load the entire configuration file (which includes also section we might not be interested in).
+        :param config_name: Name of the configuration to load.
+        :return: Dictionary with the config.
         """
-
         config_file = self._get_config_filename(config_name)
 
         # The config file does not exist
@@ -59,6 +60,20 @@ class ConfigFileStorage(object):
 
         return configuration
 
+    def get_config(self, config_name):
+        """
+        Return config for a camera.
+        :param config_name: Camera config to retrieve.
+        :return: Dict containing the camera config.
+        """
+
+        configuration = self._get_named_configuration(config_name)
+
+        if self.config_section not in configuration:
+            raise ValueError("Section '%s' missing in configuration." % self.config_section)
+
+        return configuration[self.config_section]
+
     def save_config(self, config_name, configuration):
         """
         Update an existing camera config.
@@ -66,6 +81,10 @@ class ConfigFileStorage(object):
         :param configuration: Configuration to persist.
         """
         target_config_file = self._get_config_filename(config_name)
+        complete_config = self._get_named_configuration(config_name)
+
+        # Overwrite only the specific configuration part we are interested in.
+        complete_config[self.config_section] = configuration
 
         with open(target_config_file, 'w') as data_file:
             json.dump(configuration, data_file, indent=True)
