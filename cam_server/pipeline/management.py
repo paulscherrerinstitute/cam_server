@@ -8,6 +8,7 @@ from cam_server.instance_management.manager import InstanceManager
 from cam_server.instance_management.wrapper import InstanceWrapper
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
+from cam_server.utils import get_host_port_from_stream_address
 
 _logger = getLogger(__name__)
 
@@ -75,8 +76,7 @@ class PipelineInstanceManager(InstanceManager):
 
 class PipelineInstance(InstanceWrapper):
     def __init__(self, instance_id, process_function, pipeline, output_stream_port, source_stream_address):
-        source_host, source_port = source_stream_address.rsplit(":", maxsplit=1)
-        source_host = source_host.split("//")[1]
+        source_host, source_port = get_host_port_from_stream_address(source_stream_address)
 
         super(PipelineInstance, self).__init__(instance_id, process_function,
                                                source_host, source_port, pipeline, output_stream_port)
