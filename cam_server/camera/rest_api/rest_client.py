@@ -103,7 +103,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s" % camera_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
         validate_response(server_response)
 
     def stop_all_cameras(self):
@@ -113,5 +113,16 @@ class CamClient(object):
         """
         rest_endpoint = ""
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
         validate_response(server_response)
+
+    def kill_server(self):
+        """
+        Kill the running server.
+        """
+        rest_endpoint = "/kill"
+
+        try:
+            requests.delete(self.api_address_format % rest_endpoint).json()
+        except:
+            pass
