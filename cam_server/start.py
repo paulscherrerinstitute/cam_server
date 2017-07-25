@@ -25,8 +25,8 @@ def start_camera_server(host, port, config_base):
 
     config_manager = CameraConfigManager(config_provider=ConfigFileStorage(config_base))
     camera_instance_manager = CameraInstanceManager(config_manager)
-    # TODO: Fix this.
-    cam_server_client = CamClient()
+
+    cam_server_client = CamClient("http://%s:%s" % (host, port))
     pipeline_instance_manager = PipelineInstanceManager(config_manager, cam_server_client)
 
     app = bottle.Bottle()
