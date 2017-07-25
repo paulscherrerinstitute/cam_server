@@ -3,6 +3,13 @@ import requests
 from cam_server import config
 
 
+def validate_response(response):
+    if response["state"] != "ok":
+        raise ValueError(response.get("status", "Unknown error occurred."))
+
+    return requests
+
+
 class CamClient(object):
     def __init__(self, address="http://0.0.0.0:8888/"):
         """
@@ -18,7 +25,9 @@ class CamClient(object):
         :return: Status of the server
         """
         rest_endpoint = "/info"
-        return requests.get(self.api_address_format % rest_endpoint).json()
+        response = requests.get(self.api_address_format % rest_endpoint).json()
+
+        return validate_response(response)["info"]
 
     def get_cameras(self):
         """
@@ -26,7 +35,9 @@ class CamClient(object):
         :return: Currently existing cameras.
         """
         rest_endpoint = ""
-        return requests.get(self.api_address_format % rest_endpoint).json()
+
+        response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(response)["cameras"]
 
     def get_camera_config(self, camera_name):
         """
@@ -35,7 +46,9 @@ class CamClient(object):
         :return: Camera configuration.
         """
         rest_endpoint = "/%s/config" % camera_name
-        return requests.get(self.api_address_format % rest_endpoint).json()
+
+        response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(response)["config"]
 
     def set_camera_config(self, camera_name, config):
         """
@@ -45,7 +58,9 @@ class CamClient(object):
         :return: Actual applied config.
         """
         rest_endpoint = "/%s" % camera_name
-        return requests.post(self.api_address_format % rest_endpoint, json=config).json()
+
+        response = requests.post(self.api_address_format % rest_endpoint, data=config).json()
+        return validate_response(response)["config"]
 
     def get_camera_geometry(self, camera_name):
         """
@@ -54,7 +69,9 @@ class CamClient(object):
         :return: Camera geometry.
         """
         rest_endpoint = "/%s/geometry" % camera_name
-        return requests.get(self.api_address_format % rest_endpoint).json()
+
+        response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(response)["cameras"]
 
     def get_camera_image(self, camera_name):
         """
@@ -63,7 +80,9 @@ class CamClient(object):
         :return: Response content (PNG).
         """
         rest_endpoint = "/%s/image" % camera_name
-        return requests.get(self.api_address_format % rest_endpoint).content
+
+        response = requests.get(self.api_address_format % rest_endpoint).json()
+        return response
 
     def get_camera_stream(self, camera_name):
         """
@@ -72,7 +91,9 @@ class CamClient(object):
         :return: Stream address.
         """
         rest_endpoint = "/%s" % camera_name
-        return requests.get(self.api_address_format % rest_endpoint).json()
+
+        response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(response)["stream"]
 
     def stop_camera(self, camera_name):
         """
@@ -81,7 +102,9 @@ class CamClient(object):
         :return: Response.
         """
         rest_endpoint = "/%s" % camera_name
-        return requests.delete(self.api_address_format % rest_endpoint).json()
+
+        response = requests.get(self.api_address_format % rest_endpoint).json()
+        validate_response(response)
 
     def stop_all_cameras(self):
         """
@@ -89,5 +112,6 @@ class CamClient(object):
         :return: Response.
         """
         rest_endpoint = ""
-        return requests.delete(self.api_address_format % rest_endpoint).json()
 
+        response = requests.get(self.api_address_format % rest_endpoint).json()
+        validate_response(response)

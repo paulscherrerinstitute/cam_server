@@ -27,6 +27,16 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     # Register instance management API.
     rest_api.register_rest_interface(app, instance_manager, api_root_address)
 
+    @app.get(api_root_address)
+    def get_camera_list():
+        """
+        Return the list of available cameras.
+        :return:
+        """
+        return {"state": "ok",
+                "status": "List of available cameras.",
+                "cameras": instance_manager.get_camera_list()}
+
     @app.get(api_root_address + "/<camera_name>")
     def get_camera_stream(camera_name):
         """
