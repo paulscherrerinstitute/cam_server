@@ -75,6 +75,16 @@ class ConfigFileStorage(object):
         :param configuration: Configuration to persist.
         """
         target_config_file = self._get_config_filename(config_name)
+        # We need to enforce this for the file storage - retrieve the files by config name.
+        configuration["name"] = config_name
 
         with open(target_config_file, 'w') as data_file:
             json.dump(configuration, data_file, indent=True)
+
+    def delete_config(self, config_name):
+        """
+        Delete the provided config.
+        :param config_name: Config name to delete.
+        """
+        target_config_file = self._get_config_filename(config_name)
+        os.remove(target_config_file)
