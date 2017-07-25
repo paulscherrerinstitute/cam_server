@@ -1,0 +1,7 @@
+{
+  "name": "example_3",
+  "prefix": "EPICS_example_3",
+  "mirror_x": false,
+  "mirror_y": false,
+  "rotate": 3
+}

@@ -1,10 +1,10 @@
 import unittest
 
+from cam_server.camera.receiver import CameraSimulation
 from tests.helpers.camera import get_test_instance_manager
 
 
 class CameraConfigTest(unittest.TestCase):
-
     def test_simulation_camera(self):
         instance_manager = get_test_instance_manager()
 
@@ -47,6 +47,34 @@ class CameraConfigTest(unittest.TestCase):
         # You should never be able to overwrite the simulation camera.
         with self.assertRaisesRegex(ValueError, "Cannot save config for simulation camera."):
             instance_manager.config_manager.save_camera_config("simulation", camera_config)
+
+    def test_load_camera(self):
+        expected_config_example_1 = {
+            "name": "example_1",
+            "prefix": "EPICS_example_1",
+            "mirror_x": False,
+            "mirror_y": True,
+            "rotate": 1
+        }
+
+        instance_manager = get_test_instance_manager()
+        instance_manager.config_manager.save_camera_config("example_1", expected_config_example_1)
+
+        camera_config = instance_manager.config_manager.get_camera_config("example_1")
+
+        self.assertDictEqual(camera_config.to_dict(), expected_config_example_1,
+                             "CameraConfig not as expected")
+
+        camera = instance_manager.config_manager.load_camera("example_1")
+
+        self.assertDictEqual(camera.camera_config.to_dict(), expected_config_example_1,
+                             "Camera not as expected")
+
+        simulated_camera = instance_manager.config_manager.load_camera("simulation")
+
+        self.assertTrue(isinstance(simulated_camera, CameraSimulation),
+                        "The 'simulation' configuration did not return the camera simulation.")
+
 
 if __name__ == '__main__':
     unittest.main()
