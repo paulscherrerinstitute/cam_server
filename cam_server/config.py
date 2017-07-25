@@ -35,3 +35,5 @@ CAMERA_BSREAD_IMAGE_COMPRESSION = None
 
 # Every time you open a pipeline it gets the next port. 1000 rotating ports should be enough.
 PIPELINE_STREAM_PORT_RANGE = (11100, 12100)
+# Receive timeout for the pipeline.
+PIPELINE_RECEIVE_TIMEOUT = 500

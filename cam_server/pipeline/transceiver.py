@@ -16,7 +16,7 @@ def receive_process_send(stop_event, statistics, parameter_queue,
                      config.MFLOW_NO_CLIENTS_TIMEOUT)
         stop_event.set()
 
-    source = Source(host=source_host, port=source_port, receive_timeout=config.R)
+    source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT)
     source.connect()
 
     sender = Sender(port=output_stream_port)
