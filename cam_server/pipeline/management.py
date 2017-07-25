@@ -14,6 +14,8 @@ _logger = getLogger(__name__)
 
 class PipelineInstanceManager(InstanceManager):
     def __init__(self, config_manager, cam_server_client):
+        super(PipelineInstanceManager, self).__init__()
+
         self.config_manager = config_manager
         self.cam_server_client = cam_server_client
 
