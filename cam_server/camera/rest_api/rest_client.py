@@ -115,14 +115,3 @@ class CamClient(object):
 
         server_response = requests.delete(self.api_address_format % rest_endpoint).json()
         validate_response(server_response)
-
-    def kill_server(self):
-        """
-        Kill the running server.
-        """
-        rest_endpoint = "/kill"
-
-        try:
-            requests.delete(self.api_address_format % rest_endpoint).json()
-        except:
-            pass

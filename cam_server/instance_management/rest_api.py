@@ -1,5 +1,6 @@
 
 import logging
+import os
 
 _logger = logging.getLogger(__name__)
 
@@ -41,10 +42,3 @@ def register_rest_interface(app, instance_manager, api_root_address):
 
         return {"state": "ok",
                 "status": "Instance '%s' stopped." % instance_name}
-
-    @app.delete(api_root_address + "/kill")
-    def kill_server():
-        """
-        Stop the current server.
-        """
-        raise KeyboardInterrupt("Requested by user.")
