@@ -8,6 +8,7 @@ from time import sleep
 from bsread import source
 
 from cam_server import CamClient
+from cam_server.camera.receiver import CameraSimulation
 from cam_server.start import start_camera_server
 from cam_server.utils import get_host_port_from_stream_address
 
@@ -18,9 +19,9 @@ class CameraClientTest(unittest.TestCase):
         self.port = 8888
 
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
-        config_folder = os.path.join(test_base_dir, "test_camera_config/")
+        self.config_folder = os.path.join(test_base_dir, "test_camera_config/")
 
-        self.process = Process(target=start_camera_server, args=(self.host, self.port, config_folder))
+        self.process = Process(target=start_camera_server, args=(self.host, self.port, self.config_folder))
         self.process.start()
 
         # Give it some time to start.
@@ -30,7 +31,9 @@ class CameraClientTest(unittest.TestCase):
         self.client = CamClient(server_address)
 
     def tearDown(self):
+        self.client.stop_all_cameras()
         os.kill(self.process.pid, signal.SIGINT)
+        os.remove(os.path.join(self.config_folder, "testing_camera.json"))
         # Wait for the server to die.
         sleep(1)
 
@@ -72,6 +75,27 @@ class CameraClientTest(unittest.TestCase):
 
         self.assertTrue("simulation" not in self.client.get_server_info()["active_instances"],
                         "Camera simulation did not stop.")
+
+        example_1_config = self.client.get_camera_config("example_1")
+
+        self.assertTrue(bool(example_1_config), "Cannot retrieve config.")
+
+        # Change the name to reflect tha camera.
+        example_1_config["name"] = "testing_camera"
+
+        self.client.set_camera_config("testing_camera", example_1_config)
+
+        testing_camera_config = self.client.get_camera_config("testing_camera")
+
+        self.assertDictEqual(example_1_config, testing_camera_config, "Saved and loaded configs are not the same.")
+
+        geometry = self.client.get_camera_geometry("simulation")
+        simulated_camera = CameraSimulation()
+        self.assertListEqual(geometry, [simulated_camera.size_x, simulated_camera.size_y],
+                             'The geometry of the simulated camera is not correct.')
+
+
+        # self.client.get_camera_image()
 
 
 if __name__ == '__main__':

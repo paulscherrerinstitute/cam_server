@@ -50,16 +50,16 @@ class CamClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["config"]
 
-    def set_camera_config(self, camera_name, config):
+    def set_camera_config(self, camera_name, configuration):
         """
         Set config on cam.
         :param camera_name: Camera to set the config to.
-        :param config: Config to set, in dictionary format.
+        :param configuration: Config to set, in dictionary format.
         :return: Actual applied config.
         """
-        rest_endpoint = "/%s" % camera_name
+        rest_endpoint = "/%s/config" % camera_name
 
-        server_response = requests.post(self.api_address_format % rest_endpoint, data=config).json()
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
         return validate_response(server_response)["config"]
 
     def get_camera_geometry(self, camera_name):
@@ -71,7 +71,7 @@ class CamClient(object):
         rest_endpoint = "/%s/geometry" % camera_name
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return validate_response(server_response)["cameras"]
+        return validate_response(server_response)["geometry"]
 
     def get_camera_image(self, camera_name):
         """
