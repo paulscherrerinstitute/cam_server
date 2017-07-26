@@ -1,5 +1,11 @@
+from logging import getLogger
+from threading import Event, Thread
+
 import epics
 import numpy
+import time
+
+_logger = getLogger(__name__)
 
 
 class Camera:
@@ -131,7 +137,7 @@ class CameraSimulation:
     Camera simulation for debugging purposes.
     """
     def __init__(self, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
-                 beam_size_x=100, beam_size_y=20, frame_rate=10):
+                 beam_size_x=100, beam_size_y=20, frame_rate=10, simulation_interval=0.1):
         """
         Initialize the camera simulation.
         :param size_x: Image width.
@@ -141,6 +147,7 @@ class CameraSimulation:
         :param beam_size_x: Beam width.
         :param beam_size_y: Beam height.
         :param frame_rate: How many frames, in mhz, does the simulation outputs.
+        :param simulation_interval: Interval between frames on the simulated camera.
         """
 
         self.frame_rate = frame_rate
@@ -153,7 +160,9 @@ class CameraSimulation:
 
         # Functions to call in simulation.
         self.callback_functions = []
+        self.simulation_interval = simulation_interval
         self.simulation_thread = None
+        self.simulation_stop_event = Event()
 
     def generate_dead_pixels(self, number_of_dead_pixel):
         dead_pixels = numpy.zeros((self.size_y, self.size_x))
@@ -204,10 +213,38 @@ class CameraSimulation:
         return y_axis, x_axis
 
     def connect(self):  # NOOP - Just to match signature of cam_server
-        pass
+        # Thread already exists.
+        if self.simulation_thread:
+            return
+
+        self.simulation_stop_event.clear()
+
+        def call_callbacks(stop_event):
+
+            while not stop_event.is_set():
+                try:
+                    image = self.get_image()
+                    # Same timestamp as used by PyEpics.
+                    timestamp = time.time()
+                    print("new image")
+
+                    for callback in self.callback_functions:
+                        print("calling callbacks")
+                        callback(image, timestamp)
+
+                    time.sleep(self.simulation_interval)
+
+                except:
+                    _logger.exception("Error occurred in camera simulation.")
+
+        self.simulation_thread = Thread(target=call_callbacks, args=(self.simulation_stop_event,))
+        self.simulation_thread.daemon = True
+        self.simulation_thread.start()
 
     def disconnect(self):  # NOOP - Just to match signature of cam_server
-        pass
+        self.simulation_stop_event.set()
+        self.simulation_thread.join()
+        self.simulation_thread = None
 
     def get_geometry(self):
         return self.size_x, self.size_y
