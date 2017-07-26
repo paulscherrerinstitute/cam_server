@@ -29,6 +29,9 @@ CAMERA_BSREAD_DATA_HEADER_COMPRESSION = None
 # Compression here might be a good idea. Use "bitshuffle_lz4" or None.
 CAMERA_BSREAD_IMAGE_COMPRESSION = None
 
+# Wait for a maximum of 500ms before exiting the send.
+CAMERA_SEND_TIMEOUT = 500
+
 #####################
 # Pipeline settings #
 #####################
@@ -37,3 +40,12 @@ CAMERA_BSREAD_IMAGE_COMPRESSION = None
 PIPELINE_STREAM_PORT_RANGE = (11100, 12100)
 # Receive timeout for the pipeline.
 PIPELINE_RECEIVE_TIMEOUT = 500
+
+################
+# IPC settings #
+################
+
+# Time to wait for the process to execute the requested action.
+PROCESS_COMMUNICATION_TIMEOUT = 6
+# Interval used when polling the state from the process.
+PROCESS_POLL_INTERVAL = 0.1
