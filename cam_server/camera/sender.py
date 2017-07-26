@@ -39,7 +39,7 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         data = {"image": image,
                 "timestamp": timestamp}
 
-        sender.send(data, check_data=False)
+        sender.send(data=data, check_data=False)
 
     camera.add_callback(collect_and_send)
 
@@ -49,7 +49,6 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
     # Wait for termination / update configuration / etc.
     stop_event.wait()
 
-    camera.clear_callbacks()
     camera.disconnect()
 
     sender.close()

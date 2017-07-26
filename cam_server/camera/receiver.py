@@ -226,10 +226,8 @@ class CameraSimulation:
                     image = self.get_image()
                     # Same timestamp as used by PyEpics.
                     timestamp = time.time()
-                    print("new image")
 
                     for callback in self.callback_functions:
-                        print("calling callbacks")
                         callback(image, timestamp)
 
                     time.sleep(self.simulation_interval)
@@ -238,10 +236,10 @@ class CameraSimulation:
                     _logger.exception("Error occurred in camera simulation.")
 
         self.simulation_thread = Thread(target=call_callbacks, args=(self.simulation_stop_event,))
-        self.simulation_thread.daemon = True
         self.simulation_thread.start()
 
     def disconnect(self):  # NOOP - Just to match signature of cam_server
+        self.clear_callbacks()
         self.simulation_stop_event.set()
         self.simulation_thread.join()
         self.simulation_thread = None
