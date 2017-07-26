@@ -3,8 +3,7 @@ from logging import getLogger
 
 from cam_server import config
 from cam_server.camera.sender import process_camera_stream
-from cam_server.instance_management.manager import InstanceManager
-from cam_server.instance_management.wrapper import InstanceWrapper
+from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 
 _logger = getLogger(__name__)
 

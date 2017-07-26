@@ -4,8 +4,7 @@ from itertools import cycle
 from logging import getLogger
 
 from cam_server import config
-from cam_server.instance_management.manager import InstanceManager
-from cam_server.instance_management.wrapper import InstanceWrapper
+from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
 from cam_server.utils import get_host_port_from_stream_address
