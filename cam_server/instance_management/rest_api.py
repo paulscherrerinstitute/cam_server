@@ -1,6 +1,5 @@
 
 import logging
-import os
 
 _logger = logging.getLogger(__name__)
 
@@ -18,7 +17,7 @@ def register_rest_interface(app, instance_manager, api_root_address):
         """
         Stop all the cameras running on the server.
         """
-        instance_manager.stop_all_cameras()
+        instance_manager.stop_all_instances()
 
         return {"state": "ok",
                 "status": "All instances have been stopped."}
@@ -38,7 +37,7 @@ def register_rest_interface(app, instance_manager, api_root_address):
         Stop a specific camera.
         :param instance_name: Name of the camera.
         """
-        instance_manager.stop_camera(instance_name)
+        instance_manager.stop_instance(instance_name)
 
         return {"state": "ok",
                 "status": "Instance '%s' stopped." % instance_name}
