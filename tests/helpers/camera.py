@@ -25,3 +25,6 @@ class MockConfigStorage:
 
     def save_config(self, config_name, configuration):
         self.configs[config_name] = configuration
+
+    def delete_config(self, config_name):
+        del self.configs[config_name]

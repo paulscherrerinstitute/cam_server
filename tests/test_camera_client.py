@@ -33,7 +33,10 @@ class CameraClientTest(unittest.TestCase):
     def tearDown(self):
         self.client.stop_all_cameras()
         os.kill(self.process.pid, signal.SIGINT)
-        os.remove(os.path.join(self.config_folder, "testing_camera.json"))
+        try:
+            os.remove(os.path.join(self.config_folder, "testing_camera.json"))
+        except:
+            pass
         # Wait for the server to die.
         sleep(1)
 
@@ -94,8 +97,11 @@ class CameraClientTest(unittest.TestCase):
         self.assertListEqual(geometry, [simulated_camera.size_x, simulated_camera.size_y],
                              'The geometry of the simulated camera is not correct.')
 
+        self.assertTrue("testing_camera" in self.client.get_cameras(), "Testing camera should be present.")
 
-        # self.client.get_camera_image()
+        self.client.delete_camera_config("testing_camera")
+
+        self.assertTrue("testing_camera" not in self.client.get_cameras(), "Testing camera should not be present.")
 
 
 if __name__ == '__main__':

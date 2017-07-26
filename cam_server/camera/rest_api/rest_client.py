@@ -52,7 +52,7 @@ class CamClient(object):
 
     def set_camera_config(self, camera_name, configuration):
         """
-        Set config on cam.
+        Set config on camera.
         :param camera_name: Camera to set the config to.
         :param configuration: Config to set, in dictionary format.
         :return: Actual applied config.
@@ -61,6 +61,17 @@ class CamClient(object):
 
         server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
         return validate_response(server_response)["config"]
+
+    def delete_camera_config(self, camera_name):
+        """
+        Delete config of camera.
+        :param camera_name: Camera to set the config to.
+        :return: Actual applied config.
+        """
+        rest_endpoint = "/%s/config" % camera_name
+
+        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
+        validate_response(server_response)
 
     def get_camera_geometry(self, camera_name):
         """
