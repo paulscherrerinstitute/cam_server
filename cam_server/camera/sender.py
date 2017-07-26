@@ -1,5 +1,6 @@
 from logging import getLogger
 from bsread.sender import Sender
+from zmq import Again
 
 from cam_server import config
 
@@ -39,7 +40,10 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         data = {"image": image,
                 "timestamp": timestamp}
 
-        sender.send(data=data, check_data=False)
+        try:
+            sender.send(data=data, check_data=False)
+        except Again:
+            _logger.warning("Send timeout. Lost image with timestamp '%s'." % timestamp)
 
     camera.add_callback(collect_and_send)
 
