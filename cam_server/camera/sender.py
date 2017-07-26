@@ -22,7 +22,7 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
                      (camera.get_name(), config.MFLOW_NO_CLIENTS_TIMEOUT))
         stop_event.set()
 
-    sender = Sender(port=port)
+    sender = Sender(port=port, send_timeout=config.CAMERA_SEND_TIMEOUT)
 
     # Register the bsread channels - compress only the image.
     sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION})
@@ -50,5 +50,4 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
     stop_event.wait()
 
     camera.disconnect()
-
     sender.close()

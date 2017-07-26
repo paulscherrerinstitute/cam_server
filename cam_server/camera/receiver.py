@@ -212,7 +212,7 @@ class CameraSimulation:
         y_axis = numpy.linspace(0, self.size_x - 1, self.size_x, dtype='f')
         return y_axis, x_axis
 
-    def connect(self):  # NOOP - Just to match signature of cam_server
+    def connect(self):
         # Thread already exists.
         if self.simulation_thread:
             return
@@ -238,7 +238,10 @@ class CameraSimulation:
         self.simulation_thread = Thread(target=call_callbacks, args=(self.simulation_stop_event,))
         self.simulation_thread.start()
 
-    def disconnect(self):  # NOOP - Just to match signature of cam_server
+    def disconnect(self):
+        if not self.simulation_thread:
+            return
+
         self.clear_callbacks()
         self.simulation_stop_event.set()
         self.simulation_thread.join()
