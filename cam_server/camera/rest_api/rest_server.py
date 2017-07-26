@@ -67,11 +67,23 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         :return: New config.
         """
 
-        instance_manager.config_manager.save_camera_config(camera_name, json.request)
+        instance_manager.config_manager.save_camera_config(camera_name, request.json)
 
         return {"state": "ok",
                 "status": "Camera %s configuration saved." % camera_name,
                 "config": instance_manager.config_manager.get_camera_config(camera_name).to_dict()}
+
+    @app.delete(api_root_address + '/<camera_name>/config')
+    def delete_camera_config(camera_name):
+        """
+        Delete camera settings.
+        :param camera_name: Name of the camera to delete the config for.
+        """
+
+        instance_manager.config_manager.delete_camera_config(camera_name)
+
+        return {"state": "ok",
+                "status": "Camera %s configuration deleted." % camera_name}
 
     @app.get(api_root_address + '/<camera_name>/geometry')
     def get_camera_geometry(camera_name):
@@ -83,8 +95,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         return {"state": "ok",
                 "status": "Geometry of camera %s retrieved." % camera_name,
-                "width": width,
-                "height": height}
+                "geometry": [width, height]}
 
     @app.get(api_root_address + '/<camera_name>/image')
     def get_camera_image(camera_name):

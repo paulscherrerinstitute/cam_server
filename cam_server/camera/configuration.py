@@ -35,6 +35,21 @@ class CameraConfigManager(object):
 
         return CameraConfig(camera_name, parameters=configuration)
 
+    def delete_camera_config(self, camera_name):
+        """
+        Delete an existing config.
+        :param camera_name: Name of the camera to delete.
+        """
+
+        # Simulation cam_server is not defined in the config.
+        if camera_name.lower() == "simulation":
+            raise ValueError("Cannot delete simulation camera.")
+
+        if camera_name not in self.get_camera_list():
+            raise ValueError("Config '%s' does not exist." % camera_name)
+
+        self.config_provider.delete_config(camera_name)
+
     def load_camera(self, camera_name):
         """
         Load a camera with the given name.

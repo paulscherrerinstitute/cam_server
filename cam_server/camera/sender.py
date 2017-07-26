@@ -26,6 +26,7 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
     sender = Sender(port=port, send_timeout=config.CAMERA_SEND_TIMEOUT)
 
     # Register the bsread channels - compress only the image.
+    # TODO: Add channel "type" to metadata.
     sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION})
     sender.add_channel("timestamp", metadata={"compression": None})
 
