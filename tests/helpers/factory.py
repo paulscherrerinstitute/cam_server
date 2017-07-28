@@ -13,7 +13,7 @@ def get_test_instance_manager():
 
 def get_test_pipeline_manager():
     config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
-    pipeline_instance_manager = PipelineInstanceManager(config_manager)
+    pipeline_instance_manager = PipelineInstanceManager(config_manager, MockCamServerClient())
 
     return pipeline_instance_manager
 
@@ -37,3 +37,12 @@ class MockConfigStorage:
 
     def delete_config(self, config_name):
         del self.configs[config_name]
+
+
+class MockCamServerClient:
+
+    def get_camera_geometry(self, camera_name):
+        return 100, 101
+
+    def get_camera_stream(self, camera_name):
+        return "tcp://127.0.0.1:10000"
