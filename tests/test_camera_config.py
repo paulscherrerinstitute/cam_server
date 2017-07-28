@@ -87,6 +87,27 @@ class CameraConfigTest(unittest.TestCase):
         self.assertTrue(isinstance(simulated_camera, CameraSimulation),
                         "The 'simulation' configuration did not return the camera simulation.")
 
+    def test_delete_camera_config(self):
+        instance_manager = get_test_instance_manager()
+
+        with self.assertRaisesRegex(ValueError, "Config 'example_test' does not exist."):
+            instance_manager.config_manager.delete_camera_config("example_test")
+
+        example_test = {
+            "name": "example_1",
+            "prefix": "EPICS_example_1",
+            "mirror_x": False,
+            "mirror_y": True,
+            "rotate": 1
+        }
+
+        instance_manager.config_manager.save_camera_config("different_name", example_test)
+        instance_manager.config_manager.get_camera_config("different_name")
+        instance_manager.config_manager.delete_camera_config("different_name")
+
+        with self.assertRaisesRegex(ValueError, "Config 'example_test' does not exist."):
+            instance_manager.config_manager.get_camera_config("different_name")
+
 
 if __name__ == '__main__':
     unittest.main()
