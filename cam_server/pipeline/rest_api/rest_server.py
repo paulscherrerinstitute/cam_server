@@ -40,7 +40,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     @app.post(api_root_address)
     def create_pipeline():
         pipeline_config = request.json
-        instance_id, stream_address = instance_manager.create_pipeline_instance(configuration=pipeline_config)
+        instance_id, stream_address = instance_manager.create_pipeline(configuration=pipeline_config)
 
         {"state": "ok",
          "status": "Stream address for pipeline %s." % instance_id,
@@ -50,7 +50,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     @app.post(api_root_address + '/<pipeline_name>')
     def create_pipeline_from_config(pipeline_name):
-        instance_id, stream_address = instance_manager.create_pipeline_instance(pipeline_name=pipeline_name)
+        instance_id, stream_address = instance_manager.create_pipeline(pipeline_name=pipeline_name)
 
         return {"state": "ok",
                 "status": "Stream address for pipeline %s." % instance_id,
@@ -59,14 +59,12 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "config": instance_manager.get_instance(instance_id).get_parameters()}
 
     @app.get(api_root_address + '/instance/<instance_id>')
-    def get_instance(instance_id):
-        pipeline = instance_manager.get_instance(instance_id)
+    def get_instance_stream(instance_id):
+        stream_address = instance_manager.get_instance_stream(pipeline_name=instance_id)
 
         return {"state": "ok",
                 "status": "Stream address for pipeline %s." % instance_id,
-                "instance_id": instance_id,
-                "stream": pipeline.stream_address,
-                "config": pipeline.get_parameters()}
+                "stream": stream_address}
 
     @app.get(api_root_address + '/instance/<instance_id>/info')
     def get_instance_info(instance_id):

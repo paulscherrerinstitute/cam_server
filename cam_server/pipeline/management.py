@@ -24,7 +24,7 @@ class PipelineInstanceManager(InstanceManager):
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
 
-    def create_pipeline_instance(self, pipeline_name=None, configuration=None):
+    def create_pipeline(self, pipeline_name=None, configuration=None):
         """
         Create the pipeline stream address. Either pass the pipeline name, or the configuration.
         :param pipeline_name: Name of the pipeline to load from config.
@@ -66,15 +66,39 @@ class PipelineInstanceManager(InstanceManager):
 
         return pipeline.get_id(), pipeline.get_stream_address()
 
-    def get_instance(self, instance_id):
+    def get_instance_stream(self, instance_id):
         if not self.is_instance_present(instance_id):
-            raise ValueError("Instance id '%s' does not exist." % instance_id)
+            try:
+                pipeline = self.config_manager.load_pipeline(instance_id)
+            except ValueError:
+                raise ValueError("Instance '%s' is not present on server and it is not a saved pipeline name." %
+                                 instance_id)
 
-        return self.get_instance(instance_id)
+            stream_port = next(self.port_generator)
+
+            camera_name = pipeline.camera_name
+            camera_stream_address = self.cam_server_client.get_camera_stream(camera_name)["stream"]
+
+            _logger.info("Creating pipeline '%s' on port '%d' for camera '%s' on stream '%s'. instance_id=%s",
+                         instance_id, stream_port, camera_name, camera_stream_address, instance_id)
+
+            self.add_instance(instance_id, PipelineInstance(
+                instance_id=instance_id,
+                process_function=receive_process_send,
+                pipeline=pipeline,
+                output_stream_port=stream_port,
+                source_stream_address=camera_stream_address,
+                read_only_config=True  # Implicitly created instances are read only.
+            ))
+
+        self.start_instance(instance_id)
+
+        return self.get_instance(instance_id).get_stream_address()
 
 
 class PipelineInstance(InstanceWrapper):
-    def __init__(self, instance_id, process_function, pipeline, output_stream_port, source_stream_address):
+    def __init__(self, instance_id, process_function, pipeline, output_stream_port, source_stream_address,
+                 read_only_config=False):
         source_host, source_port = get_host_port_from_stream_address(source_stream_address)
 
         super(PipelineInstance, self).__init__(instance_id, process_function,
@@ -82,6 +106,7 @@ class PipelineInstance(InstanceWrapper):
 
         self.pipeline = pipeline
         self.stream_address = "tcp://%s:%d" % (socket.gethostname(), self.stream_port)
+        self.read_only_config = read_only_config
 
     def get_info(self):
         return {"stream_address": self.stream_address,
@@ -97,6 +122,9 @@ class PipelineInstance(InstanceWrapper):
         return self.stream_address
 
     def set_parameter(self, parameters):
+        if self.read_only_config:
+            raise ValueError("Cannot set config on a read only instance.")
+
         super().set_parameter(parameters)
 
         # Update the parameters on the local instance as well.
