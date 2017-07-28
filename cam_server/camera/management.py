@@ -40,7 +40,7 @@ class CameraInstanceManager(InstanceManager):
 
         self.start_instance(camera_name)
 
-        return self.get_instance(camera_name).stream_address
+        return self.get_instance(camera_name).get_stream_address()
 
 
 class CameraInstanceWrapper(InstanceWrapper):
@@ -63,3 +63,6 @@ class CameraInstanceWrapper(InstanceWrapper):
 
     def get_name(self):
         return self.camera.get_name()
+
+    def get_stream_address(self):
+        return self.stream_address
