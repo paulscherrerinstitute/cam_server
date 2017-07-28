@@ -27,7 +27,7 @@ class CameraConfigTest(unittest.TestCase):
         instance_manager = get_test_instance_manager()
 
         # Verify that the config does not exist yet.
-        with self.assertRaisesRegex(ValueError, "Unable to load config"):
+        with self.assertRaisesRegex(ValueError, "Config 'test_camera_1' does not exist."):
             instance_manager.config_manager.get_camera_config("test_camera_1")
 
         # Check if default values work as expected.
@@ -105,7 +105,7 @@ class CameraConfigTest(unittest.TestCase):
         instance_manager.config_manager.get_camera_config("different_name")
         instance_manager.config_manager.delete_camera_config("different_name")
 
-        with self.assertRaisesRegex(ValueError, "Config 'example_test' does not exist."):
+        with self.assertRaisesRegex(ValueError, "Config 'different_name' does not exist."):
             instance_manager.config_manager.get_camera_config("different_name")
 
 

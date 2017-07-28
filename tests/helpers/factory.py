@@ -28,7 +28,7 @@ class MockConfigStorage:
     def get_config(self, config_name):
         if config_name not in self.configs:
             # Replicate the error in the real config provider.
-            raise ValueError("Unable to load config '%s'" % config_name)
+            raise ValueError("Config '%s' does not exist." % config_name)
 
         return self.configs[config_name]
 
