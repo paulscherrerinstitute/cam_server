@@ -1,12 +1,21 @@
 from cam_server.camera.configuration import CameraConfigManager
 from cam_server.camera.management import CameraInstanceManager
+from cam_server.pipeline.configuration import PipelineConfigManager
+from cam_server.pipeline.management import PipelineInstanceManager
 
 
 def get_test_instance_manager():
-    config_manager = CameraConfigManager(config_provider=MockConfigStorage())
-    camera_instance_manager = CameraInstanceManager(config_manager)
+        config_manager = CameraConfigManager(config_provider=MockConfigStorage())
+        camera_instance_manager = CameraInstanceManager(config_manager)
 
-    return camera_instance_manager
+        return camera_instance_manager
+
+
+def get_test_pipeline_manager():
+    config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
+    pipeline_instance_manager = PipelineInstanceManager(config_manager)
+
+    return pipeline_instance_manager
 
 
 class MockConfigStorage:

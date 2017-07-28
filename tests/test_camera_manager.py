@@ -7,7 +7,7 @@ from io import BytesIO
 
 from cam_server import config
 from cam_server.pipeline.data_processing.functions import get_png_from_image
-from tests.helpers.camera import get_test_instance_manager
+from tests.helpers.factory import get_test_instance_manager
 
 
 class CameraTest(unittest.TestCase):
