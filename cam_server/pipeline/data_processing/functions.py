@@ -13,7 +13,8 @@ from cam_server import config
 
 
 def subtract_background(image, background_image):
-        return image - background_image
+    # We do not want negative numbers int the image.
+    return apply_threshold(image - background_image, 0)
 
 
 def get_region_of_interest(image, offset_x, size_x, offset_y, size_y):
