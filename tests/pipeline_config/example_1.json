@@ -1,14 +1,13 @@
 {
-  "camera":
-    {
-      "prefix": "EPICS_example_1",
-       "mirror_x": true,
-       "mirror_y": true,
-       "rotate": 3
-    },
+  "camera_name": "simulation",
 
-  "pipeline":
-  {
+  "camera_calibration": null,
 
-  }
+  "image_background": null,
+  "image_threshold": null,
+  "image_region_of_interest": null,
+
+  "image_good_region": null,
+
+  "image_slices": null
 }
