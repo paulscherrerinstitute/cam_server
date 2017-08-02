@@ -7,7 +7,7 @@ from cam_server.instance_management.configuration import ConfigFileStorage
 class ConfigFileStorageTest(unittest.TestCase):
     def setUp(self):
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
-        self.config_folder = os.path.join(test_base_dir, "test_camera_config/")
+        self.config_folder = os.path.join(test_base_dir, "camera_config/")
         self.file_storage = ConfigFileStorage(config_folder=self.config_folder)
 
         self.config_to_save_name = "test_config"

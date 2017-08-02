@@ -19,7 +19,7 @@ class CameraClientTest(unittest.TestCase):
         self.port = 8888
 
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
-        self.config_folder = os.path.join(test_base_dir, "test_camera_config/")
+        self.config_folder = os.path.join(test_base_dir, "camera_config/")
 
         self.process = Process(target=start_camera_server, args=(self.host, self.port, self.config_folder))
         self.process.start()
