@@ -73,22 +73,9 @@ class PipelineConfig:
         else:
             # Default pipeline parameters.
             self.parameters = OrderedDict(
-                {"background_subtraction": False,
-
-                 "apply_threshold": False,
-                 "threshold": None,  # default 1.0
-
-                 "apply_region_of_interest": False,
-                 "region_of_interest": None,  # (offset_x, size_x, offset_y, size_y)
-
-                 "apply_good_region": False,
-                 "good_region_threshold": 0.3,  # default 0.3
-                 "good_region_gfscale": 1.8,  # default 1.8
-
-                 "apply_slices": False,
-                 "slices_number": 1,
-                 "slices_scale": 2  # width_all_slices = scale * standard_deviation
-                 })
+                {
+                    "camera_name": "simulation"
+                })
 
         self.background_image = None
 
@@ -102,9 +89,22 @@ class PipelineConfig:
         return copy.deepcopy(self.parameters)
 
     @staticmethod
-    def validate_pipeline_config(config):
-        # TODO: implement validation.
-        pass
+    def validate_pipeline_config(configuration):
+        """
+        Verify if the pipeline config has all the mandatory attributes.
+        :param configuration: Config to validate.
+        :return:
+        """
+
+        if not configuration:
+            raise ValueError("Config object cannot be empty.\nConfig: %s" % configuration)
+
+        mandatory_attributes = ["camera_name"]
+        missing_attributes = [attr for attr in mandatory_attributes if attr not in configuration]
+
+        if missing_attributes:
+            raise ValueError("The following mandatory attributes were not found in the configuration: %s" %
+                             missing_attributes)
 
     def get_name(self):
         return self.pipeline_name
