@@ -51,6 +51,17 @@ class PipelineConfigManager(object):
         PipelineConfig.validate_pipeline_config(configuration)
         self.config_provider.save_config(pipeline_name, configuration)
 
+    def delete_pipeline_config(self, pipeline_name):
+        """
+        Delete the pipeline config.
+        :param pipeline_name: Name of the pipeline to delete.
+        """
+
+        if pipeline_name not in self.get_pipeline_list():
+            raise ValueError("Pipeline '%s' does not exist." % pipeline_name)
+
+        self.config_provider.delete_config(pipeline_name)
+
 
 class PipelineConfig:
     def __init__(self, pipeline_name, parameters=None):
