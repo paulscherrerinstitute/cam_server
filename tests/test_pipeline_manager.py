@@ -18,10 +18,19 @@ class PipelineManager(unittest.TestCase):
                              "Set and received lists are not the same.")
 
     def test_create_pipeline_instance(self):
+        pipeline_manager = get_test_pipeline_manager()
+
+    def test_multiple_create_requests(self):
+        pass
+
+    def test_multiple_get_requests(self):
         pass
 
     def test_get_instance_stream(self):
         pipeline_manager = get_test_pipeline_manager()
+
+    def test_pipeline_image(self):
+        pass
 
 
 if __name__ == '__main__':
