@@ -85,6 +85,8 @@ class PipelineProcessingTest(unittest.TestCase):
         parameters = pipeline_config.get_parameters()
         image_background_array = background_provider.get_background(parameters.get("image_background"))
 
+        expected_image = numpy.zeros(shape=(y_size, x_size))
+
         result = process_image(image=image,
                                timestamp=time.time(),
                                x_axis=x_axis,
@@ -92,10 +94,58 @@ class PipelineProcessingTest(unittest.TestCase):
                                parameters=parameters,
                                image_background_array=image_background_array)
 
-        expected_image = numpy.zeros(shape=(y_size, x_size))
-
         self.assertTrue(numpy.array_equal(result["image"], expected_image),
                         "The image should be all zeros - negative numbers are not allowed.")
+
+    def test_image_threshold(self):
+        simulated_camera = CameraSimulation()
+        image = simulated_camera.get_image()
+        x_axis, y_axis = simulated_camera.get_x_y_axis()
+        x_size, y_size = simulated_camera.get_geometry()
+
+        pipeline_parameters = {
+            "camera_name": "simulation",
+            "image_threshold": 9999999
+        }
+
+        pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
+        parameters = pipeline_config.get_parameters()
+
+        result = process_image(image=image,
+                               timestamp=time.time(),
+                               x_axis=x_axis,
+                               y_axis=y_axis,
+                               parameters=parameters)
+
+        expected_image = numpy.zeros(shape=(y_size, x_size))
+        self.assertTrue(numpy.array_equal(result["image"], expected_image),
+                        "An image of zeros should have been produced.")
+
+        pipeline_parameters = {
+            "camera_name": "simulation",
+            "image_threshold": 0
+        }
+
+        pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
+        parameters = pipeline_config.get_parameters()
+
+        result = process_image(image=image,
+                               timestamp=time.time(),
+                               x_axis=x_axis,
+                               y_axis=y_axis,
+                               parameters=parameters)
+
+        self.assertTrue(numpy.array_equal(result["image"], image),
+                        "The image should be the same as the original image.")
+
+    def test_region_of_interest(self):
+        pass
+
+    def test_good_region(self):
+        pass
+
+    def test_slices(self):
+        pass
 
 
 if __name__ == '__main__':
