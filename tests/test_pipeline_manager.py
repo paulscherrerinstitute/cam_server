@@ -3,7 +3,7 @@ import unittest
 from tests.helpers.factory import get_test_pipeline_manager
 
 
-class PipelineManager(unittest.TestCase):
+class PipelineManagerTest(unittest.TestCase):
 
     def test_get_pipeline_list(self):
         pipeline_manager = get_test_pipeline_manager()

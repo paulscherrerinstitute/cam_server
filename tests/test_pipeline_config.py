@@ -40,7 +40,7 @@ class PipelineConfigTest(unittest.TestCase):
         instance_manager.config_manager.save_pipeline_config("pipeline_simulation", example_pipeline_config)
 
         pipeline = instance_manager.config_manager.load_pipeline("pipeline_simulation")
-        self.assertDictEqual(pipeline.to_dict(), example_pipeline_config,
+        self.assertDictEqual(pipeline.get_parameters(), example_pipeline_config,
                              "Saved and loaded pipelines are not the same.")
 
     def test_invalid_config(self):

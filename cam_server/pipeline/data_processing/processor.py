@@ -1,3 +1,4 @@
+import json
 from logging import getLogger
 
 from cam_server.pipeline.data_processing import functions
@@ -5,23 +6,24 @@ from cam_server.pipeline.data_processing import functions
 _logger = getLogger(__name__)
 
 
-def process_image(image, timestamp, x_axis, y_axis, parameter):
+def process_image(image, timestamp, x_axis, y_axis, parameters, image_background_array=None):
 
     # Add return values
     return_value = dict()
 
-    image = image
-    if parameter.subtract_background:
-        image = functions.subtract_background(image, parameter.background_image)
+    if image_background_array is not None:
+        image = functions.subtract_background(image, image_background_array)
 
-    if parameter.apply_threshold:
-        image = functions.apply_threshold(image, parameter.threshold)
+    image_threshold = parameters.get("image_threshold")
+    if image_threshold:
+        image = functions.apply_threshold(image, image_threshold)
 
-    if parameter.apply_region_of_interest:
-        offset_x, size_x, offset_y, size_y = parameter.region_of_interest
+    image_region_of_interest = parameters.get("image_region_of_interest")
+    if image_region_of_interest:
+        offset_x, size_x, offset_y, size_y = image_region_of_interest
         image = functions.get_region_of_interest(image, offset_x, size_x, offset_y, size_y)
 
-        # TODO To be optimized
+        # TODO To be optimized - how?
         # Apply roi to geometry x_axis and y_axis
         x_axis = x_axis[offset_x:offset_x + size_x]
         y_axis = y_axis[offset_y:offset_y + size_y]
@@ -32,6 +34,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameter):
 
     x_fit = functions.gauss_fit(x_profile, x_axis)
     y_fit = functions.gauss_fit(y_profile, y_axis)
+
     x_fit_gauss_function, x_fit_offset, x_fit_amplitude, x_fit_mean, x_fit_standard_deviation, x_center_of_mass, x_rms = x_fit
     y_fit_gauss_function, y_fit_offset, y_fit_amplitude, y_fit_mean, y_fit_standard_deviation, y_center_of_mass, y_rms = y_fit
 
@@ -44,6 +47,9 @@ def process_image(image, timestamp, x_axis, y_axis, parameter):
     return_value["max_value"] = max_value
     return_value["x_profile"] = x_profile
     return_value["y_profile"] = y_profile
+
+    # Needed for config traceability.
+    return_value["processing_parameters"] = json.dumps(parameters)
 
     # TODO Provide - Center of mass of profile
     # TODO Provide - RMS of profile
@@ -65,15 +71,15 @@ def process_image(image, timestamp, x_axis, y_axis, parameter):
     return_value["y_fit_standard_deviation"] = y_fit_standard_deviation
     return_value["y_fit_mean"] = y_fit_mean
 
-    if parameter.apply_good_region:
+    image_good_region = parameters.get("image_good_region")
+    if image_good_region:
         try:
+            threshold = image_good_region["threshold"]
+            gfscale = image_good_region["gfscale"]
+
             # Get the good region
-            good_region_x_start, good_region_x_end = functions.get_good_region_profile(x_profile,
-                                                                                       parameter.good_region_threshold,
-                                                                                       parameter.good_region_gfscale)
-            good_region_y_start, good_region_y_end = functions.get_good_region_profile(y_profile,
-                                                                                       parameter.good_region_threshold,
-                                                                                       parameter.good_region_gfscale)
+            good_region_x_start, good_region_x_end = functions.get_good_region_profile(x_profile, threshold, gfscale)
+            good_region_y_start, good_region_y_end = functions.get_good_region_profile(y_profile, threshold, gfscale)
 
             # Clip good region
             good_region = image[good_region_y_start:good_region_y_end, good_region_x_start:good_region_x_end]
@@ -109,19 +115,24 @@ def process_image(image, timestamp, x_axis, y_axis, parameter):
             return_value["gr_y_fit_standard_deviation"] = gr_y_fit_standard_deviation
             return_value["gr_y_fit_mean"] = gr_y_fit_mean
 
-            if parameter.apply_slices:
+            image_slices = parameters.get("image_slices")
+
+            if image_slices:
+
+                scale = image_slices["scale"]
+                number_of_slices = image_slices["number_of_slices"]
 
                 try:
-                    x_slice_data = functions.get_x_slices_data(good_region, good_region_x_axis, good_region_y_axis, gr_x_fit_mean,
-                                                               gr_x_fit_standard_deviation,
-                                                               scaling=parameter.slices_scale,
-                                                               number_of_slices=parameter.number_of_slices)
+                    x_slice_data = functions.get_x_slices_data(good_region, good_region_x_axis, good_region_y_axis,
+                                                               gr_x_fit_mean, gr_x_fit_standard_deviation,
+                                                               scaling=scale,
+                                                               number_of_slices=number_of_slices)
 
                     y_slice_data = functions.get_y_slices_data(good_region, good_region_x_axis, good_region_y_axis,
                                                                gr_y_fit_mean,
                                                                gr_y_fit_standard_deviation,
-                                                               scaling=parameter.slices_scale,
-                                                               number_of_slices=parameter.number_of_slices)
+                                                               scaling=scale,
+                                                               number_of_slices=number_of_slices)
 
                     # Add return values
                     counter = 0
@@ -140,7 +151,6 @@ def process_image(image, timestamp, x_axis, y_axis, parameter):
                         y.append(float(data[0][1]))  # y
 
                     slope, offset = functions.linear_fit(x, y)
-                    print(slope)
 
                     # TODO need to calculate: slope * sigma(x)^2
                     return_value["coupling"] = slope * (gr_x_fit_standard_deviation ** 2)
