@@ -23,10 +23,6 @@ class PipelineConfigManager(object):
         """
 
         configuration = self.config_provider.get_config(pipeline_name)
-        # TODO: Check for background, and add.
-        # background_file = camera_configuration_directory + '/' + camera_name + '_background.npy'
-        # if os.path.isfile(background_file):
-        #     parameter.background_image = numpy.load(background_file)
 
         PipelineConfig.validate_pipeline_config(configuration)
 
@@ -77,10 +73,11 @@ class PipelineConfig:
                     "camera_name": "simulation"
                 })
 
-        self.background_image = None
-
         # Check if the config is valid.
         self.validate_pipeline_config(self.parameters)
+
+    def get_parameters(self):
+        return self.parameters
 
     def to_dict(self):
         # Validate before passing on, since anyone can change the dictionary content.
@@ -108,3 +105,6 @@ class PipelineConfig:
 
     def get_name(self):
         return self.pipeline_name
+
+    def get_camera_name(self):
+        return self.parameters["camera_name"]
