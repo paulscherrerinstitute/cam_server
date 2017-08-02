@@ -55,7 +55,7 @@ class PipelineInstanceManager(InstanceManager):
         self.add_instance(instance_id, PipelineInstance(
             instance_id=instance_id,
             process_function=receive_process_send,
-            pipeline=pipeline,
+            pipeline_config=pipeline,
             output_stream_port=stream_port,
             source_stream_address=camera_stream_address
         ))
@@ -69,14 +69,14 @@ class PipelineInstanceManager(InstanceManager):
     def get_instance_stream(self, instance_id):
         if not self.is_instance_present(instance_id):
             try:
-                pipeline = self.config_manager.load_pipeline(instance_id)
+                pipeline_config = self.config_manager.load_pipeline(instance_id)
             except ValueError:
                 raise ValueError("Instance '%s' is not present on server and it is not a saved pipeline name." %
                                  instance_id)
 
             stream_port = next(self.port_generator)
 
-            camera_name = pipeline.camera_name
+            camera_name = pipeline_config.get_camera_name()
             camera_stream_address = self.cam_server_client.get_camera_stream(camera_name)["stream"]
 
             _logger.info("Creating pipeline '%s' on port '%d' for camera '%s' on stream '%s'. instance_id=%s",
@@ -85,7 +85,7 @@ class PipelineInstanceManager(InstanceManager):
             self.add_instance(instance_id, PipelineInstance(
                 instance_id=instance_id,
                 process_function=receive_process_send,
-                pipeline=pipeline,
+                pipeline_config=pipeline_config,
                 output_stream_port=stream_port,
                 source_stream_address=camera_stream_address,
                 read_only_config=True  # Implicitly created instances are read only.
@@ -97,14 +97,14 @@ class PipelineInstanceManager(InstanceManager):
 
 
 class PipelineInstance(InstanceWrapper):
-    def __init__(self, instance_id, process_function, pipeline, output_stream_port, source_stream_address,
+    def __init__(self, instance_id, process_function, pipeline_config, output_stream_port, source_stream_address,
                  read_only_config=False):
         source_host, source_port = get_host_port_from_stream_address(source_stream_address)
 
         super(PipelineInstance, self).__init__(instance_id, process_function,
-                                               source_host, source_port, pipeline, output_stream_port)
+                                               source_host, source_port, pipeline_config, output_stream_port)
 
-        self.pipeline = pipeline
+        self.pipeline = pipeline_config
         self.stream_address = "tcp://%s:%d" % (socket.gethostname(), self.stream_port)
         self.read_only_config = read_only_config
 
@@ -113,7 +113,8 @@ class PipelineInstance(InstanceWrapper):
                 "is_stream_active": self.is_running(),
                 "camera_stream_address": self.source_stream_address,
                 "config": self.pipeline.get_parameters(),
-                "pipeline_name": self.instance_name}
+                "pipeline_name": self.instance_name,
+                "read_only": self.read_only_config}
 
     def get_config(self):
         return self.pipeline.to_dict()
