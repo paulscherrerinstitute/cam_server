@@ -19,8 +19,8 @@ MFLOW_NO_CLIENTS_TIMEOUT = 3
 
 # Each camera config gets assigned one port. 1000 cameras per server should be enough.
 CAMERA_STREAM_PORT_RANGE = (10100, 11100)
-# Default folder for cam_server configs.
-DEFAULT_CAMERA_CONFIG_FOLDER = "configuration"
+# Default folder for camera configs.
+DEFAULT_CAMERA_CONFIG_FOLDER = "configuration/cam"
 # Default colormap to use when getting an image from the camera.
 DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 
@@ -38,6 +38,8 @@ CAMERA_SEND_TIMEOUT = 500
 
 # Every time you open a pipeline it gets the next port. 1000 rotating ports should be enough.
 PIPELINE_STREAM_PORT_RANGE = (11100, 12100)
+# Default folder for camera configs.
+DEFAULT_PIPELINE_CONFIG_FOLDER = "configuration/pipeline"
 # Receive timeout for the pipeline.
 PIPELINE_RECEIVE_TIMEOUT = 500
 

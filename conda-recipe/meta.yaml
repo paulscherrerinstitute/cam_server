@@ -24,7 +24,8 @@ requirements:
 
 build:
   entry_points:
-    - cam_server = cam_server.start
+    - cam_server = cam_server.start_cam_server
+    - pipeline_server = cam_server.start_pipeline_server
 
 about:
     home: https://git.psi.ch/controls_highlevel_applications/cam_server
