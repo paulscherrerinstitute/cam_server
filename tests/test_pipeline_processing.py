@@ -139,12 +139,15 @@ class PipelineProcessingTest(unittest.TestCase):
                         "The image should be the same as the original image.")
 
     def test_region_of_interest(self):
+        # TODO: Write tests.
         pass
 
     def test_good_region(self):
+        # TODO: Write tests.
         pass
 
     def test_slices(self):
+        # TODO: Write tests.
         pass
 
 

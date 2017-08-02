@@ -54,6 +54,10 @@ class PipelineConfigTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not "):
             instance_manager.config_manager.save_pipeline_config("invalid_pipeline", invalid_pipeline_config)
 
+    def test_background_provider(self):
+        # TODO: Write tests.
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()
