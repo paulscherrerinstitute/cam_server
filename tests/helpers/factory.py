@@ -1,3 +1,4 @@
+import numpy
 from cam_server.camera.configuration import CameraConfigManager
 from cam_server.camera.management import CameraInstanceManager
 from cam_server.pipeline.configuration import PipelineConfigManager
@@ -16,6 +17,17 @@ def get_test_pipeline_manager():
     pipeline_instance_manager = PipelineInstanceManager(config_manager, MockCamServerClient())
 
     return pipeline_instance_manager
+
+
+class MockBackgroundProvider:
+    def __init__(self):
+        self.backgrounds = {}
+
+    def get_background(self, background_name):
+        return self.backgrounds[background_name]
+
+    def save_background(self, background_name, image):
+        self.backgrounds[background_name] = image
 
 
 class MockConfigStorage:

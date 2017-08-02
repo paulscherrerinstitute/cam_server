@@ -59,6 +59,17 @@ class PipelineConfigManager(object):
         self.config_provider.delete_config(pipeline_name)
 
 
+class BackgroundImageManager(object):
+    def __init__(self, background_folder):
+        self.background_folder = background_folder
+
+    def get_background(self, background_name):
+        pass
+
+    def save_background(self, background_name, image):
+        pass
+
+
 class PipelineConfig:
     def __init__(self, pipeline_name, parameters=None):
 
@@ -77,9 +88,6 @@ class PipelineConfig:
         self.validate_pipeline_config(self.parameters)
 
     def get_parameters(self):
-        return self.parameters
-
-    def to_dict(self):
         # Validate before passing on, since anyone can change the dictionary content.
         self.validate_pipeline_config(self.parameters)
         # We do not want to pass by reference - someone might change the dictionary.

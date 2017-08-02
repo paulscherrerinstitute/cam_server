@@ -117,7 +117,7 @@ class PipelineInstance(InstanceWrapper):
                 "read_only": self.read_only_config}
 
     def get_config(self):
-        return self.pipeline.to_dict()
+        return self.pipeline.get_parameters()
 
     def get_stream_address(self):
         return self.stream_address
