@@ -5,7 +5,7 @@ import unittest
 from multiprocessing import Process
 from time import sleep
 
-from bsread import source
+from bsread import source, SUB
 
 from cam_server import CamClient
 from cam_server.camera.receiver import CameraSimulation
@@ -59,7 +59,7 @@ class CameraClientTest(unittest.TestCase):
 
         # Check if we can connect to the stream and receive data (in less than 2 seconds).
         host, port = get_host_port_from_stream_address(camera_stream_address)
-        with source(host=host, port=port, receive_timeout=2000) as stream:
+        with source(host=host, port=port, receive_timeout=2000, mode=SUB) as stream:
             data = stream.receive()
             self.assertIsNotNone(data, "Received data was none.")
 

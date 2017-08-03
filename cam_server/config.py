@@ -28,8 +28,6 @@ DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 CAMERA_BSREAD_DATA_HEADER_COMPRESSION = None
 # Compression here might be a good idea. Use "bitshuffle_lz4" or None.
 CAMERA_BSREAD_IMAGE_COMPRESSION = None
-# Maximum time to wait before aborting the send.
-CAMERA_SEND_TIMEOUT = 500
 
 #####################
 # Pipeline settings #

@@ -1,5 +1,5 @@
 from logging import getLogger
-from bsread.sender import Sender
+from bsread.sender import Sender, PUB
 from zmq import Again
 
 from cam_server import config
@@ -26,10 +26,9 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
             stop_event.set()
 
         camera.connect()
-        x_axis, y_axis = camera.get_x_y_axis()
         x_size, y_size = camera.get_geometry()
 
-        sender = Sender(port=port, send_timeout=config.CAMERA_SEND_TIMEOUT)
+        sender = Sender(port=port, mode=PUB)
 
         # Register the bsread channels - compress only the image.
         # TODO: Add channel "type" to metadata.

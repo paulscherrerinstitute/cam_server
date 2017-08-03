@@ -3,7 +3,7 @@ from logging import getLogger
 import time
 
 import numpy
-from bsread import Source, PUB
+from bsread import Source, PUB, SUB
 from bsread.sender import Sender
 
 from cam_server import config, CamClient
@@ -40,10 +40,10 @@ def receive_process_send(stop_event, statistics, parameter_queue,
         camera_stream_address = client.get_camera_stream(pipeline_config.get_camera_name())
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
 
-        source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT)
+        source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
         source.connect()
 
-        sender = Sender(port=output_stream_port, send_timeout=config.CAMERA_SEND_TIMEOUT, mode=PUB)
+        sender = Sender(port=output_stream_port, mode=PUB)
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
         # TODO: Register proper channels.
 
