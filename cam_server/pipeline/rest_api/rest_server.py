@@ -5,6 +5,7 @@ from bottle import request
 
 from cam_server import config
 from cam_server.instance_management import rest_api
+from cam_server.utils import collect_background
 
 _logger = logging.getLogger(__name__)
 
@@ -24,18 +25,6 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     # Register instance management API.
     rest_api.register_rest_interface(app, instance_manager, api_root_address)
-
-    # TODO: Figure out where and on what to do background collection.
-    # @app.post(api_root_address + '/instance/<instance_id>/background')
-    # def collect_background(instance_id):
-    #     number_of_images = 10
-    #     if "number_of_images" in request.json:
-    #         number_of_images = request.json["number_of_images"]
-    #
-    #     background_file = camera_configuration_directory + '/' + camera_name + '_background.npy'
-    #     instance.start(None, config_file, number_of_images, background_file)
-    #
-    #     return json.dumps({"instance_id": default_instance_name})
 
     @app.post(api_root_address)
     def create_pipeline():
@@ -106,3 +95,19 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         return {"state": "ok",
                 "status": "Pipeline %s configuration saved." % pipeline_name,
                 "config": instance_manager.config_manager.get_pipeline_config(pipeline_name)}
+
+    @app.post(api_root_address + '/instance/<instance_id>/background')
+    def collect_background_on_instance(instance_id):
+        number_of_images = 10
+
+        if "number_of_images" in request.json:
+            number_of_images = request.json["number_of_images"]
+
+        stream_address = get_instance_stream(instance_id)["stream"]
+        camera_name = get_instance_info(instance_id)["info"]["camera_name"]
+        background_id = collect_background(camera_name, stream_address, number_of_images,
+                                           instance_manager.background_manager)
+
+        return {"state": "ok",
+                "status": "Background collected on instance %d." % instance_id,
+                "background_id": background_id}

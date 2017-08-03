@@ -101,6 +101,8 @@ class InstanceWrapper:
             _logger.info("Instance '%s' already running.", self.instance_name)
             return
 
+        self.stop_event.set()
+
         self.process = multiprocessing.Process(target=self.process_function,
                                                args=(self.stop_event, self.statistics, self.parameter_queue,
                                                      *self.args))

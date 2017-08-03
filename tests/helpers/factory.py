@@ -15,14 +15,15 @@ def get_test_instance_manager():
 
 def get_test_pipeline_manager():
     config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
-    pipeline_instance_manager = PipelineInstanceManager(config_manager, MockCamServerClient(), MockBackgroundManager())
+    pipeline_instance_manager = PipelineInstanceManager(config_manager, MockBackgroundManager(), MockCamServerClient())
 
     return pipeline_instance_manager
 
 
 def get_test_pipeline_manager_with_real_cam():
     config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
-    pipeline_instance_manager = PipelineInstanceManager(config_manager, CamClient("http://0.0.0.0:8888"))
+    pipeline_instance_manager = PipelineInstanceManager(config_manager, MockBackgroundManager(),
+                                                        CamClient("http://0.0.0.0:8888"))
 
     return pipeline_instance_manager
 

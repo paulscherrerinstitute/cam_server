@@ -17,6 +17,13 @@ class CamClient(object):
         """
 
         self.api_address_format = address.rstrip("/") + config.API_PREFIX + config.CAMERA_REST_INTERFACE_PREFIX + "%s"
+        self.address = address
+
+    def get_address(self):
+        """
+        Return the REST api endpoint address.
+        """
+        return self.address
 
     def get_server_info(self):
         """

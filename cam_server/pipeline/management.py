@@ -45,20 +45,19 @@ class PipelineInstanceManager(InstanceManager):
         stream_port = next(self.port_generator)
 
         camera_name = pipeline.get_camera_name()
-        camera_stream_address = self.cam_server_client.get_camera_stream(camera_name)
 
         # Random uuid as the instance id.
         instance_id = uuid.uuid4()
 
-        _logger.info("Creating pipeline '%s' on port '%d' for camera '%s' on stream '%s'. instance_id=%s",
-                     pipeline_name, stream_port, camera_name, camera_stream_address, instance_id)
+        _logger.info("Creating pipeline '%s' on port '%d' for camera '%s'. instance_id=%s",
+                     pipeline_name, stream_port, camera_name, instance_id)
 
         self.add_instance(instance_id, PipelineInstance(
             instance_id=instance_id,
             process_function=receive_process_send,
             pipeline_config=pipeline,
             output_stream_port=stream_port,
-            source_stream_address=camera_stream_address,
+            cam_client=self.cam_server_client,
             background_manager=self.background_manager
         ))
 
@@ -79,17 +78,16 @@ class PipelineInstanceManager(InstanceManager):
             stream_port = next(self.port_generator)
 
             camera_name = pipeline_config.get_camera_name()
-            camera_stream_address = self.cam_server_client.get_camera_stream(camera_name)["stream"]
 
-            _logger.info("Creating pipeline '%s' on port '%d' for camera '%s' on stream '%s'. instance_id=%s",
-                         instance_id, stream_port, camera_name, camera_stream_address, instance_id)
+            _logger.info("Creating pipeline '%s' on port '%d' for camera '%s'. instance_id=%s",
+                         instance_id, stream_port, camera_name, instance_id)
 
             self.add_instance(instance_id, PipelineInstance(
                 instance_id=instance_id,
                 process_function=receive_process_send,
                 pipeline_config=pipeline_config,
                 output_stream_port=stream_port,
-                source_stream_address=camera_stream_address,
+                cam_client=self.cam_server_client,
                 background_manager=self.background_manager,
                 read_only_config=True  # Implicitly created instances are read only.
             ))
@@ -100,28 +98,27 @@ class PipelineInstanceManager(InstanceManager):
 
 
 class PipelineInstance(InstanceWrapper):
-    def __init__(self, instance_id, process_function, pipeline_config, output_stream_port, source_stream_address,
+    def __init__(self, instance_id, process_function, pipeline_config, output_stream_port, cam_client,
                  background_manager, read_only_config=False):
-        source_host, source_port = get_host_port_from_stream_address(source_stream_address)
 
         super(PipelineInstance, self).__init__(instance_id, process_function,
-                                               source_host, source_port, pipeline_config, output_stream_port,
+                                               cam_client, pipeline_config, output_stream_port,
                                                background_manager)
 
-        self.pipeline = pipeline_config
+        self.pipeline_config = pipeline_config
         self.stream_address = "tcp://%s:%d" % (socket.gethostname(), output_stream_port)
         self.read_only_config = read_only_config
 
     def get_info(self):
         return {"stream_address": self.stream_address,
                 "is_stream_active": self.is_running(),
-                "camera_stream_address": self.source_stream_address,
-                "config": self.pipeline.get_parameters(),
+                "camera_name": self.pipeline_config.get_camera_name(),
+                "config": self.pipeline_config.get_parameters(),
                 "pipeline_name": self.instance_name,
                 "read_only": self.read_only_config}
 
     def get_config(self):
-        return self.pipeline.get_parameters()
+        return self.pipeline_config.get_parameters()
 
     def get_stream_address(self):
         return self.stream_address
@@ -133,7 +130,7 @@ class PipelineInstance(InstanceWrapper):
         super().set_parameter(parameters)
 
         # Update the parameters on the local instance as well.
-        self.pipeline.parameters = parameters
+        self.pipeline_config.parameters = parameters
 
     def get_name(self):
-        return self.pipeline.get_name()
+        return self.pipeline_config.get_name()

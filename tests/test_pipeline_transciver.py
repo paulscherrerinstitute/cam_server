@@ -57,7 +57,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         pipeline_config = PipelineConfig("test_pipeline")
 
         def send():
-            receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint,
+            receive_process_send(stop_event, statistics, parameter_queue, self.client,
                                  pipeline_config, 12000, MockBackgroundManager())
 
         thread = Thread(target=send)
@@ -92,7 +92,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         background_manager = MockBackgroundManager()
 
         with self.assertRaises(Exception):
-            receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint, pipeline_config,
+            receive_process_send(stop_event, statistics, parameter_queue, self.client, pipeline_config,
                                  12000, background_manager)
 
         simulated_camera_shape = (960, 1280)
@@ -102,7 +102,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         background_manager.save_background("full_background", background_array)
 
         def send():
-            receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint, pipeline_config,
+            receive_process_send(stop_event, statistics, parameter_queue, self.client, pipeline_config,
                                  12000, background_manager)
 
         thread = Thread(target=send)
@@ -135,7 +135,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         })
 
         def send():
-            receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint, calibration_config,
+            receive_process_send(stop_event, statistics, parameter_queue, self.client, calibration_config,
                                  12001, MockBackgroundManager())
 
         thread = Thread(target=send)

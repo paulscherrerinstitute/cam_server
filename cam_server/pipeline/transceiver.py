@@ -1,12 +1,10 @@
 from logging import getLogger
 
-import time
-
 import numpy
 from bsread import Source, PUB, SUB
 from bsread.sender import Sender
 
-from cam_server import config, CamClient
+from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import get_host_port_from_stream_address
 from zmq import Again
@@ -15,7 +13,7 @@ _logger = getLogger(__name__)
 
 
 def receive_process_send(stop_event, statistics, parameter_queue,
-                         cam_api_endpoint, pipeline_config, output_stream_port, background_manager):
+                         cam_client, pipeline_config, output_stream_port, background_manager):
     def no_client_timeout():
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance." %
                         config.MFLOW_NO_CLIENTS_TIMEOUT)
@@ -26,9 +24,7 @@ def receive_process_send(stop_event, statistics, parameter_queue,
         pipeline_parameters = pipeline_config.get_parameters()
         image_background_array = background_manager.get_background(pipeline_config.get_background_id())
 
-        client = CamClient(cam_api_endpoint)
-
-        x_size, y_size = client.get_camera_geometry(pipeline_config.get_camera_name())
+        x_size, y_size = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
 
         calibration = pipeline_parameters.get("calibration")
         if calibration:
@@ -37,7 +33,7 @@ def receive_process_send(stop_event, statistics, parameter_queue,
             x_axis = numpy.linspace(0, x_size - 1, x_size, dtype='f')
             y_axis = numpy.linspace(0, y_size - 1, y_size, dtype='f')
 
-        camera_stream_address = client.get_camera_stream(pipeline_config.get_camera_name())
+        camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
 
         source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
@@ -46,6 +42,9 @@ def receive_process_send(stop_event, statistics, parameter_queue,
         sender = Sender(port=output_stream_port, mode=PUB)
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
         # TODO: Register proper channels.
+
+        # Indicate that the startup was successful.
+        stop_event.clear()
 
         while not stop_event.is_set():
             try:
