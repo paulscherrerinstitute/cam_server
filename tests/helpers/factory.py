@@ -15,7 +15,7 @@ def get_test_instance_manager():
 
 def get_test_pipeline_manager():
     config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
-    pipeline_instance_manager = PipelineInstanceManager(config_manager, MockCamServerClient())
+    pipeline_instance_manager = PipelineInstanceManager(config_manager, MockCamServerClient(), MockBackgroundManager())
 
     return pipeline_instance_manager
 

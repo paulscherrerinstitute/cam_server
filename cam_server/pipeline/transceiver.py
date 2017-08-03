@@ -4,20 +4,25 @@ import time
 from bsread import Source, PUB
 from bsread.sender import Sender
 
-from cam_server import config
+from cam_server import config, CamClient
 from cam_server.pipeline.data_processing.processor import process_image
+from cam_server.utils import get_host_port_from_stream_address
 from zmq import Again
 
 _logger = getLogger(__name__)
 
 
 def receive_process_send(stop_event, statistics, parameter_queue,
-                         source_host, source_port, pipeline_config, output_stream_port, background_manager):
+                         cam_api_endpoint, pipeline_config, output_stream_port, background_manager):
     def no_client_timeout():
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance." %
                         config.MFLOW_NO_CLIENTS_TIMEOUT)
         stop_event.set()
     try:
+
+        client = CamClient(cam_api_endpoint)
+        camera_stream_address = client.get_camera_stream(pipeline_config.get_camera_name())
+        source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
 
         source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT)
         source.connect()

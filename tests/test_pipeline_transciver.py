@@ -1,7 +1,6 @@
 import os
 import signal
 import unittest
-from functools import partial
 
 from multiprocessing import Process, Event
 from threading import Thread
@@ -9,7 +8,7 @@ from time import sleep
 
 import multiprocessing
 
-from bsread import Source, SUB, source
+from bsread import SUB, source
 from cam_server import CamClient
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
@@ -33,8 +32,8 @@ class PipelineTransceiverTest(unittest.TestCase):
         # Give it some time to start.
         sleep(0.5)
 
-        server_address = "http://%s:%s" % (self.host, self.port)
-        self.client = CamClient(server_address)
+        self.rest_api_endpoint = "http://%s:%s" % (self.host, self.port)
+        self.client = CamClient(self.rest_api_endpoint)
 
     def tearDown(self):
         self.client.stop_all_cameras()
@@ -58,20 +57,51 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         pipeline_config = PipelineConfig("test_pipeline")
 
-        camera_stream_address = self.client.get_camera_stream("simulation")
-        host, port = get_host_port_from_stream_address(camera_stream_address)
-
         def send():
-            receive_process_send(stop_event, statistics, parameter_queue, host, port, pipeline_config, 12000,
-                                 MockBackgroundManager())
+            receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint,
+                                 pipeline_config, 12000, MockBackgroundManager())
 
         thread = Thread(target=send)
         thread.start()
 
         with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
-            self.assertIsNotNone(stream.receive(), "Received None message.")
+            data = stream.receive()
+            self.assertIsNotNone(data, "Received None message.")
 
         thread.join()
+
+    def test_pipeline_background_manager(self):
+        manager = multiprocessing.Manager()
+        stop_event = multiprocessing.Event()
+        statistics = manager.Namespace()
+        parameter_queue = multiprocessing.Queue()
+
+        camera_stream_address = self.client.get_camera_stream("simulation")
+        host, port = get_host_port_from_stream_address(camera_stream_address)
+
+        pipeline_config = PipelineConfig("test_pipeline", parameters={
+            "camera_name": "simulation",
+            "image_background": "full_background"
+        })
+
+        receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint, pipeline_config, 12000,
+                             MockBackgroundManager())
+
+        # camera_stream_address = self.client.get_camera_stream("simulation")
+        # host, port = get_host_port_from_stream_address(camera_stream_address)
+        #
+        # def send():
+        #     receive_process_send(stop_event, statistics, parameter_queue, host, port, pipeline_config, 12000,
+        #                          MockBackgroundManager())
+        #
+        # thread = Thread(target=send)
+        # thread.start()
+        #
+        # with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
+        #     data = stream.receive()
+        #     self.assertIsNotNone(data, "Received None message.")
+        #
+        # thread.join()
 
 if __name__ == '__main__':
     unittest.main()
