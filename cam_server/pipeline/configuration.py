@@ -64,7 +64,10 @@ class BackgroundImageManager(object):
         self.background_folder = background_folder
 
     def get_background(self, background_name):
-        pass
+        if not background_name:
+            return None
+
+        return None
 
     def save_background(self, background_name, image):
         pass
@@ -92,6 +95,9 @@ class PipelineConfig:
         self.validate_pipeline_config(self.parameters)
         # We do not want to pass by reference - someone might change the dictionary.
         return copy.deepcopy(self.parameters)
+
+    def get_background_id(self):
+        return self.parameters.get("image_background")
 
     @staticmethod
     def validate_pipeline_config(configuration):

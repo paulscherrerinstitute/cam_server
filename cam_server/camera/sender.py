@@ -17,42 +17,61 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
     :param port: Port to use to bind the output stream.
     """
 
-    # If there is no client for some time, disconnect.
-    def no_client_timeout():
-        _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %
-                     (camera.get_name(), config.MFLOW_NO_CLIENTS_TIMEOUT))
-        stop_event.set()
+    try:
 
-    sender = Sender(port=port, send_timeout=config.CAMERA_SEND_TIMEOUT)
+        # If there is no client for some time, disconnect.
+        def no_client_timeout():
+            _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %
+                         (camera.get_name(), config.MFLOW_NO_CLIENTS_TIMEOUT))
+            stop_event.set()
 
-    # Register the bsread channels - compress only the image.
-    # TODO: Add channel "type" to metadata.
-    sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION})
-    sender.add_channel("timestamp", metadata={"compression": None})
+        camera.connect()
+        x_axis, y_axis = camera.get_x_y_axis()
+        x_size, y_size = camera.get_geometry()
 
-    sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
+        sender = Sender(port=port, send_timeout=config.CAMERA_SEND_TIMEOUT)
 
-    camera.connect()
+        # Register the bsread channels - compress only the image.
+        # TODO: Add channel "type" to metadata.
+        sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
+                                              "shape": [y_size, x_size],
+                                              "type": "float32"})
+        sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
+                                               "type": "float64"})
+        sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
+                                               "type": "float64"})
+        sender.add_channel("timestamp", metadata={"compression": None,
+                                                  "type": "float64"})
 
-    statistics.counter = 0
+        sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
 
-    def collect_and_send(image, timestamp):
-        # Data to be sent over the stream.
-        data = {"image": image,
-                "timestamp": timestamp}
+        statistics.counter = 0
 
-        try:
-            sender.send(data=data, check_data=False)
-        except Again:
-            _logger.warning("Send timeout. Lost image with timestamp '%s'." % timestamp)
+        def collect_and_send(image, timestamp):
+            # Data to be sent over the stream.
+            data = {"image": image,
+                    "x_axis": x_axis,
+                    "y_axis": y_axis,
+                    "timestamp": timestamp}
 
-    camera.add_callback(collect_and_send)
+            try:
+                sender.send(data=data, check_data=False)
+            except Again:
+                _logger.warning("Send timeout. Lost image with timestamp '%s'." % timestamp)
 
-    # This signals that the camera has successfully started.
-    stop_event.clear()
+        camera.add_callback(collect_and_send)
 
-    # Wait for termination / update configuration / etc.
-    stop_event.wait()
+        # This signals that the camera has successfully started.
+        stop_event.clear()
 
-    camera.disconnect()
-    sender.close()
+    except Exception as e:
+        _logger.error(e)
+        print(e)
+
+    finally:
+
+        # Wait for termination / update configuration / etc.
+        stop_event.wait()
+
+        camera.disconnect()
+        sender.close()

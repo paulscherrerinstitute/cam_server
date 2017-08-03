@@ -1,4 +1,5 @@
 import numpy
+from cam_server import CamClient
 from cam_server.camera.configuration import CameraConfigManager
 from cam_server.camera.management import CameraInstanceManager
 from cam_server.pipeline.configuration import PipelineConfigManager
@@ -19,11 +20,21 @@ def get_test_pipeline_manager():
     return pipeline_instance_manager
 
 
-class MockBackgroundProvider:
+def get_test_pipeline_manager_with_real_cam():
+    config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
+    pipeline_instance_manager = PipelineInstanceManager(config_manager, CamClient("http://0.0.0.0:8888"))
+
+    return pipeline_instance_manager
+
+
+class MockBackgroundManager:
     def __init__(self):
         self.backgrounds = {}
 
     def get_background(self, background_name):
+        if not background_name:
+            return None
+
         return self.backgrounds[background_name]
 
     def save_background(self, background_name, image):

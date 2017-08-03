@@ -126,8 +126,8 @@ class Camera:
         if not self.width or not self.height:
             raise RuntimeError('Width and height of the cam_server not known yet - connect first')
 
-        x_axis = numpy.linspace(0, self.width - 1, self.width, dtype='f')
-        y_axis = numpy.linspace(0, self.height - 1, self.height, dtype='f')
+        x_axis = numpy.linspace(0, self.width - 1, self.width, dtype='f8')
+        y_axis = numpy.linspace(0, self.height - 1, self.height, dtype='f8')
 
         return x_axis, y_axis
 
@@ -208,8 +208,8 @@ class CameraSimulation:
         return image
 
     def get_x_y_axis(self):
-        x_axis = numpy.linspace(0, self.size_y - 1, self.size_y, dtype='f')
-        y_axis = numpy.linspace(0, self.size_x - 1, self.size_x, dtype='f')
+        x_axis = numpy.linspace(0, self.size_y - 1, self.size_y, dtype='f8')
+        y_axis = numpy.linspace(0, self.size_x - 1, self.size_x, dtype='f8')
         return y_axis, x_axis
 
     def connect(self):

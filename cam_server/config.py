@@ -28,8 +28,7 @@ DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 CAMERA_BSREAD_DATA_HEADER_COMPRESSION = None
 # Compression here might be a good idea. Use "bitshuffle_lz4" or None.
 CAMERA_BSREAD_IMAGE_COMPRESSION = None
-
-# Wait for a maximum of 500ms before exiting the send.
+# Maximum time to wait before aborting the send.
 CAMERA_SEND_TIMEOUT = 500
 
 #####################
@@ -40,8 +39,8 @@ CAMERA_SEND_TIMEOUT = 500
 PIPELINE_STREAM_PORT_RANGE = (11100, 12100)
 # Default folder for camera configs.
 DEFAULT_PIPELINE_CONFIG_FOLDER = "configuration/pipeline"
-# Receive timeout for the pipeline.
-PIPELINE_RECEIVE_TIMEOUT = 500
+# Maximum time to wait before aborting the receive.
+PIPELINE_RECEIVE_TIMEOUT = 1000
 
 ################
 # IPC settings #

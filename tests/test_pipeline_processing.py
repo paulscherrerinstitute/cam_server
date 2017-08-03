@@ -7,7 +7,7 @@ import numpy
 from cam_server.camera.receiver import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.data_processing.processor import process_image
-from tests.helpers.factory import MockBackgroundProvider
+from tests.helpers.factory import MockBackgroundManager
 
 
 class PipelineProcessingTest(unittest.TestCase):
@@ -52,7 +52,7 @@ class PipelineProcessingTest(unittest.TestCase):
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
 
-        background_provider = MockBackgroundProvider()
+        background_provider = MockBackgroundManager()
         x_size, y_size = simulated_camera.get_geometry()
         background_provider.save_background("white_background", numpy.zeros(shape=(y_size, x_size)))
 

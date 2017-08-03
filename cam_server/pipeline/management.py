@@ -13,10 +13,11 @@ _logger = getLogger(__name__)
 
 
 class PipelineInstanceManager(InstanceManager):
-    def __init__(self, config_manager, cam_server_client):
+    def __init__(self, config_manager, background_manager, cam_server_client):
         super(PipelineInstanceManager, self).__init__()
 
         self.config_manager = config_manager
+        self.background_manager = background_manager
         self.cam_server_client = cam_server_client
 
         self.port_generator = cycle(iter(range(*config.PIPELINE_STREAM_PORT_RANGE)))
@@ -43,8 +44,8 @@ class PipelineInstanceManager(InstanceManager):
 
         stream_port = next(self.port_generator)
 
-        camera_name = pipeline.camera_name
-        camera_stream_address = self.cam_server_client.get_camera_stream(camera_name)["stream"]
+        camera_name = pipeline.get_camera_name()
+        camera_stream_address = self.cam_server_client.get_camera_stream(camera_name)
 
         # Random uuid as the instance id.
         instance_id = uuid.uuid4()
@@ -57,10 +58,11 @@ class PipelineInstanceManager(InstanceManager):
             process_function=receive_process_send,
             pipeline_config=pipeline,
             output_stream_port=stream_port,
-            source_stream_address=camera_stream_address
+            source_stream_address=camera_stream_address,
+            background_manager=self.background_manager
         ))
 
-        self.start_instance(pipeline_name)
+        self.start_instance(instance_id)
 
         pipeline = self.get_instance(instance_id).get_stream_address()
 
@@ -88,6 +90,7 @@ class PipelineInstanceManager(InstanceManager):
                 pipeline_config=pipeline_config,
                 output_stream_port=stream_port,
                 source_stream_address=camera_stream_address,
+                background_manager=self.background_manager,
                 read_only_config=True  # Implicitly created instances are read only.
             ))
 
@@ -98,14 +101,15 @@ class PipelineInstanceManager(InstanceManager):
 
 class PipelineInstance(InstanceWrapper):
     def __init__(self, instance_id, process_function, pipeline_config, output_stream_port, source_stream_address,
-                 read_only_config=False):
+                 background_manager, read_only_config=False):
         source_host, source_port = get_host_port_from_stream_address(source_stream_address)
 
         super(PipelineInstance, self).__init__(instance_id, process_function,
-                                               source_host, source_port, pipeline_config, output_stream_port)
+                                               source_host, source_port, pipeline_config, output_stream_port,
+                                               background_manager)
 
         self.pipeline = pipeline_config
-        self.stream_address = "tcp://%s:%d" % (socket.gethostname(), self.stream_port)
+        self.stream_address = "tcp://%s:%d" % (socket.gethostname(), output_stream_port)
         self.read_only_config = read_only_config
 
     def get_info(self):
