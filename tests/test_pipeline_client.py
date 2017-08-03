@@ -61,7 +61,11 @@ class PipelineClientTest(unittest.TestCase):
         camera_config = self.pipeline_client.get_pipeline_config("example_4")
         self.pipeline_client.save_pipeline_config("testing_config", camera_config)
 
-        # TODO: Try to save invalid pipeline config.
+        with self.assertRaisesRegex(ValueError, "Config object cannot be empty"):
+            self.pipeline_client.save_pipeline_config("testing_config", {})
+
+        with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not found"):
+            self.pipeline_client.save_pipeline_config("testing_config", {"invalid": "config"})
 
         self.assertListEqual(self.pipeline_client.get_pipelines(), expected_pipelines + ["testing_config"],
                              "Testing config was not added.")
@@ -71,7 +75,14 @@ class PipelineClientTest(unittest.TestCase):
         self.assertEqual(len(self.pipeline_client.get_server_info()["active_instances"]), 1,
                          "Instance not started or too many instances started.")
 
-        # TODO: Try to change config of read only instance.
+        with self.assertRaisesRegex(ValueError, "Config object cannot be empty"):
+            self.pipeline_client.set_instance_config("testing_config", {})
+
+        with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not found"):
+            self.pipeline_client.set_instance_config("testing_config", {"invalid": "config"})
+
+        with self.assertRaisesRegex(ValueError, "Cannot set config on a read only instance."):
+            self.pipeline_client.set_instance_config("testing_config", {"camera_name": "simulation"})
 
         self.assertEqual(stream_address_1, stream_address_2, "Stream addresses should be equal.")
 
@@ -84,6 +95,7 @@ class PipelineClientTest(unittest.TestCase):
         instance_id_2, instance_stream_2 = self.pipeline_client.create_instance_from_name("testing_config")
 
         # TODO: try to change config of created instance on the fly.
+        # TODO: Try to change camera name on created instance.
 
         self.assertNotEqual(instance_id_1, instance_id_2, "Instances should be different.")
         self.assertNotEqual(instance_stream_1, instance_stream_2, "Stream addresses should be different.")

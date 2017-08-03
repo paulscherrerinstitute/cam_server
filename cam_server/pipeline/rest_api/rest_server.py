@@ -6,6 +6,7 @@ from bottle import request, response
 
 from cam_server import config
 from cam_server.instance_management import rest_api
+from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.utils import collect_background
 
 _logger = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         configuration = request.json
         # TODO: This call is to coupled. Remove the validation logic from the rest api.
         # TODO: Get instance current config and update it.
-        instance_manager.config_manager.validate_pipeline_config(configuration)
+        PipelineConfig.validate_pipeline_config(configuration)
 
         pipeline = instance_manager.get_instance(instance_id)
         pipeline.set_parameter(configuration)

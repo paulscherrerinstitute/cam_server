@@ -20,7 +20,7 @@ MFLOW_NO_CLIENTS_TIMEOUT = 3
 # Each camera config gets assigned one port. 1000 cameras per server should be enough.
 CAMERA_STREAM_PORT_RANGE = (10100, 11100)
 # Default folder for camera configs.
-DEFAULT_CAMERA_CONFIG_FOLDER = "configuration/cam"
+DEFAULT_CAMERA_CONFIG_FOLDER = "configuration/camera"
 # Default colormap to use when getting an image from the camera.
 DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 

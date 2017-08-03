@@ -1,0 +1,16 @@
+{
+    "camera_name": "SINEG01-DSCR190",
+    "name": "SINEG01-DSCR190",
+    "camera_calibration": {
+        "reference_marker_width": 30000.0,
+        "angle_vertical": 0.0,
+        "reference_marker": [
+            70,
+            48,
+            1191,
+            1176
+        ],
+        "reference_marker_height": 30000.0,
+        "angle_horizontal": 0.0
+    }
+}

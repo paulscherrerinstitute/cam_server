@@ -11,5 +11,5 @@
 
   "image_background": null,
   "image_threshold": 0.5,
-  "image_region_of_interest": [0, 100, 0, 100],
+  "image_region_of_interest": [0, 100, 0, 100]
 }

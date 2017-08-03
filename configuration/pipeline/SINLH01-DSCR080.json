@@ -1,0 +1,16 @@
+{
+    "camera_name": "SINLH01-DSCR080",
+    "name": "SINLH01-DSCR080",
+    "camera_calibration": {
+        "reference_marker_width": 16000.0,
+        "angle_vertical": 0.0,
+        "reference_marker": [
+            72,
+            10,
+            1141,
+            1185
+        ],
+        "reference_marker_height": 16000.0,
+        "angle_horizontal": 15.8
+    }
+}

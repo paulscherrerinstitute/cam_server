@@ -1,0 +1,16 @@
+{
+    "camera_name": "SINDI01-DSCR080",
+    "name": "SINDI01-DSCR080",
+    "camera_calibration": {
+        "reference_marker_width": 16000.0,
+        "angle_vertical": 0.0,
+        "reference_marker": [
+            61,
+            14,
+            1141,
+            1197
+        ],
+        "reference_marker_height": 16000.0,
+        "angle_horizontal": 15.8
+    }
+}

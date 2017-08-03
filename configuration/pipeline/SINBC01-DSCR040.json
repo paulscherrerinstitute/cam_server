@@ -1,0 +1,16 @@
+{
+    "camera_name": "SINBC01-DSCR040",
+    "name": "SINBC01-DSCR040",
+    "camera_calibration": {
+        "reference_marker_width": 16000.0,
+        "angle_vertical": 0.0,
+        "reference_marker": [
+            50,
+            5,
+            1114,
+            1181
+        ],
+        "reference_marker_height": 16000.0,
+        "angle_horizontal": 15.8
+    }
+}

@@ -1,0 +1,16 @@
+{
+    "camera_name": "SINEG01-DSCR350",
+    "name": "SINEG01-DSCR350",
+    "camera_calibration": {
+        "reference_marker_width": 16000.0,
+        "angle_vertical": 0.0,
+        "reference_marker": [
+            120,
+            245,
+            1251,
+            1504
+        ],
+        "reference_marker_height": 16000.0,
+        "angle_horizontal": 15.8
+    }
+}
