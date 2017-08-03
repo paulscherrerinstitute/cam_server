@@ -5,15 +5,15 @@ import unittest
 from multiprocessing import Process
 from time import sleep
 
+from bsread import source, SUB
 from cam_server import CamClient
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.start_cam_server import start_camera_server
-from cam_server.utils import collect_background
+from cam_server.utils import collect_background, get_host_port_from_stream_address
 from tests.helpers.factory import get_test_pipeline_manager, get_test_pipeline_manager_with_real_cam
 
 
 class PipelineManagerTest(unittest.TestCase):
-
     def setUp(self):
         self.host = "0.0.0.0"
         self.port = 8888
@@ -53,29 +53,42 @@ class PipelineManagerTest(unittest.TestCase):
                              "Set and received lists are not the same.")
 
     def test_create_pipeline_instance(self):
-        pass
-        # pipeline_manager = get_test_pipeline_manager_with_real_cam()
-        #
-        # pipeline_config = {
-        #     "camera_name": "simulation"
-        # }
-        #
-        # pipeline_manager.config_manager.save_pipeline_config("test_pipeline", pipeline_config)
-        #
-        # pipeline_id, stream_address = pipeline_manager.create_pipeline("test_pipeline")
+        # TODO: Test create pipeline, multiple instances, and setting parameters.
+        pipeline_manager = get_test_pipeline_manager_with_real_cam()
 
+        pipeline_config = {
+            "camera_name": "simulation"
+        }
 
-    def test_multiple_create_requests(self):
-        # TODO: Write tests.
-        pass
+        pipeline_manager.config_manager.save_pipeline_config("test_pipeline", pipeline_config)
 
-    def test_multiple_get_requests(self):
-        # TODO: Write tests.
-        pass
+        pipeline_id, stream_address = pipeline_manager.create_pipeline("test_pipeline")
 
     def test_get_instance_stream(self):
-        # TODO: Write tests.
-        pipeline_manager = get_test_pipeline_manager()
+        instance_manager = get_test_pipeline_manager_with_real_cam()
+        instance_manager.stop_all_instances()
+
+        self.assertTrue(len(instance_manager.get_info()["active_instances"]) == 0,
+                        "There should be no running instances.")
+
+        pipeline_id = "test_pipeline"
+        pipeline_config = PipelineConfig(pipeline_id, parameters={
+            "camera_name": "simulation"
+        })
+
+        instance_manager.config_manager.save_pipeline_config(pipeline_id, pipeline_config.get_parameters())
+        instance_stream_1 = instance_manager.get_instance_stream(pipeline_id)
+
+        self.assertTrue(instance_manager.get_info()["active_instances"][pipeline_id]["read_only"],
+                        "Instance should be read only.")
+
+        with self.assertRaisesRegex(ValueError, "Cannot set config on a read only instance."):
+            instance_manager.get_instance(pipeline_id).set_parameter({})
+
+        instance_stream_2 = instance_manager.get_instance_stream(pipeline_id)
+
+        self.assertEqual(instance_stream_1, instance_stream_2, "Only one instance should be present.")
+
 
     def test_pipeline_image(self):
         # TODO: Write tests.
@@ -93,13 +106,31 @@ class PipelineManagerTest(unittest.TestCase):
 
         instance_manager.config_manager.save_pipeline_config(pipeline_id, pipeline_config.get_parameters())
 
-        stream_address = instance_manager.get_instance_stream(pipeline_id)
+        pipeline_stream_address = instance_manager.get_instance_stream(pipeline_id)
+        pipeline_host, pipeline_port = get_host_port_from_stream_address(pipeline_stream_address)
+
+        # Collect from the pipeline.
+        with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
+            data = stream.receive()
+            self.assertIsNotNone(data, "This should really not happen anymore.")
+
         camera_name = instance_manager.get_instance(pipeline_id).get_info()["camera_name"]
-        background_id = collect_background(camera_name, stream_address, number_of_images,
+        background_id = collect_background(camera_name, pipeline_stream_address, number_of_images,
                                            instance_manager.background_manager)
 
-        print(background_id)
+        self.assertTrue(background_id.startswith("simulation"), "Background id not as expected.")
 
+        host, port = get_host_port_from_stream_address(instance_manager.
+                                                       cam_server_client.get_camera_stream("simulation"))
+
+        # Collect from the camera.
+        with source(host=host, port=port, mode=SUB) as stream:
+            data = stream.receive()
+            self.assertIsNotNone(data, "This should really not happen anymore.")
+
+        self.assertEqual(instance_manager.background_manager.get_background(background_id).shape,
+                         data.data.data["image"].value.shape,
+                         "Background and image have to be of the same shape.")
 
 
 if __name__ == '__main__':

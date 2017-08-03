@@ -20,6 +20,7 @@ def collect_background(camera_name, stream_address, n_images, background_manager
         for _ in range(n_images):
 
             data = stream.receive()
+            print(data)
             image = data.data.data["image"].value
 
             if accumulator_image is None:
@@ -31,4 +32,6 @@ def collect_background(camera_name, stream_address, n_images, background_manager
     background_image = accumulator_image / n_images
 
     background_manager.save_background(background_id, background_image)
+
+    return background_id
 
