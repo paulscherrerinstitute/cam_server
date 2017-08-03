@@ -115,7 +115,7 @@ class InstanceWrapper:
             # Check if the timeout has already elapsed.
             if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
                 self.process.terminate()
-                error_message = "Could not start the '%s' camera in time. Terminated. See cam_server logs." % \
+                error_message = "Could not start the '%s' instance in time. Terminated. See logs." % \
                                 self.instance_name
                 _logger.error(error_message)
                 raise Exception(error_message)
@@ -134,7 +134,7 @@ class InstanceWrapper:
             time.sleep(config.PROCESS_POLL_INTERVAL)
             # Check if the timeout has already elapsed.
             if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
-                _logger.warning("Could not stop the '%s' camera in time. Terminated.", self.instance_name)
+                _logger.warning("Could not stop the '%s' instance in time. Terminated.", self.instance_name)
                 break
 
         # Kill process - no-op in case process already terminated

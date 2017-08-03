@@ -32,21 +32,21 @@ class PipelineInstanceManager(InstanceManager):
         :param configuration: Configuration to load the pipeline with.
         :return: Pipeline stream address.
         """
+        # Random uuid as the instance id.
+        instance_id = str(uuid.uuid4())
+
         # You cannot specify both or none.
         if (pipeline_name is None) == (configuration is None):
             raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
 
         if configuration:
-            pipeline = PipelineConfig(pipeline_name, configuration)
+            pipeline = PipelineConfig(instance_id, configuration)
         else:
             pipeline = self.config_manager.load_pipeline(pipeline_name)
 
         stream_port = next(self.port_generator)
 
         camera_name = pipeline.get_camera_name()
-
-        # Random uuid as the instance id.
-        instance_id = str(uuid.uuid4())
 
         _logger.info("Creating pipeline '%s' on port '%d' for camera '%s'. instance_id=%s",
                      pipeline_name, stream_port, camera_name, instance_id)
@@ -130,6 +130,9 @@ class PipelineInstance(InstanceWrapper):
 
         # Update the parameters on the local instance as well.
         self.pipeline_config.parameters = parameters
+
+    def get_parameters(self):
+        return self.pipeline_config.get_parameters()
 
     def get_name(self):
         return self.pipeline_config.get_name()

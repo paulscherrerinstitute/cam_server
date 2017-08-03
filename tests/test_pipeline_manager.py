@@ -86,7 +86,6 @@ class PipelineManagerTest(unittest.TestCase):
 
         instance_manager.stop_all_instances()
 
-
     def test_get_instance_stream(self):
         instance_manager = get_test_pipeline_manager_with_real_cam()
         instance_manager.stop_all_instances()

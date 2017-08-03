@@ -3,6 +3,13 @@ import requests
 from cam_server import config
 
 
+def validate_response(server_response):
+    if server_response["state"] != "ok":
+        raise ValueError(server_response.get("status", "Unknown error occurred."))
+
+    return server_response
+
+
 class PipelineClient(object):
     def __init__(self, address="http://0.0.0.0:8888/"):
         """
@@ -18,7 +25,9 @@ class PipelineClient(object):
         :return: Status of the server
         """
         rest_endpoint = "/info"
-        return requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+
+        return validate_response(server_response)["info"]
 
     def get_pipelines(self):
         """
@@ -26,7 +35,9 @@ class PipelineClient(object):
         :return: Currently existing cameras.
         """
         rest_endpoint = ""
-        return requests.get(self.api_address_format % rest_endpoint).json()["pipelines"]
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+
+        return validate_response(server_response)["pipelines"]
 
     def get_pipeline_config(self, pipeline_name):
         """
@@ -35,7 +46,9 @@ class PipelineClient(object):
         :return: Pipeline configuration.
         """
         rest_endpoint = "/%s/config" % pipeline_name
-        return requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+
+        return validate_response(server_response)["config"]
 
     def get_instance_config(self, instance_id):
         """
@@ -44,9 +57,58 @@ class PipelineClient(object):
         :return: Pipeline configuration.
         """
         rest_endpoint = "/instance/%s/config" % instance_id
-        return requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
 
-    def set_pipeline_config(self, pipeline_name, configuration):
+        return validate_response(server_response)["config"]
+
+    def get_instance_info(self, instance_id):
+        """
+        Return the instance info.
+        :param instance_id: Id of the instance.
+        :return: Pipeline instance info.
+        """
+        rest_endpoint = "/instance/%s/info" % instance_id
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+
+        return validate_response(server_response)["info"]
+
+    def get_instance_stream(self, instance_id):
+        """
+        Return the instance stream. If the instance does not exist, it will be created.
+        Instance will be read only - no config changes will be allowed.
+        :param instance_id: Id of the instance.
+        :return: Pipeline instance stream.
+        """
+        rest_endpoint = "/instance/%s" % instance_id
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+
+        return validate_response(server_response)["stream"]
+
+    def create_instance_from_name(self, pipeline_name):
+        """
+        Create a pipeline from a config file. Pipeline config can be changed.
+        :param pipeline_name: Name of the pipeline to create.
+        :return: Pipeline instance stream.
+        """
+        rest_endpoint = "/%s" % pipeline_name
+        server_response = requests.post(self.api_address_format % rest_endpoint).json()
+        validate_response(server_response)
+
+        return server_response["instance_id"], server_response["stream"]
+
+    def create_instance_from_config(self, configuration):
+        """
+        Create a pipeline from the provided config. Pipeline config can be changed.
+        :param configuration: Config to use with the pipeline.
+        :return: Pipeline instance stream.
+        """
+        rest_endpoint = ""
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
+        validate_response(server_response)
+
+        return server_response["instance_id"], server_response["stream"]
+
+    def save_pipeline_config(self, pipeline_name, configuration):
         """
         Set config of the pipeline.
         :param pipeline_name: Pipeline to save the config for.
@@ -54,7 +116,9 @@ class PipelineClient(object):
         :return: Actual applied config.
         """
         rest_endpoint = "/%s/config" % pipeline_name
-        return requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
+
+        return validate_response(server_response)["config"]
 
     def set_instance_config(self, instance_id, configuration):
         """
@@ -64,22 +128,36 @@ class PipelineClient(object):
         :return: Actual applied config.
         """
         rest_endpoint = "/instance/%s/config" % instance_id
-        return requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
+
+        return validate_response(server_response)["config"]
 
     def stop_instance(self, pipeline_id):
         """
         Stop the pipeline.
         :param pipeline_id: Name of the pipeline to stop.
-        :return: Response.
         """
         rest_endpoint = "/%s" % pipeline_id
-        return requests.delete(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
+
+        validate_response(server_response)
 
     def stop_all_instances(self):
         """
         Stop all the pipelines on the server.
-        :return: Response.
         """
         rest_endpoint = ""
-        return requests.delete(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
 
+        validate_response(server_response)
+
+    def collect_background(self, instance_id):
+        """
+        Collect the background image on the selected instance.
+        :param instance_id: Instance to collect the background on.
+        :return: Background id.
+        """
+        rest_endpoint = "/instance/%s/background" % instance_id
+        server_response = requests.post(self.api_address_format % rest_endpoint).json()
+
+        return validate_response(server_response)["background_id"]
