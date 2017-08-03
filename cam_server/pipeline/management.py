@@ -7,7 +7,6 @@ from cam_server import config
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
-from cam_server.utils import get_host_port_from_stream_address
 
 _logger = getLogger(__name__)
 
@@ -125,6 +124,9 @@ class PipelineInstance(InstanceWrapper):
     def set_parameter(self, parameters):
         if self.read_only_config:
             raise ValueError("Cannot set config on a read only instance.")
+
+        if self.is_running() and self.pipeline_config.get_camera_name() != parameters["camera_name"]:
+            raise ValueError("Cannot change the camera name on a running instance. Stop the instance first.")
 
         super().set_parameter(parameters)
 
