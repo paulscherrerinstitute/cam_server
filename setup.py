@@ -22,9 +22,13 @@ setup(name="cam_server",
 
       packages=['cam_server',
                 "cam_server.camera",
-                "cam_server.rest_api"],
+                "cam_server.camera.rest_api",
+                "cam_server.instance_management",
+                "cam_server.pipeline",
+                "cam_server.pipeline.data_processing",
+                "cam_server.pipeline.rest_api"],
 
-      long_description=read('Readme.md'),
+      # long_description=read('Readme.md'),
 
       install_requires=[
           'requests',
