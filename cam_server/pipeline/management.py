@@ -37,7 +37,6 @@ class PipelineInstanceManager(InstanceManager):
             raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
 
         if configuration:
-            self.config_manager.validate_config(configuration)
             pipeline = PipelineConfig(pipeline_name, configuration)
         else:
             pipeline = self.config_manager.load_pipeline(pipeline_name)
@@ -47,7 +46,7 @@ class PipelineInstanceManager(InstanceManager):
         camera_name = pipeline.get_camera_name()
 
         # Random uuid as the instance id.
-        instance_id = uuid.uuid4()
+        instance_id = str(uuid.uuid4())
 
         _logger.info("Creating pipeline '%s' on port '%d' for camera '%s'. instance_id=%s",
                      pipeline_name, stream_port, camera_name, instance_id)
@@ -63,9 +62,9 @@ class PipelineInstanceManager(InstanceManager):
 
         self.start_instance(instance_id)
 
-        pipeline = self.get_instance(instance_id).get_stream_address()
+        pipeline = self.get_instance(instance_id)
 
-        return pipeline.get_id(), pipeline.get_stream_address()
+        return pipeline.get_instance_id(), pipeline.get_stream_address()
 
     def get_instance_stream(self, instance_id):
         if not self.is_instance_present(instance_id):
@@ -114,7 +113,7 @@ class PipelineInstance(InstanceWrapper):
                 "is_stream_active": self.is_running(),
                 "camera_name": self.pipeline_config.get_camera_name(),
                 "config": self.pipeline_config.get_parameters(),
-                "pipeline_name": self.instance_name,
+                "instance_id": self.get_instance_id(),
                 "read_only": self.read_only_config}
 
     def get_config(self):

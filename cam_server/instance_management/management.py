@@ -16,7 +16,7 @@ class InstanceManager(object):
         Return the instance manager info.
         :return: Dictionary with the info.
         """
-        info = {"active_instances": dict((instance.get_name(), instance.get_info())
+        info = {"active_instances": dict((instance.get_instance_id(), instance.get_info())
                                          for instance in self.instances.values() if instance.is_running())}
 
         return info
@@ -149,3 +149,6 @@ class InstanceWrapper:
 
     def is_running(self):
         return self.process and self.process.is_alive()
+
+    def get_instance_id(self):
+        return self.instance_name

@@ -53,16 +53,39 @@ class PipelineManagerTest(unittest.TestCase):
                              "Set and received lists are not the same.")
 
     def test_create_pipeline_instance(self):
-        # TODO: Test create pipeline, multiple instances, and setting parameters.
-        pipeline_manager = get_test_pipeline_manager_with_real_cam()
+        instance_manager = get_test_pipeline_manager_with_real_cam()
 
         pipeline_config = {
             "camera_name": "simulation"
         }
 
-        pipeline_manager.config_manager.save_pipeline_config("test_pipeline", pipeline_config)
+        instance_manager.config_manager.save_pipeline_config("test_pipeline", pipeline_config)
 
-        pipeline_id, stream_address = pipeline_manager.create_pipeline("test_pipeline")
+        pipeline_id_1, stream_address_1 = instance_manager.create_pipeline("test_pipeline")
+        pipeline_id_2, stream_address_2 = instance_manager.create_pipeline("test_pipeline")
+
+        self.assertNotEqual(pipeline_id_1, pipeline_id_2, "The pipeline ids should be different.")
+        self.assertNotEqual(stream_address_1, stream_address_2, "The pipeline streams should be different.")
+
+        self.assertFalse(instance_manager.get_info()["active_instances"][pipeline_id_1]["read_only"],
+                         "Instance should not be read only.")
+        self.assertFalse(instance_manager.get_info()["active_instances"][pipeline_id_2]["read_only"],
+                         "Instance should not be read only.")
+
+        pipeline_id_3, stream_address_3 = instance_manager.create_pipeline(configuration=pipeline_config)
+
+        self.assertNotEqual(pipeline_id_2, pipeline_id_3, "The pipeline ids should be different.")
+        self.assertNotEqual(stream_address_2, stream_address_3, "The pipeline streams should be different.")
+
+        self.assertFalse(instance_manager.get_info()["active_instances"][pipeline_id_3]["read_only"],
+                         "Instance should not be read only.")
+
+        with self.assertRaisesRegex(ValueError, "You must specify either the pipeline name or the "
+                                                "configuration for the pipeline."):
+            instance_manager.create_pipeline(pipeline_name="test_pipeline", configuration=pipeline_config)
+
+        instance_manager.stop_all_instances()
+
 
     def test_get_instance_stream(self):
         instance_manager = get_test_pipeline_manager_with_real_cam()
