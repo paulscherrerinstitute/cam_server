@@ -18,7 +18,11 @@ def receive_process_send(stop_event, statistics, parameter_queue,
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance." %
                         config.MFLOW_NO_CLIENTS_TIMEOUT)
         stop_event.set()
+
     try:
+
+        pipeline_parameters = pipeline_config.get_parameters()
+        image_background_array = background_manager.get_background(pipeline_config.get_background_id())
 
         client = CamClient(cam_api_endpoint)
         camera_stream_address = client.get_camera_stream(pipeline_config.get_camera_name())
@@ -29,10 +33,6 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
         sender = Sender(port=output_stream_port, send_timeout=config.CAMERA_SEND_TIMEOUT, mode=PUB)
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
-
-        pipeline_parameters = pipeline_config.get_parameters()
-        image_background_array = background_manager.get_background(pipeline_config.get_background_id())
-
         # TODO: Register proper channels.
 
         while not stop_event.is_set():
@@ -64,3 +64,4 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
     except:
         _logger.exception("Exception while trying to start the receive and process thread.")
+        raise

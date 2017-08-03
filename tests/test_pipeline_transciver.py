@@ -8,17 +8,16 @@ from time import sleep
 
 import multiprocessing
 
+import numpy
 from bsread import SUB, source
 from cam_server import CamClient
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
 from cam_server.start_cam_server import start_camera_server
-from cam_server.utils import get_host_port_from_stream_address
 from tests.helpers.factory import MockBackgroundManager
 
 
 class PipelineTransceiverTest(unittest.TestCase):
-
     def setUp(self):
         self.host = "0.0.0.0"
         self.port = 8888
@@ -68,6 +67,15 @@ class PipelineTransceiverTest(unittest.TestCase):
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
 
+            required_keys = set(['x_fit_standard_deviation', 'x_axis', 'y_fit_standard_deviation', 'x_center_of_mass',
+                                 'x_fit_amplitude', 'y_fit_mean', 'processing_parameters', 'timestamp',
+                                 'y_fit_gauss_function', 'y_profile', 'y_center_of_mass', 'x_fit_gauss_function',
+                                 'x_rms', 'y_rms', 'y_fit_amplitude', 'image', 'y_axis', 'min_value', 'x_fit_mean',
+                                 'max_value', 'x_fit_offset', 'x_profile', 'y_fit_offset'])
+
+            self.assertSetEqual(required_keys, set(data.data.data.keys()),
+                                "Missing required keys in pipeline output bsread message.")
+
         thread.join()
 
     def test_pipeline_background_manager(self):
@@ -76,32 +84,38 @@ class PipelineTransceiverTest(unittest.TestCase):
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
 
-        camera_stream_address = self.client.get_camera_stream("simulation")
-        host, port = get_host_port_from_stream_address(camera_stream_address)
-
         pipeline_config = PipelineConfig("test_pipeline", parameters={
             "camera_name": "simulation",
             "image_background": "full_background"
         })
 
-        receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint, pipeline_config, 12000,
-                             MockBackgroundManager())
+        background_manager = MockBackgroundManager()
 
-        # camera_stream_address = self.client.get_camera_stream("simulation")
-        # host, port = get_host_port_from_stream_address(camera_stream_address)
-        #
-        # def send():
-        #     receive_process_send(stop_event, statistics, parameter_queue, host, port, pipeline_config, 12000,
-        #                          MockBackgroundManager())
-        #
-        # thread = Thread(target=send)
-        # thread.start()
-        #
-        # with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
-        #     data = stream.receive()
-        #     self.assertIsNotNone(data, "Received None message.")
-        #
-        # thread.join()
+        with self.assertRaises(Exception):
+            receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint, pipeline_config,
+                                 12000, background_manager)
+
+        simulated_camera_shape = (960, 1280)
+
+        background_array = numpy.zeros(shape=simulated_camera_shape)
+        background_array.fill(99999)
+        background_manager.save_background("full_background", background_array)
+
+        def send():
+            receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint, pipeline_config,
+                                 12000, background_manager)
+
+        thread = Thread(target=send)
+        thread.start()
+
+        with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
+            data = stream.receive()
+
+            self.assertIsNotNone(data, "Received None message.")
+            self.assertTrue(numpy.array_equal(data.data.data["image"].value, numpy.zeros(shape=simulated_camera_shape)))
+
+        thread.join()
+
 
 if __name__ == '__main__':
     unittest.main()
