@@ -116,6 +116,43 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         thread.join()
 
+    def test_pipeline_camera_calibration(self):
+        manager = multiprocessing.Manager()
+        stop_event = multiprocessing.Event()
+        statistics = manager.Namespace()
+        parameter_queue = multiprocessing.Queue()
+
+        # This is the "neutral" calibration - it should not change the image.
+        calibration_config = PipelineConfig("test_pipeline", parameters={
+            "camera_name": "simulation",
+            "calibration": {
+                "reference_marker": [0, 0, 100, 100],
+                "reference_marker_width": 100.0,
+                "reference_marker_height": 100.0,
+                "angle_horizontal": 0.0,
+                "angle_vertical": 0.0
+            }
+        })
+
+        def send():
+            receive_process_send(stop_event, statistics, parameter_queue, self.rest_api_endpoint, calibration_config,
+                                 12001, MockBackgroundManager())
+
+        thread = Thread(target=send)
+        thread.start()
+
+        with source(host="127.0.0.1", port=12001, mode=SUB) as stream:
+            data = stream.receive()
+            x_axis = data.data.data["x_axis"].value
+            y_axis = data.data.data["y_axis"].value
+
+            self.assertIsNotNone(x_axis, "x_axis is None.")
+            self.assertIsNotNone(y_axis, "y_axis is None.")
+
+        thread.join()
+
+        # TODO: How to test if the calibration was correct?
+
 
 if __name__ == '__main__':
     unittest.main()

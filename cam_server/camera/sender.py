@@ -36,10 +36,6 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
                                               "shape": [y_size, x_size],
                                               "type": "float32"})
-        sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
-                                               "type": "float64"})
-        sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
-                                               "type": "float64"})
         sender.add_channel("timestamp", metadata={"compression": None,
                                                   "type": "float64"})
 
@@ -50,8 +46,6 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         def collect_and_send(image, timestamp):
             # Data to be sent over the stream.
             data = {"image": image,
-                    "x_axis": x_axis,
-                    "y_axis": y_axis,
                     "timestamp": timestamp}
 
             try:

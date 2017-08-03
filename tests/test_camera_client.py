@@ -63,7 +63,7 @@ class CameraClientTest(unittest.TestCase):
             data = stream.receive()
             self.assertIsNotNone(data, "Received data was none.")
 
-            required_fields = set(["image", "timestamp", "x_axis", "y_axis"])
+            required_fields = set(["image", "timestamp"])
             self.assertSetEqual(required_fields, set(data.data.data.keys()), "Required fields missing.")
 
             image = data.data.data["image"].value
