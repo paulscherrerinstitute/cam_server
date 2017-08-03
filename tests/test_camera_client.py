@@ -9,7 +9,7 @@ from bsread import source, SUB
 
 from cam_server import CamClient
 from cam_server.camera.receiver import CameraSimulation
-from cam_server.start_cam_server import start_camera_server
+from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import get_host_port_from_stream_address
 
 

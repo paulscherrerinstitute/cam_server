@@ -8,7 +8,7 @@ from time import sleep
 from bsread import source, SUB
 from cam_server import CamClient
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server.start_cam_server import start_camera_server
+from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import collect_background, get_host_port_from_stream_address
 from tests.helpers.factory import get_test_pipeline_manager, get_test_pipeline_manager_with_real_cam
 

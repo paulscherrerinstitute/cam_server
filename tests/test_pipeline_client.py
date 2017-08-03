@@ -6,7 +6,7 @@ from multiprocessing import Process
 from time import sleep
 
 from cam_server import CamClient, PipelineClient
-from cam_server.start_cam_server import start_camera_server
+from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
 
 

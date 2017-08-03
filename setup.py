@@ -29,14 +29,4 @@ setup(name="cam_server",
                 "cam_server.pipeline.rest_api"],
 
       # long_description=read('Readme.md'),
-
-      install_requires=[
-          'requests',
-          'bsread',
-          'bottle',
-          'numpy',
-          'scipy',
-          'pyepics',
-          'matplotlib',
-          'pillow'],
       )

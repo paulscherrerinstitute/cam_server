@@ -34,7 +34,7 @@ def start_camera_server(host, port, config_base):
         camera_instance_manager.stop_all_instances()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description='Camera acquisition server')
     parser.add_argument('-p', '--port', default=8888, help="Server cam_port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
@@ -49,3 +49,6 @@ if __name__ == "__main__":
     logging.basicConfig(level=arguments.log_level)
 
     start_camera_server(arguments.interface, arguments.port, arguments.base)
+
+if __name__ == "__main__":
+    main()

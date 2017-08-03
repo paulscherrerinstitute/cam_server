@@ -20,12 +20,12 @@ requirements:
         - scipy
         - pyepics
         - matplotlib
-        - Pillow
+        - pillow
 
 build:
   entry_points:
-    - cam_server = cam_server.start_cam_server
-    - pipeline_server = cam_server.start_pipeline_server
+    - camera_server = cam_server.start_camera_server:main
+    - pipeline_server = cam_server.start_pipeline_server:main
 
 about:
     home: https://git.psi.ch/controls_highlevel_applications/cam_server

@@ -13,7 +13,7 @@ from bsread import SUB, source
 from cam_server import CamClient
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
-from cam_server.start_cam_server import start_camera_server
+from cam_server.start_camera_server import start_camera_server
 from tests.helpers.factory import MockBackgroundManager
 
 

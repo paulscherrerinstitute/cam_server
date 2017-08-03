@@ -41,7 +41,7 @@ def start_pipeline_server(host, port, config_base, background_base, cam_server_a
         pipeline_instance_manager.stop_all_instances()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description='Pipeline processing server')
     parser.add_argument("-c", '--cam_server', default="http://0.0.0.0:8888", help="Cam server rest api address.")
     parser.add_argument('-p', '--port', default=8889, help="Server port")
@@ -60,3 +60,7 @@ if __name__ == "__main__":
 
     start_pipeline_server(arguments.interface, arguments.port, arguments.base,
                           arguments.background_base, arguments.cam_server)
+
+
+if __name__ == "__main__":
+    main()
