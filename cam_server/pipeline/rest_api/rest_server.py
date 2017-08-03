@@ -26,6 +26,16 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     # Register instance management API.
     rest_api.register_rest_interface(app, instance_manager, api_root_address)
 
+    @app.get(api_root_address)
+    def get_pipeline_list():
+        """
+        Return the list of available pipelines.
+        :return:
+        """
+        return {"state": "ok",
+                "status": "List of available cameras.",
+                "pipelines": instance_manager.get_pipeline_list()}
+
     @app.post(api_root_address)
     def create_pipeline():
         pipeline_config = request.json

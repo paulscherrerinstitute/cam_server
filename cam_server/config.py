@@ -37,6 +37,8 @@ CAMERA_BSREAD_IMAGE_COMPRESSION = None
 PIPELINE_STREAM_PORT_RANGE = (11100, 12100)
 # Default folder for camera configs.
 DEFAULT_PIPELINE_CONFIG_FOLDER = "configuration/pipeline"
+# Where to store the backgrounds by default.
+DEFAULT_BACKGROUND_CONFIG_FOLDER = "configuration/background"
 # Maximum time to wait before aborting the receive.
 PIPELINE_RECEIVE_TIMEOUT = 1000
 

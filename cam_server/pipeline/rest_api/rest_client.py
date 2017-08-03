@@ -26,7 +26,7 @@ class PipelineClient(object):
         :return: Currently existing cameras.
         """
         rest_endpoint = ""
-        return requests.get(self.api_address_format % rest_endpoint).json()
+        return requests.get(self.api_address_format % rest_endpoint).json()["pipelines"]
 
     def get_pipeline_config(self, pipeline_name):
         """
