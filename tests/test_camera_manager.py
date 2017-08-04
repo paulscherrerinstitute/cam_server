@@ -6,8 +6,10 @@ from PIL import Image
 from io import BytesIO
 
 from cam_server import config
+from cam_server.camera.configuration import CameraConfigManager
+from cam_server.camera.management import CameraInstanceManager
 from cam_server.pipeline.data_processing.functions import get_png_from_image
-from tests.helpers.factory import get_test_instance_manager
+from tests.helpers.factory import get_test_instance_manager, MockConfigStorage
 
 
 class CameraTest(unittest.TestCase):
@@ -110,6 +112,15 @@ class CameraTest(unittest.TestCase):
 
     def test_camera_settings_change(self):
         pass
+
+    def test_custom_hostname(self):
+        config_manager = CameraConfigManager(config_provider=MockConfigStorage())
+        camera_instance_manager = CameraInstanceManager(config_manager, hostname="custom_cam_hostname")
+
+        stream_address = camera_instance_manager.get_camera_stream("simulation")
+        self.assertTrue(stream_address.startswith("tcp://custom_cam_hostname"))
+
+        camera_instance_manager.stop_all_instances()
 
 if __name__ == '__main__':
     unittest.main()

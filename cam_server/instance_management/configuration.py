@@ -13,6 +13,9 @@ class ConfigFileStorage(object):
         :param config_folder: Config folder to search for camera definition. If None, default from config.py will
         be used.
         """
+
+        # TODO: Format the config folder (/ should not matter at the end).
+
         if not config_folder:
             config_folder = config.DEFAULT_CAMERA_CONFIG_FOLDER
         self.config_folder = config_folder

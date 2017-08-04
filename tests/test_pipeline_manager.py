@@ -7,10 +7,12 @@ from time import sleep
 
 from bsread import source, SUB
 from cam_server import CamClient
-from cam_server.pipeline.configuration import PipelineConfig
+from cam_server.pipeline.configuration import PipelineConfig, PipelineConfigManager
+from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import collect_background, get_host_port_from_stream_address
-from tests.helpers.factory import get_test_pipeline_manager, get_test_pipeline_manager_with_real_cam
+from tests.helpers.factory import get_test_pipeline_manager, get_test_pipeline_manager_with_real_cam, MockConfigStorage, \
+    MockBackgroundManager
 
 
 class PipelineManagerTest(unittest.TestCase):
@@ -151,6 +153,17 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertEqual(instance_manager.background_manager.get_background(background_id).shape,
                          data.data.data["image"].value.shape,
                          "Background and image have to be of the same shape.")
+
+    def test_custom_hostname(self):
+        config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
+        pipeline_instance_manager = PipelineInstanceManager(config_manager, MockBackgroundManager(),
+                                                            CamClient("http://0.0.0.0:8888"),
+                                                            hostname="custom_cam_hostname")
+
+        _, stream_address = pipeline_instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        self.assertTrue(stream_address.startswith("tcp://custom_cam_hostname"))
+
 
 
 if __name__ == '__main__':

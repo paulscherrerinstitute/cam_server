@@ -14,7 +14,7 @@ from cam_server.instance_management.configuration import ConfigFileStorage
 _logger = logging.getLogger(__name__)
 
 
-def start_pipeline_server(host, port, config_base, background_base, cam_server_api_address):
+def start_pipeline_server(host, port, config_base, background_base, cam_server_api_address, hostname=None):
 
     # Check if config directory exists
     if not os.path.isdir(config_base):
@@ -25,10 +25,14 @@ def start_pipeline_server(host, port, config_base, background_base, cam_server_a
         _logger.error("Background image directory '%s' does not exist." % background_base)
         exit(-1)
 
+    if hostname:
+        _logger.warning("Using custom hostname '%s'." % hostname)
+
     cam_server_client = CamClient(cam_server_api_address)
     config_manager = PipelineConfigManager(config_provider=ConfigFileStorage(config_base))
     background_manager = BackgroundImageManager(background_base)
-    pipeline_instance_manager = PipelineInstanceManager(config_manager, background_manager, cam_server_client)
+    pipeline_instance_manager = PipelineInstanceManager(config_manager, background_manager, cam_server_client,
+                                                        hostname=hostname)
 
     app = bottle.Bottle()
 
@@ -49,6 +53,7 @@ def main():
     parser.add_argument('-b', '--base', default=config.DEFAULT_PIPELINE_CONFIG_FOLDER,
                         help="(Pipeline) Configuration base directory")
     parser.add_argument('-g', '--background_base', default=config.DEFAULT_BACKGROUND_CONFIG_FOLDER)
+    parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
 
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
@@ -59,7 +64,8 @@ def main():
     logging.basicConfig(level=arguments.log_level)
 
     start_pipeline_server(arguments.interface, arguments.port, arguments.base,
-                          arguments.background_base, arguments.cam_server)
+                          arguments.background_base, arguments.cam_server,
+                          arguments.hostname)
 
 
 if __name__ == "__main__":
