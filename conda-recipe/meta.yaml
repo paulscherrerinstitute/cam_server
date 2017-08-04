@@ -1,18 +1,19 @@
 package:
     name: cam_server
-    version: 0.0.1
-
-build:
-  number: 0
+    version: 0.0.3
 
 source:
     path: ..
+
+build:
+    number: 0
 
 requirements:
     build:
         - python
 
     run:
+        - python
         - requests
         - bsread >=0.9.3
         - bottle

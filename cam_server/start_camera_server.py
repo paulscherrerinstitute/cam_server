@@ -13,15 +13,18 @@ from cam_server.camera.rest_api.rest_server import register_rest_interface as re
 _logger = logging.getLogger(__name__)
 
 
-def start_camera_server(host, port, config_base):
+def start_camera_server(host, port, config_base, hostname=None):
 
     # Check if config directory exists
     if not os.path.isdir(config_base):
         _logger.error("Configuration directory '%s' does not exist." % config_base)
         exit(-1)
 
+    if hostname:
+        _logger.warning("Using custom hostname '%s'." % hostname)
+
     config_manager = CameraConfigManager(config_provider=ConfigFileStorage(config_base))
-    camera_instance_manager = CameraInstanceManager(config_manager)
+    camera_instance_manager = CameraInstanceManager(config_manager, hostname=hostname)
 
     app = bottle.Bottle()
 
@@ -40,6 +43,7 @@ def main():
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
     parser.add_argument('-b', '--base', default=config.DEFAULT_CAMERA_CONFIG_FOLDER,
                         help="(Camera) Configuration base directory")
+    parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
@@ -48,7 +52,7 @@ def main():
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
 
-    start_camera_server(arguments.interface, arguments.port, arguments.base)
+    start_camera_server(arguments.interface, arguments.port, arguments.base, arguments.hostname)
 
 if __name__ == "__main__":
     main()

@@ -12,12 +12,13 @@ _logger = getLogger(__name__)
 
 
 class PipelineInstanceManager(InstanceManager):
-    def __init__(self, config_manager, background_manager, cam_server_client):
+    def __init__(self, config_manager, background_manager, cam_server_client, hostname=None):
         super(PipelineInstanceManager, self).__init__()
 
         self.config_manager = config_manager
         self.background_manager = background_manager
         self.cam_server_client = cam_server_client
+        self.hostname = hostname
 
         self.port_generator = cycle(iter(range(*config.PIPELINE_STREAM_PORT_RANGE)))
 
@@ -56,7 +57,8 @@ class PipelineInstanceManager(InstanceManager):
             pipeline_config=pipeline,
             output_stream_port=stream_port,
             cam_client=self.cam_server_client,
-            background_manager=self.background_manager
+            background_manager=self.background_manager,
+            hostname=self.hostname
         ))
 
         self.start_instance(instance_id)
@@ -87,6 +89,7 @@ class PipelineInstanceManager(InstanceManager):
                 output_stream_port=stream_port,
                 cam_client=self.cam_server_client,
                 background_manager=self.background_manager,
+                hostname=self.hostname,
                 read_only_config=True  # Implicitly created instances are read only.
             ))
 
@@ -97,14 +100,18 @@ class PipelineInstanceManager(InstanceManager):
 
 class PipelineInstance(InstanceWrapper):
     def __init__(self, instance_id, process_function, pipeline_config, output_stream_port, cam_client,
-                 background_manager, read_only_config=False):
+                 background_manager, hostname=None, read_only_config=False):
 
         super(PipelineInstance, self).__init__(instance_id, process_function,
                                                cam_client, pipeline_config, output_stream_port,
                                                background_manager)
 
         self.pipeline_config = pipeline_config
-        self.stream_address = "tcp://%s:%d" % (socket.gethostname(), output_stream_port)
+
+        if not hostname:
+            hostname = socket.gethostname()
+
+        self.stream_address = "tcp://%s:%d" % (hostname, output_stream_port)
         self.read_only_config = read_only_config
 
     def get_info(self):

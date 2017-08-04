@@ -9,11 +9,12 @@ _logger = getLogger(__name__)
 
 
 class CameraInstanceManager(InstanceManager):
-    def __init__(self, config_manager):
+    def __init__(self, config_manager, hostname=None):
         super(CameraInstanceManager, self).__init__()
 
         self.config_manager = config_manager
         self.port_generator = iter(range(*config.CAMERA_STREAM_PORT_RANGE))
+        self.hostname = hostname
 
     def get_camera_list(self):
         return self.config_manager.get_camera_list()
@@ -35,7 +36,8 @@ class CameraInstanceManager(InstanceManager):
             self.add_instance(camera_name, CameraInstanceWrapper(
                 process_function=process_camera_stream,
                 camera=self.config_manager.load_camera(camera_name),
-                stream_port=stream_port
+                stream_port=stream_port,
+                hostname=self.hostname
             ))
 
         self.start_instance(camera_name)
@@ -44,13 +46,17 @@ class CameraInstanceManager(InstanceManager):
 
 
 class CameraInstanceWrapper(InstanceWrapper):
-    def __init__(self, process_function, camera, stream_port):
+    def __init__(self, process_function, camera, stream_port, hostname=None):
 
         super(CameraInstanceWrapper, self).__init__(camera.get_name(), process_function,
                                                     camera, stream_port)
 
         self.camera = camera
-        self.stream_address = "tcp://%s:%d" % (socket.gethostname(), stream_port)
+
+        if not hostname:
+            hostname = socket.gethostname()
+
+        self.stream_address = "tcp://%s:%d" % (hostname, stream_port)
 
     def get_info(self):
         return {"stream_address": self.stream_address,
