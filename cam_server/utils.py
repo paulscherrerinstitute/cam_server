@@ -1,7 +1,10 @@
 from datetime import datetime
+from logging import getLogger
 
 import numpy
 from bsread import source, SUB
+
+_logger = getLogger(__name__)
 
 
 def get_host_port_from_stream_address(stream_address):
@@ -13,25 +16,31 @@ def get_host_port_from_stream_address(stream_address):
 
 def collect_background(camera_name, stream_address, n_images, background_manager):
 
-    host, port = get_host_port_from_stream_address(stream_address)
-    accumulator_image = None
+    try:
 
-    with source(host=host, port=port, mode=SUB) as stream:
-        for _ in range(n_images):
+        host, port = get_host_port_from_stream_address(stream_address)
+        accumulator_image = None
 
-            data = stream.receive()
-            print(data)
-            image = data.data.data["image"].value
+        with source(host=host, port=port, mode=SUB) as stream:
+            for _ in range(n_images):
 
-            if accumulator_image is None:
-                accumulator_image = numpy.array(image)
-            else:
-                accumulator_image += image
+                data = stream.receive()
+                print(data)
+                image = data.data.data["image"].value
 
-    background_id = camera_name + datetime.now().strftime("_%Y%m%d_%H%M%S_%f")
-    background_image = accumulator_image / n_images
+                if accumulator_image is None:
+                    accumulator_image = numpy.array(image)
+                else:
+                    accumulator_image += image
 
-    background_manager.save_background(background_id, background_image)
+        background_id = camera_name + datetime.now().strftime("_%Y%m%d_%H%M%S_%f")
+        background_image = accumulator_image / n_images
 
-    return background_id
+        background_manager.save_background(background_id, background_image)
+
+        return background_id
+
+    except:
+        _logger.exception("Error while collecting background.")
+        raise
 

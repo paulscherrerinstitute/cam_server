@@ -26,7 +26,6 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
         offset_x, size_x, offset_y, size_y = image_region_of_interest
         image = functions.get_region_of_interest(image, offset_x, size_x, offset_y, size_y)
 
-        # TODO To be optimized - how?
         # Apply roi to geometry x_axis and y_axis
         x_axis = x_axis[offset_x:offset_x + size_x]
         y_axis = y_axis[offset_y:offset_y + size_y]

@@ -1,6 +1,8 @@
 from collections import OrderedDict
 
 import copy
+import os
+import numpy
 
 
 class PipelineConfigManager(object):
@@ -67,10 +69,12 @@ class BackgroundImageManager(object):
         if not background_name:
             return None
 
-        return None
+        background_filename = os.path.join(self.background_folder, background_name + ".npy")
+        return numpy.load(background_filename)
 
     def save_background(self, background_name, image):
-        pass
+        background_filename = os.path.join(self.background_folder, background_name + ".npy")
+        numpy.save(background_filename, image)
 
 
 class PipelineConfig:

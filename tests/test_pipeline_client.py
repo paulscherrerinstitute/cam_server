@@ -124,12 +124,16 @@ class PipelineClientTest(unittest.TestCase):
         #                  "A new instance from config was created.")
         #
 
+        background_id = self.pipeline_client.collect_background("simulation")
+        expected_background_file = os.path.join(self.background_config_folder, background_id + ".npy")
+
+        self.assertTrue(os.path.exists(expected_background_file))
+        # os.remove(expected_background_file)
+
         # self.pipeline_client.get_instance_config(instance_id)
         # self.pipeline_client.set_instance_config(instance_id, configuration)
         # self.pipeline_client.get_instance_info(instance_id):
         # self.pipeline_client.collect_background(instance_id):
-
-
 
 
 if __name__ == '__main__':

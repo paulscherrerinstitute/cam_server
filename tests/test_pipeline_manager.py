@@ -32,7 +32,10 @@ class PipelineManagerTest(unittest.TestCase):
 
     def tearDown(self):
         self.client.stop_all_cameras()
-        os.kill(self.process.pid, signal.SIGINT)
+        try:
+            os.kill(self.process.pid, signal.SIGINT)
+        except:
+            pass
         try:
             os.remove(os.path.join(self.config_folder, "testing_camera.json"))
         except:

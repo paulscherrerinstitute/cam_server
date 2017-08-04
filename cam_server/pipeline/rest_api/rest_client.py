@@ -11,7 +11,7 @@ def validate_response(server_response):
 
 
 class PipelineClient(object):
-    def __init__(self, address="http://0.0.0.0:8888/"):
+    def __init__(self, address="http://0.0.0.0:8889/"):
         """
         :param address: Address of the pipeline API, e.g. http://localhost:10000
         """
@@ -151,13 +151,13 @@ class PipelineClient(object):
 
         validate_response(server_response)
 
-    def collect_background(self, instance_id):
+    def collect_background(self, camera_name):
         """
-        Collect the background image on the selected instance.
+        Collect the background image on the selected camera.
         :param instance_id: Instance to collect the background on.
         :return: Background id.
         """
-        rest_endpoint = "/instance/%s/background" % instance_id
+        rest_endpoint = "/camera/%s/background" % camera_name
         server_response = requests.post(self.api_address_format % rest_endpoint).json()
 
         return validate_response(server_response)["background_id"]
