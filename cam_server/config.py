@@ -11,14 +11,14 @@ PIPELINE_REST_INTERFACE_PREFIX = "/pipeline"
 # Default logging level.
 DEFAULT_LOGGING_LEVEL = "WARNING"
 # How many seconds do we wait before disconnecting a stream without clients.
-MFLOW_NO_CLIENTS_TIMEOUT = 3
+MFLOW_NO_CLIENTS_TIMEOUT = 10
 
 ###################
 # Camera settings #
 ###################
 
-# Each camera config gets assigned one port. 1000 cameras per server should be enough.
-CAMERA_STREAM_PORT_RANGE = (10100, 11100)
+# Each camera config gets assigned one port.
+CAMERA_STREAM_PORT_RANGE = (10100, 10201)
 # Default folder for camera configs.
 DEFAULT_CAMERA_CONFIG_FOLDER = "configuration/camera"
 # Default colormap to use when getting an image from the camera.
@@ -33,8 +33,8 @@ CAMERA_BSREAD_IMAGE_COMPRESSION = None
 # Pipeline settings #
 #####################
 
-# Every time you open a pipeline it gets the next port. 1000 rotating ports should be enough.
-PIPELINE_STREAM_PORT_RANGE = (11100, 12100)
+# Every time you open a pipeline it gets the next port.
+PIPELINE_STREAM_PORT_RANGE = (11100, 11201)
 # Default folder for camera configs.
 DEFAULT_PIPELINE_CONFIG_FOLDER = "configuration/pipeline"
 # Where to store the backgrounds by default.
