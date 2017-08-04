@@ -7,6 +7,6 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill camera_server
 ExecStartPre=-/usr/bin/docker rm camera_server
 ExecStartPre=/usr/bin/docker pull docker.psi.ch:5000/cam_server
-ExecStart=/usr/bin/docker run --name camera_server -p:8888:8888 docker.psi.ch:5000/cam_server camera_server
+ExecStart=/usr/bin/docker run --name camera_server -p:8888:8888 -p 10100-11099 docker.psi.ch:5000/cam_server camera_server
 ExecStop=/usr/bin/docker stop camera_server
 Restart=always
