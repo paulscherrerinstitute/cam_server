@@ -14,6 +14,22 @@ def get_host_port_from_stream_address(stream_address):
     return source_host, int(source_port)
 
 
+def update_pipeline_config(current_config, config_updates):
+    # TODO: Rewrite in a recursive dictionary merge.
+    def update_subsection(section_name):
+        if section_name in config_updates:
+            old_section = current_config.get(section_name, {})
+            config_updates[section_name].update(old_section)
+
+    update_subsection("camera_calibration")
+    update_subsection("image_good_region")
+    update_subsection("image_slices")
+
+    current_config.update(config_updates)
+
+    return current_config
+
+
 def collect_background(camera_name, stream_address, n_images, background_manager):
 
     try:
