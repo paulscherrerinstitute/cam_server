@@ -1,12 +1,12 @@
 package:
     name: cam_server
-    version: 0.0.1
-
-build:
-  number: 1
+    version: 0.0.2
 
 source:
     path: ..
+
+build:
+    number: 0
 
 requirements:
     build:
