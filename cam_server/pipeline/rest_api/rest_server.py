@@ -115,12 +115,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         if "number_of_images" in request.json:
             number_of_images = request.json["number_of_images"]
 
-        stream_address = get_instance_stream(instance_id)["stream"]
-
         camera_name = get_instance_info(instance_id)["info"]["camera_name"]
-
-        # TODO: Which address? Pipeline or original camera one?
-        # stream_address = instance_manager.cam_server_client.get_camera_stream(camera_name)
+        stream_address = instance_manager.cam_server_client.get_camera_stream(camera_name)
 
         background_id = collect_background(camera_name, stream_address, number_of_images,
                                            instance_manager.background_manager)
