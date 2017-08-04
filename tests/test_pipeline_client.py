@@ -96,6 +96,7 @@ class PipelineClientTest(unittest.TestCase):
 
         # TODO: try to change config of created instance on the fly.
         # TODO: Try to change camera name on created instance.
+        # self.pipeline_client.set_instance_config(instance_id, configuration)
 
         self.assertNotEqual(instance_id_1, instance_id_2, "Instances should be different.")
         self.assertNotEqual(instance_stream_1, instance_stream_2, "Stream addresses should be different.")
@@ -109,32 +110,50 @@ class PipelineClientTest(unittest.TestCase):
         self.assertEqual(len(self.pipeline_client.get_server_info()["active_instances"]), 2,
                          "Two instances should be running, get does not increase the number of instances.")
 
-        self.pipeline_client.stop_all_instances()
+        self.pipeline_client.create_instance_from_config({"camera_name": "simulation"})
+        self.pipeline_client.create_instance_from_config({"camera_name": "simulation"})
 
-        self.assertEqual(len(self.pipeline_client.get_server_info()["active_instances"]), 0,
-                         "All instances should be stopped now.")
+        self.assertEqual(len(self.pipeline_client.get_server_info()["active_instances"]), 4,
+                         "Two new instances should be created.")
 
-        # TODO: Fix this, unknown reason why it does not work.
+        with self.assertRaisesRegex(ValueError, "You must specify either the pipeline name or the "
+                                                "configuration for the pipeline."):
+            self.pipeline_client.create_instance_from_config({})
 
-        # self.pipeline_client.create_instance_from_config({"camera_name": "simulation"})
-
-        # TODO: Try to make an instance from an invalid config.
-        #
-        # self.assertEqual(len(self.pipeline_client.get_server_info()["active_instances"]), 3,
-        #                  "A new instance from config was created.")
-        #
+        with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not"):
+            self.pipeline_client.create_instance_from_config({"invalid": "config"})
 
         background_id = self.pipeline_client.collect_background("simulation")
         expected_background_file = os.path.join(self.background_config_folder, background_id + ".npy")
 
+        pipeline_config = {"camera_name": "simulation",
+                           "background_image": background_id}
+
+        instance_id, stream_address = self.pipeline_client.create_instance_from_config(pipeline_config)
+
+        instance_config = self.pipeline_client.get_instance_config(instance_id)
+        self.assertDictEqual(pipeline_config, instance_config, "Set and retrieved instances are not equal.")
+
+        instance_info = self.pipeline_client.get_instance_info(instance_id)
+        self.assertEqual(instance_info["instance_id"], instance_id, "Requested and retireved instances are different.")
+        self.assertEqual(instance_info["stream_address"], stream_address, "Different stream address.")
+        self.assertTrue(instance_info["is_stream_active"], "Stream should be active.")
+        self.assertFalse(instance_info["read_only"], "It should not be read only.")
+        self.assertEqual(instance_info["camera_name"], "simulation", "Wrong camera name.")
+        self.assertDictEqual(instance_info["config"], pipeline_config, "Config is not equal")
+
+        self.pipeline_client.stop_instance(instance_id)
+
+        stopped_instance_info = self.pipeline_client.get_instance_info(instance_id)
+        self.assertFalse(stopped_instance_info["is_stream_active"], "Stream should not be active.")
+
+        with self.assertRaisesRegex(ValueError, "Instance 'invalid instance' does not exist."):
+            self.pipeline_client.get_instance_info("invalid instance")
+
         self.assertTrue(os.path.exists(expected_background_file))
-        # os.remove(expected_background_file)
+        os.remove(expected_background_file)
 
-        # self.pipeline_client.get_instance_config(instance_id)
-        # self.pipeline_client.set_instance_config(instance_id, configuration)
-        # self.pipeline_client.get_instance_info(instance_id):
-        # self.pipeline_client.collect_background(instance_id):
-
+        self.pipeline_client.stop_all_instances()
 
 if __name__ == '__main__':
     unittest.main()

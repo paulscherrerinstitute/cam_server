@@ -35,7 +35,7 @@ class PipelineInstanceManager(InstanceManager):
         instance_id = str(uuid.uuid4())
 
         # You cannot specify both or none.
-        if (pipeline_name is None) == (configuration is None):
+        if bool(pipeline_name) == bool(configuration):
             raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
 
         if configuration:

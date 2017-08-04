@@ -43,6 +43,9 @@ class InstanceManager(object):
         :param instance_name: Name od the instance to return.
         :return:
         """
+        if instance_name not in self.instances:
+            raise ValueError("Instance '%s' does not exist." % instance_name)
+
         return self.instances[instance_name]
 
     def start_instance(self, instance_name):

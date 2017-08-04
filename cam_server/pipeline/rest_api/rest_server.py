@@ -44,11 +44,11 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         pipeline_config = request.json
         instance_id, stream_address = instance_manager.create_pipeline(configuration=pipeline_config)
 
-        {"state": "ok",
-         "status": "Stream address for pipeline %s." % instance_id,
-         "instance_id": instance_id,
-         "stream": stream_address,
-         "config": instance_manager.get_instance(instance_id).get_parameters()}
+        return {"state": "ok",
+                "status": "Stream address for pipeline %s." % instance_id,
+                "instance_id": instance_id,
+                "stream": stream_address,
+                "config": instance_manager.get_instance(instance_id).get_parameters()}
 
     @app.post(api_root_address + '/<pipeline_name>')
     def create_pipeline_from_name(pipeline_name):
