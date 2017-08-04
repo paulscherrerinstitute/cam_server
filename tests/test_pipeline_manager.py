@@ -114,11 +114,6 @@ class PipelineManagerTest(unittest.TestCase):
 
         self.assertEqual(instance_stream_1, instance_stream_2, "Only one instance should be present.")
 
-
-    def test_pipeline_image(self):
-        # TODO: Write tests.
-        pass
-
     def test_collect_background(self):
         instance_manager = get_test_pipeline_manager_with_real_cam()
 
