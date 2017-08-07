@@ -100,7 +100,7 @@ class PipelineInstanceManager(InstanceManager):
 
     def update_instance_config(self, instance_id, config_updates):
         pipeline_instance = self.get_instance(instance_id)
-        current_config = pipeline_instance.get_config()
+        current_config = pipeline_instance.get_configuration()
 
         new_config = update_pipeline_config(current_config, config_updates)
         pipeline_instance.set_parameter(new_config)
@@ -130,7 +130,7 @@ class PipelineInstance(InstanceWrapper):
                 "instance_id": self.get_instance_id(),
                 "read_only": self.read_only_config}
 
-    def get_config(self):
+    def get_configuration(self):
         return self.pipeline_config.get_configuration()
 
     def get_stream_address(self):
