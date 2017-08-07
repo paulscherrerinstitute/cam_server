@@ -19,19 +19,22 @@ def receive_process_send(stop_event, statistics, parameter_queue,
                         config.MFLOW_NO_CLIENTS_TIMEOUT)
         stop_event.set()
 
-    try:
-
-        pipeline_parameters = pipeline_config.get_configuration()
-        image_background_array = background_manager.get_background(pipeline_config.get_background_id())
-
+    def process_pipeline_parameters():
+        parameters = pipeline_config.get_configuration()
+        background_array = background_manager.get_background(pipeline_config.get_background_id())
         x_size, y_size = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
 
-        calibration = pipeline_parameters.get("calibration")
+        calibration = parameters.get("calibration")
         if calibration:
-            x_axis, y_axis = get_calibrated_axis(x_size, y_size, calibration)
+            axis_x, axis_y = get_calibrated_axis(x_size, y_size, calibration)
         else:
-            x_axis = numpy.linspace(0, x_size - 1, x_size, dtype='f')
-            y_axis = numpy.linspace(0, y_size - 1, y_size, dtype='f')
+            axis_x = numpy.linspace(0, x_size - 1, x_size, dtype='f')
+            axis_y = numpy.linspace(0, y_size - 1, y_size, dtype='f')
+
+        return parameters, background_array, axis_x, axis_y
+
+    try:
+        pipeline_parameters, image_background_array, x_axis, y_axis = process_pipeline_parameters()
 
         camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
@@ -49,7 +52,9 @@ def receive_process_send(stop_event, statistics, parameter_queue,
         while not stop_event.is_set():
             try:
                 while not parameter_queue.empty():
-                    pipeline_config.parameters = parameter_queue.get()
+                    pipeline_config.set_parameters(parameter_queue.get())
+                    pipeline_parameters, image_background_array, x_axis, y_axis = process_pipeline_parameters()
+
                 try:
                     data = source.receive()
                 except Again:
