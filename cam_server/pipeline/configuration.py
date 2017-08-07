@@ -69,6 +69,10 @@ class BackgroundImageManager(object):
             return None
 
         background_filename = os.path.join(self.background_folder, background_name + ".npy")
+
+        if not os.path.exists(background_filename):
+            raise ValueError("Requested background '%s' does not exist." % background_name)
+
         return numpy.load(background_filename)
 
     def save_background(self, background_name, image):

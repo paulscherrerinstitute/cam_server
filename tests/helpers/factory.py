@@ -36,6 +36,9 @@ class MockBackgroundManager:
         if not background_name:
             return None
 
+        if background_name not in self.backgrounds:
+            raise ValueError("Requested background '%s' does not exist." % background_name)
+
         return self.backgrounds[background_name]
 
     def save_background(self, background_name, image):

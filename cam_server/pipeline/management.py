@@ -102,6 +102,11 @@ class PipelineInstanceManager(InstanceManager):
         pipeline_instance = self.get_instance(instance_id)
         current_config = pipeline_instance.get_configuration()
 
+        # Check if the background can be loaded.
+        image_background = config_updates.get("image_background")
+        if image_background:
+            self.background_manager.get_background(image_background)
+
         new_config = update_pipeline_config(current_config, config_updates)
         pipeline_instance.set_parameter(new_config)
 

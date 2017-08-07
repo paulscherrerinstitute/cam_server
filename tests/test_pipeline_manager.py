@@ -164,9 +164,66 @@ class PipelineManagerTest(unittest.TestCase):
 
         self.assertTrue(stream_address.startswith("tcp://custom_cam_hostname"))
 
-    def test_update_config(self):
-        pass
+    def test_update_instance_config_without_running(self):
+        pipeline_manager = get_test_pipeline_manager()
 
+        instance_id, _ = pipeline_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        config_updates = {
+            "camera_name": "different_name",
+        }
+
+        with self.assertRaisesRegex(ValueError, "Cannot change the camera name on a running instance. "
+                                                "Stop the instance first."):
+            pipeline_manager.update_instance_config(instance_id, config_updates)
+
+        config_updates = {
+            "camera_name": "simulation",
+            "camera_calibration": {
+                "reference_marker": [1, 2, 3, 4],
+                "reference_marker_width": 5.0,
+                "reference_marker_height": 6.0,
+                "angle_horizontal": 7.0,
+                "angle_vertical": 8.0
+            },
+            "image_background": None,
+            "image_threshold": 2,
+            "image_region_of_interest": [3, 4, 5, 6],
+            "image_good_region": {
+                "threshold": 0.9,
+                "gfscale": 3.6
+            },
+            "image_slices": {
+                "number_of_slices": 6,
+                "scale": 7
+            }
+        }
+
+        pipeline_manager.update_instance_config(instance_id, config_updates)
+
+        self.assertDictEqual(pipeline_manager.get_instance(instance_id).get_configuration(),
+                             config_updates, "Update was not successful.")
+
+        self.assertDictEqual(pipeline_manager.get_instance(instance_id).get_configuration()["camera_calibration"],
+                             config_updates["camera_calibration"], "Update was not successful.")
+
+        self.assertDictEqual(pipeline_manager.get_instance(instance_id).get_configuration()["image_good_region"],
+                             config_updates["image_good_region"], "Update was not successful.")
+
+        self.assertDictEqual(pipeline_manager.get_instance(instance_id).get_configuration()["image_slices"],
+                             config_updates["image_slices"], "Update was not successful.")
+
+        with self.assertRaisesRegex(ValueError, "Requested background 'non_existing' does not exist."):
+            pipeline_manager.update_instance_config(instance_id, {"image_background": "non_existing"})
+
+        pipeline_manager.background_manager.save_background("non_existing", None)
+        pipeline_manager.update_instance_config(instance_id, {"image_background": "non_existing"})
+
+        self.assertEqual(pipeline_manager.get_instance(instance_id).get_configuration()["image_background"],
+                         "non_existing", "Background not updated.")
+
+    def test_update_instance_config_with_running(self):
+        pass
 
 
 if __name__ == '__main__':
