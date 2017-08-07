@@ -85,16 +85,11 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         if not config_updates:
             raise ValueError("Config updates cannot be empty.")
 
-        pipeline_instance = instance_manager.get_instance(instance_id)
-        current_config = pipeline_instance.get_configuration()
-
-        new_config = update_pipeline_config(current_config, config_updates)
-
-        pipeline_instance.set_parameter(config_updates)
+        instance_manager.update_instance_config(instance_id, config_updates)
 
         return {"state": "ok",
                 "status": "Pipeline instance %s configuration changed." % instance_id,
-                "config": pipeline_instance.get_config()}
+                "config": instance_manager.get_instance(instance_id).get_config()}
 
     @app.get(api_root_address + '/<pipeline_name>/config')
     def get_pipeline_config(pipeline_name):

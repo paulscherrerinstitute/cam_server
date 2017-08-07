@@ -64,7 +64,7 @@ class PipelineClientTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Camera name not specified in configuration."):
             self.pipeline_client.save_pipeline_config("testing_config", {})
 
-        with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not found"):
+        with self.assertRaisesRegex(ValueError, "Camera name not specified in configuration."):
             self.pipeline_client.save_pipeline_config("testing_config", {"invalid": "config"})
 
         self.assertListEqual(self.pipeline_client.get_pipelines(), expected_pipelines + ["testing_config"],

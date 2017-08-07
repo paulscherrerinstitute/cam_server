@@ -7,6 +7,7 @@ from cam_server import config
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
+from cam_server.utils import update_pipeline_config
 
 _logger = getLogger(__name__)
 
@@ -96,6 +97,13 @@ class PipelineInstanceManager(InstanceManager):
         self.start_instance(instance_id)
 
         return self.get_instance(instance_id).get_stream_address()
+
+    def update_instance_config(self, instance_id, config_updates):
+        pipeline_instance = self.get_instance(instance_id)
+        current_config = pipeline_instance.get_config()
+
+        new_config = update_pipeline_config(current_config, config_updates)
+        pipeline_instance.set_parameter(new_config)
 
 
 class PipelineInstance(InstanceWrapper):

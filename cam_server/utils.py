@@ -17,7 +17,7 @@ def get_host_port_from_stream_address(stream_address):
 def update_pipeline_config(current_config, config_updates):
     # TODO: Rewrite in a recursive dictionary merge.
     def update_subsection(section_name):
-        if section_name in config_updates:
+        if config_updates.get(section_name) is not None:
             old_section = current_config.get(section_name, {})
             config_updates[section_name].update(old_section)
 

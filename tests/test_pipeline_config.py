@@ -92,8 +92,8 @@ class PipelineConfigTest(unittest.TestCase):
             }
         }
 
-        config = PipelineConfig("test", configuration)
-        complete_config = config.get_configuration()
+        configuration = PipelineConfig("test", configuration)
+        complete_config = configuration.get_configuration()
 
         self.assertIsNone(complete_config["image_good_region"], "This section should be None.")
         self.assertIsNone(complete_config["image_slices"], "This section should be None.")
@@ -102,6 +102,28 @@ class PipelineConfigTest(unittest.TestCase):
                             set(["reference_marker", "reference_marker_width", "reference_marker_height",
                                  "angle_horizontal", "angle_vertical"]),
                             "Missing keys in camera calibration.")
+
+        configuration = {
+            "camera_name": "simulation",
+            "image_good_region": {},
+            "image_slices": {}
+        }
+
+        configuration = PipelineConfig("test", configuration)
+        complete_config = configuration.get_configuration()
+
+        self.assertSetEqual(set(complete_config["image_good_region"].keys()),
+                            set(["threshold", "gfscale"]),
+                            "Missing keys in camera calibration.")
+
+        self.assertSetEqual(set(complete_config["image_slices"].keys()),
+                            set(["number_of_slices", "scale"]),
+                            "Missing keys in camera calibration.")
+
+
+    # def test_update_pipeline_config(self):
+
+
 
 if __name__ == '__main__':
     unittest.main()
