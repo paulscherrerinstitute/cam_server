@@ -118,30 +118,28 @@ class PipelineInstance(InstanceWrapper):
         return {"stream_address": self.stream_address,
                 "is_stream_active": self.is_running(),
                 "camera_name": self.pipeline_config.get_camera_name(),
-                "config": self.pipeline_config.get_parameters(),
+                "config": self.pipeline_config.get_configuration(),
                 "instance_id": self.get_instance_id(),
                 "read_only": self.read_only_config}
 
     def get_config(self):
-        return self.pipeline_config.get_parameters()
+        return self.pipeline_config.get_configuration()
 
     def get_stream_address(self):
         return self.stream_address
 
-    def set_parameter(self, parameters):
+    def set_parameter(self, configuration):
         if self.read_only_config:
             raise ValueError("Cannot set config on a read only instance.")
 
-        if self.is_running() and self.pipeline_config.get_camera_name() != parameters["camera_name"]:
+        if self.is_running() and self.pipeline_config.get_camera_name() != configuration["camera_name"]:
             raise ValueError("Cannot change the camera name on a running instance. Stop the instance first.")
 
-        super().set_parameter(parameters)
-
-        # Update the parameters on the local instance as well.
-        self.pipeline_config.parameters = parameters
+        self.pipeline_config.set_configuration(configuration)
+        super().set_parameter(configuration)
 
     def get_parameters(self):
-        return self.pipeline_config.get_parameters()
+        return self.pipeline_config.get_configuration()
 
     def get_name(self):
         return self.pipeline_config.get_name()

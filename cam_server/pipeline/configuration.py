@@ -25,10 +25,9 @@ class PipelineConfigManager(object):
         """
 
         configuration = self.config_provider.get_config(pipeline_name)
+        pipeline_config = PipelineConfig(pipeline_name, configuration)
 
-        PipelineConfig.validate_pipeline_config(configuration)
-
-        return configuration
+        return pipeline_config.get_configuration()
 
     def load_pipeline(self, pipeline_name):
         """
@@ -46,8 +45,8 @@ class PipelineConfigManager(object):
         :param configuration: Config to save.
         """
 
-        PipelineConfig.validate_pipeline_config(configuration)
-        self.config_provider.save_config(pipeline_name, configuration)
+        pipeline_config = PipelineConfig(pipeline_name, configuration)
+        self.config_provider.save_config(pipeline_name, pipeline_config.get_configuration())
 
     def delete_pipeline_config(self, pipeline_name):
         """
@@ -78,6 +77,34 @@ class BackgroundImageManager(object):
 
 
 class PipelineConfig:
+
+    DEFAULT_CONFIGURATION = {
+        "camera_calibration": None,
+        "image_background": None,
+        "image_threshold": None,
+        "image_region_of_interest": None,
+        "image_good_region": None,
+        "image_slices": None
+    }
+
+    DEFAULT_CAMERA_CALIBRATION = {
+        "reference_marker": [0, 0, 100, 100],
+        "reference_marker_width": 100.0,
+        "reference_marker_height": 100.0,
+        "angle_horizontal": 0.0,
+        "angle_vertical": 0.0
+    }
+
+    DEFAULT_IMAGE_GOOD_REGION = {
+        "threshold": 0.3,
+        "gfscale": 1.8
+    }
+
+    DEFAULT_IMAGE_SLICES = {
+        "number_of_slices": 1,
+        "scale": 2
+    }
+
     def __init__(self, pipeline_name, parameters=None):
 
         self.pipeline_name = pipeline_name
@@ -91,14 +118,21 @@ class PipelineConfig:
                     "camera_name": "simulation"
                 })
 
-        # Check if the config is valid.
-        self.validate_pipeline_config(self.parameters)
+        # Expand the config with the default values.
+        self.parameters = PipelineConfig.expand_config(self.parameters)
 
-    def get_parameters(self):
+        # Check if the config is valid.
+        PipelineConfig.validate_pipeline_config(self.parameters)
+
+    def get_configuration(self):
         # Validate before passing on, since anyone can change the dictionary content.
-        self.validate_pipeline_config(self.parameters)
+        PipelineConfig.validate_pipeline_config(self.parameters)
         # We do not want to pass by reference - someone might change the dictionary.
         return copy.deepcopy(self.parameters)
+
+    def set_configuration(self, configuration):
+        PipelineConfig.validate_pipeline_config(configuration)
+        self.parameters = copy.deepcopy(configuration)
 
     def get_background_id(self):
         return self.parameters.get("image_background")
@@ -114,12 +148,54 @@ class PipelineConfig:
         if not configuration:
             raise ValueError("Config object cannot be empty.\nConfig: %s" % configuration)
 
-        mandatory_attributes = ["camera_name"]
-        missing_attributes = [attr for attr in mandatory_attributes if attr not in configuration]
+        if "camera_name" not in configuration:
+            raise ValueError("Camera name not specified in configuration.")
 
-        if missing_attributes:
-            raise ValueError("The following mandatory attributes were not found in the configuration: %s" %
-                             missing_attributes)
+        def verify_attributes(section_name, section, mandatory_attributes):
+            missing_attributes = [attr for attr in mandatory_attributes if attr not in section]
+
+            if missing_attributes:
+                raise ValueError("The following mandatory attributes were not found in the %s: %s" %
+                                 (section_name, missing_attributes))
+
+        # Verify root attributes.
+        verify_attributes("configuration", configuration, PipelineConfig.DEFAULT_CONFIGURATION.keys())
+
+        camera_calibration = configuration["camera_calibration"]
+        if camera_calibration:
+            verify_attributes("camera_calibration", camera_calibration, PipelineConfig.DEFAULT_CAMERA_CALIBRATION)
+
+        image_good_region = configuration["image_good_region"]
+        if image_good_region:
+            verify_attributes("image_good_region", image_good_region, PipelineConfig.DEFAULT_IMAGE_GOOD_REGION)
+
+        image_slices = configuration["image_slices"]
+        if image_slices:
+            verify_attributes("image_slices", image_slices, PipelineConfig.DEFAULT_IMAGE_SLICES)
+
+    @staticmethod
+    def expand_config(configuration):
+
+        def expand_section(provided_value, default_value):
+            expanded_section = copy.deepcopy(default_value)
+            expanded_section.update(provided_value)
+            return expanded_section
+
+        expanded_config = expand_section(configuration, PipelineConfig.DEFAULT_CONFIGURATION)
+
+        if expanded_config["camera_calibration"] is not None:
+            expanded_config["camera_calibration"] = expand_section(expanded_config["camera_calibration"],
+                                                                   PipelineConfig.DEFAULT_CAMERA_CALIBRATION)
+
+        if expanded_config["image_good_region"] is not None:
+            expanded_config["image_good_region"] = expand_section(expanded_config["image_good_region"],
+                                                                  PipelineConfig.DEFAULT_IMAGE_GOOD_REGION)
+
+        if expanded_config["image_slices"] is not None:
+            expanded_config["image_slices"] = expand_section(expanded_config["image_slices"],
+                                                             PipelineConfig.DEFAULT_IMAGE_SLICES)
+
+        return expanded_config
 
     def get_name(self):
         return self.pipeline_name

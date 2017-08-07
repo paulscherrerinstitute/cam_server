@@ -61,7 +61,7 @@ class PipelineClientTest(unittest.TestCase):
         camera_config = self.pipeline_client.get_pipeline_config("example_4")
         self.pipeline_client.save_pipeline_config("testing_config", camera_config)
 
-        with self.assertRaisesRegex(ValueError, "Config object cannot be empty"):
+        with self.assertRaisesRegex(ValueError, "Camera name not specified in configuration."):
             self.pipeline_client.save_pipeline_config("testing_config", {})
 
         with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not found"):

@@ -1,13 +1,11 @@
 import json
 import logging
-import traceback
 
 import bottle
 from bottle import request, response
 
 from cam_server import config
 from cam_server.instance_management import rest_api
-from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.utils import collect_background, update_pipeline_config
 
 _logger = logging.getLogger(__name__)
@@ -48,7 +46,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Stream address for pipeline %s." % instance_id,
                 "instance_id": instance_id,
                 "stream": stream_address,
-                "config": instance_manager.get_instance(instance_id).get_parameters()}
+                "config": instance_manager.get_instance(instance_id).get_configuration()}
 
     @app.post(api_root_address + '/<pipeline_name>')
     def create_pipeline_from_name(pipeline_name):
@@ -58,7 +56,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Stream address for pipeline %s." % instance_id,
                 "instance_id": instance_id,
                 "stream": stream_address,
-                "config": instance_manager.get_instance(instance_id).get_parameters()}
+                "config": instance_manager.get_instance(instance_id).get_configuration()}
 
     @app.get(api_root_address + '/instance/<instance_id>')
     def get_instance_stream(instance_id):
@@ -88,10 +86,9 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
             raise ValueError("Config updates cannot be empty.")
 
         pipeline_instance = instance_manager.get_instance(instance_id)
-        current_config = pipeline_instance.get_parameters()
+        current_config = pipeline_instance.get_configuration()
 
         new_config = update_pipeline_config(current_config, config_updates)
-        PipelineConfig.validate_pipeline_config(new_config)
 
         pipeline_instance.set_parameter(config_updates)
 

@@ -2,12 +2,14 @@ import unittest
 
 import numpy
 import os
-from cam_server.pipeline.configuration import BackgroundImageManager
+
+from copy import deepcopy
+
+from cam_server.pipeline.configuration import BackgroundImageManager, PipelineConfig
 from tests.helpers.factory import get_test_pipeline_manager
 
 
 class PipelineConfigTest(unittest.TestCase):
-
     def test_get_set_delete_pipeline_config(self):
         instance_manager = get_test_pipeline_manager()
 
@@ -22,7 +24,10 @@ class PipelineConfigTest(unittest.TestCase):
         self.assertListEqual(["simulation_pipeline"], instance_manager.config_manager.get_pipeline_list(),
                              "Pipeline not added.")
 
-        self.assertDictEqual(example_pipeline_config,
+        expected_config = deepcopy(PipelineConfig.DEFAULT_CONFIGURATION)
+        expected_config.update(example_pipeline_config)
+
+        self.assertDictEqual(expected_config,
                              instance_manager.config_manager.get_pipeline_config("simulation_pipeline"),
                              "Saved and retrieved pipeline configs are not the same.")
 
@@ -42,8 +47,11 @@ class PipelineConfigTest(unittest.TestCase):
 
         instance_manager.config_manager.save_pipeline_config("pipeline_simulation", example_pipeline_config)
 
+        expected_config = deepcopy(PipelineConfig.DEFAULT_CONFIGURATION)
+        expected_config.update(example_pipeline_config)
+
         pipeline = instance_manager.config_manager.load_pipeline("pipeline_simulation")
-        self.assertDictEqual(pipeline.get_parameters(), example_pipeline_config,
+        self.assertDictEqual(pipeline.get_configuration(), expected_config,
                              "Saved and loaded pipelines are not the same.")
 
     def test_invalid_config(self):
@@ -54,7 +62,7 @@ class PipelineConfigTest(unittest.TestCase):
             "camera": "simulation"
         }
 
-        with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not "):
+        with self.assertRaisesRegex(ValueError, "Camera name not specified in configuration."):
             instance_manager.config_manager.save_pipeline_config("invalid_pipeline", invalid_pipeline_config)
 
     def test_background_provider(self):
@@ -75,6 +83,25 @@ class PipelineConfigTest(unittest.TestCase):
 
         os.remove(expected_file)
 
+    def test_default_config(self):
+        configuration = {
+            "camera_name": "simulation",
+            "image_background": "test_background",
+            "camera_calibration": {
+
+            }
+        }
+
+        config = PipelineConfig("test", configuration)
+        complete_config = config.get_configuration()
+
+        self.assertIsNone(complete_config["image_good_region"], "This section should be None.")
+        self.assertIsNone(complete_config["image_slices"], "This section should be None.")
+
+        self.assertSetEqual(set(complete_config["camera_calibration"].keys()),
+                            set(["reference_marker", "reference_marker_width", "reference_marker_height",
+                                 "angle_horizontal", "angle_vertical"]),
+                            "Missing keys in camera calibration.")
 
 if __name__ == '__main__':
     unittest.main()

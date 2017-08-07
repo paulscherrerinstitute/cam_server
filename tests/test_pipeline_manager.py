@@ -103,7 +103,7 @@ class PipelineManagerTest(unittest.TestCase):
             "camera_name": "simulation"
         })
 
-        instance_manager.config_manager.save_pipeline_config(pipeline_id, pipeline_config.get_parameters())
+        instance_manager.config_manager.save_pipeline_config(pipeline_id, pipeline_config.get_configuration())
         instance_stream_1 = instance_manager.get_instance_stream(pipeline_id)
 
         self.assertTrue(instance_manager.get_info()["active_instances"][pipeline_id]["read_only"],
@@ -126,7 +126,7 @@ class PipelineManagerTest(unittest.TestCase):
             "camera_name": "simulation"
         })
 
-        instance_manager.config_manager.save_pipeline_config(pipeline_id, pipeline_config.get_parameters())
+        instance_manager.config_manager.save_pipeline_config(pipeline_id, pipeline_config.get_configuration())
 
         pipeline_stream_address = instance_manager.get_instance_stream(pipeline_id)
         pipeline_host, pipeline_port = get_host_port_from_stream_address(pipeline_stream_address)

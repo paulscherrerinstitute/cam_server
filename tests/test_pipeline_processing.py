@@ -17,7 +17,7 @@ class PipelineProcessingTest(unittest.TestCase):
         simulated_camera = CameraSimulation()
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
-        parameters = pipeline_config.get_parameters()
+        parameters = pipeline_config.get_configuration()
 
         result = process_image(image=image,
                                timestamp=time.time(),
@@ -57,7 +57,7 @@ class PipelineProcessingTest(unittest.TestCase):
         background_provider.save_background("white_background", numpy.zeros(shape=(y_size, x_size)))
 
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
-        parameters = pipeline_config.get_parameters()
+        parameters = pipeline_config.get_configuration()
         image_background_array = background_provider.get_background(parameters.get("image_background"))
 
         result = process_image(image=image,
@@ -82,7 +82,7 @@ class PipelineProcessingTest(unittest.TestCase):
         background_provider.save_background("max_background", max_background)
 
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
-        parameters = pipeline_config.get_parameters()
+        parameters = pipeline_config.get_configuration()
         image_background_array = background_provider.get_background(parameters.get("image_background"))
 
         expected_image = numpy.zeros(shape=(y_size, x_size))
@@ -109,7 +109,7 @@ class PipelineProcessingTest(unittest.TestCase):
         }
 
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
-        parameters = pipeline_config.get_parameters()
+        parameters = pipeline_config.get_configuration()
 
         result = process_image(image=image,
                                timestamp=time.time(),
@@ -127,7 +127,7 @@ class PipelineProcessingTest(unittest.TestCase):
         }
 
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
-        parameters = pipeline_config.get_parameters()
+        parameters = pipeline_config.get_configuration()
 
         result = process_image(image=image,
                                timestamp=time.time(),

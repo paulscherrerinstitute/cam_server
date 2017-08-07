@@ -21,7 +21,7 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
     try:
 
-        pipeline_parameters = pipeline_config.get_parameters()
+        pipeline_parameters = pipeline_config.get_configuration()
         image_background_array = background_manager.get_background(pipeline_config.get_background_id())
 
         x_size, y_size = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
