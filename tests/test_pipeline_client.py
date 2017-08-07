@@ -6,6 +6,7 @@ from multiprocessing import Process
 from time import sleep
 
 from cam_server import CamClient, PipelineClient
+from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
 
@@ -131,7 +132,13 @@ class PipelineClientTest(unittest.TestCase):
         instance_id, stream_address = self.pipeline_client.create_instance_from_config(pipeline_config)
 
         instance_config = self.pipeline_client.get_instance_config(instance_id)
-        self.assertDictEqual(pipeline_config, instance_config, "Set and retrieved instances are not equal.")
+
+        # We need to account for the expended config.
+        expected_config = {}
+        expected_config.update(PipelineConfig.DEFAULT_CONFIGURATION)
+        expected_config.update(pipeline_config)
+
+        self.assertDictEqual(expected_config, instance_config, "Set and retrieved instances are not equal.")
 
         instance_info = self.pipeline_client.get_instance_info(instance_id)
         self.assertEqual(instance_info["instance_id"], instance_id, "Requested and retireved instances are different.")
@@ -139,7 +146,7 @@ class PipelineClientTest(unittest.TestCase):
         self.assertTrue(instance_info["is_stream_active"], "Stream should be active.")
         self.assertFalse(instance_info["read_only"], "It should not be read only.")
         self.assertEqual(instance_info["camera_name"], "simulation", "Wrong camera name.")
-        self.assertDictEqual(instance_info["config"], pipeline_config, "Config is not equal")
+        self.assertDictEqual(instance_info["config"], expected_config, "Config is not equal")
 
         self.pipeline_client.stop_instance(instance_id)
 
