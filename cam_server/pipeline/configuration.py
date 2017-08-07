@@ -131,8 +131,9 @@ class PipelineConfig:
         return copy.deepcopy(self.parameters)
 
     def set_configuration(self, configuration):
-        PipelineConfig.validate_pipeline_config(configuration)
-        self.parameters = copy.deepcopy(configuration)
+        new_parameters = PipelineConfig.expand_config(configuration)
+        PipelineConfig.validate_pipeline_config(new_parameters)
+        self.parameters = new_parameters
 
     def get_background_id(self):
         return self.parameters.get("image_background")

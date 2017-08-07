@@ -119,7 +119,7 @@ class PipelineClientTest(unittest.TestCase):
                                                 "configuration for the pipeline."):
             self.pipeline_client.create_instance_from_config({})
 
-        with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not"):
+        with self.assertRaisesRegex(ValueError, "Camera name not specified in configuration."):
             self.pipeline_client.create_instance_from_config({"invalid": "config"})
 
         background_id = self.pipeline_client.collect_background("simulation")

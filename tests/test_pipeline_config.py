@@ -6,6 +6,7 @@ import os
 from copy import deepcopy
 
 from cam_server.pipeline.configuration import BackgroundImageManager, PipelineConfig
+from cam_server.utils import update_pipeline_config
 from tests.helpers.factory import get_test_pipeline_manager
 
 
@@ -120,9 +121,96 @@ class PipelineConfigTest(unittest.TestCase):
                             set(["number_of_slices", "scale"]),
                             "Missing keys in camera calibration.")
 
+    def test_update_pipeline_config(self):
+        configuration = {
+            "camera_name": "simulation"
+        }
 
-    # def test_update_pipeline_config(self):
+        old_config = PipelineConfig("test", configuration).get_configuration()
 
+        config_updates = {"camera_calibration": {}}
+        updated_config = update_pipeline_config(old_config, config_updates)
+
+        self.assertIsNotNone(updated_config["camera_calibration"])
+
+        configuration = {
+            "camera_name": "simulation",
+            "image_slices": {
+                "number_of_slices": 98
+            }
+        }
+
+        old_config = PipelineConfig("test", configuration).get_configuration()
+
+        config_updates = {
+            "image_slices": {
+                "scale": 99
+            }
+        }
+
+        updated_config = update_pipeline_config(old_config, config_updates)
+        self.assertEqual(updated_config["image_slices"]["scale"], 99, "New value not updated.")
+        self.assertEqual(updated_config["image_slices"]["number_of_slices"], 98, "Old value changed.")
+
+        configuration = {
+            "camera_name": "name 1",
+            "camera_calibration": {
+                "reference_marker": [0, 0, 100, 100],
+                "reference_marker_width": 100.0,
+                "reference_marker_height": 100.0,
+                "angle_horizontal": 0.0,
+                "angle_vertical": 0.0
+            },
+            "image_background": "test",
+            "image_threshold": 1,
+            "image_region_of_interest": [0, 1, 2, 3],
+            "image_good_region": {
+                "threshold": 0.3,
+                "gfscale": 1.8
+            },
+            "image_slices": {
+                "number_of_slices": 1,
+                "scale": 2
+            }
+        }
+
+        old_config = PipelineConfig("test", configuration).get_configuration()
+
+        config_updates = {
+            "camera_name": "name 2",
+            "camera_calibration": {
+                "reference_marker": [1, 2, 3, 4],
+                "reference_marker_width": 5.0,
+                "reference_marker_height": 6.0,
+                "angle_horizontal": 7.0,
+                "angle_vertical": 8.0
+            },
+            "image_background": "test_2",
+            "image_threshold": 2,
+            "image_region_of_interest": [3, 4, 5, 6],
+            "image_good_region": {
+                "threshold": 0.9,
+                "gfscale": 3.6
+            },
+            "image_slices": {
+                "number_of_slices": 6,
+                "scale": 7
+            }
+        }
+
+        updated_config = update_pipeline_config(old_config, config_updates)
+
+        self.assertDictEqual(updated_config["camera_calibration"], config_updates["camera_calibration"],
+                             "Everything was not updated properly.")
+
+        self.assertDictEqual(updated_config["image_good_region"], config_updates["image_good_region"],
+                             "Everything was not updated properly.")
+
+        self.assertDictEqual(updated_config["image_slices"], config_updates["image_slices"],
+                             "Everything was not updated properly.")
+
+        self.assertDictEqual(updated_config, config_updates,
+                             "Everything was not updated properly.")
 
 
 if __name__ == '__main__':

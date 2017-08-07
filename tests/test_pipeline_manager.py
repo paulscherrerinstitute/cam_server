@@ -164,6 +164,9 @@ class PipelineManagerTest(unittest.TestCase):
 
         self.assertTrue(stream_address.startswith("tcp://custom_cam_hostname"))
 
+    def test_update_config(self):
+        pass
+
 
 
 if __name__ == '__main__':
