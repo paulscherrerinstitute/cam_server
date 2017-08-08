@@ -28,7 +28,8 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         camera.connect()
         x_size, y_size = camera.get_geometry()
 
-        sender = Sender(port=port, mode=PUB)
+        sender = Sender(port=port, mode=PUB,
+                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
 
         # Register the bsread channels - compress only the image.
         sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,

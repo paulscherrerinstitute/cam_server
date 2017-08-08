@@ -139,7 +139,7 @@ All request (with the exception of **get\_camera\_image**) return a JSON with th
 
 For more information on what each command does check the **API** section in this document.
 
-### Camera server
+### Camera server API
 
 In the API description, localhost and port 8888 are assumed. Please change this for your specific case.
 
@@ -164,7 +164,7 @@ In the API description, localhost and port 8888 are assumed. Please change this 
 * `DELETE localhost:8888/api/v1/cam/<camera_name>` - stop the camera instance.
     - Response specific field: None
 
-### Pipeline server
+### Pipeline server API
 
 In the API description, localhost and port 8889 are assumed. Please change this for your specific case.
 
