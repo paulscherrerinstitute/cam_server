@@ -42,7 +42,9 @@ def receive_process_send(stop_event, statistics, parameter_queue,
         source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
         source.connect()
 
-        sender = Sender(port=output_stream_port, mode=PUB)
+        sender = Sender(port=output_stream_port, mode=PUB,
+                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
         # TODO: Register proper channels.
 

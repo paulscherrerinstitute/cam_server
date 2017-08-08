@@ -35,7 +35,7 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
                                               "shape": [y_size, x_size],
                                               "type": "float32"})
-        sender.add_channel("timestamp", metadata={"compression": None,
+        sender.add_channel("timestamp", metadata={"compression": "none",
                                                   "type": "float64"})
 
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
