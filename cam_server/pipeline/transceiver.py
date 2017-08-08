@@ -52,7 +52,8 @@ def receive_process_send(stop_event, statistics, parameter_queue,
         while not stop_event.is_set():
             try:
                 while not parameter_queue.empty():
-                    pipeline_config.set_parameters(parameter_queue.get())
+                    new_parameters = parameter_queue.get()
+                    pipeline_config.set_configuration(new_parameters)
                     pipeline_parameters, image_background_array, x_axis, y_axis = process_pipeline_parameters()
 
                 try:

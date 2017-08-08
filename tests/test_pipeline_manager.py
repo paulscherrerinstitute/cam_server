@@ -5,9 +5,10 @@ import unittest
 from multiprocessing import Process
 from time import sleep
 
+import numpy
 from bsread import source, SUB
 from cam_server import CamClient
-from cam_server.pipeline.configuration import PipelineConfig, PipelineConfigManager
+from cam_server.pipeline.configuration import PipelineConfig, PipelineConfigManager, BackgroundImageManager
 from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import collect_background, get_host_port_from_stream_address
@@ -22,6 +23,7 @@ class PipelineManagerTest(unittest.TestCase):
 
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         self.config_folder = os.path.join(test_base_dir, "camera_config/")
+        self.background_folder = os.path.join(test_base_dir, "background_config/")
 
         self.process = Process(target=start_camera_server, args=(self.host, self.port, self.config_folder))
         self.process.start()
@@ -40,6 +42,11 @@ class PipelineManagerTest(unittest.TestCase):
             pass
         try:
             os.remove(os.path.join(self.config_folder, "testing_camera.json"))
+        except:
+            pass
+
+        try:
+            os.remove(os.path.join(self.background_folder, "white_background.npy"))
         except:
             pass
         # Wait for the server to die.
@@ -116,6 +123,8 @@ class PipelineManagerTest(unittest.TestCase):
 
         self.assertEqual(instance_stream_1, instance_stream_2, "Only one instance should be present.")
 
+        instance_manager.stop_all_instances()
+
     def test_collect_background(self):
         instance_manager = get_test_pipeline_manager_with_real_cam()
 
@@ -154,6 +163,8 @@ class PipelineManagerTest(unittest.TestCase):
                          data.data.data["image"].value.shape,
                          "Background and image have to be of the same shape.")
 
+        instance_manager.stop_all_instances()
+
     def test_custom_hostname(self):
         config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
         pipeline_instance_manager = PipelineInstanceManager(config_manager, MockBackgroundManager(),
@@ -163,6 +174,8 @@ class PipelineManagerTest(unittest.TestCase):
         _, stream_address = pipeline_instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
 
         self.assertTrue(stream_address.startswith("tcp://custom_cam_hostname"))
+
+        pipeline_instance_manager.stop_all_instances()
 
     def test_update_instance_config_without_running(self):
         pipeline_manager = get_test_pipeline_manager()
@@ -222,8 +235,47 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertEqual(pipeline_manager.get_instance(instance_id).get_configuration()["image_background"],
                          "non_existing", "Background not updated.")
 
+        pipeline_manager.stop_all_instances()
+
     def test_update_instance_config_with_running(self):
-        pass
+        instance_manager = get_test_pipeline_manager_with_real_cam()
+        instance_manager.background_manager = BackgroundImageManager(self.background_folder)
+
+        pipeline_config = {
+            "camera_name": "simulation"
+        }
+
+        black_image = numpy.zeros(shape=(960, 1280))
+
+        pipeline_id, pipeline_stream_address = instance_manager.create_pipeline(configuration=pipeline_config)
+        pipeline_host, pipeline_port = get_host_port_from_stream_address(pipeline_stream_address)
+
+        # Collect from the pipeline.
+        with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
+            normal_image_data = stream.receive()
+            self.assertIsNotNone(normal_image_data, "This should really not happen anymore.")
+            self.assertFalse(numpy.array_equal(normal_image_data.data.data['image'].value, black_image),
+                             "There should be a non black image.")
+
+        white_image = numpy.zeros(shape=(960, 1280))
+        white_image.fill(99999)
+
+        instance_manager.background_manager.save_background("white_background", white_image)
+
+        instance_manager.update_instance_config(pipeline_id, {"image_background": "white_background"})
+
+        # Give it some time to load the background.
+        sleep(0.5)
+
+        # Collect from the camera.
+        with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
+            black_image_data = stream.receive()
+            self.assertIsNotNone(black_image_data, "This should really not happen anymore.")
+
+        self.assertTrue(numpy.array_equal(black_image_data.data.data["image"].value, black_image),
+                        "Since the background is white, the image should be black.")
+
+        instance_manager.stop_all_instances()
 
 
 if __name__ == '__main__':

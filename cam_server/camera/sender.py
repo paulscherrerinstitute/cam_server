@@ -56,9 +56,8 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         # This signals that the camera has successfully started.
         stop_event.clear()
 
-    except Exception as e:
-        _logger.error(e)
-        print(e)
+    except:
+        _logger.exception("Error while processing camera stream.")
 
     finally:
 

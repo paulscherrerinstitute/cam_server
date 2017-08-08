@@ -3,7 +3,6 @@ from logging import getLogger
 
 import numpy
 from bsread import source, SUB
-from copy import deepcopy
 
 _logger = getLogger(__name__)
 
@@ -44,7 +43,6 @@ def collect_background(camera_name, stream_address, n_images, background_manager
             for _ in range(n_images):
 
                 data = stream.receive()
-                print(data)
                 image = data.data.data["image"].value
 
                 if accumulator_image is None:
