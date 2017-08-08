@@ -22,19 +22,23 @@ def receive_process_send(stop_event, statistics, parameter_queue,
     def process_pipeline_parameters():
         parameters = pipeline_config.get_configuration()
         background_array = background_manager.get_background(pipeline_config.get_background_id())
-        x_size, y_size = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
+        size_x, size_y = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
 
         calibration = parameters.get("calibration")
         if calibration:
-            axis_x, axis_y = get_calibrated_axis(x_size, y_size, calibration)
+            axis_x, axis_y = get_calibrated_axis(size_x, size_y, calibration)
         else:
-            axis_x = numpy.linspace(0, x_size - 1, x_size, dtype='f')
-            axis_y = numpy.linspace(0, y_size - 1, y_size, dtype='f')
+            axis_x = numpy.linspace(0, size_x - 1, size_x, dtype='f')
+            axis_y = numpy.linspace(0, size_y - 1, size_y, dtype='f')
 
-        return parameters, background_array, axis_x, axis_y
+        image_region_of_interest = parameters.get("image_region_of_interest")
+        if image_region_of_interest:
+            _, size_x, _, size_y = image_region_of_interest
+
+        return parameters, background_array, axis_x, axis_y, size_x, size_y
 
     try:
-        pipeline_parameters, image_background_array, x_axis, y_axis = process_pipeline_parameters()
+        pipeline_parameters, image_background_array, x_axis, y_axis, x_size, y_size = process_pipeline_parameters()
 
         camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
@@ -56,7 +60,8 @@ def receive_process_send(stop_event, statistics, parameter_queue,
                 while not parameter_queue.empty():
                     new_parameters = parameter_queue.get()
                     pipeline_config.set_configuration(new_parameters)
-                    pipeline_parameters, image_background_array, x_axis, y_axis = process_pipeline_parameters()
+                    pipeline_parameters, image_background_array, x_axis, y_axis, x_size, y_size \
+                        = process_pipeline_parameters()
 
                 try:
                     data = source.receive()
@@ -69,6 +74,9 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
                 processed_data = process_image(image, timestamp, x_axis, y_axis,
                                                pipeline_parameters, image_background_array)
+
+                processed_data["width"] = x_size
+                processed_data["height"] = y_size
 
                 sender.send(data=processed_data)
 

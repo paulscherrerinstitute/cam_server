@@ -257,6 +257,9 @@ class PipelineManagerTest(unittest.TestCase):
             self.assertFalse(numpy.array_equal(normal_image_data.data.data['image'].value, black_image),
                              "There should be a non black image.")
 
+            self.assertEqual(normal_image_data.data.data["width"].value, 1280, "Incorrect width.")
+            self.assertEqual(normal_image_data.data.data["height"].value, 960, "Incorrect height.")
+
         white_image = numpy.zeros(shape=(960, 1280))
         white_image.fill(99999)
 

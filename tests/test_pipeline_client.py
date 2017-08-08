@@ -115,6 +115,10 @@ class PipelineClientTest(unittest.TestCase):
             self.assertTrue(numpy.array_equal(data.data.data["image"].value, numpy.zeros(shape=(200, 200))),
                             "Array should be all zeros, because of the threshold config.")
 
+            # Adjust width and height with the region of interest.
+            self.assertEqual(data.data.data["width"].value, 200, "Region of interest not takes into account.")
+            self.assertEqual(data.data.data["height"].value, 200, "Region of interest not takes into account.")
+
         self.assertNotEqual(instance_id_1, instance_id_2, "Instances should be different.")
         self.assertNotEqual(instance_stream_1, instance_stream_2, "Stream addresses should be different.")
 
