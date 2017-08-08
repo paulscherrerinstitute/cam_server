@@ -71,7 +71,7 @@ class PipelineTransceiverTest(unittest.TestCase):
                                  'x_fit_amplitude', 'y_fit_mean', 'processing_parameters', 'timestamp',
                                  'y_fit_gauss_function', 'y_profile', 'y_center_of_mass', 'x_fit_gauss_function',
                                  'x_rms', 'y_rms', 'y_fit_amplitude', 'image', 'y_axis', 'min_value', 'x_fit_mean',
-                                 'max_value', 'x_fit_offset', 'x_profile', 'y_fit_offset'])
+                                 'max_value', 'x_fit_offset', 'x_profile', 'y_fit_offset', 'width', 'height'])
 
             self.assertSetEqual(required_keys, set(data.data.data.keys()),
                                 "Missing required keys in pipeline output bsread message.")
