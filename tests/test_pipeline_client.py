@@ -5,10 +5,14 @@ import unittest
 from multiprocessing import Process
 from time import sleep
 
+import numpy
+from bsread import source, SUB
+
 from cam_server import CamClient, PipelineClient
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
+from cam_server.utils import get_host_port_from_stream_address
 
 
 class PipelineClientTest(unittest.TestCase):
@@ -92,11 +96,24 @@ class PipelineClientTest(unittest.TestCase):
         instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("testing_config")
         instance_id_2, instance_stream_2 = self.pipeline_client.create_instance_from_name("testing_config")
 
-        # TODO: try to change config of created instance on the fly.
-
         with self.assertRaisesRegex(ValueError, "Cannot change the camera name on a running instance. "
                                                 "Stop the instance first."):
             self.pipeline_client.set_instance_config(instance_id_1, {"camera_name": "different_camera"})
+
+        self.pipeline_client.set_instance_config(instance_id_2, {"image_threshold": 99999,
+                                                                 "image_region_of_interest": [0, 200, 0, 200]})
+
+        # Wait for the config update.
+        sleep(0.5)
+
+        pipeline_host, pipeline_port = get_host_port_from_stream_address(instance_stream_2)
+
+        with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
+            data = stream.receive()
+            self.assertIsNotNone(data, "This should really not happen anymore.")
+            # shape 200, 200 -> Account for the region of interest change.
+            self.assertTrue(numpy.array_equal(data.data.data["image"].value, numpy.zeros(shape=(200, 200))),
+                            "Array should be all zeros, because of the threshold config.")
 
         self.assertNotEqual(instance_id_1, instance_id_2, "Instances should be different.")
         self.assertNotEqual(instance_stream_1, instance_stream_2, "Stream addresses should be different.")
