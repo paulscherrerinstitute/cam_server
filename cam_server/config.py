@@ -28,6 +28,8 @@ DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 CAMERA_BSREAD_DATA_HEADER_COMPRESSION = "none"
 # Compression here might be a good idea. Use "bitshuffle_lz4" or None.
 CAMERA_BSREAD_IMAGE_COMPRESSION = "none"
+# Compression for scalar attributes.
+CAMERA_BSREAD_SCALAR_COMPRESSION = "none"
 
 #####################
 # Pipeline settings #

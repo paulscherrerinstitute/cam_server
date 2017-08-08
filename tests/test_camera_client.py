@@ -63,13 +63,16 @@ class CameraClientTest(unittest.TestCase):
             data = stream.receive()
             self.assertIsNotNone(data, "Received data was none.")
 
-            required_fields = set(["image", "timestamp"])
+            required_fields = set(["image", "timestamp", "width", "height"])
             self.assertSetEqual(required_fields, set(data.data.data.keys()), "Required fields missing.")
 
             image = data.data.data["image"].value
             x_size, y_size = CameraSimulation().get_geometry()
             self.assertListEqual(list(image.shape), [y_size, x_size],
                                  "Original and received image are not the same.")
+
+            self.assertEqual(data.data.data["width"].value, x_size, "Width not correct.")
+            self.assertEqual(data.data.data["height"].value, y_size, "Height not correct.")
 
         # Stop the simulation instance.
         self.client.stop_camera("simulation")

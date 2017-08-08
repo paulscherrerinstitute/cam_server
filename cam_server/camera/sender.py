@@ -35,7 +35,14 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
                                               "shape": [y_size, x_size],
                                               "type": "float32"})
-        sender.add_channel("timestamp", metadata={"compression": "none",
+
+        sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
+                                              "type": "int64"})
+
+        sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
+                                               "type": "int64"})
+
+        sender.add_channel("timestamp", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
                                                   "type": "float64"})
 
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
@@ -45,7 +52,9 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         def collect_and_send(image, timestamp):
             # Data to be sent over the stream.
             data = {"image": image,
-                    "timestamp": timestamp}
+                    "timestamp": timestamp,
+                    "width": x_size,
+                    "height": y_size}
 
             try:
                 sender.send(data=data, check_data=False)
