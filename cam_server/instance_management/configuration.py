@@ -14,7 +14,8 @@ class ConfigFileStorage(object):
         be used.
         """
 
-        # TODO: Format the config folder (/ should not matter at the end).
+        if len(config_folder) > 1 and config_folder[-1] == '/':
+            config_folder = config_folder[:-1]
 
         if not config_folder:
             config_folder = config.DEFAULT_CAMERA_CONFIG_FOLDER

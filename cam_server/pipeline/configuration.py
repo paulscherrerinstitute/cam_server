@@ -62,6 +62,10 @@ class PipelineConfigManager(object):
 
 class BackgroundImageManager(object):
     def __init__(self, background_folder):
+
+        if len(background_folder) > 1 and background_folder[-1] == '/':
+            background_folder = background_folder[:-1]
+
         self.background_folder = background_folder
 
     def get_background(self, background_name):
