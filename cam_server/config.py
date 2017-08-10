@@ -25,11 +25,11 @@ DEFAULT_CAMERA_CONFIG_FOLDER = "configuration/camera"
 DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 
 # We have only 2 channels: Image and timestamp. Header compression is not really needed.
-CAMERA_BSREAD_DATA_HEADER_COMPRESSION = "none"
+CAMERA_BSREAD_DATA_HEADER_COMPRESSION = "bitshuffle_lz4"
 # Compression here might be a good idea. Use "bitshuffle_lz4" or None.
-CAMERA_BSREAD_IMAGE_COMPRESSION = "none"
+CAMERA_BSREAD_IMAGE_COMPRESSION = "bitshuffle_lz4"
 # Compression for scalar attributes.
-CAMERA_BSREAD_SCALAR_COMPRESSION = "none"
+CAMERA_BSREAD_SCALAR_COMPRESSION = "bitshuffle_lz4"
 
 #####################
 # Pipeline settings #
