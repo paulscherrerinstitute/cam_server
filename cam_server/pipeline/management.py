@@ -26,15 +26,23 @@ class PipelineInstanceManager(InstanceManager):
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
 
-    def create_pipeline(self, pipeline_name=None, configuration=None):
+    def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
         """
         Create the pipeline stream address. Either pass the pipeline name, or the configuration.
         :param pipeline_name: Name of the pipeline to load from config.
         :param configuration: Configuration to load the pipeline with.
-        :return: Pipeline stream address.
+        :param instance_id: Name to assign to the instace. It must be unique.
+        :return: instance_id, Pipeline stream address.
         """
-        # Random uuid as the instance id.
-        instance_id = str(uuid.uuid4())
+        # User specified or random uuid as the instance id.
+        if not instance_id:
+            instance_id = str(uuid.uuid4())
+
+        # User can overwrite instance with specific id only if the instance is stopped.
+        if self.is_instance_present(instance_id) and self.get_instance(instance_id).is_running():
+            raise ValueError("Instance with id '%s' is already present and running. "
+                             "Use another instance_id or stop the current instance "
+                             "if you want to reuse the same instance_id." % instance_id)
 
         # You cannot specify both or none.
         if bool(pipeline_name) == bool(configuration):

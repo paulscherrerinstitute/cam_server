@@ -147,6 +147,14 @@ class PipelineClientTest(unittest.TestCase):
         background_id = self.pipeline_client.collect_background("simulation")
         expected_background_file = os.path.join(self.background_config_folder, background_id + ".npy")
 
+        # Unfortunately there is not way of knowing (from client side) how many images were collected.
+        background_id_2 = self.pipeline_client.collect_background("simulation", 5)
+
+        self.assertNotEqual(background_id, background_id_2, "Background should be different.")
+
+        with self.assertRaisesRegex(Exception, "n_images must be a number."):
+            self.pipeline_client.collect_background("simulation", "invalid_number")
+
         pipeline_config = {"camera_name": "simulation",
                            "background_image": background_id}
 
@@ -188,6 +196,56 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_client.delete_pipeline_config("testing_config")
         self.assertFalse("testing_config" in self.pipeline_client.get_pipelines(),
                          "Pipeline should not exist anymore.")
+
+        instance_id, stream_address = self.pipeline_client.create_instance_from_config(
+            {"camera_name": "simulation",
+             "image_threshold": 10}, "custom_instance"
+        )
+
+        self.assertEqual(instance_id, "custom_instance", "Custom instance not set properly.")
+
+        self.assertTrue("custom_instance" in self.pipeline_client.get_server_info()["active_instances"],
+                        "Instance with custom instance id not present.")
+
+        self.assertEqual(self.pipeline_client.get_instance_config("custom_instance")["image_threshold"], 10,
+                         "Config not set on custom instance id.")
+
+        with self.assertRaisesRegex(ValueError, "Instance with id 'custom_instance' is already present and running. "
+                                                "Use another instance_id or stop the current instance if you want "
+                                                "to reuse the same instance_id."):
+            self.pipeline_client.create_instance_from_config(
+                {"camera_name": "simulation"}, "custom_instance"
+            )
+
+        self.pipeline_client.stop_instance("custom_instance")
+
+        # The instance is now stopped, it should overwrite it.
+        self.pipeline_client.create_instance_from_config(
+            {"camera_name": "simulation",
+             "image_threshold": 20}, "custom_instance"
+        )
+
+        self.assertEqual(self.pipeline_client.get_instance_config("custom_instance")["image_threshold"], 20,
+                         "Instance with custom id not overwritten.")
+
+        self.pipeline_client.save_pipeline_config("testing_config", {"camera_name": "simulation",
+                                                                     "image_threshold": 30})
+
+        with self.assertRaisesRegex(ValueError, "Instance with id 'custom_instance' is already present and running. "
+                                                "Use another instance_id or stop the current instance if you want "
+                                                "to reuse the same instance_id."):
+            self.pipeline_client.create_instance_from_name("testing_config", "custom_instance")
+
+        self.assertEqual(self.pipeline_client.get_instance_config("custom_instance")["image_threshold"], 20,
+                         "Instance should not have changed.")
+
+        self.pipeline_client.stop_instance("custom_instance")
+
+        self.pipeline_client.create_instance_from_name("testing_config", "custom_instance")
+
+        self.assertEqual(self.pipeline_client.get_instance_config("custom_instance")["image_threshold"], 30,
+                         "Instance should have changed.")
+
 
 if __name__ == '__main__':
     unittest.main()

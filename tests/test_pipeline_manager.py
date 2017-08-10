@@ -290,6 +290,26 @@ class PipelineManagerTest(unittest.TestCase):
         instance_manager.config_manager.delete_pipeline_config("test")
         self.assertEqual(len(instance_manager.get_pipeline_list()), 0, "Pipeline should be empty")
 
+    def test_custom_instance_id(self):
+        instance_manager = get_test_pipeline_manager()
+        instance_manager.config_manager.save_pipeline_config("test_pipeline", {"camera_name": "simulation"})
+
+        instance_id, stream_address = instance_manager.create_pipeline("test_pipeline", instance_id="custom_instance")
+
+        self.assertEqual(instance_id, "custom_instance", "Custom instance name was not set.")
+
+        with self.assertRaisesRegex(ValueError, "Instance with id 'custom_instance' is already present and running. "
+                                                "Use another instance_id or stop the current instance "
+                                                "if you want to reuse the same instance_id."):
+            instance_manager.create_pipeline("test_pipeline", instance_id="custom_instance")
+
+        instance_manager.stop_instance("custom_instance")
+
+        instance_id, stream_address = instance_manager.create_pipeline(configuration={"camera_name": "simulation"},
+                                                                       instance_id="custom_instance")
+
+        self.assertEqual(instance_id, "custom_instance", "Custom instance name was not set.")
+
 
 if __name__ == '__main__':
     unittest.main()

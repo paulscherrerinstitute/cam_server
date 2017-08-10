@@ -43,6 +43,8 @@ DEFAULT_PIPELINE_CONFIG_FOLDER = "configuration/pipeline"
 DEFAULT_BACKGROUND_CONFIG_FOLDER = "configuration/background"
 # Maximum time to wait before aborting the receive.
 PIPELINE_RECEIVE_TIMEOUT = 1000
+# Default number of images to collect when acquiring the background.
+PIPELINE_DEFAULT_N_IMAGES_FOR_BACKGROUND = 10
 
 ################
 # IPC settings #

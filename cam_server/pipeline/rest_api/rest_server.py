@@ -40,7 +40,10 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     @app.post(api_root_address)
     def create_pipeline_from_config():
         pipeline_config = request.json
-        instance_id, stream_address = instance_manager.create_pipeline(configuration=pipeline_config)
+        user_instance_id = request.query.decode().get("instance_id")
+
+        instance_id, stream_address = instance_manager.create_pipeline(configuration=pipeline_config,
+                                                                       instance_id=user_instance_id)
 
         return {"state": "ok",
                 "status": "Stream address for pipeline %s." % instance_id,
@@ -50,7 +53,10 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     @app.post(api_root_address + '/<pipeline_name>')
     def create_pipeline_from_name(pipeline_name):
-        instance_id, stream_address = instance_manager.create_pipeline(pipeline_name=pipeline_name)
+        user_instance_id = request.query.decode().get("instance_id")
+
+        instance_id, stream_address = instance_manager.create_pipeline(pipeline_name=pipeline_name,
+                                                                       instance_id=user_instance_id)
 
         return {"state": "ok",
                 "status": "Stream address for pipeline %s." % instance_id,
@@ -116,10 +122,12 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     @app.post(api_root_address + '/camera/<camera_name>/background')
     def collect_background_on_camera(camera_name):
-        number_of_images = 10
+        number_of_images = request.query.decode().get("n_images", config.PIPELINE_DEFAULT_N_IMAGES_FOR_BACKGROUND)
 
-        if request.json and "number_of_images" in request.json:
-            number_of_images = request.json["number_of_images"]
+        try:
+            number_of_images = int(number_of_images)
+        except ValueError:
+            raise ValueError("n_images must be a number.")
 
         stream_address = instance_manager.cam_server_client.get_camera_stream(camera_name)
 

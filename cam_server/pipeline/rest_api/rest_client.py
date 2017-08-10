@@ -84,26 +84,44 @@ class PipelineClient(object):
 
         return validate_response(server_response)["stream"]
 
-    def create_instance_from_name(self, pipeline_name):
+    def create_instance_from_name(self, pipeline_name, instance_id=None):
         """
         Create a pipeline from a config file. Pipeline config can be changed.
         :param pipeline_name: Name of the pipeline to create.
+        :param instance_id: User specified instance id. GUID used if not specified.
         :return: Pipeline instance stream.
         """
         rest_endpoint = "/%s" % pipeline_name
-        server_response = requests.post(self.api_address_format % rest_endpoint).json()
+
+        if instance_id:
+            params = {"instance_id": instance_id}
+        else:
+            params = None
+
+        server_response = requests.post(self.api_address_format % rest_endpoint,
+                                        params=params).json()
+
         validate_response(server_response)
 
         return server_response["instance_id"], server_response["stream"]
 
-    def create_instance_from_config(self, configuration):
+    def create_instance_from_config(self, configuration, instance_id=None):
         """
         Create a pipeline from the provided config. Pipeline config can be changed.
         :param configuration: Config to use with the pipeline.
+        :param instance_id: User specified instance id. GUID used if not specified.
         :return: Pipeline instance stream.
         """
         rest_endpoint = ""
-        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
+
+        params = None
+        if instance_id:
+            params = {"instance_id": instance_id}
+
+        server_response = requests.post(self.api_address_format % rest_endpoint,
+                                        json=configuration,
+                                        params=params).json()
+
         validate_response(server_response)
 
         return server_response["instance_id"], server_response["stream"]
@@ -161,13 +179,18 @@ class PipelineClient(object):
 
         validate_response(server_response)
 
-    def collect_background(self, camera_name):
+    def collect_background(self, camera_name, n_images=None):
         """
         Collect the background image on the selected camera.
-        :param instance_id: Instance to collect the background on.
+        :param camera_name: Name of the camera to collect the background on.
+        :param n_images: Number of images to collect the background on.
         :return: Background id.
         """
+        params = None
+        if n_images:
+            params = {"n_images": n_images}
+
         rest_endpoint = "/camera/%s/background" % camera_name
-        server_response = requests.post(self.api_address_format % rest_endpoint).json()
+        server_response = requests.post(self.api_address_format % rest_endpoint, params=params).json()
 
         return validate_response(server_response)["background_id"]
