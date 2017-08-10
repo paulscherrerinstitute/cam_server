@@ -106,6 +106,14 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Pipeline %s configuration saved." % pipeline_name,
                 "config": instance_manager.config_manager.get_pipeline_config(pipeline_name)}
 
+    @app.delete(api_root_address + '/<pipeline_name>/config')
+    def delete_pipeline_config(pipeline_name):
+
+        instance_manager.config_manager.delete_pipeline_config(pipeline_name)
+
+        return {"state": "ok",
+                "status": "Pipeline %s configuration deleted." % pipeline_name}
+
     @app.post(api_root_address + '/camera/<camera_name>/background')
     def collect_background_on_camera(camera_name):
         number_of_images = 10

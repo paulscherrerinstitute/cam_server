@@ -120,6 +120,16 @@ class PipelineClient(object):
 
         return validate_response(server_response)["config"]
 
+    def delete_pipeline_config(self, pipeline_name):
+        """
+        Delete a pipeline config.
+        :param pipeline_name: Name of pipeline config to delete.
+        """
+        rest_endpoint = "/%s/config" % pipeline_name
+
+        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
+        validate_response(server_response)
+
     def set_instance_config(self, instance_id, configuration):
         """
         Set config of the instance.

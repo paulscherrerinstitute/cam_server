@@ -182,5 +182,12 @@ class PipelineClientTest(unittest.TestCase):
 
         self.pipeline_client.stop_all_instances()
 
+        self.assertTrue("testing_config" in self.pipeline_client.get_pipelines(),
+                        "Pre requirement for next test.")
+
+        self.pipeline_client.delete_pipeline_config("testing_config")
+        self.assertFalse("testing_config" in self.pipeline_client.get_pipelines(),
+                         "Pipeline should not exist anymore.")
+
 if __name__ == '__main__':
     unittest.main()

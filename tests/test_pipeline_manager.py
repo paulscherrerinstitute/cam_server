@@ -280,6 +280,16 @@ class PipelineManagerTest(unittest.TestCase):
 
         instance_manager.stop_all_instances()
 
+    def test_delete_pipeline(self):
+        instance_manager = get_test_pipeline_manager()
+        self.assertEqual(len(instance_manager.get_pipeline_list()), 0, "Pipeline should be empty")
+
+        instance_manager.config_manager.save_pipeline_config("test", {"camera_name": "simulation"})
+        self.assertEqual(len(instance_manager.get_pipeline_list()), 1, "Pipeline should not be empty")
+
+        instance_manager.config_manager.delete_pipeline_config("test")
+        self.assertEqual(len(instance_manager.get_pipeline_list()), 0, "Pipeline should be empty")
+
 
 if __name__ == '__main__':
     unittest.main()
