@@ -132,12 +132,12 @@ class PipelineClient(object):
 
         return validate_response(server_response)["config"]
 
-    def stop_instance(self, pipeline_id):
+    def stop_instance(self, instance_id):
         """
         Stop the pipeline.
-        :param pipeline_id: Name of the pipeline to stop.
+        :param instance_id: Name of the pipeline to stop.
         """
-        rest_endpoint = "/%s" % pipeline_id
+        rest_endpoint = "/%s" % instance_id
         server_response = requests.delete(self.api_address_format % rest_endpoint).json()
 
         validate_response(server_response)
