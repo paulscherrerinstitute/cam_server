@@ -229,7 +229,7 @@ class PipelineManagerTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Requested background 'non_existing' does not exist."):
             pipeline_manager.update_instance_config(instance_id, {"image_background": "non_existing"})
 
-        pipeline_manager.background_manager.save_background("non_existing", None)
+        pipeline_manager.background_manager.save_background("non_existing", None, append_timestamp=False)
         pipeline_manager.update_instance_config(instance_id, {"image_background": "non_existing"})
 
         self.assertEqual(pipeline_manager.get_instance(instance_id).get_configuration()["image_background"],
@@ -263,7 +263,7 @@ class PipelineManagerTest(unittest.TestCase):
         white_image = numpy.zeros(shape=(960, 1280))
         white_image.fill(99999)
 
-        instance_manager.background_manager.save_background("white_background", white_image)
+        instance_manager.background_manager.save_background("white_background", white_image, append_timestamp=False)
 
         instance_manager.update_instance_config(pipeline_id, {"image_background": "white_background"})
 

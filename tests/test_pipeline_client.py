@@ -246,6 +246,18 @@ class PipelineClientTest(unittest.TestCase):
         self.assertEqual(self.pipeline_client.get_instance_config("custom_instance")["image_threshold"], 30,
                          "Instance should have changed.")
 
+        background_1 = self.pipeline_client.collect_background("simulation")
+        background_2 = self.pipeline_client.collect_background("simulation")
+
+        self.assertNotEqual(background_1, background_2)
+
+        latest_background = self.pipeline_client.get_latest_background("simulation")
+
+        self.assertEqual(latest_background, background_2, "Wrong background set as latest.")
+
+        with self.assertRaisesRegex(ValueError, "No background matches for the specified prefix 'does not exist'."):
+            self.pipeline_client.get_latest_background("does not exist")
+
 
 if __name__ == '__main__':
     unittest.main()

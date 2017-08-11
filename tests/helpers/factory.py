@@ -1,4 +1,4 @@
-import numpy
+from datetime import datetime
 from cam_server import CamClient
 from cam_server.camera.configuration import CameraConfigManager
 from cam_server.camera.management import CameraInstanceManager
@@ -41,8 +41,17 @@ class MockBackgroundManager:
 
         return self.backgrounds[background_name]
 
-    def save_background(self, background_name, image):
+    def save_background(self, background_name, image, append_timestamp=True):
+        if append_timestamp:
+            background_name += datetime.now().strftime("_%Y%m%d_%H%M%S_%f")
+
         self.backgrounds[background_name] = image
+
+        return background_name
+
+    def get_latest_background_id(self, background_prefix):
+        raise NotImplementedError("This cannot work in the mock.")
+
 
 
 class MockConfigStorage:

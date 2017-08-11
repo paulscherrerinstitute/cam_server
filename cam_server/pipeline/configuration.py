@@ -1,7 +1,11 @@
+import glob
 from collections import OrderedDict
 
 import copy
 import os
+from datetime import datetime
+from os.path import basename
+
 import numpy
 
 
@@ -79,9 +83,25 @@ class BackgroundImageManager(object):
 
         return numpy.load(background_filename)
 
-    def save_background(self, background_name, image):
+    def save_background(self, background_name, image, append_timestamp=True):
+        if append_timestamp:
+            background_name += datetime.now().strftime("_%Y%m%d_%H%M%S_%f")
+
         background_filename = os.path.join(self.background_folder, background_name + ".npy")
         numpy.save(background_filename, image)
+
+        return background_name
+
+    def get_latest_background_id(self, background_prefix):
+        matching_backgrounds = glob.glob(self.background_folder + '/%s*.npy' % background_prefix)
+
+        if not matching_backgrounds:
+            raise ValueError("No background matches for the specified prefix '%s'." % background_prefix)
+
+        latest_background_filename = sorted(matching_backgrounds)[-1]
+        latest_background_id = os.path.splitext(basename(latest_background_filename))[0]
+
+        return latest_background_id
 
 
 class PipelineConfig:

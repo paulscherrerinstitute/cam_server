@@ -194,3 +194,15 @@ class PipelineClient(object):
         server_response = requests.post(self.api_address_format % rest_endpoint, params=params).json()
 
         return validate_response(server_response)["background_id"]
+
+    def get_latest_background(self, camera_name):
+        """
+        Return the latest collected background for a camera.
+        :param camera_name: Name of the camera to return the background.
+        :return: Background id.
+        """
+
+        rest_endpoint = "/camera/%s/background" % camera_name
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+
+        return validate_response(server_response)["background_id"]

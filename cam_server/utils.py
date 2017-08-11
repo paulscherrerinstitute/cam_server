@@ -1,4 +1,3 @@
-from datetime import datetime
 from logging import getLogger
 
 import numpy
@@ -50,10 +49,10 @@ def collect_background(camera_name, stream_address, n_images, background_manager
                 else:
                     accumulator_image += image
 
-        background_id = camera_name + datetime.now().strftime("_%Y%m%d_%H%M%S_%f")
+        background_prefix = camera_name
         background_image = accumulator_image / n_images
 
-        background_manager.save_background(background_id, background_image)
+        background_id = background_manager.save_background(background_prefix, background_image)
 
         return background_id
 

@@ -99,7 +99,7 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         background_array = numpy.zeros(shape=simulated_camera_shape)
         background_array.fill(99999)
-        background_manager.save_background("full_background", background_array)
+        background_manager.save_background("full_background", background_array, append_timestamp=False)
 
         def send():
             receive_process_send(stop_event, statistics, parameter_queue, self.client, pipeline_config,

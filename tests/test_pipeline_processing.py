@@ -54,7 +54,8 @@ class PipelineProcessingTest(unittest.TestCase):
 
         background_provider = MockBackgroundManager()
         x_size, y_size = simulated_camera.get_geometry()
-        background_provider.save_background("white_background", numpy.zeros(shape=(y_size, x_size)))
+        background_provider.save_background("white_background", numpy.zeros(shape=(y_size, x_size)),
+                                            append_timestamp=False)
 
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
         parameters = pipeline_config.get_configuration()
@@ -79,7 +80,7 @@ class PipelineProcessingTest(unittest.TestCase):
 
         max_background = numpy.zeros(shape=(y_size, x_size))
         max_background.fill(max_value_in_image)
-        background_provider.save_background("max_background", max_background)
+        background_provider.save_background("max_background", max_background, append_timestamp=False)
 
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
         parameters = pipeline_config.get_configuration()

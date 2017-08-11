@@ -1,4 +1,5 @@
 import unittest
+from time import sleep
 
 import numpy
 import os
@@ -72,8 +73,10 @@ class PipelineConfigTest(unittest.TestCase):
         shape = (960, 1280)
         image = numpy.zeros(shape=shape, dtype="f8")
 
-        background_manager.save_background("test_background", image)
+        return_name = background_manager.save_background("test_background", image, append_timestamp=False)
         expected_file = "background_config/test_background.npy"
+
+        self.assertEqual(return_name, "test_background", "Saved and returned backgrounds are not the same.")
 
         self.assertTrue(os.path.exists(expected_file),
                         "The background is not in the expected location.")
@@ -83,6 +86,34 @@ class PipelineConfigTest(unittest.TestCase):
         self.assertTrue(numpy.array_equal(image, loaded_image), "Loaded background not same as saved.")
 
         os.remove(expected_file)
+
+        return_name = background_manager.save_background("test_background", image, append_timestamp=True)
+        self.assertNotEqual(return_name, "test_background", "The names should not be equal.")
+        expected_file = "background_config/" + return_name + ".npy"
+
+        os.remove(expected_file)
+
+    def test_get_latest_background(self):
+        background_manager = BackgroundImageManager("background_config/")
+
+        shape = (960, 1280)
+        image = numpy.zeros(shape=shape, dtype="f8")
+
+        return_name_1 = background_manager.save_background("test_background", image)
+        sleep(0.1)
+        return_name_2 = background_manager.save_background("test_background", image)
+        sleep(0.1)
+        return_name_3 = background_manager.save_background("test_background", image)
+
+        self.assertNotEqual(return_name_1, return_name_2)
+        self.assertNotEqual(return_name_2, return_name_3)
+
+        return_name_latest = background_manager.get_latest_background_id("test_background")
+
+        self.assertEqual(return_name_3, return_name_latest, "Return background id is not correct.")
+
+        with self.assertRaisesRegex(ValueError, "No background matches for the specified prefix 'not_here'."):
+            background_manager.get_latest_background_id("not_here")
 
     def test_default_config(self):
         configuration = {

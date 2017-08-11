@@ -147,22 +147,31 @@ In the API description, localhost and port 8888 are assumed. Please change this 
 
 * `GET localhost:8888/api/v1/cam` - get the list of available cameras.
     - Response specific field: "cameras" - List of cameras.
+    
 * `GET localhost:8888/api/v1/cam/<camera_name>` - get the camera stream.
     - Response specific field: "stream" - Stream address.
+    
 * `GET localhost:8888/api/v1/cam/<camera_name>/config` - get camera config.
     - Response specific field: "config" - configuration JSON.
+    
 * `POST localhost:8888/api/v1/cam/<camera_name>/config` - set camera config.
     - Response specific field: "config" configuration JSON.
+    
 * `DELETE localhost:8888/api/v1/cam/<camera_name>/config` - delete the camera config.
     - Response specific field: None
+    
 * `GET localhost:8888/api/v1/cam/<camera_name>/geometry` - get the geometry of the camera.
     - Response specific field: "geometry" - \[width, height\] of image
+    
 * `GET localhost:8888/api/v1/cam/<camera_name>/image` - get one PNG image of the camera.
     - Returns a PNG image
+    
 * `GET localhost:8888/api/v1/cam/info` - return info on the camera manager.
     - Response specific field: "info" - JSON with instance info.
+    
 * `DELETE localhost:8888/api/v1/cam` - stop all camera instances.
     - Response specific field: None
+    
 * `DELETE localhost:8888/api/v1/cam/<camera_name>` - stop the camera instance.
     - Response specific field: None
 
@@ -172,29 +181,47 @@ In the API description, localhost and port 8889 are assumed. Please change this 
 
 * `GET localhost:8889/api/v1/pipeline` - get the list of available pipelines.
     - Response specific field: "pipelines" - List of pipelines.
-* `POST localhost:8889/api/v1/pipeline` - create a pipeline by passing its config as a JSON payload.
+    
+* `POST localhost:8889/api/v1/pipeline?instance_id=id` - create a pipeline by passing its config as a JSON payload.
+    - Query parameter: instance_id (optional) - request a specific instance id. Must be unique.
     - Response specific field: "instance_id", "stream", "config"
-* `POST localhost:8889/api/v1/pipeline/<pipeline_name>` - create a pipeline from a named config.
+    
+* `POST localhost:8889/api/v1/pipeline/<pipeline_name>?instance_id=id` - create a pipeline from a named config.
+    - Query parameter: instance_id (optional) - request a specific instance id. Must be unique.
     - Response specific field: "instance_id", "stream", "config"
+    
 * `GET localhost:8889/api/v1/pipeline/instance/<instance_id>` - get pipeline instance stream address.
     - Response specific field: "stream" - Stream address of the pipeline instance.
+   
 * `GET localhost:8889/api/v1/pipeline/instance/<instance_id>/info` - get pipeline instance info.
     - Response specific field: "info" - JSON with instance info.
+    
 * `GET localhost:8889/api/v1/pipeline/instance/<instance_id>/config` - get pipeline instance config.
     - Response specific field: "config" - JSON instance config.
+    
 * `POST localhost:8889/api/v1/pipeline/instance/<instance_id>/config` - set pipeline instance config - JSON payload.
     - Response specific field: "config" - JSON instance config.
+    
 * `GET localhost:8889/api/v1/pipeline/<pipeline_name>/config` - get named pipeline config.
     - Response specific field: "config" - JSON named pipeline config.
+    
 * `POST localhost:8889/api/v1/pipeline/<pipeline_name>/config` - set named pipeline config - JSON payload.
     - Response specific field: "config" - JSON named pipeline config.
-* `POST localhost:8889/api/v1/pipeline/camera/<camera_name>/background` - collect background for the camera.
+    
+* `POST localhost:8889/api/v1/pipeline/camera/<camera_name>/background?n_images=10` - collect background for the camera.
+    - Query parameter: n_images (optional) = how many images to average for the background.
     - Response specific field: "background_id" - ID of the acquired background.
-* `GET localhost:8888/api/v1/pipeline/info` - return info on the pipeline manager.
+    
+* `GET localhost:8889/api/v1/pipeline/camera/<camera_name>/background` - return latest background for camera.
+    - Response specific field: "background_id" - ID of the latest background for the camera.
+    
+* `GET localhost:8889/api/v1/pipeline/info` - return info on the pipeline manager.
     - Response specific field: "info" -  JSON with instance info.
-* `DELETE localhost:8888/api/v1/pipeline` - stop all pipeline instances.
+    
+* `DELETE localhost:8889/api/v1/pipeline` - stop all pipeline instances.
     - Response specific field: None
-* `DELETE localhost:8888/api/v1/pipeline/<instance_id>` - stop the pipeline instance.
+    
+* `DELETE localhost:8889/api/v1/pipeline/<instance_id>` - stop the pipeline instance.
     - Response specific field: None
     
 
