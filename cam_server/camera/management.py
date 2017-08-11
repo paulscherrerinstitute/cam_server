@@ -4,6 +4,7 @@ from logging import getLogger
 from cam_server import config
 from cam_server.camera.sender import process_camera_stream
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
+from cam_server.utils import get_port_generator
 
 _logger = getLogger(__name__)
 
@@ -13,7 +14,7 @@ class CameraInstanceManager(InstanceManager):
         super(CameraInstanceManager, self).__init__()
 
         self.config_manager = config_manager
-        self.port_generator = iter(range(*config.CAMERA_STREAM_PORT_RANGE))
+        self.port_generator = get_port_generator(config.CAMERA_STREAM_PORT_RANGE)
         self.hostname = hostname
 
     def get_camera_list(self):

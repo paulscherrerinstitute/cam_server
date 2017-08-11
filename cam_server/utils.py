@@ -1,3 +1,4 @@
+from itertools import cycle
 from logging import getLogger
 
 import numpy
@@ -29,6 +30,10 @@ def update_pipeline_config(current_config, config_updates):
     current_config.update(config_updates)
 
     return current_config
+
+
+def get_port_generator(port_range):
+    return cycle(iter(range(*port_range)))
 
 
 def collect_background(camera_name, stream_address, n_images, background_manager):

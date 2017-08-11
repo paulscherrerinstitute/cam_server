@@ -1,13 +1,12 @@
 import socket
 import uuid
-from itertools import cycle
 from logging import getLogger
 
 from cam_server import config
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
-from cam_server.utils import update_pipeline_config
+from cam_server.utils import update_pipeline_config, get_port_generator
 
 _logger = getLogger(__name__)
 
@@ -21,7 +20,7 @@ class PipelineInstanceManager(InstanceManager):
         self.cam_server_client = cam_server_client
         self.hostname = hostname
 
-        self.port_generator = cycle(iter(range(*config.PIPELINE_STREAM_PORT_RANGE)))
+        self.port_generator = get_port_generator(config.PIPELINE_STREAM_PORT_RANGE)
 
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
