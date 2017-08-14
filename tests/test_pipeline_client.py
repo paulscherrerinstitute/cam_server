@@ -258,6 +258,11 @@ class PipelineClientTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "No background matches for the specified prefix 'does not exist'."):
             self.pipeline_client.get_latest_background("does not exist")
 
+        expected_cameras = ['example_1', 'example_3', 'example_2', 'simulation', 'example_4']
+
+        self.assertEqual(set(self.pipeline_client.get_cameras()), set(expected_cameras),
+                         "Expected cameras not present.")
+
 
 if __name__ == '__main__':
     unittest.main()

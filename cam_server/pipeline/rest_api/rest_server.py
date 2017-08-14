@@ -147,6 +147,13 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Latest background for camera %s." % camera_name,
                 "background_id": background_id}
 
+    @app.get(api_root_address + '/camera')
+    def get_camera_list():
+
+        return {"state": "ok",
+                "status": "List of available cameras.",
+                "cameras": instance_manager.cam_server_client.get_cameras()}
+
     @app.error(405)
     def method_not_allowed(res):
         if request.method == 'OPTIONS':

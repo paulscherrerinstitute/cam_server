@@ -206,3 +206,13 @@ class PipelineClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
 
         return validate_response(server_response)["background_id"]
+
+    def get_cameras(self):
+        """
+        List available cameras.
+        :return: Currently available cameras.
+        """
+        rest_endpoint = "/camera"
+
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["cameras"]

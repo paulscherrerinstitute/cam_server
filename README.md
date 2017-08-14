@@ -208,6 +208,9 @@ In the API description, localhost and port 8889 are assumed. Please change this 
 * `POST localhost:8889/api/v1/pipeline/<pipeline_name>/config` - set named pipeline config - JSON payload.
     - Response specific field: "config" - JSON named pipeline config.
     
+* `GET localhost:8889/api/v1/pipeline/camera` - return the list of available cameras.
+    - Response specific field: "cameras" - List of cameras.
+    
 * `POST localhost:8889/api/v1/pipeline/camera/<camera_name>/background?n_images=10` - collect background for the camera.
     - Query parameter: n_images (optional) = how many images to average for the background.
     - Response specific field: "background_id" - ID of the acquired background.

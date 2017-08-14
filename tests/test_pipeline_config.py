@@ -309,7 +309,5 @@ class PipelineConfigTest(unittest.TestCase):
                              "Image slices defaults not applied.")
 
 
-
-
 if __name__ == '__main__':
     unittest.main()
