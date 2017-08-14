@@ -86,7 +86,8 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         pipeline_config = PipelineConfig("test_pipeline", parameters={
             "camera_name": "simulation",
-            "image_background": "full_background"
+            "image_background": "full_background",
+            "image_background_enable": True
         })
 
         background_manager = MockBackgroundManager()

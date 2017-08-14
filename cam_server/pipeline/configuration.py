@@ -108,6 +108,7 @@ class PipelineConfig:
 
     DEFAULT_CONFIGURATION = {
         "camera_calibration": None,
+        "image_background_enable": False,
         "image_background": None,
         "image_threshold": None,
         "image_region_of_interest": None,

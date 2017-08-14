@@ -88,7 +88,8 @@ Example:
 
 Configuration changes can for the pipeline can be incremental - you need to specify only the fields that you want 
 to change. A valid configuration must have only the **camera_name** specified, all other fields will be 
-defaulted to **None**. The complete configuration used for the pipeline is added to the output bsread stream in the 
+defaulted to **None** (or False, in the case of "image_background_enable"). The complete configuration used for the 
+pipeline is added to the output bsread stream in the 
 **processing\_parameters** field.
 
 Example:
@@ -105,6 +106,7 @@ Example:
   },
 
   "image_background": null,
+  "image_background_enable": false,
   "image_threshold": 0.5,
   "image_region_of_interest": [0, 100, 0, 100],
 

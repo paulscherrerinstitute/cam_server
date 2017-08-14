@@ -200,6 +200,7 @@ class PipelineManagerTest(unittest.TestCase):
                 "angle_vertical": 8.0
             },
             "image_background": None,
+            "image_background_enable": False,
             "image_threshold": 2,
             "image_region_of_interest": [3, 4, 5, 6],
             "image_good_region": {
@@ -285,11 +286,25 @@ class PipelineManagerTest(unittest.TestCase):
 
         # Collect from the camera.
         with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
+            image_data = stream.receive()
+            self.assertIsNotNone(image_data, "This should really not happen anymore.")
+
+        # Because we didn't set the "image_background_enable" yet.
+        self.assertFalse(numpy.array_equal(image_data.data.data["image"].value, black_image),
+                         "Background should not be yet applied.")
+
+        instance_manager.update_instance_config(pipeline_id, {"image_background_enable": True})
+
+        # Give it some time to load the background.
+        sleep(0.5)
+
+        # Collect from the camera.
+        with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
             black_image_data = stream.receive()
             self.assertIsNotNone(black_image_data, "This should really not happen anymore.")
 
         self.assertTrue(numpy.array_equal(black_image_data.data.data["image"].value, black_image),
-                        "Since the background is white, the image should be black.")
+                         "Now background should work.")
 
         instance_manager.stop_all_instances()
 

@@ -21,7 +21,11 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
     def process_pipeline_parameters():
         parameters = pipeline_config.get_configuration()
-        background_array = background_manager.get_background(pipeline_config.get_background_id())
+
+        background_array = None
+        if parameters.get("image_background_enable"):
+            background_array = background_manager.get_background(pipeline_config.get_background_id())
+
         size_x, size_y = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
 
         calibration = parameters.get("calibration")
@@ -68,6 +72,10 @@ def receive_process_send(stop_event, statistics, parameter_queue,
                 except Again:
                     _logger.error("Source '%s:%d' did not provide message in time. Aborting.", source_host, source_port)
                     stop_event.set()
+
+                # In case of receiving error, the returned data is None.
+                if data is None:
+                    continue
 
                 image = data.data.data["image"].value
                 timestamp = data.data.data["timestamp"].value

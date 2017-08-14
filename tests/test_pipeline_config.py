@@ -216,6 +216,7 @@ class PipelineConfigTest(unittest.TestCase):
                 "angle_horizontal": 7.0,
                 "angle_vertical": 8.0
             },
+            "image_background_enable": True,
             "image_background": "test_2",
             "image_threshold": 2,
             "image_region_of_interest": [3, 4, 5, 6],
@@ -278,6 +279,9 @@ class PipelineConfigTest(unittest.TestCase):
         updated_config = update_pipeline_config(updated_config, {"image_threshold": None})
         self.assertEqual(updated_config["image_threshold"], None)
 
+        updated_config = update_pipeline_config(updated_config, {"image_background_enable": None})
+        self.assertEqual(updated_config["image_background_enable"], None)
+
         self.assertTrue(all(value is None for value in updated_config.values()))
 
     def test_expand_pipeline_config(self):
@@ -307,6 +311,15 @@ class PipelineConfigTest(unittest.TestCase):
 
         self.assertDictEqual(expanded_configuration["image_slices"], PipelineConfig.DEFAULT_IMAGE_SLICES,
                              "Image slices defaults not applied.")
+
+        configuration = {"camera_name": "simulation",
+                         "image_background_enable": None}
+
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+
+        self.assertEqual(expanded_configuration["image_background_enable"],
+                         PipelineConfig.DEFAULT_CONFIGURATION["image_background_enable"],
+                         "Default value not applied. It should not be None.")
 
 
 if __name__ == '__main__':
