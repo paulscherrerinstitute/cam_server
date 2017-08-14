@@ -235,6 +235,19 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertEqual(pipeline_manager.get_instance(instance_id).get_configuration()["image_background"],
                          "non_existing", "Background not updated.")
 
+        pipeline_manager.update_instance_config(instance_id, {"image_background": None})
+        self.assertIsNone(pipeline_manager.get_instance(instance_id).get_configuration()["image_background"],
+                          "Background should be None.")
+
+        pipeline_manager.update_instance_config(instance_id, {"image_slices": None})
+        self.assertIsNone(pipeline_manager.get_instance(instance_id).get_configuration()["image_slices"],
+                          "Sub dictionary not set to None.")
+
+        pipeline_manager.update_instance_config(instance_id, {"image_good_region": {"gfscale": None}})
+        self.assertEqual(pipeline_manager.get_instance(instance_id).get_configuration()["image_good_region"]["gfscale"],
+                         PipelineConfig.DEFAULT_IMAGE_GOOD_REGION["gfscale"],
+                         "Default value not set correctly.")
+
         pipeline_manager.stop_all_instances()
 
     def test_update_instance_config_with_running(self):

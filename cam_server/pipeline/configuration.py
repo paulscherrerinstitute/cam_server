@@ -207,7 +207,8 @@ class PipelineConfig:
 
         def expand_section(provided_value, default_value):
             expanded_section = copy.deepcopy(default_value)
-            expanded_section.update(provided_value)
+            # Prevent None values to overwrite defaults.
+            expanded_section.update((k, v) for k, v in provided_value.items() if v is not None)
             return expanded_section
 
         expanded_config = expand_section(configuration, PipelineConfig.DEFAULT_CONFIGURATION)

@@ -6,7 +6,7 @@ from bottle import request, response
 
 from cam_server import config
 from cam_server.instance_management import rest_api
-from cam_server.utils import collect_background, update_pipeline_config
+from cam_server.utils import collect_background
 
 _logger = logging.getLogger(__name__)
 

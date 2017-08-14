@@ -100,6 +100,7 @@ class PipelineInstanceManager(InstanceManager):
                 hostname=self.hostname,
                 read_only_config=True  # Implicitly created instances are read only.
             ))
+        # TODO: If instance is not running, reload the config first.
 
         self.start_instance(instance_id)
 
@@ -156,7 +157,9 @@ class PipelineInstance(InstanceWrapper):
             raise ValueError("Cannot change the camera name on a running instance. Stop the instance first.")
 
         self.pipeline_config.set_configuration(configuration)
-        super().set_parameter(configuration)
+
+        # The set configuration sets the default parameters.
+        super().set_parameter(self.pipeline_config.get_configuration())
 
     def get_parameters(self):
         return self.pipeline_config.get_configuration()

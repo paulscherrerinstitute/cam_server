@@ -243,6 +243,73 @@ class PipelineConfigTest(unittest.TestCase):
         self.assertDictEqual(updated_config, config_updates,
                              "Everything was not updated properly.")
 
+        # Try removing element by element from the config - negative update.
+
+        updated_config = update_pipeline_config(updated_config, {"camera_name": None})
+        self.assertEqual(updated_config["camera_name"], None)
+
+        updated_config = update_pipeline_config(updated_config, {"camera_calibration": {"reference_marker": None}})
+        self.assertEqual(updated_config["camera_calibration"]["reference_marker"], None)
+        self.assertEqual(updated_config["camera_calibration"]["reference_marker_width"], 5.0)
+
+        updated_config = update_pipeline_config(updated_config, {"camera_calibration": None})
+        self.assertEqual(updated_config["camera_calibration"], None)
+
+        updated_config = update_pipeline_config(updated_config, {"image_background": None})
+        self.assertEqual(updated_config["image_background"], None)
+
+        updated_config = update_pipeline_config(updated_config, {"image_region_of_interest": None})
+        self.assertEqual(updated_config["image_region_of_interest"], None)
+
+        updated_config = update_pipeline_config(updated_config, {"image_good_region": {"threshold": None}})
+        self.assertEqual(updated_config["image_good_region"]["threshold"], None)
+        self.assertEqual(updated_config["image_good_region"]["gfscale"], 3.6)
+
+        updated_config = update_pipeline_config(updated_config, {"image_good_region": None})
+        self.assertEqual(updated_config["image_good_region"], None)
+
+        updated_config = update_pipeline_config(updated_config, {"image_slices": {"number_of_slices": None}})
+        self.assertEqual(updated_config["image_slices"]["number_of_slices"], None)
+        self.assertEqual(updated_config["image_slices"]["scale"], 7)
+
+        updated_config = update_pipeline_config(updated_config, {"image_slices": None})
+        self.assertEqual(updated_config["image_slices"], None)
+
+        updated_config = update_pipeline_config(updated_config, {"image_threshold": None})
+        self.assertEqual(updated_config["image_threshold"], None)
+
+        self.assertTrue(all(value is None for value in updated_config.values()))
+
+    def test_expand_pipeline_config(self):
+        configuration = {"camera_name": "simulation",
+                         "image_slices": {
+                             "number_of_slices": None,
+                             "scale": 7}
+                         }
+
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+        self.assertEqual(expanded_configuration["image_slices"]["number_of_slices"],
+                         PipelineConfig.DEFAULT_IMAGE_SLICES["number_of_slices"],
+                         "Default not applied.")
+
+        configuration = {"camera_name": "simulation",
+                         "image_slices": None}
+
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+
+        self.assertIsNone(expanded_configuration["image_slices"],
+                          "It should still be None.")
+
+        configuration = {"camera_name": "simulation",
+                         "image_slices": {}}
+
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+
+        self.assertDictEqual(expanded_configuration["image_slices"], PipelineConfig.DEFAULT_IMAGE_SLICES,
+                             "Image slices defaults not applied.")
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
