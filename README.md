@@ -73,7 +73,15 @@ The expected folder structure for the configuration (which can be changed by pas
 ### Camera configuration
 For camera configuration, all fields must be specified, and there is no defaulting in case some are missing.
 
-Example:
+#### Configuration parameters
+
+- **name**: Name of the camera.
+- **prefix**: PV prefix to connect to the camera.
+- **mirror\_x**: Mirror camera image over X axis.
+- **mirror\_y**: Mirror camera image over Y axis.
+- **rotate**: how many times to rotate the camera image by 90 degrees.
+
+#### Example
 ```json
 {
   "name": "example_4",
@@ -92,7 +100,27 @@ defaulted to **None** (or False, in the case of "image_background_enable"). The 
 pipeline is added to the output bsread stream in the 
 **processing\_parameters** field.
 
-Example:
+#### Configuration parameters
+
+- **camera\_name** : Name of the camera to use as a pipeline source.
+- **camera\_calibration** (Default _None_): Info on how to convert the camera pixels into engineering units.
+    - reference_marker (Default _[0, 0, 100, 100]_): Reference markers placement.
+    - reference_marker_width (Default _100.0_): Width of reference markers.
+    - reference_marker_height (Default _100.0_): Height of reference markers.
+    - angle_horizontal (Default _0.0_): Horizontal angle.
+    - angle_vertical (Default _0.0_): Vertical angle.
+- **image\_background** (Default _None_): Background to subtract from the original image.
+- **image\_background_enable** (Default _False_): Enable or disale the image_background subtraction.
+- **image\_threshold** (Default _None_): Minimum value of each pixel. Pixels below the threshold are converted to 0.
+- **image\_region\_of\_interest** (Default _None_): Crop the image before processing.
+- **image\_good\_region** (Default _None_): Good region to use for fits and slices.
+    - threshold (Default _0.3_): Threshold to apply on each pixel.
+    - gfscale (Default _1.8_): Scale to extend the good region.
+- **image\_slices** (Default _None_): 
+    - number_of_slices (Default _1_): Desired number of slices.
+    - scale (Default _2.0_): Good region scale in for slicing purposes.
+
+#### Example
 ```json
 {
   "camera_name": "simulation",
