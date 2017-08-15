@@ -28,7 +28,7 @@ conda install --use-local mflow_node_processors
 ```
 
 ## Docker build
-To use the docker image run 
+To build the docker image run (from project root):
 ```bash
 ./docker/build.sh
 ```
@@ -274,8 +274,8 @@ The two servers are:
 You can also use the docker container directly - it setups and starts both servers.
 
 Before you can run the servers, you need to have (and specify where you have it) the cameras, pipelines and background 
-configurations. This configurations are not part of this repository but are available on:
-- https://git.psi.ch/controls_highlevel_applications/cam_server_configuration
+configurations. In this repo, you can find the test configurations inside the **tests/** folder. To use the 
+production configuration, see **Production configuration** chapter below.
 
 ### Camera server
 
@@ -324,6 +324,40 @@ optional arguments:
 ```
 
 ### Docker container
+To execute the application inside a docker container, you must first start it (from the project root folder):
+```bash
+docker run --net=host -it -v /CURRENT_DIR/tests:/configuration docker.psi.ch:5000/cam_server
+```
+
+**WARNING**: Docker needs (at least on OSX) a full path for the -v option. Replace the **CURRENT\_DIR** with your 
+actual path.
+
+This will map the test configuration (-v option) to the /configuration folder inside the container. 
+If you need to have the production configuration, see the next chapter.
+
+Once in the container bash, you can start the two servers:
+```bash
+camera_server & pipeline_server &
+```
+
+### Production configuration
+
+The production configurations are not part of this repository but are available on:
+- https://git.psi.ch/controls_highlevel_applications/cam_server_configuration
+
+You can download it using git:
+```bash
+git clone https://git.psi.ch/controls_highlevel_applications/cam_server_configuration.git
+```
+
+And later, when you start the docker container, map the configuration using the **-v** parameter:
+```bash
+docker run --net=host -it -v /CURRENT_DIR/cam_server_configuration/configuration:/configuration docker.psi.ch:5000/cam_server
+```
+
+**WARNING**: Docker needs (at least on OSX) a full path for the -v option. Replace the **CURRENT\_DIR** with your 
+actual path.
+
 
 ## Examples
 
