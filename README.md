@@ -586,6 +586,51 @@ actual path.
 <a id="get_simulation_camera_stream"></a>
 ### Get the simulation camera stream
 
+This is just an example on how you can retrieve the raw image from the camera. You **should not** do this for 
+the normal use case. See next example for a more common use.
+
+```python
+from cam_server import CamClient
+from cam_server.utils import get_host_port_from_stream_address
+from bsread import source, SUB
+
+# Change to match your camera server
+server_address = "http://0.0.0.0:8888"
+
+# Initialize the client.
+camera_client = CamClient(server_address)
+
+# Get stream address of simulation camera. Stream address in format tcp://hostname:port.
+camera_stream_address = camera_client.get_camera_stream("simulation")
+
+# Extract the stream hostname and port from the stream address.
+camera_host, camera_port = get_host_port_from_stream_address(camera_stream_address)
+
+# Subscribe to the stream.
+with source(host=camera_host, port=camera_port, mode=SUB) as stream:
+    # Receive next message.
+    data = stream.receive()
+
+image_width = data.data.data["width"].value
+image_height = data.data.data["height"].value
+image_bytes = data.data.data["image"].value
+
+print("Image size: %d x %d" % (image_width, image_height))
+print("Image data: %s" % image_bytes)
+```
+
+<a id="basic_pipeline"></a>
+### Get a basic pipeline with a simulated camera
+
+In contrast with the example above, where we just request a camera stream, we have to create a pipeline instance 
+in this example. We create a pipeline instance by specifying which camera - simulation in our example - to use as 
+the pipeline source.
+
+By not giving any additional pipeline parameters, the image will in fact be exactly the same as the one in the 
+previous example. Even if requesting a raw camera image, it is still advisable to use the PipelineClient (and create 
+an empty pipeline as in the example below) because the CamClient might change and be moved to a different server out 
+of your reach.
+
 ```python
 from cam_server import PipelineClient
 from cam_server.utils import get_host_port_from_stream_address
@@ -619,8 +664,33 @@ print("Image size: %d x %d" % (image_width, image_height))
 print("Image data: %s" % image_bytes)
 ```
 
-<a id="basic_pipeline"></a>
-### Get a basic pipeline with a simulated camera
-
 <a id="private_pipeline"></a>
-### Create a private pipeline instance and collect the camera background
+### Create a pipeline instance with background
+
+This example is the continuation of the previous example. Before creating our own pipeline, we collect the 
+background for the simulation camera and apply it to the pipeline.
+
+```python
+from cam_server import PipelineClient
+from cam_server.utils import get_host_port_from_stream_address
+from bsread import source, SUB
+
+# Change to match your pipeline server
+server_address = "http://0.0.0.0:8889"
+camera_name = "simulation"
+
+# Initialize the client.
+pipeline_client = PipelineClient(server_address)
+
+# Collect the background for the given camera.
+background_id = pipeline_client.collect_background(camera_name)
+
+# Setup the pipeline config. Use the simulation camera as the pipeline source, and the collected background.
+pipeline_config = {"camera_name": camera_name,
+                   "background_id": background_id}
+
+# Create a new pipeline with the provided configuration. Stream address in format tcp://hostname:port.
+instance_id, pipeline_stream_address = pipeline_client.create_instance_from_config(pipeline_config)
+
+# TODO: Continue as in the example above.
+```
