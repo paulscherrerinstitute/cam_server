@@ -586,6 +586,39 @@ actual path.
 <a id="get_simulation_camera_stream"></a>
 ### Get the simulation camera stream
 
+```python
+from cam_server import PipelineClient
+from cam_server.utils import get_host_port_from_stream_address
+from bsread import source, SUB
+
+# Change to match your pipeline server
+server_address = "http://0.0.0.0:8889"
+
+# Initialize the client.
+pipeline_client = PipelineClient(server_address)
+
+# Setup the pipeline config. Use the simulation camera as the pipeline source.
+pipeline_config = {"camera_name": "simulation"}
+
+# Create a new pipeline with the provided configuration. Stream address in format tcp://hostname:port.
+instance_id, pipeline_stream_address = pipeline_client.create_instance_from_config(pipeline_config)
+
+# Extract the stream hostname and port from the stream address.
+pipeline_host, pipeline_port = get_host_port_from_stream_address(pipeline_stream_address)
+
+# Subscribe to the stream.
+with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
+    # Receive next message.
+    data = stream.receive()
+
+image_width = data.data.data["width"].value
+image_height = data.data.data["height"].value
+image_bytes = data.data.data["image"].value
+
+print("Image size: %d x %d" % (image_width, image_height))
+print("Image data: %s" % image_bytes)
+```
+
 <a id="basic_pipeline"></a>
 ### Get a basic pipeline with a simulated camera
 
