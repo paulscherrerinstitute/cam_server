@@ -116,7 +116,7 @@ class Camera:
         return self.width, self.height
 
     def get_name(self):
-        return self.self.camera_config.get_name()
+        return self.camera_config.get_name()
 
     def clear_callbacks(self):
         self.channel_image.clear_callbacks()
