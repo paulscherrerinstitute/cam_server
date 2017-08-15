@@ -7,6 +7,6 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill pipeline_server
 ExecStartPre=-/usr/bin/docker rm pipeline_server
 ExecStartPre=/usr/bin/docker pull docker.psi.ch:5000/cam_server
-ExecStart=/usr/bin/docker run --name pipeline_server -v /configuration:/configuration -p 8889:8889 -p 11100-11200:11100-11200 docker.psi.ch:5000/cam_server pipeline_server -b /configuration/pipelines -g /configuration/backgrounds -n sf-daqsync-01.psi.ch
+ExecStart=/usr/bin/docker run --name pipeline_server -v /configuration:/configuration --net=host docker.psi.ch:5000/cam_server pipeline_server -b /configuration/pipelines -g /configuration/backgrounds -n sf-daqsync-01.psi.ch
 ExecStop=/usr/bin/docker stop pipeline_server
 Restart=always
