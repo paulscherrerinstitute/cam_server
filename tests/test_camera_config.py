@@ -62,7 +62,7 @@ class CameraConfigTest(unittest.TestCase):
 
     def test_load_camera(self):
         expected_config_example_1 = {
-            "name": "example_1",
+            "name": "camera_example_1",
             "prefix": "EPICS_example_1",
             "mirror_x": False,
             "mirror_y": True,
@@ -94,7 +94,7 @@ class CameraConfigTest(unittest.TestCase):
             instance_manager.config_manager.delete_camera_config("example_test")
 
         example_test = {
-            "name": "example_1",
+            "name": "camera_example_1",
             "prefix": "EPICS_example_1",
             "mirror_x": False,
             "mirror_y": True,

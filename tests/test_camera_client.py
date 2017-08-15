@@ -46,7 +46,8 @@ class CameraClientTest(unittest.TestCase):
         self.assertIsNot(server_info["active_instances"],
                          "There should be no running instances.")
 
-        expected_cameras = ["example_1", "example_2", "example_3", "example_4", "simulation"]
+        expected_cameras = ["camera_example_1", "camera_example_2", "camera_example_3", "camera_example_4",
+                            "simulation"]
 
         self.assertListEqual(self.client.get_cameras(), expected_cameras, "Not getting all expected cameras")
 
@@ -90,7 +91,7 @@ class CameraClientTest(unittest.TestCase):
         self.assertTrue("simulation" not in self.client.get_server_info()["active_instances"],
                         "Camera simulation did not stop.")
 
-        example_1_config = self.client.get_camera_config("example_1")
+        example_1_config = self.client.get_camera_config("camera_example_1")
 
         self.assertTrue(bool(example_1_config), "Cannot retrieve config.")
 

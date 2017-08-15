@@ -1,5 +1,5 @@
 {
-  "name": "example_2",
+  "name": "camera_example_2",
   "prefix": "EPICS_example_2",
   "mirror_x": false,
   "mirror_y": true,

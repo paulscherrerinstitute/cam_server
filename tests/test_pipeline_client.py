@@ -59,11 +59,11 @@ class PipelineClientTest(unittest.TestCase):
         sleep(1)
 
     def test_client(self):
-        expected_pipelines = ["example_1", "example_2", "example_3", "example_4"]
+        expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3", "pipeline_example_4"]
         self.assertListEqual(self.pipeline_client.get_pipelines(), expected_pipelines,
                              "Test config pipelines have changed?")
 
-        camera_config = self.pipeline_client.get_pipeline_config("example_4")
+        camera_config = self.pipeline_client.get_pipeline_config("pipeline_example_4")
         self.pipeline_client.save_pipeline_config("testing_config", camera_config)
 
         with self.assertRaisesRegex(ValueError, "Camera name not specified in configuration."):
@@ -258,7 +258,8 @@ class PipelineClientTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "No background matches for the specified prefix 'does not exist'."):
             self.pipeline_client.get_latest_background("does not exist")
 
-        expected_cameras = ['example_1', 'example_3', 'example_2', 'simulation', 'example_4']
+        expected_cameras = ['camera_example_1', 'camera_example_3', 'camera_example_2', 'camera_example_4',
+                            'simulation']
 
         self.assertEqual(set(self.pipeline_client.get_cameras()), set(expected_cameras),
                          "Expected cameras not present.")

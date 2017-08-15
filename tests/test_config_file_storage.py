@@ -19,16 +19,16 @@ class ConfigFileStorageTest(unittest.TestCase):
             pass
 
     def test_list_configs(self):
-        expected_config_files = ["example_1", "example_2", "example_3", "example_4"]
+        expected_config_files = ["camera_example_1", "camera_example_2", "camera_example_3", "camera_example_4"]
         available_configs_1 = self.file_storage.get_available_configs()
         self.assertListEqual(available_configs_1, expected_config_files,
                              "Available configs not as expected.")
 
     def test_get_config(self):
-        config_example_1 = self.file_storage.get_config("example_1")
+        config_example_1 = self.file_storage.get_config("camera_example_1")
 
         expected_config_example_1 = {
-            "name": "example_1",
+            "name": "camera_example_1",
             "prefix": "EPICS_example_1",
             "mirror_x": True,
             "mirror_y": True,
