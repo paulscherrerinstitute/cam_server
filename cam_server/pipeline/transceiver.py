@@ -21,10 +21,14 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
     def process_pipeline_parameters():
         parameters = pipeline_config.get_configuration()
+        _logger.debug("Processing pipeline parameters %s.", parameters)
 
         background_array = None
         if parameters.get("image_background_enable"):
-            background_array = background_manager.get_background(pipeline_config.get_background_id())
+            background_id = pipeline_config.get_background_id()
+            _logger.debug("Image background enabled. Using background_id %s.", background_id)
+
+            background_array = background_manager.get_background()
 
         size_x, size_y = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
 
@@ -39,16 +43,22 @@ def receive_process_send(stop_event, statistics, parameter_queue,
         if image_region_of_interest:
             _, size_x, _, size_y = image_region_of_interest
 
+        _logger.debug("Image width %d and height %d.", size_x, size_y)
+
         return parameters, background_array, axis_x, axis_y, size_x, size_y
 
     try:
         pipeline_parameters, image_background_array, x_axis, y_axis, x_size, y_size = process_pipeline_parameters()
 
         camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
+        _logger.debug("Connecting to camera stream address %s.", camera_stream_address)
+
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
 
         source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
         source.connect()
+
+        _logger.debug("Opening output stream on port %d.", output_stream_port)
 
         sender = Sender(port=output_stream_port, mode=PUB,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
@@ -58,6 +68,8 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
         # Indicate that the startup was successful.
         stop_event.clear()
+
+        _logger.debug("Transceiver started.")
 
         while not stop_event.is_set():
             try:
@@ -91,6 +103,8 @@ def receive_process_send(stop_event, statistics, parameter_queue,
             except:
                 _logger.exception("Could not process message.")
                 stop_event.set()
+
+        _logger.debug("Stopping transceiver.")
 
         source.disconnect()
         sender.close()
