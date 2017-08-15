@@ -91,8 +91,35 @@ Before building the docker image, make sure the latest version of the library is
 <a id="request_a_stream"></a>
 ### Requesting a stream and instance management
 
+Instance management is done automatically. Once you request a stream, you have a fixed amount of time 
+(no clients timeout) to connect to the stream. If you do not connect in the given time, the stream will automatically 
+be stopped. In this case, you will need to request the stream again. 
+
+The same is true when disconnecting from the stream. You do not need to take any actions to close the pipeline or 
+camera stream, as they will close themselves automatically after the configured time has elapsed.
+
+There are however 2 methods available for manual instance management:
+- stop_instance
+- stop_all_instances
+
+They are not meant to be used during normal operations, but only as administrative methods if something does not work 
+as expected.
+
 <a id="shared_and_private"></a>
 ### Shared and private pipeline instances
+
+The difference between shared and private pipeline instances in mainly in the fact that shared instances are 
+read only (the pipeline config cannot be changed). This is done to prevent the interaction between different users 
+- if 2 people are independently viewing the same pipeline at the same time, we need to prevent to any of them to change 
+what the other receives. If you need to change the pipeline parameters, you need to create a private pipeline instance.
+
+Shared instances are named after the pipeline config they are created from. For example, if you have a saved pipeline 
+with the name 'simulation_pipeline', the shared instance instance_id will be 'simulation_pipeline'. Private instances 
+can have a custom instance_id you provide, or an automatically generated one. 
+In any case, the given instance_id must be unique.
+
+You can share the private pipeline as well - all you need to share is the instance_id. But you need to be 
+aware that anyone having your instance_id can change any parameter on the pipeline.
 
 <a id="configuration_versioning"></a>
 ### Configuration versioning and camera background in the pipeline server
@@ -225,6 +252,9 @@ For more information on what each command does check the **API** section in this
 
 <a id="python_client"></a>
 ### Python client
+
+There are 2 classes available to communicate with the camera and pipeline server. They are basically just wrappers 
+around REST API calls (see next chapters).
 
 #### CamClient
 Import and create a cam client instance:
