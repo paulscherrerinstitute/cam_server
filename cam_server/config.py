@@ -20,7 +20,7 @@ MFLOW_NO_CLIENTS_TIMEOUT = 10
 # Each camera config gets assigned one port.
 CAMERA_STREAM_PORT_RANGE = (10100, 10201)
 # Default folder for camera configs.
-DEFAULT_CAMERA_CONFIG_FOLDER = "configuration/camera"
+DEFAULT_CAMERA_CONFIG_FOLDER = "configuration/camera_config"
 # Default colormap to use when getting an image from the camera.
 DEFAULT_CAMERA_IMAGE_COLORMAP = "rainbow"
 
@@ -38,9 +38,9 @@ CAMERA_BSREAD_SCALAR_COMPRESSION = "bitshuffle_lz4"
 # Every time you open a pipeline it gets the next port.
 PIPELINE_STREAM_PORT_RANGE = (11100, 11201)
 # Default folder for camera configs.
-DEFAULT_PIPELINE_CONFIG_FOLDER = "configuration/pipeline"
+DEFAULT_PIPELINE_CONFIG_FOLDER = "configuration/pipeline_config"
 # Where to store the backgrounds by default.
-DEFAULT_BACKGROUND_CONFIG_FOLDER = "configuration/background"
+DEFAULT_BACKGROUND_CONFIG_FOLDER = "configuration/background_config"
 # Maximum time to wait before aborting the receive.
 PIPELINE_RECEIVE_TIMEOUT = 1000
 # Default number of images to collect when acquiring the background.
