@@ -14,7 +14,7 @@ also provides a processing pipeline and a REST interface to control both the cam
     2. [Shared and private pipeline instances](#shared_and_private)
     3. [Configuration versioning and camera background in the pipeline server](#configuration_versioning)
 3. [Configuration](#configuration)
-    1. [Camera configuration](#camera_configuartion)
+    1. [Camera configuration](#camera_configuration)
     2. [Pipeline configuration](#pipeline_configuration)
 4. [Web interface](#web_interface)
     1. [Python client](#python_client)
