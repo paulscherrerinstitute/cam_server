@@ -27,7 +27,7 @@ also provides a processing pipeline and a REST interface to control both the cam
 7. [Examples](#examples)
     1. [Get the simulation camera stream](#get_simulation_camera_stream)
     2. [Get a basic pipeline with a simulated camera](#basic_pipeline)
-    3. [Create a private pipeline instance and collect the camera background](#private_pipeline)
+    3. [Create a pipeline instance with background](#private_pipeline)
     
 <a id="build"></a>
 ## Build
