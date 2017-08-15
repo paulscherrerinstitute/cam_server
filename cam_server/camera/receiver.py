@@ -36,7 +36,8 @@ class Camera:
         # Check cam_server status
         channel_init = epics.PV(self.camera_config.parameters["prefix"] + ":INIT")
         if channel_init.get(as_string=True) != 'INIT':
-            raise RuntimeError("Camera {} not online - Status {}".format(self.prefix, channel_init.get(as_string=True)))
+            raise RuntimeError("Camera {} not online - Status {}".format(self.camera_config.parameters["prefix"],
+                                                                         channel_init.get(as_string=True)))
 
         channel_init.disconnect()
 
