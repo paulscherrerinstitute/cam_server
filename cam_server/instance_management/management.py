@@ -80,6 +80,12 @@ class InstanceManager(object):
         for instance_name in self.instances:
             self.stop_instance(instance_name)
 
+    def delete_instance(self, instance_name):
+        if instance_name not in self.instances:
+            raise ValueError("Instance '%s' does not exist." % instance_name)
+
+        del self.instances[instance_name]
+
 
 class InstanceWrapper:
     def __init__(self, instance_name, process_function, *args):

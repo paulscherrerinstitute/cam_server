@@ -28,7 +28,7 @@ def receive_process_send(stop_event, statistics, parameter_queue,
             background_id = pipeline_config.get_background_id()
             _logger.debug("Image background enabled. Using background_id %s.", background_id)
 
-            background_array = background_manager.get_background()
+            background_array = background_manager.get_background(background_id)
 
         size_x, size_y = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
 

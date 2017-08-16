@@ -304,7 +304,7 @@ class PipelineManagerTest(unittest.TestCase):
             self.assertIsNotNone(black_image_data, "This should really not happen anymore.")
 
         self.assertTrue(numpy.array_equal(black_image_data.data.data["image"].value, black_image),
-                         "Now background should work.")
+                        "Now background should work.")
 
         instance_manager.stop_all_instances()
 
@@ -337,6 +337,35 @@ class PipelineManagerTest(unittest.TestCase):
                                                                        instance_id="custom_instance")
 
         self.assertEqual(instance_id, "custom_instance", "Custom instance name was not set.")
+
+    def test_reload_after_stop(self):
+        instance_manager = get_test_pipeline_manager()
+
+        instance_id = "trying_to_test"
+
+        initial_config = {"camera_name": "simulation"}
+
+        instance_manager.config_manager.save_pipeline_config(instance_id, initial_config)
+        instance_manager.get_instance_stream(instance_id)
+
+        self.assertEqual(instance_manager.get_instance(instance_id).get_configuration()["image_threshold"],
+                         None)
+
+        updated_config = {"camera_name": "simulation",
+                          "threshold": 9999}
+
+        instance_manager.config_manager.save_pipeline_config("test_pipeline", updated_config)
+
+        self.assertEqual(instance_manager.get_instance(instance_id).get_configuration()["image_threshold"],
+                         None, "It should not change at this point.")
+
+        instance_manager.stop_instance(instance_id)
+        instance_manager.get_instance_stream(instance_id)
+
+        # self.assertEqual(instance_manager.get_instance(instance_id).get_configuration()["image_threshold"],
+        #                  9999, "It should have changed now - reload should happen.")
+
+        instance_manager.stop_all_instances()
 
 
 if __name__ == '__main__':
