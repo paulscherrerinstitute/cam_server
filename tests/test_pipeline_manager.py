@@ -7,13 +7,13 @@ from time import sleep
 
 import numpy
 from bsread import source, SUB
-from cam_server import CamClient
+from cam_server import CamClient, config
 from cam_server.pipeline.configuration import PipelineConfig, PipelineConfigManager, BackgroundImageManager
 from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import collect_background, get_host_port_from_stream_address
 from tests.helpers.factory import get_test_pipeline_manager, get_test_pipeline_manager_with_real_cam, MockConfigStorage, \
-    MockBackgroundManager
+    MockBackgroundManager, MockCamServerClient
 
 
 class PipelineManagerTest(unittest.TestCase):
@@ -391,16 +391,98 @@ class PipelineManagerTest(unittest.TestCase):
         stream_address_2 = instance_manager.get_instance_stream("simulation")
 
         self.assertEqual(stream_address_1, stream_address_2)
+        self.assertTrue(instance_manager.is_instance_present("simulation"))
+
+        instance_port = instance_manager.get_instance("simulation").get_stream_port()
+
+        self.assertEqual(instance_manager._used_ports[instance_port], "simulation")
 
         instance_manager.stop_instance("simulation")
+
+        self.assertEqual(len(instance_manager._used_ports), 0)
+
+        self.assertFalse(instance_manager.is_instance_present("simulation"), "Instance should have been deleted.")
 
         stream_address_3 = instance_manager.get_instance_stream("simulation")
 
         self.assertNotEqual(stream_address_1, stream_address_3,
                             "The instance was stopped, the stream should have changed.")
 
+        instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        self.assertEqual(len(instance_manager._used_ports), 4,
+                         "There should be 4 used ports.")
+
         instance_manager.stop_all_instances()
 
+        self.assertEqual(len(instance_manager._used_ports), 0,
+                         "All ports should be free now.")
+
+    def test_out_of_ports(self):
+        config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
+        instance_manager = PipelineInstanceManager(config_manager, MockBackgroundManager(),
+                                                   MockCamServerClient(), port_range=(12000, 12003))
+
+        instance_id_0, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_id_1, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_id_2, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        self.assertEqual(instance_manager.get_instance(instance_id_0).get_stream_port(), 12000)
+        self.assertEqual(instance_manager.get_instance(instance_id_1).get_stream_port(), 12001)
+        self.assertEqual(instance_manager.get_instance(instance_id_2).get_stream_port(), 12002)
+
+        with self.assertRaisesRegex(Exception, "All ports are used. Stop some instances before opening a new stream."):
+            instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        instance_manager.stop_instance(instance_id_1)
+
+        instance_id_1, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        self.assertEqual(instance_manager.get_instance(instance_id_1).get_stream_port(), 12001,
+                         "Instance_id_1 should have freeded the port 10001, but some other port was assigned.")
+
+        instance_manager.stop_all_instances()
+
+        # Check if the port rotation works as expected.
+        instance_id_2, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_id_0, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_id_1, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        self.assertEqual(instance_manager.get_instance(instance_id_2).get_stream_port(), 12002)
+        self.assertEqual(instance_manager.get_instance(instance_id_0).get_stream_port(), 12000)
+        self.assertEqual(instance_manager.get_instance(instance_id_1).get_stream_port(), 12001)
+
+        instance_manager.stop_all_instances()
+
+        old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
+        config.MFLOW_NO_CLIENTS_TIMEOUT = 1
+
+        # Test the cleanup procedure.
+        instance_id_2, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_id_0, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_id_1, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        self.assertEqual(len(instance_manager.get_info()["active_instances"]), 3,
+                         "All 3 instances should be running")
+
+        with self.assertRaisesRegex(Exception, "All ports are used. Stop some instances before opening a new stream."):
+            instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        # Wait for the instances to die.
+        sleep(3)
+
+        self.assertEqual(len(instance_manager.get_info()["active_instances"]), 0,
+                         "All instances should be dead by now.")
+
+        instance_id_2, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_id_0, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_id_1, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        # Restore previous state.
+        config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
+        instance_manager.stop_all_instances()
 
 if __name__ == '__main__':
     unittest.main()

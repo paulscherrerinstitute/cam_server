@@ -12,7 +12,7 @@ _logger = getLogger(__name__)
 
 
 class PipelineInstanceManager(InstanceManager):
-    def __init__(self, config_manager, background_manager, cam_server_client, hostname=None):
+    def __init__(self, config_manager, background_manager, cam_server_client, hostname=None, port_range=None):
         super(PipelineInstanceManager, self).__init__()
 
         self.config_manager = config_manager
@@ -20,12 +20,36 @@ class PipelineInstanceManager(InstanceManager):
         self.cam_server_client = cam_server_client
         self.hostname = hostname
 
-        self.port_generator = get_port_generator(config.PIPELINE_STREAM_PORT_RANGE)
+        if port_range is None:
+            port_range = config.PIPELINE_STREAM_PORT_RANGE
+
+        self._port_generator = get_port_generator(port_range)
+        self._used_ports = {}
+
+    def _get_next_available_port(self, instance_id):
+        # Clean up any stopped instances.
+        instance_ids = list(self.instances.keys())
+        for instance_id in instance_ids:
+            self._delete_stopped_instance(instance_id)
+
+        # Loop over all ports.
+        for _ in range(*config.PIPELINE_STREAM_PORT_RANGE):
+            candidate_port = next(self._port_generator)
+
+            if candidate_port not in self._used_ports:
+                self._used_ports[candidate_port] = instance_id
+                return candidate_port
+
+        raise Exception("All ports are used. Stop some instances before opening a new stream.")
 
     def _delete_stopped_instance(self, instance_id):
         # If instance is present but not running, delete it.
         if self.is_instance_present(instance_id) and not self.get_instance(instance_id).is_running():
+            stream_port = self.get_instance(instance_id).get_stream_port()
+
             self.delete_instance(instance_id)
+
+            del self._used_ports[stream_port]
 
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
@@ -59,7 +83,7 @@ class PipelineInstanceManager(InstanceManager):
         else:
             pipeline = self.config_manager.load_pipeline(pipeline_name)
 
-        stream_port = next(self.port_generator)
+        stream_port = self._get_next_available_port(instance_id)
 
         camera_name = pipeline.get_camera_name()
 
@@ -94,7 +118,7 @@ class PipelineInstanceManager(InstanceManager):
             raise ValueError("Instance '%s' is not present on server and it is not a saved pipeline name." %
                              instance_id)
 
-        stream_port = next(self.port_generator)
+        stream_port = self._get_next_available_port(instance_id)
 
         camera_name = pipeline_config.get_camera_name()
 
@@ -131,6 +155,18 @@ class PipelineInstanceManager(InstanceManager):
         new_config = update_pipeline_config(current_config, config_updates)
         pipeline_instance.set_parameter(new_config)
 
+    def stop_instance(self, instance_name):
+        super().stop_instance(instance_name)
+        self._delete_stopped_instance(instance_name)
+
+    def stop_all_instances(self):
+        _logger.info("Stopping all instances.")
+
+        instance_ids = list(self.instances.keys())
+
+        for instance_id in instance_ids:
+            self.stop_instance(instance_id)
+
 
 class PipelineInstance(InstanceWrapper):
     def __init__(self, instance_id, process_function, pipeline_config, output_stream_port, cam_client,
@@ -147,6 +183,7 @@ class PipelineInstance(InstanceWrapper):
 
         self.stream_address = "tcp://%s:%d" % (hostname, output_stream_port)
         self.read_only_config = read_only_config
+        self.stream_port = output_stream_port
 
     def get_info(self):
         return {"stream_address": self.stream_address,
@@ -179,3 +216,6 @@ class PipelineInstance(InstanceWrapper):
 
     def get_name(self):
         return self.pipeline_config.get_name()
+
+    def get_stream_port(self):
+        return self.stream_port

@@ -179,8 +179,8 @@ class PipelineClientTest(unittest.TestCase):
 
         self.pipeline_client.stop_instance(instance_id)
 
-        stopped_instance_info = self.pipeline_client.get_instance_info(instance_id)
-        self.assertFalse(stopped_instance_info["is_stream_active"], "Stream should not be active.")
+        with self.assertRaisesRegex(ValueError, "Instance '%s' does not exist." % instance_id):
+            self.pipeline_client.get_instance_info(instance_id)
 
         with self.assertRaisesRegex(ValueError, "Instance 'invalid instance' does not exist."):
             self.pipeline_client.get_instance_info("invalid instance")

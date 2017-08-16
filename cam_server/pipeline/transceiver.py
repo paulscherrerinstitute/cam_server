@@ -7,7 +7,6 @@ from bsread.sender import Sender
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import get_host_port_from_stream_address
-from zmq import Again
 
 _logger = getLogger(__name__)
 
@@ -79,13 +78,9 @@ def receive_process_send(stop_event, statistics, parameter_queue,
                     pipeline_parameters, image_background_array, x_axis, y_axis, x_size, y_size \
                         = process_pipeline_parameters()
 
-                try:
-                    data = source.receive()
-                except Again:
-                    _logger.error("Source '%s:%d' did not provide message in time. Aborting.", source_host, source_port)
-                    stop_event.set()
+                data = source.receive()
 
-                # In case of receiving error, the returned data is None.
+                # In case of receiving error or timeout, the returned data is None.
                 if data is None:
                     continue
 
@@ -104,7 +99,7 @@ def receive_process_send(stop_event, statistics, parameter_queue,
                 _logger.exception("Could not process message.")
                 stop_event.set()
 
-        _logger.debug("Stopping transceiver.")
+        _logger.info("Stopping transceiver.")
 
         source.disconnect()
         sender.close()
