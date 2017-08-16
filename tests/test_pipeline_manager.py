@@ -338,6 +338,8 @@ class PipelineManagerTest(unittest.TestCase):
 
         self.assertEqual(instance_id, "custom_instance", "Custom instance name was not set.")
 
+        instance_manager.stop_all_instances()
+
     def test_reload_after_stop(self):
         instance_manager = get_test_pipeline_manager()
 
@@ -352,9 +354,9 @@ class PipelineManagerTest(unittest.TestCase):
                          None)
 
         updated_config = {"camera_name": "simulation",
-                          "threshold": 9999}
+                          "image_threshold": 9999}
 
-        instance_manager.config_manager.save_pipeline_config("test_pipeline", updated_config)
+        instance_manager.config_manager.save_pipeline_config(instance_id, updated_config)
 
         self.assertEqual(instance_manager.get_instance(instance_id).get_configuration()["image_threshold"],
                          None, "It should not change at this point.")
@@ -362,8 +364,40 @@ class PipelineManagerTest(unittest.TestCase):
         instance_manager.stop_instance(instance_id)
         instance_manager.get_instance_stream(instance_id)
 
-        # self.assertEqual(instance_manager.get_instance(instance_id).get_configuration()["image_threshold"],
-        #                  9999, "It should have changed now - reload should happen.")
+        self.assertEqual(instance_manager.get_instance(instance_id).get_configuration()["image_threshold"],
+                         9999, "It should have changed now - reload should happen.")
+
+        instance_manager.stop_all_instances()
+
+    def test_update_stopped_instance(self):
+        instance_manager = get_test_pipeline_manager()
+        instance_id, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        instance_manager.update_instance_config(instance_id, {"camera_name": "simulation",
+                                                              "image_threshold": 9999})
+
+        instance_manager.stop_instance(instance_id)
+
+        with self.assertRaisesRegex(ValueError, "Instance '%s' does not exist." % instance_id):
+            instance_manager.update_instance_config(instance_id, {"camera_name": "simulation",
+                                                                  "image_threshold": 9999})
+
+        instance_manager.stop_all_instances()
+
+    def test_multiple_get_stream(self):
+        instance_manager = get_test_pipeline_manager()
+        instance_manager.config_manager.save_pipeline_config("simulation", {"camera_name": "simulation"})
+
+        stream_address_1 = instance_manager.get_instance_stream("simulation")
+        stream_address_2 = instance_manager.get_instance_stream("simulation")
+
+        self.assertEqual(stream_address_1, stream_address_2)
+
+        instance_manager.stop_instance("simulation")
+
+        stream_address_3 = instance_manager.get_instance_stream("simulation")
+
+        self.assertNotEqual(stream_address_1, stream_address_3,
+                            "The instance was stopped, the stream should have changed.")
 
         instance_manager.stop_all_instances()
 

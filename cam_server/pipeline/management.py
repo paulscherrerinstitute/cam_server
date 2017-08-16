@@ -22,6 +22,11 @@ class PipelineInstanceManager(InstanceManager):
 
         self.port_generator = get_port_generator(config.PIPELINE_STREAM_PORT_RANGE)
 
+    def _delete_stopped_instance(self, instance_id):
+        # If instance is present but not running, delete it.
+        if self.is_instance_present(instance_id) and not self.get_instance(instance_id).is_running():
+            self.delete_instance(instance_id)
+
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
 
@@ -33,12 +38,14 @@ class PipelineInstanceManager(InstanceManager):
         :param instance_id: Name to assign to the instace. It must be unique.
         :return: instance_id, Pipeline stream address.
         """
+
         # User specified or random uuid as the instance id.
         if not instance_id:
             instance_id = str(uuid.uuid4())
 
-        # User can overwrite instance with specific id only if the instance is stopped.
-        if self.is_instance_present(instance_id) and self.get_instance(instance_id).is_running():
+        self._delete_stopped_instance(instance_id)
+
+        if self.is_instance_present(instance_id):
             raise ValueError("Instance with id '%s' is already present and running. "
                              "Use another instance_id or stop the current instance "
                              "if you want to reuse the same instance_id." % instance_id)
@@ -76,38 +83,44 @@ class PipelineInstanceManager(InstanceManager):
         return pipeline.get_instance_id(), pipeline.get_stream_address()
 
     def get_instance_stream(self, instance_id):
-        if not self.is_instance_present(instance_id):
-            try:
-                pipeline_config = self.config_manager.load_pipeline(instance_id)
-            except ValueError:
-                raise ValueError("Instance '%s' is not present on server and it is not a saved pipeline name." %
-                                 instance_id)
+        self._delete_stopped_instance(instance_id)
 
-            stream_port = next(self.port_generator)
+        if self.is_instance_present(instance_id):
+            return self.get_instance(instance_id).get_stream_address()
 
-            camera_name = pipeline_config.get_camera_name()
+        try:
+            pipeline_config = self.config_manager.load_pipeline(instance_id)
+        except ValueError:
+            raise ValueError("Instance '%s' is not present on server and it is not a saved pipeline name." %
+                             instance_id)
 
-            _logger.info("Creating pipeline '%s' on port '%d' for camera '%s'. instance_id=%s",
-                         instance_id, stream_port, camera_name, instance_id)
+        stream_port = next(self.port_generator)
 
-            self.add_instance(instance_id, PipelineInstance(
-                instance_id=instance_id,
-                process_function=receive_process_send,
-                pipeline_config=pipeline_config,
-                output_stream_port=stream_port,
-                cam_client=self.cam_server_client,
-                background_manager=self.background_manager,
-                hostname=self.hostname,
-                read_only_config=True  # Implicitly created instances are read only.
-            ))
-        # TODO: If instance is not running, reload the config first.
+        camera_name = pipeline_config.get_camera_name()
+
+        _logger.info("Creating pipeline '%s' on port '%d' for camera '%s'. instance_id=%s",
+                     instance_id, stream_port, camera_name, instance_id)
+
+        self.add_instance(instance_id, PipelineInstance(
+            instance_id=instance_id,
+            process_function=receive_process_send,
+            pipeline_config=pipeline_config,
+            output_stream_port=stream_port,
+            cam_client=self.cam_server_client,
+            background_manager=self.background_manager,
+            hostname=self.hostname,
+            read_only_config=True  # Implicitly created instances are read only.
+        ))
 
         self.start_instance(instance_id)
 
         return self.get_instance(instance_id).get_stream_address()
 
     def update_instance_config(self, instance_id, config_updates):
+        self._delete_stopped_instance(instance_id)
+
         pipeline_instance = self.get_instance(instance_id)
+
         current_config = pipeline_instance.get_configuration()
 
         # Check if the background can be loaded.
