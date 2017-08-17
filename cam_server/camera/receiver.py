@@ -62,7 +62,8 @@ class Camera:
             raise RuntimeError("Could not connect to: {}".format(self.channel_image.pvname))
 
         # Set correct width and height of the corrected image
-        if self.rotate == 1 or self.rotate == 3:
+        rotate = self.camera_config.parameters["rotate"]
+        if rotate == 1 or rotate == 3:
             self.width = self.height_raw
             self.height = self.width_raw
         else:
