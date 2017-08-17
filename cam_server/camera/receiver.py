@@ -34,16 +34,24 @@ class Camera:
     def connect(self):
 
         # Check cam_server status
-        channel_init = epics.PV(self.camera_config.parameters["prefix"] + ":INIT")
+        camera_init_pv = self.camera_config.parameters["prefix"] + ":INIT"
+        _logger.debug("Checking camera INIT PV '%s'", camera_init_pv)
+
+        channel_init = epics.PV(camera_init_pv)
         if channel_init.get(as_string=True) != 'INIT':
             raise RuntimeError("Camera {} not online - Status {}".format(self.camera_config.parameters["prefix"],
                                                                          channel_init.get(as_string=True)))
 
         channel_init.disconnect()
 
-        # Retrieve with and height of cam_server image
-        channel_width = epics.PV(self.camera_config.parameters["prefix"] + ":WIDTH")
-        channel_height = epics.PV(self.camera_config.parameters["prefix"] + ":HEIGHT")
+        # Retrieve with and height of cam_server image\
+        camera_width_pv = self.camera_config.parameters["prefix"] + ":WIDTH"
+        camera_height_pv = self.camera_config.parameters["prefix"] + ":HEIGHT"
+
+        _logger.debug("Checking camera WIDTH '%s' and HEIGHT '%s' PV.", camera_width_pv, camera_height_pv)
+
+        channel_width = epics.PV(camera_width_pv)
+        channel_height = epics.PV(camera_height_pv)
 
         self.width_raw = int(channel_width.get(timeout=4))
         self.height_raw = int(channel_height.get(timeout=4))
@@ -73,7 +81,10 @@ class Camera:
 
     def disconnect(self):
         self.clear_callbacks()
-        self.channel_image.disconnect()
+
+        if self.channel_image:
+            self.channel_image.disconnect()
+
         self.channel_image = None
 
     def add_callback(self, callback_function):
@@ -122,7 +133,8 @@ class Camera:
         return self.camera_config.get_name()
 
     def clear_callbacks(self):
-        self.channel_image.clear_callbacks()
+        if self.channel_image:
+            self.channel_image.clear_callbacks()
 
     def get_x_y_axis(self):
 
