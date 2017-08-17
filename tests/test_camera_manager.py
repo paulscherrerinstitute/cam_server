@@ -122,5 +122,12 @@ class CameraTest(unittest.TestCase):
 
         camera_instance_manager.stop_all_instances()
 
+    def test_get_camera_instance_config(self):
+        with self.assertRaisesRegex(ValueError, "Instance 'simulation' does not exist."):
+            self.instance_manager.get_instance("simulation").get_config()
+
+        self.instance_manager.get_camera_stream("simulation")
+        self.assertIsNotNone(self.instance_manager.get_instance("simulation").get_config())
+
 if __name__ == '__main__':
     unittest.main()
