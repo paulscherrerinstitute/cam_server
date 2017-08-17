@@ -37,6 +37,7 @@ class CameraInstanceManager(InstanceManager):
             self.add_instance(camera_name, CameraInstanceWrapper(
                 process_function=process_camera_stream,
                 camera=self.config_manager.load_camera(camera_name),
+                camera_config=self.config_manager.get_camera_config(camera_name),
                 stream_port=stream_port,
                 hostname=self.hostname
             ))
@@ -47,12 +48,13 @@ class CameraInstanceManager(InstanceManager):
 
 
 class CameraInstanceWrapper(InstanceWrapper):
-    def __init__(self, process_function, camera, stream_port, hostname=None):
+    def __init__(self, process_function, camera, camera_config, stream_port, hostname=None):
 
         super(CameraInstanceWrapper, self).__init__(camera.get_name(), process_function,
                                                     camera, stream_port)
 
         self.camera = camera
+        self.camera_config = camera_config
 
         if not hostname:
             hostname = socket.gethostname()
