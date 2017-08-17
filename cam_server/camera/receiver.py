@@ -49,7 +49,8 @@ class Camera:
         self.height_raw = int(channel_height.get(timeout=4))
 
         if not self.width_raw or not self.height_raw:
-            raise RuntimeError("Could not fetch width and height for cam_server:{}".format(self.prefix))
+            raise RuntimeError("Could not fetch width and height for cam_server:{}".format(
+                self.camera_config.parameters["prefix"]))
 
         channel_width.disconnect()
         channel_height.disconnect()
