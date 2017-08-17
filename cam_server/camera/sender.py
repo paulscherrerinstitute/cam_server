@@ -13,9 +13,12 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
     Start the camera stream and listen for image monitors. This function blocks until stop_event is set.
     :param stop_event: Event when to stop the process.
     :param statistics: Statistics namespace.
+    :param parameter_queue: Parameters queue to be passed to the pipeline.
     :param camera: Camera instance to get the images from.
     :param port: Port to use to bind the output stream.
     """
+
+    sender = None
 
     try:
 
@@ -75,4 +78,6 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         stop_event.wait()
 
         camera.disconnect()
-        sender.close()
+
+        if sender:
+            sender.close()
