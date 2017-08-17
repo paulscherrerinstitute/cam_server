@@ -53,7 +53,6 @@ class MockBackgroundManager:
         raise NotImplementedError("This cannot work in the mock.")
 
 
-
 class MockConfigStorage:
     def __init__(self):
         self.configs = {}

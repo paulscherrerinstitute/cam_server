@@ -702,8 +702,6 @@ background for the simulation camera and apply it to the pipeline.
 
 ```python
 from cam_server import PipelineClient
-from cam_server.utils import get_host_port_from_stream_address
-from bsread import source, SUB
 
 # Change to match your pipeline server
 server_address = "http://0.0.0.0:8889"

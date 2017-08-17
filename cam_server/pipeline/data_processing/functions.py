@@ -185,7 +185,8 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
     n_pixel_half_slice = abs(index_half_slice - index_center)
 
     if n_pixel_half_slice < 1:
-        logging.info('Calculated number of pixel of a slice size [%d] is less than 1 - default to 1' % n_pixel_half_slice)
+        logging.info('Calculated number of pixel of a slice size [%d] is less than 1 - default to 1' %
+                     n_pixel_half_slice)
         n_pixel_half_slice = 1
 
     n_pixel_slice = 2 * n_pixel_half_slice
@@ -223,7 +224,8 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
     :return: <center [x,y]>, <standard deviation>, <intensity> 
     """
 
-    list_slices, n_pixel_half_slice = calculate_slices(x_axis, x_center, x_standard_deviation, scaling, number_of_slices)
+    list_slices, n_pixel_half_slice = calculate_slices(x_axis, x_center, x_standard_deviation, scaling,
+                                                       number_of_slices)
 
     slice_data = []
 
@@ -238,7 +240,8 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
             gauss_function, offset, amplitude, center_y, standard_deviation, _, _ = gauss_fit(slice_y_profile, y_axis)
 
             # Does x need to be the middle of slice? - currently it is
-            slice_data.append(([x_axis[list_slices[i]+n_pixel_half_slice], center_y], standard_deviation, pixel_intensity))
+            slice_data.append(([x_axis[list_slices[i]+n_pixel_half_slice], center_y], standard_deviation,
+                               pixel_intensity))
         else:
             logging.info('Drop slice')
 
@@ -251,7 +254,8 @@ def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, sca
     :return: <center [x,y]>, <standard deviation>, <intensity> 
     """
 
-    list_slices, n_pixel_half_slice = calculate_slices(y_axis, y_center, y_standard_deviation, scaling, number_of_slices)
+    list_slices, n_pixel_half_slice = calculate_slices(y_axis, y_center, y_standard_deviation, scaling,
+                                                       number_of_slices)
 
     slice_data = []
 
@@ -266,7 +270,8 @@ def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, sca
             gauss_function, offset, amplitude, center_x, standard_deviation, _, _ = gauss_fit(slice_x_profile, x_axis)
 
             # Does x need to be the middle of slice? - currently it is
-            slice_data.append(([center_x, y_axis[list_slices[i]+n_pixel_half_slice]], standard_deviation, pixel_intensity))
+            slice_data.append(([center_x, y_axis[list_slices[i]+n_pixel_half_slice]], standard_deviation,
+                               pixel_intensity))
         else:
             logging.info('Drop slice')
 
