@@ -2,6 +2,9 @@ import multiprocessing
 import time
 from logging import getLogger
 
+#from multiprocessing import Process
+from epics.multiproc import CAProcess as Process
+
 from cam_server import config
 
 _logger = getLogger(__name__)
@@ -112,9 +115,9 @@ class InstanceWrapper:
 
         self.stop_event.set()
 
-        self.process = multiprocessing.Process(target=self.process_function,
-                                               args=(self.stop_event, self.statistics, self.parameter_queue,
-                                                     *self.args))
+        self.process = Process(target=self.process_function,
+                               args=(self.stop_event, self.statistics, self.parameter_queue,
+                                     *self.args))
         self.process.start()
 
         # Wait for the processor to clear the flag - indication that the process is ready.
