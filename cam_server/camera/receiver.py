@@ -38,13 +38,14 @@ class Camera:
         _logger.debug("Checking camera INIT PV '%s'", camera_init_pv)
 
         channel_init = epics.PV(camera_init_pv)
-        if channel_init.get(as_string=True) != 'INIT':
+        channel_init_value = channel_init.get(as_string=True)
+        if channel_init_value != 'INIT':
             raise RuntimeError("Camera {} not online - Status {}".format(self.camera_config.parameters["prefix"],
-                                                                         channel_init.get(as_string=True)))
+                                                                         channel_init_value))
 
         channel_init.disconnect()
 
-        # Retrieve with and height of cam_server image\
+        # Retrieve with and height of cam_server image.
         camera_width_pv = self.camera_config.parameters["prefix"] + ":WIDTH"
         camera_height_pv = self.camera_config.parameters["prefix"] + ":HEIGHT"
 
