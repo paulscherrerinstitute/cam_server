@@ -32,11 +32,14 @@ class CameraInstanceManager(InstanceManager):
 
             stream_port = next(self.port_generator)
 
+            camera = self.config_manager.load_camera(camera_name)
+            camera.verify_camera_online()
+
             _logger.info("Creating camera instance '%s' on port %d.", camera_name, stream_port)
 
             self.add_instance(camera_name, CameraInstanceWrapper(
                 process_function=process_camera_stream,
-                camera=self.config_manager.load_camera(camera_name),
+                camera=camera,
                 camera_config=self.config_manager.get_camera_config(camera_name),
                 stream_port=stream_port,
                 hostname=self.hostname

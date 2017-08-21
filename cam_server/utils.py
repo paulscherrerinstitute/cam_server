@@ -64,4 +64,3 @@ def collect_background(camera_name, stream_address, n_images, background_manager
     except:
         _logger.exception("Error while collecting background.")
         raise
-

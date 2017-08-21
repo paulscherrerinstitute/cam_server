@@ -31,19 +31,20 @@ class Camera:
 
         self.channel_image = None
 
-    def connect(self):
-
-        # Check cam_server status
-        camera_init_pv = self.camera_config.parameters["prefix"] + ":INIT"
-        _logger.debug("Checking camera INIT PV '%s'", camera_init_pv)
+    def verify_camera_online(self):
+        camera_prefix = self.camera_config.parameters["prefix"]
+        camera_init_pv = camera_prefix + ":INIT"
 
         channel_init = epics.PV(camera_init_pv)
         channel_init_value = channel_init.get(as_string=True)
-        if channel_init_value != 'INIT':
-            raise RuntimeError("Camera {} not online - Status {}".format(self.camera_config.parameters["prefix"],
-                                                                         channel_init_value))
-
         channel_init.disconnect()
+
+        if channel_init_value != 'INIT':
+            raise RuntimeError("Camera with prefix {} not online - Status {}".format(camera_prefix, channel_init_value))
+
+    def connect(self):
+
+        self.verify_camera_online()
 
         # Retrieve with and height of cam_server image.
         camera_width_pv = self.camera_config.parameters["prefix"] + ":WIDTH"
@@ -152,6 +153,10 @@ class CameraSimulation:
     """
     Camera simulation for debugging purposes.
     """
+
+    def verify_camera_online(self):
+        return True
+
     def __init__(self, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
                  beam_size_x=100, beam_size_y=20, frame_rate=10, simulation_interval=0.1):
         """
