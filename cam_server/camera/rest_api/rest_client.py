@@ -91,6 +91,17 @@ class CamClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["geometry"]
 
+    def is_camera_online(self, camera_name):
+        """
+        Return True of camera is online. False otherwise.
+        :param camera_name: Name of the cam.
+        :return: Camera status.
+        """
+        rest_endpoint = "/%s/is_online" % camera_name
+
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["online"]
+
     def get_camera_image(self, camera_name):
         """
         Return the cam image in PNG format.

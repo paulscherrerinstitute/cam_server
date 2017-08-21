@@ -119,6 +119,10 @@ class CameraClientTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Camera with prefix EPICS_example_1 not online - Status None"):
             self.client.get_camera_stream("camera_example_1")
 
+        self.assertTrue(self.client.is_camera_online("simulation"), "Simulation should be always online")
+
+        self.assertFalse(self.client.is_camera_online("camera_example_1"), "Epics not working in this tests.")
+
 
 if __name__ == '__main__':
     unittest.main()

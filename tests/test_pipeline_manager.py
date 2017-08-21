@@ -484,5 +484,10 @@ class PipelineManagerTest(unittest.TestCase):
         config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
         instance_manager.stop_all_instances()
 
+    def test_camera_offline(self):
+        instance_manager = get_test_pipeline_manager_with_real_cam()
+        with self.assertRaisesRegex(ValueError, "Camera camera_example_1 is not online. Cannot start pipeline."):
+            instance_manager.create_pipeline(configuration={"camera_name": "camera_example_1"})
+
 if __name__ == '__main__':
     unittest.main()

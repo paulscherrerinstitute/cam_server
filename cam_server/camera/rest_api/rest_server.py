@@ -48,6 +48,22 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Stream address for camera %s." % camera_name,
                 "stream": instance_manager.get_camera_stream(camera_name)}
 
+    @app.get(api_root_address + "/<camera_name>/is_online")
+    def is_camera_online(camera_name):
+        online = True
+        status = "Camera %s is online." % camera_name
+
+        camera = instance_manager.config_manager.load_camera(camera_name)
+        try:
+            camera.verify_camera_online()
+        except Exception as e:
+            online = False
+            status = str(e)
+
+        return {"state": "ok",
+                "status": status,
+                "online": online}
+
     @app.get(api_root_address + '/<camera_name>/config')
     def get_camera_config(camera_name):
         """
