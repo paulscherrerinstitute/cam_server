@@ -64,26 +64,16 @@ class CameraConfigManager(object):
 
         return Camera(camera_config)
 
-    def save_camera_config(self, camera_name, config_updates):
+    def save_camera_config(self, camera_name, config):
         """
         Save the camera config changes.
         :param camera_name: Name of the cam_server to save the config to.
-        :param config_updates: Config to save.
+        :param config: Config to save.
         """
+        CameraConfig.validate_camera_config(config)
 
-        if camera_name.lower() == 'simulation':
-            raise ValueError("Cannot save config for simulation camera.")
-
-        # Get either the existing config, or generate a template one.
-        try:
-            camera_config = self.get_camera_config(camera_name)
-        except ValueError:
-            # Config does not exist, create an empty template.
-            camera_config = CameraConfig(camera_name)
-
-        camera_config.parameters.update(config_updates)
-
-        self.config_provider.save_config(camera_name, camera_config.get_configuration())
+        if not camera_name.lower() == 'simulation':
+            self.config_provider.save_config(camera_name, config)
 
     def get_camera_geometry(self, camera_name):
         """
@@ -155,7 +145,7 @@ class CameraConfig:
         :return:
         """
         if not configuration:
-            raise ValueError("Config object cannot be empty.\nConfig: %s" % configuration)
+            raise ValueError("Config object cannot be empty. Config: %s" % configuration)
 
         if "prefix" not in configuration:
             raise ValueError("Prefix not specified in configuration.")

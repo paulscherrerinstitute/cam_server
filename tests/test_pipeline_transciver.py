@@ -36,6 +36,7 @@ class PipelineTransceiverTest(unittest.TestCase):
 
     def tearDown(self):
         self.client.stop_all_cameras()
+        sleep(1)
         try:
             os.kill(self.process.pid, signal.SIGINT)
         except:
@@ -48,9 +49,6 @@ class PipelineTransceiverTest(unittest.TestCase):
         sleep(1)
 
     def test_pipeline_with_simulation_camera(self):
-        old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
-        config.MFLOW_NO_CLIENTS_TIMEOUT = 2
-
         manager = multiprocessing.Manager()
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
@@ -78,13 +76,10 @@ class PipelineTransceiverTest(unittest.TestCase):
             self.assertSetEqual(required_keys, set(data.data.data.keys()),
                                 "Missing required keys in pipeline output bsread message.")
 
+        stop_event.set()
         thread.join()
-        config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
 
     def test_pipeline_background_manager(self):
-        old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
-        config.MFLOW_NO_CLIENTS_TIMEOUT = 2
-
         manager = multiprocessing.Manager()
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
@@ -121,8 +116,8 @@ class PipelineTransceiverTest(unittest.TestCase):
             self.assertIsNotNone(data, "Received None message.")
             self.assertTrue(numpy.array_equal(data.data.data["image"].value, numpy.zeros(shape=simulated_camera_shape)))
 
+        stop_event.set()
         thread.join()
-        config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
 
 
 if __name__ == '__main__':

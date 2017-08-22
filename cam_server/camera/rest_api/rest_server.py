@@ -5,8 +5,10 @@ import bottle
 from bottle import request, response
 
 from cam_server import config
+from cam_server.camera.configuration import CameraConfig
 from cam_server.instance_management import rest_api
 from cam_server.pipeline.data_processing.functions import get_png_from_image
+from cam_server.utils import update_camera_config
 
 _logger = logging.getLogger(__name__)
 
@@ -84,12 +86,26 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         :param camera_name: Name of the camera to change the config for.
         :return: New config.
         """
+        # If possible, use the instance config. This is due to the simulated camera being a memory only object.
+        if instance_manager.is_instance_present(camera_name):
+            old_config = instance_manager.get_instance(camera_name).get_configuration()
+        else:
+            # Get either the existing config, or generate a template one.
+            try:
+                old_config = instance_manager.config_manager.get_camera_config(camera_name).get_configuration()
+            except ValueError:
+                # Config does not exist, create an empty template.
+                old_config = CameraConfig(camera_name).get_configuration()
 
-        instance_manager.config_manager.save_camera_config(camera_name, request.json)
+        new_config_parameters = update_camera_config(old_config, request.json)
+        new_config = CameraConfig(camera_name, new_config_parameters).get_configuration()
+
+        instance_manager.config_manager.save_camera_config(camera_name, new_config)
+        instance_manager.set_camera_instance_config(camera_name, new_config)
 
         return {"state": "ok",
                 "status": "Camera %s configuration saved." % camera_name,
-                "config": instance_manager.config_manager.get_camera_config(camera_name).get_configuration()}
+                "config": new_config}
 
     @app.delete(api_root_address + '/<camera_name>/config')
     def delete_camera_config(camera_name):

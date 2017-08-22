@@ -4,7 +4,7 @@ from logging import getLogger
 from cam_server import config
 from cam_server.camera.sender import process_camera_stream
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
-from cam_server.utils import get_port_generator, update_camera_config
+from cam_server.utils import get_port_generator
 
 _logger = getLogger(__name__)
 
@@ -48,15 +48,11 @@ class CameraInstanceManager(InstanceManager):
 
         return self.get_instance(camera_name).get_stream_address()
 
-    def update_camera_config(self, instance_id, config_updates):
-        if not self.is_instance_present(instance_id):
+    def set_camera_instance_config(self, camera_name, new_config):
+        if not self.is_instance_present(camera_name):
             return
 
-        camera_instance = self.get_instance(instance_id)
-
-        current_config = camera_instance.get_configuration()
-
-        new_config = update_camera_config(current_config, config_updates)
+        camera_instance = self.get_instance(camera_name)
         camera_instance.set_parameter(new_config)
 
 

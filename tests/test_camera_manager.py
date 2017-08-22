@@ -13,7 +13,7 @@ from cam_server.camera.configuration import CameraConfigManager, CameraConfig
 from cam_server.camera.management import CameraInstanceManager
 from cam_server.camera.receiver import CameraSimulation
 from cam_server.pipeline.data_processing.functions import get_png_from_image
-from cam_server.utils import get_host_port_from_stream_address
+from cam_server.utils import get_host_port_from_stream_address, update_camera_config
 from tests.helpers.factory import get_test_instance_manager, MockConfigStorage
 
 
@@ -138,7 +138,10 @@ class CameraTest(unittest.TestCase):
             self.assertEqual(x_axis_1.shape[0], sim_x)
             self.assertEqual(y_axis_1.shape[0], sim_y)
 
-        self.instance_manager.update_camera_config("simulation", {"rotate": 1})
+        new_config = update_camera_config(self.instance_manager.get_instance("simulation").get_configuration(),
+                                          {"rotate": 1})
+        new_config = CameraConfig("simulation", new_config).get_configuration()
+        self.instance_manager.set_camera_instance_config("simulation", new_config)
 
         sleep(0.5)
 
@@ -164,7 +167,10 @@ class CameraTest(unittest.TestCase):
         self.assertTrue(numpy.array_equal(x_axis_1, y_axis_2))
         self.assertTrue(numpy.array_equal(y_axis_1, x_axis_2))
 
-        self.instance_manager.update_camera_config("simulation", {"camera_calibration": {}})
+        new_config = update_camera_config(self.instance_manager.get_instance("simulation").get_configuration(),
+                                          {"camera_calibration": {}})
+        new_config = CameraConfig("simulation", new_config).get_configuration()
+        self.instance_manager.set_camera_instance_config("simulation", new_config)
 
         with source(host=camera_host, port=camera_port, mode=SUB) as stream:
             data = stream.receive()

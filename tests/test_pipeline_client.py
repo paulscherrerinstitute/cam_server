@@ -264,6 +264,8 @@ class PipelineClientTest(unittest.TestCase):
         self.assertEqual(set(self.pipeline_client.get_cameras()), set(expected_cameras),
                          "Expected cameras not present.")
 
+        self.pipeline_client.stop_all_instances()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -125,7 +125,48 @@ class CameraClientTest(unittest.TestCase):
 
         self.assertFalse(self.client.is_camera_online("camera_example_1"), "Epics not working in this tests.")
 
-        # TODO: Update camera config on the fly.
+        stream_address = self.client.get_camera_stream("simulation")
+        camera_host, camera_port = get_host_port_from_stream_address(stream_address)
+        sim_x, sim_y = CameraSimulation(CameraConfig("simulation")).get_geometry()
+
+        # Collect from the pipeline.
+        with source(host=camera_host, port=camera_port, mode=SUB) as stream:
+            data = stream.receive()
+
+            x_size = data.data.data["width"].value
+            y_size = data.data.data["height"].value
+
+            self.assertEqual(x_size, sim_x)
+            self.assertEqual(y_size, sim_y)
+
+            x_axis_1 = data.data.data["x_axis"].value
+            y_axis_1 = data.data.data["y_axis"].value
+
+            self.assertEqual(x_axis_1.shape[0], sim_x)
+            self.assertEqual(y_axis_1.shape[0], sim_y)
+
+        self.client.set_camera_config("simulation", {"rotate": 1})
+        sleep(0.5)
+
+        # Collect from the pipeline.
+        with source(host=camera_host, port=camera_port, mode=SUB) as stream:
+            data = stream.receive()
+
+            x_size = data.data.data["width"].value
+            y_size = data.data.data["height"].value
+
+            # We rotate the image for 90 degrees - X and Y size should be inverted.
+            self.assertEqual(x_size, sim_y)
+            self.assertEqual(y_size, sim_x)
+
+            x_axis_2 = data.data.data["x_axis"].value
+            y_axis_2 = data.data.data["y_axis"].value
+
+            # We rotate the image for 90 degrees - X and Y size should be inverted.
+            self.assertEqual(x_axis_2.shape[0], sim_y)
+            self.assertEqual(y_axis_2.shape[0], sim_x)
+
+        self.client.stop_all_cameras()
 
 
 if __name__ == '__main__':

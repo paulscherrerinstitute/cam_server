@@ -39,6 +39,9 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
         return parameters, background_array, size_x, size_y
 
+    source = None
+    sender = None
+
     try:
         pipeline_parameters, image_background_array, x_size, y_size = process_pipeline_parameters()
 
@@ -95,9 +98,13 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
         _logger.info("Stopping transceiver.")
 
-        source.disconnect()
-        sender.close()
-
     except:
         _logger.exception("Exception while trying to start the receive and process thread.")
         raise
+
+    finally:
+        if source:
+            source.disconnect()
+
+        if sender:
+            sender.close()

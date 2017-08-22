@@ -32,6 +32,9 @@ def update_pipeline_config(current_config, config_updates):
 
 
 def update_camera_config(current_config, config_updates):
+    if not config_updates:
+        return config_updates
+
     def update_subsection(section_name):
         if config_updates.get(section_name) is not None:
             old_section = current_config.get(section_name)
@@ -45,7 +48,6 @@ def update_camera_config(current_config, config_updates):
     current_config.update(config_updates)
 
     return current_config
-
 
 
 def get_port_generator(port_range):

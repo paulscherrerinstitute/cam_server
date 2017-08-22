@@ -19,9 +19,6 @@ class CameraConfigTest(unittest.TestCase):
         configuration = instance_manager.config_manager.get_camera_config("simulation")
         self.assertIsNotNone(configuration, "Configuration for the simulated camera should exist.")
 
-        with self.assertRaisesRegex(ValueError, "Cannot save config for simulation camera."):
-            instance_manager.config_manager.save_camera_config("simulation", {})
-
         with self.assertRaisesRegex(ValueError, "Cannot delete simulation camera."):
             instance_manager.config_manager.delete_camera_config("simulation")
 
@@ -33,15 +30,25 @@ class CameraConfigTest(unittest.TestCase):
             instance_manager.config_manager.get_camera_config("test_camera_1")
 
         # Check if default values work as expected.
-        instance_manager.config_manager.save_camera_config("test_camera_1", {})
+        with self.assertRaisesRegex(ValueError, "Config object cannot be empty. Config: {}"):
+            instance_manager.config_manager.save_camera_config("test_camera_1", {})
 
+        with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not found in the "):
+            instance_manager.config_manager.save_camera_config("test_camera_1", {"prefix": "test"})
+
+        instance_manager.config_manager.save_camera_config("test_camera_1", {"prefix": "test",
+                                                                             "mirror_x": False,
+                                                                             "mirror_y": False,
+                                                                             "rotate": 0,
+                                                                             "camera_calibration": None})
         camera = instance_manager.config_manager.load_camera("test_camera_1")
         self.assertIsNotNone(camera, "Retrieved camera config works.")
 
         camera_config = {"prefix": "EPICS_PREFIX",
                          "mirror_x": True,
                          "mirror_y": True,
-                         "rotate": 3}
+                         "rotate": 3,
+                         "camera_calibration": None}
 
         # Overwrite existing and create new config with same values. The result should be the same.
         instance_manager.config_manager.save_camera_config("test_camera_1", camera_config)
@@ -61,9 +68,12 @@ class CameraConfigTest(unittest.TestCase):
                              sorted(["simulation", "test_camera_1"]),
                              "Test camera was not deleted successfully.")
 
-        # You should never be able to overwrite the simulation camera.
-        with self.assertRaisesRegex(ValueError, "Cannot save config for simulation camera."):
-            instance_manager.config_manager.save_camera_config("simulation", camera_config)
+        # Simulation camera cannot be saved - config should not match.
+        simulation_config_before = instance_manager.config_manager.get_camera_config("simulation").get_configuration()
+        instance_manager.config_manager.save_camera_config("simulation", camera_config)
+        simulation_config_after = instance_manager.config_manager.get_camera_config("simulation").get_configuration()
+
+        self.assertDictEqual(simulation_config_before, simulation_config_after)
 
     def test_load_camera(self):
         expected_config_example_1 = {
@@ -104,7 +114,8 @@ class CameraConfigTest(unittest.TestCase):
             "prefix": "EPICS_example_1",
             "mirror_x": False,
             "mirror_y": True,
-            "rotate": 1
+            "rotate": 1,
+            "camera_calibration": None
         }
 
         instance_manager.config_manager.save_camera_config("different_name", example_test)
