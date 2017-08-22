@@ -111,6 +111,7 @@ class CameraTest(unittest.TestCase):
         self.assertEqual(camera_size, png_size, "Camera and image size are not the same.")
 
     def test_camera_settings_change(self):
+        # TODO: Test this.
         pass
 
     def test_custom_hostname(self):

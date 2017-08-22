@@ -125,6 +125,8 @@ class CameraClientTest(unittest.TestCase):
 
         self.assertFalse(self.client.is_camera_online("camera_example_1"), "Epics not working in this tests.")
 
+        # TODO: Update camera config on the fly.
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -32,7 +32,9 @@ class ConfigFileStorageTest(unittest.TestCase):
             "prefix": "EPICS_example_1",
             "mirror_x": True,
             "mirror_y": True,
-            "rotate": 1
+            "rotate": 1,
+            "camera_calibration": None
+
         }
 
         self.assertDictEqual(config_example_1, expected_config_example_1,
