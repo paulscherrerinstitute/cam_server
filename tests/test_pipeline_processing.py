@@ -4,6 +4,8 @@ import unittest
 import time
 
 import numpy
+
+from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.receiver import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.data_processing.processor import process_image
@@ -14,7 +16,7 @@ class PipelineProcessingTest(unittest.TestCase):
     def test_noop_pipeline(self):
         pipeline_config = PipelineConfig("test_pipeline")
 
-        simulated_camera = CameraSimulation()
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
         parameters = pipeline_config.get_configuration()
@@ -48,7 +50,7 @@ class PipelineProcessingTest(unittest.TestCase):
             "image_background": "white_background"
         }
 
-        simulated_camera = CameraSimulation()
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
 
@@ -99,7 +101,7 @@ class PipelineProcessingTest(unittest.TestCase):
                         "The image should be all zeros - negative numbers are not allowed.")
 
     def test_image_threshold(self):
-        simulated_camera = CameraSimulation()
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
         x_size, y_size = simulated_camera.get_geometry()

@@ -1,12 +1,15 @@
 import unittest
 
+import multiprocessing
+
+from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.receiver import CameraSimulation
 
 
 class CameraReceiverTest(unittest.TestCase):
 
     def test_camera_simulation(self):
-        camera = CameraSimulation()
+        camera = CameraSimulation(CameraConfig("simulation"))
 
         n_images_to_receive = 5
 
@@ -25,6 +28,21 @@ class CameraReceiverTest(unittest.TestCase):
         camera.add_callback(callback_method)
 
         camera.simulation_stop_event.wait()
+
+    def test_camera_calibration(self):
+        camera = CameraSimulation(CameraConfig("simulation"))
+        size_x, size_y = camera.get_geometry()
+
+        image = camera.get_image()
+
+        self.assertEqual(image.shape[0], size_y)
+        self.assertEqual(image.shape[1], size_x)
+
+        x_axis, y_axis = camera.get_x_y_axis()
+
+        self.assertEqual(x_axis.shape[0], size_x)
+        self.assertEqual(y_axis.shape[0], size_y)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -58,7 +58,7 @@ class CameraConfigManager(object):
         """
         # Simulation cam_server is not defined in the config.
         if camera_name.lower() == 'simulation':
-            return CameraSimulation()
+            return CameraSimulation(CameraConfig("simulation"))
 
         camera_config = self.get_camera_config(camera_name)
 

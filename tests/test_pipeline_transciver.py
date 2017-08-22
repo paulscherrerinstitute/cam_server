@@ -10,7 +10,7 @@ import multiprocessing
 
 import numpy
 from bsread import SUB, source
-from cam_server import CamClient
+from cam_server import CamClient, config
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import receive_process_send
 from cam_server.start_camera_server import start_camera_server
@@ -48,6 +48,8 @@ class PipelineTransceiverTest(unittest.TestCase):
         sleep(1)
 
     def test_pipeline_with_simulation_camera(self):
+        old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
+        config.MFLOW_NO_CLIENTS_TIMEOUT = 2
 
         manager = multiprocessing.Manager()
         stop_event = multiprocessing.Event()
@@ -77,8 +79,12 @@ class PipelineTransceiverTest(unittest.TestCase):
                                 "Missing required keys in pipeline output bsread message.")
 
         thread.join()
+        config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
 
     def test_pipeline_background_manager(self):
+        old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
+        config.MFLOW_NO_CLIENTS_TIMEOUT = 2
+
         manager = multiprocessing.Manager()
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
@@ -116,43 +122,7 @@ class PipelineTransceiverTest(unittest.TestCase):
             self.assertTrue(numpy.array_equal(data.data.data["image"].value, numpy.zeros(shape=simulated_camera_shape)))
 
         thread.join()
-
-    def test_pipeline_camera_calibration(self):
-        manager = multiprocessing.Manager()
-        stop_event = multiprocessing.Event()
-        statistics = manager.Namespace()
-        parameter_queue = multiprocessing.Queue()
-
-        # This is the "neutral" calibration - it should not change the image.
-        calibration_config = PipelineConfig("test_pipeline", parameters={
-            "camera_name": "simulation",
-            "calibration": {
-                "reference_marker": [0, 0, 100, 100],
-                "reference_marker_width": 100.0,
-                "reference_marker_height": 100.0,
-                "angle_horizontal": 0.0,
-                "angle_vertical": 0.0
-            }
-        })
-
-        def send():
-            receive_process_send(stop_event, statistics, parameter_queue, self.client, calibration_config,
-                                 12001, MockBackgroundManager())
-
-        thread = Thread(target=send)
-        thread.start()
-
-        with source(host="127.0.0.1", port=12001, mode=SUB) as stream:
-            data = stream.receive()
-            x_axis = data.data.data["x_axis"].value
-            y_axis = data.data.data["y_axis"].value
-
-            self.assertIsNotNone(x_axis, "x_axis is None.")
-            self.assertIsNotNone(y_axis, "y_axis is None.")
-
-        thread.join()
-
-        # TODO: How to test if the calibration was correct?
+        config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
 
 
 if __name__ == '__main__':

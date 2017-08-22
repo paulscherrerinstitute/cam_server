@@ -71,9 +71,11 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         :param camera_name: Name of the cam_server to retrieve the config for.
         :return: Camera config.
         """
+        camera_config = instance_manager.config_manager.get_camera_config(camera_name)
+
         return {"state": "ok",
                 "status": "Camera %s configuration retrieved." % camera_name,
-                "config": instance_manager.config_manager.get_camera_config(camera_name).get_configuration()}
+                "config": camera_config.get_configuration()}
 
     @app.post(api_root_address + '/<camera_name>/config')
     def set_camera_config(camera_name):

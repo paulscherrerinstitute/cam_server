@@ -8,6 +8,7 @@ from time import sleep
 from bsread import source, SUB
 
 from cam_server import CamClient
+from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.receiver import CameraSimulation
 from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import get_host_port_from_stream_address
@@ -64,11 +65,11 @@ class CameraClientTest(unittest.TestCase):
             data = stream.receive()
             self.assertIsNotNone(data, "Received data was none.")
 
-            required_fields = set(["image", "timestamp", "width", "height"])
+            required_fields = set(["image", "timestamp", "width", "height", "x_axis", "y_axis"])
             self.assertSetEqual(required_fields, set(data.data.data.keys()), "Required fields missing.")
 
             image = data.data.data["image"].value
-            x_size, y_size = CameraSimulation().get_geometry()
+            x_size, y_size = CameraSimulation(CameraConfig("simulation")).get_geometry()
             self.assertListEqual(list(image.shape), [y_size, x_size],
                                  "Original and received image are not the same.")
 
@@ -105,8 +106,9 @@ class CameraClientTest(unittest.TestCase):
         self.assertDictEqual(example_1_config, testing_camera_config, "Saved and loaded configs are not the same.")
 
         geometry = self.client.get_camera_geometry("simulation")
-        simulated_camera = CameraSimulation()
-        self.assertListEqual(geometry, [simulated_camera.size_x, simulated_camera.size_y],
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        size_x, size_y = simulated_camera.get_geometry()
+        self.assertListEqual(geometry, [size_x, size_y],
                              'The geometry of the simulated camera is not correct.')
 
         self.assertTrue("testing_camera" in self.client.get_cameras(), "Testing camera should be present.")

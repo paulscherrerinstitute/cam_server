@@ -52,10 +52,10 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
                                                   "type": "float64"})
 
         sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                               "type": "float64"})
+                                               "type": "float32"})
 
         sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                               "type": "float64"})
+                                               "type": "float32"})
 
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
 

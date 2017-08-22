@@ -22,9 +22,6 @@ class Camera:
 
         self.camera_config = camera_config
 
-        # Width and height of the corrected image
-        self.width = 0
-        self.height = 0
         # Width and height of the raw image
         self.width_raw = 0
         self.height_raw = 0
@@ -198,14 +195,14 @@ class Camera:
         return x_axis, y_axis
 
 
-class CameraSimulation:
+class CameraSimulation(Camera):
     """
     Camera simulation for debugging purposes.
     """
     def verify_camera_online(self):
         return True
 
-    def __init__(self, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
+    def __init__(self, camera_config, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
                  beam_size_x=100, beam_size_y=20, frame_rate=10, simulation_interval=0.1):
         """
         Initialize the camera simulation.
@@ -218,12 +215,13 @@ class CameraSimulation:
         :param frame_rate: How many frames, in mhz, does the simulation outputs.
         :param simulation_interval: Interval between frames on the simulated camera.
         """
+        super(CameraSimulation, self).__init__(camera_config)
 
         self.frame_rate = frame_rate
-        self.size_x = size_x
-        self.size_y = size_y
+        self.width_raw = size_x
+        self.height_raw = size_y
         self.noise = noise  # double {0,1} noise amplification factor
-        self.dead_pixels = self.generate_dead_pixels(number_of_dead_pixels)
+        self.dead_pixels = self._generate_dead_pixels(number_of_dead_pixels)
         self.beam_size_x = beam_size_x
         self.beam_size_y = beam_size_y
 
@@ -233,12 +231,12 @@ class CameraSimulation:
         self.simulation_thread = None
         self.simulation_stop_event = Event()
 
-    def generate_dead_pixels(self, number_of_dead_pixel):
-        dead_pixels = numpy.zeros((self.size_y, self.size_x))
+    def _generate_dead_pixels(self, number_of_dead_pixel):
+        dead_pixels = numpy.zeros((self.height_raw, self.width_raw))
 
         for _ in range(number_of_dead_pixel):
-            x = numpy.random.randint(0, self.size_y)
-            y = numpy.random.randint(0, self.size_x)
+            x = numpy.random.randint(0, self.height_raw)
+            y = numpy.random.randint(0, self.width_raw)
             dead_pixels[x, y] = 1
 
         return dead_pixels
@@ -255,16 +253,16 @@ class CameraSimulation:
         else:
             beam_x = numpy.linspace(-self.beam_size_x + numpy.random.rand(),
                                     self.beam_size_x + numpy.random.rand(),
-                                    self.size_y)
+                                    self.height_raw)
             beam_y = numpy.linspace(-self.beam_size_y + numpy.random.rand(),
                                     self.beam_size_y + numpy.random.rand(),
-                                    self.size_x)
+                                    self.width_raw)
             x, y = numpy.meshgrid(beam_y, beam_x)
             image = numpy.exp(-(x ** 2 + y ** 2))
 
         # Add some noise
         if self.noise:
-            image += numpy.random.random((self.size_y, self.size_x)) * self.noise
+            image += numpy.random.random((self.height_raw, self.width_raw)) * self.noise
 
         # Add dead pixels
         image += self.dead_pixels
@@ -272,14 +270,7 @@ class CameraSimulation:
         image.clip(0, 0.9, out=image)
         image *= (numpy.power(2, 16) - 1)
 
-        # Convert to float (for better performance)
-        image = image.astype('f')
-        return image
-
-    def get_x_y_axis(self):
-        x_axis = numpy.linspace(0, self.size_y - 1, self.size_y, dtype='f8')
-        y_axis = numpy.linspace(0, self.size_x - 1, self.size_x, dtype='f8')
-        return y_axis, x_axis
+        return self._get_image(image, raw=raw)
 
     def connect(self):
         # Thread already exists.
@@ -315,12 +306,6 @@ class CameraSimulation:
         self.simulation_stop_event.set()
         self.simulation_thread.join()
         self.simulation_thread = None
-
-    def get_geometry(self):
-        return self.size_x, self.size_y
-
-    def get_name(self):
-        return "simulation"
 
     def add_callback(self, callback_function):
         self.callback_functions.append(callback_function)

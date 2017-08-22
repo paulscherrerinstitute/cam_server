@@ -4,5 +4,5 @@
   "mirror_x": true,
   "mirror_y": true,
   "rotate": 1,
-  "camera_calibration": null,
+  "camera_calibration": null
 }
