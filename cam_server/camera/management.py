@@ -54,7 +54,7 @@ class CameraInstanceWrapper(InstanceWrapper):
     def __init__(self, process_function, camera, camera_config, stream_port, hostname=None):
 
         super(CameraInstanceWrapper, self).__init__(camera.get_name(), process_function,
-                                                    camera, stream_port)
+                                                    camera, stream_port, camera_config)
 
         self.camera = camera
         self.camera_config = camera_config
