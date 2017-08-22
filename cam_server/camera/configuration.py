@@ -102,6 +102,21 @@ class CameraConfigManager(object):
 
 class CameraConfig:
 
+    DEFAULT_CONFIGURATION = {
+        "camera_calibration": None,
+        "mirror_x": False,
+        "mirror_y": False,
+        "rotate": 0
+    }
+
+    DEFAULT_CAMERA_CALIBRATION = {
+        "reference_marker": [0, 0, 100, 100],
+        "reference_marker_width": 100.0,
+        "reference_marker_height": 100.0,
+        "angle_horizontal": 0.0,
+        "angle_vertical": 0.0
+    }
+
     def __init__(self, camera_name, parameters=None):
         self.camera_name = camera_name
         self.parameters = {}
@@ -124,6 +139,11 @@ class CameraConfig:
         # We do not want to pass by reference - someone might change the dictionary.
         return copy.deepcopy(self.parameters)
 
+    def set_configuration(self, configuration):
+        new_parameters = CameraConfig.expand_config(configuration)
+        CameraConfig.validate_camera_config(new_parameters)
+        self.parameters = new_parameters
+
     def get_name(self):
         return self.camera_name
 
@@ -137,9 +157,36 @@ class CameraConfig:
         if not configuration:
             raise ValueError("Config object cannot be empty.\nConfig: %s" % configuration)
 
-        mandatory_attributes = ["prefix", "mirror_x", "mirror_y", "rotate"]
-        missing_attributes = [attr for attr in mandatory_attributes if attr not in configuration]
+        def verify_attributes(section_name, section, mandatory_attributes):
+            missing_attributes = [attr for attr in mandatory_attributes if attr not in section]
 
-        if missing_attributes:
-            raise ValueError("The following mandatory attributes were not found in the configuration: %s" %
-                             missing_attributes)
+            if missing_attributes:
+                raise ValueError("The following mandatory attributes were not found in the %s: %s" %
+                                 (section_name, missing_attributes))
+
+        # Verify root attributes.
+        additional_mandatory_attributes = ["prefix"]
+        verify_attributes("configuration", configuration,
+                          CameraConfig.DEFAULT_CONFIGURATION.keys() + additional_mandatory_attributes)
+
+        camera_calibration = configuration["camera_calibration"]
+        if camera_calibration:
+            verify_attributes("camera_calibration", camera_calibration, CameraConfig.DEFAULT_CAMERA_CALIBRATION)
+
+    @staticmethod
+    def expand_config(configuration):
+
+        def expand_section(provided_value, default_value):
+            expanded_section = copy.deepcopy(default_value)
+            # Prevent None values to overwrite defaults.
+            expanded_section.update((k, v) for k, v in provided_value.items() if v is not None)
+            return expanded_section
+
+        # No expansion of default parameters.
+        expanded_config = expand_section(configuration, CameraConfig.DEFAULT_CONFIGURATION)
+
+        if expanded_config["camera_calibration"] is not None:
+            expanded_config["camera_calibration"] = expand_section(expanded_config["camera_calibration"],
+                                                                   CameraConfig.DEFAULT_CAMERA_CALIBRATION)
+
+        return expanded_config

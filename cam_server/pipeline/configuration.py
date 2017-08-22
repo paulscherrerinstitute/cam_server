@@ -107,21 +107,12 @@ class BackgroundImageManager(object):
 class PipelineConfig:
 
     DEFAULT_CONFIGURATION = {
-        "camera_calibration": None,
         "image_background_enable": False,
         "image_background": None,
         "image_threshold": None,
         "image_region_of_interest": None,
         "image_good_region": None,
         "image_slices": None
-    }
-
-    DEFAULT_CAMERA_CALIBRATION = {
-        "reference_marker": [0, 0, 100, 100],
-        "reference_marker_width": 100.0,
-        "reference_marker_height": 100.0,
-        "angle_horizontal": 0.0,
-        "angle_vertical": 0.0
     }
 
     DEFAULT_IMAGE_GOOD_REGION = {
@@ -191,10 +182,6 @@ class PipelineConfig:
         # Verify root attributes.
         verify_attributes("configuration", configuration, PipelineConfig.DEFAULT_CONFIGURATION.keys())
 
-        camera_calibration = configuration["camera_calibration"]
-        if camera_calibration:
-            verify_attributes("camera_calibration", camera_calibration, PipelineConfig.DEFAULT_CAMERA_CALIBRATION)
-
         image_good_region = configuration["image_good_region"]
         if image_good_region:
             verify_attributes("image_good_region", image_good_region, PipelineConfig.DEFAULT_IMAGE_GOOD_REGION)
@@ -213,10 +200,6 @@ class PipelineConfig:
             return expanded_section
 
         expanded_config = expand_section(configuration, PipelineConfig.DEFAULT_CONFIGURATION)
-
-        if expanded_config["camera_calibration"] is not None:
-            expanded_config["camera_calibration"] = expand_section(expanded_config["camera_calibration"],
-                                                                   PipelineConfig.DEFAULT_CAMERA_CALIBRATION)
 
         if expanded_config["image_good_region"] is not None:
             expanded_config["image_good_region"] = expand_section(expanded_config["image_good_region"],
