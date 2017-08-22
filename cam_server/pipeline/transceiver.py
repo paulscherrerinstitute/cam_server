@@ -31,23 +31,16 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
         size_x, size_y = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
 
-        calibration = parameters.get("calibration")
-        if calibration:
-            axis_x, axis_y = get_calibrated_axis(size_x, size_y, calibration)
-        else:
-            axis_x = numpy.linspace(0, size_x - 1, size_x, dtype='f')
-            axis_y = numpy.linspace(0, size_y - 1, size_y, dtype='f')
-
         image_region_of_interest = parameters.get("image_region_of_interest")
         if image_region_of_interest:
             _, size_x, _, size_y = image_region_of_interest
 
         _logger.debug("Image width %d and height %d.", size_x, size_y)
 
-        return parameters, background_array, axis_x, axis_y, size_x, size_y
+        return parameters, background_array, size_x, size_y
 
     try:
-        pipeline_parameters, image_background_array, x_axis, y_axis, x_size, y_size = process_pipeline_parameters()
+        pipeline_parameters, image_background_array, x_size, y_size = process_pipeline_parameters()
 
         camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
         _logger.debug("Connecting to camera stream address %s.", camera_stream_address)
@@ -75,8 +68,7 @@ def receive_process_send(stop_event, statistics, parameter_queue,
                 while not parameter_queue.empty():
                     new_parameters = parameter_queue.get()
                     pipeline_config.set_configuration(new_parameters)
-                    pipeline_parameters, image_background_array, x_axis, y_axis, x_size, y_size \
-                        = process_pipeline_parameters()
+                    pipeline_parameters, image_background_array, x_size, y_size = process_pipeline_parameters()
 
                 data = source.receive()
 
@@ -86,6 +78,8 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
                 image = data.data.data["image"].value
                 timestamp = data.data.data["timestamp"].value
+                x_axis = data.data.data["x_axis"].value
+                y_axis = data.data.data["y_axis"].value
 
                 processed_data = process_image(image, timestamp, x_axis, y_axis,
                                                pipeline_parameters, image_background_array)
@@ -107,57 +101,3 @@ def receive_process_send(stop_event, statistics, parameter_queue,
     except:
         _logger.exception("Exception while trying to start the receive and process thread.")
         raise
-
-
-def get_calibrated_axis(width, height, calibration):
-    """
-    Get x and y axis in nm based on calculated origin from the reference markers
-    The coordinate system looks like this:
-           +|
-    +       |
-    -----------------
-            |       -
-           -|
-    Parameters
-    ----------
-    width       image with in pixel
-    height      image height in pixel
-    Returns
-    -------
-    (x_axis, y_axis)
-    """
-
-    def _calculate_center():
-        center_x = int(((lower_right_x - upper_left_x) / 2) + upper_left_x)
-        center_y = int(((lower_right_y - upper_left_y) / 2) + upper_left_y)
-        return center_x, center_y
-
-    def _calculate_pixel_size():
-        size_y = reference_marker_height / (lower_right_y - upper_left_y)
-        size_y *= numpy.cos(vertical_camera_angle * numpy.pi / 180)
-
-        size_x = reference_marker_width / (lower_right_x - upper_left_x)
-        size_x *= numpy.cos(horizontal_camera_angle * numpy.pi / 180)
-
-        return size_x, size_y
-
-    upper_left_x, upper_left_y, lower_right_x, lower_right_y = calibration["reference_marker"]
-    reference_marker_height = calibration["reference_marker_height"]
-    vertical_camera_angle = calibration["angle_vertical"]
-
-    reference_marker_width = calibration["reference_marker_width"]
-    horizontal_camera_angle = calibration["angle_horizontal"]
-
-    # Derived properties
-    origin_x, origin_y = _calculate_center()
-    pixel_size_x, pixel_size_y = _calculate_pixel_size()  # pixel size in nanometer
-
-    x_axis = numpy.linspace(0, width - 1, width, dtype='f')
-    x_axis -= origin_x
-    x_axis *= (-pixel_size_x)  # we need the minus to invert the axis
-
-    y_axis = numpy.linspace(0, height - 1, height, dtype='f')
-    y_axis -= origin_y
-    y_axis *= (-pixel_size_y)  # we need the minus to invert the axis
-
-    return x_axis, y_axis

@@ -74,12 +74,12 @@ class CameraConfigTest(unittest.TestCase):
 
         camera_config = instance_manager.config_manager.get_camera_config("example_1")
 
-        self.assertDictEqual(camera_config.to_dict(), expected_config_example_1,
+        self.assertDictEqual(camera_config.get_configuration(), expected_config_example_1,
                              "CameraConfig not as expected")
 
         camera = instance_manager.config_manager.load_camera("example_1")
 
-        self.assertDictEqual(camera.camera_config.to_dict(), expected_config_example_1,
+        self.assertDictEqual(camera.camera_config.get_configuration(), expected_config_example_1,
                              "Camera not as expected")
 
         simulated_camera = instance_manager.config_manager.load_camera("simulation")

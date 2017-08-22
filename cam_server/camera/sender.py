@@ -1,4 +1,6 @@
 from logging import getLogger
+
+import numpy
 from bsread.sender import Sender, PUB
 from zmq import Again
 
@@ -17,7 +19,6 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
     :param camera: Camera instance to get the images from.
     :param port: Port to use to bind the output stream.
     """
-
     sender = None
 
     try:
@@ -30,6 +31,7 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
 
         camera.connect()
         x_size, y_size = camera.get_geometry()
+        x_axis, y_axis = camera.get_x_y_axis()
 
         sender = Sender(port=port, mode=PUB,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
@@ -48,6 +50,12 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
         sender.add_channel("timestamp", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
                                                   "type": "float64"})
 
+        sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
+                                               "type": "float64"})
+
+        sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
+                                               "type": "float64"})
+
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
 
         statistics.counter = 0
@@ -57,7 +65,9 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
             data = {"image": image,
                     "timestamp": timestamp,
                     "width": x_size,
-                    "height": y_size}
+                    "height": y_size,
+                    "x_axis": x_axis,
+                    "y_axis": y_axis}
 
             try:
                 sender.send(data=data, check_data=False)

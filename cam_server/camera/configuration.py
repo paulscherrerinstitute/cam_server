@@ -83,7 +83,7 @@ class CameraConfigManager(object):
 
         camera_config.parameters.update(config_updates)
 
-        self.config_provider.save_config(camera_name, camera_config.to_dict())
+        self.config_provider.save_config(camera_name, camera_config.get_configurationCame())
 
     def get_camera_geometry(self, camera_name):
         """
@@ -118,7 +118,7 @@ class CameraConfig:
 
         self.validate_camera_config(self.parameters)
 
-    def to_dict(self):
+    def get_configuration(self):
         # Validate before passing on, since anyone can change the dictionary content.
         self.validate_camera_config(self.parameters)
         # We do not want to pass by reference - someone might change the dictionary.

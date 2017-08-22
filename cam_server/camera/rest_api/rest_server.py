@@ -73,7 +73,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         """
         return {"state": "ok",
                 "status": "Camera %s configuration retrieved." % camera_name,
-                "config": instance_manager.config_manager.get_camera_config(camera_name).to_dict()}
+                "config": instance_manager.config_manager.get_camera_config(camera_name).get_configuration()}
 
     @app.post(api_root_address + '/<camera_name>/config')
     def set_camera_config(camera_name):
@@ -87,7 +87,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         return {"state": "ok",
                 "status": "Camera %s configuration saved." % camera_name,
-                "config": instance_manager.config_manager.get_camera_config(camera_name).to_dict()}
+                "config": instance_manager.config_manager.get_camera_config(camera_name).get_configuration()}
 
     @app.delete(api_root_address + '/<camera_name>/config')
     def delete_camera_config(camera_name):
