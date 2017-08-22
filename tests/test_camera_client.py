@@ -145,7 +145,9 @@ class CameraClientTest(unittest.TestCase):
             self.assertEqual(x_axis_1.shape[0], sim_x)
             self.assertEqual(y_axis_1.shape[0], sim_y)
 
-        self.client.set_camera_config("simulation", {"rotate": 1})
+        camera_config = self.client.get_camera_config("simulation")
+        camera_config["rotate"] = 1
+        self.client.set_camera_config("simulation", camera_config)
         sleep(0.5)
 
         # Collect from the pipeline.
