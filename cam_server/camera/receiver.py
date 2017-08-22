@@ -110,7 +110,7 @@ class Camera:
 
         value = numpy.rot90(value, self.camera_config.parameters["rotate"])
 
-        return value
+        return numpy.ascontiguousarray(value)
 
     def get_image(self, raw=False):
         value = self.channel_image.get()

@@ -2,13 +2,18 @@ import imghdr
 import unittest
 from time import sleep
 
+import numpy
 from PIL import Image
 from io import BytesIO
 
+from bsread import source, SUB
+
 from cam_server import config
-from cam_server.camera.configuration import CameraConfigManager
+from cam_server.camera.configuration import CameraConfigManager, CameraConfig
 from cam_server.camera.management import CameraInstanceManager
+from cam_server.camera.receiver import CameraSimulation
 from cam_server.pipeline.data_processing.functions import get_png_from_image
+from cam_server.utils import get_host_port_from_stream_address
 from tests.helpers.factory import get_test_instance_manager, MockConfigStorage
 
 
@@ -111,8 +116,78 @@ class CameraTest(unittest.TestCase):
         self.assertEqual(camera_size, png_size, "Camera and image size are not the same.")
 
     def test_camera_settings_change(self):
-        # TODO: Test this.
-        pass
+        stream_address = self.instance_manager.get_camera_stream("simulation")
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        sim_x, sim_y = simulated_camera.get_geometry()
+
+        camera_host, camera_port = get_host_port_from_stream_address(stream_address)
+
+        # Collect from the pipeline.
+        with source(host=camera_host, port=camera_port, mode=SUB) as stream:
+            data = stream.receive()
+
+            x_size = data.data.data["width"].value
+            y_size = data.data.data["height"].value
+
+            self.assertEqual(x_size, sim_x)
+            self.assertEqual(y_size, sim_y)
+
+            x_axis_1 = data.data.data["x_axis"].value
+            y_axis_1 = data.data.data["y_axis"].value
+
+            self.assertEqual(x_axis_1.shape[0], sim_x)
+            self.assertEqual(y_axis_1.shape[0], sim_y)
+
+        self.instance_manager.update_camera_config("simulation", {"rotate": 1})
+
+        sleep(0.5)
+
+        # Collect from the pipeline.
+        with source(host=camera_host, port=camera_port, mode=SUB) as stream:
+            data = stream.receive()
+
+            x_size = data.data.data["width"].value
+            y_size = data.data.data["height"].value
+
+            # We rotate the image for 90 degrees - X and Y size should be inverted.
+            self.assertEqual(x_size, sim_y)
+            self.assertEqual(y_size, sim_x)
+
+            x_axis_2 = data.data.data["x_axis"].value
+            y_axis_2 = data.data.data["y_axis"].value
+
+            # We rotate the image for 90 degrees - X and Y size should be inverted.
+            self.assertEqual(x_axis_2.shape[0], sim_y)
+            self.assertEqual(y_axis_2.shape[0], sim_x)
+
+        # The axis should just be switched.
+        self.assertTrue(numpy.array_equal(x_axis_1, y_axis_2))
+        self.assertTrue(numpy.array_equal(y_axis_1, x_axis_2))
+
+        self.instance_manager.update_camera_config("simulation", {"camera_calibration": {}})
+
+        with source(host=camera_host, port=camera_port, mode=SUB) as stream:
+            data = stream.receive()
+
+            x_size = data.data.data["width"].value
+            y_size = data.data.data["height"].value
+
+            # We rotate the image for 90 degrees - X and Y size should be inverted.
+            self.assertEqual(x_size, sim_y)
+            self.assertEqual(y_size, sim_x)
+
+            x_axis_3 = data.data.data["x_axis"].value
+            y_axis_3 = data.data.data["y_axis"].value
+
+            # We rotate the image for 90 degrees - X and Y size should be inverted.
+            self.assertEqual(x_axis_3.shape[0], sim_y)
+            self.assertEqual(y_axis_3.shape[0], sim_x)
+
+        # Calibration should not change.
+        self.assertFalse(numpy.array_equal(x_axis_2, x_axis_3))
+        self.assertFalse(numpy.array_equal(y_axis_2, y_axis_3))
+
+        self.instance_manager.stop_all_instances()
 
     def test_custom_hostname(self):
         config_manager = CameraConfigManager(config_provider=MockConfigStorage())
@@ -125,10 +200,10 @@ class CameraTest(unittest.TestCase):
 
     def test_get_camera_instance_config(self):
         with self.assertRaisesRegex(ValueError, "Instance 'simulation' does not exist."):
-            self.instance_manager.get_instance("simulation").get_config()
+            self.instance_manager.get_instance("simulation").get_configuration()
 
         self.instance_manager.get_camera_stream("simulation")
-        self.assertIsNotNone(self.instance_manager.get_instance("simulation").get_config())
+        self.assertIsNotNone(self.instance_manager.get_instance("simulation").get_configuration())
 
 if __name__ == '__main__':
     unittest.main()

@@ -10,7 +10,7 @@ _logger = getLogger(__name__)
 
 
 def process_camera_stream(stop_event, statistics, parameter_queue,
-                          camera, port, camera_config):
+                          camera, port):
     """
     Start the camera stream and listen for image monitors. This function blocks until stop_event is set.
     :param stop_event: Event when to stop the process.
@@ -18,7 +18,6 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
     :param parameter_queue: Parameters queue to be passed to the pipeline.
     :param camera: Camera instance to get the images from.
     :param port: Port to use to bind the output stream.
-    :param camera_config: Configuration of the camera use din the camera object.
     """
     sender = None
 
@@ -65,7 +64,7 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
 
             while not parameter_queue.empty():
                 new_parameters = parameter_queue.get()
-                camera_config.set_configuration(new_parameters)
+                camera.camera_config.set_configuration(new_parameters)
 
                 nonlocal x_size, y_size, x_axis, y_axis
                 x_size, y_size = camera.get_geometry()

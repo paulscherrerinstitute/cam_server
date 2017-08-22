@@ -4,7 +4,7 @@ from logging import getLogger
 from cam_server import config
 from cam_server.camera.sender import process_camera_stream
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
-from cam_server.utils import get_port_generator
+from cam_server.utils import get_port_generator, update_camera_config
 
 _logger = getLogger(__name__)
 
@@ -37,10 +37,9 @@ class CameraInstanceManager(InstanceManager):
 
             _logger.info("Creating camera instance '%s' on port %d.", camera_name, stream_port)
 
-            self.add_instance(camera_name, CameraInstanceWrapper(
+            self.add_instance(camera_name, CameraInstance(
                 process_function=process_camera_stream,
                 camera=camera,
-                camera_config=self.config_manager.get_camera_config(camera_name),
                 stream_port=stream_port,
                 hostname=self.hostname
             ))
@@ -49,15 +48,25 @@ class CameraInstanceManager(InstanceManager):
 
         return self.get_instance(camera_name).get_stream_address()
 
+    def update_camera_config(self, instance_id, config_updates):
+        if not self.is_instance_present(instance_id):
+            return
 
-class CameraInstanceWrapper(InstanceWrapper):
-    def __init__(self, process_function, camera, camera_config, stream_port, hostname=None):
+        camera_instance = self.get_instance(instance_id)
 
-        super(CameraInstanceWrapper, self).__init__(camera.get_name(), process_function,
-                                                    camera, stream_port, camera_config)
+        current_config = camera_instance.get_configuration()
+
+        new_config = update_camera_config(current_config, config_updates)
+        camera_instance.set_parameter(new_config)
+
+
+class CameraInstance(InstanceWrapper):
+    def __init__(self, process_function, camera, stream_port, hostname=None):
+
+        super(CameraInstance, self).__init__(camera.get_name(), process_function,
+                                             camera, stream_port)
 
         self.camera = camera
-        self.camera_config = camera_config
 
         if not hostname:
             hostname = socket.gethostname()
@@ -70,11 +79,17 @@ class CameraInstanceWrapper(InstanceWrapper):
                 "camera_geometry": self.camera.get_geometry(),
                 "camera_name": self.camera.get_name()}
 
-    def get_config(self):
-        return self.camera_config.get_configuration()
+    def get_configuration(self):
+        return self.camera.camera_config.get_configuration()
 
     def get_name(self):
         return self.camera.get_name()
 
     def get_stream_address(self):
         return self.stream_address
+
+    def set_parameter(self, configuration):
+        self.camera.camera_config.set_configuration(configuration)
+
+        # The set configuration sets the default parameters.
+        super().set_parameter(self.camera.camera_config.get_configuration())
