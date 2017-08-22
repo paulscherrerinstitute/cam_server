@@ -1,14 +1,6 @@
 {
   "camera_name": "simulation",
 
-  "camera_calibration": {
-    "reference_marker": [ 0, 0, 100, 100 ],
-    "reference_marker_width": 100.0,
-    "reference_marker_height": 100.0,
-    "angle_horizontal": 0.0,
-    "angle_vertical": 0.0
-  },
-
   "image_background": null,
   "image_threshold": 0.5,
   "image_region_of_interest": [0, 100, 0, 100],

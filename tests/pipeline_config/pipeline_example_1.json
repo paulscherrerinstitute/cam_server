@@ -1,8 +1,6 @@
 {
   "camera_name": "simulation",
 
-  "camera_calibration": null,
-
   "image_background": null,
   "image_threshold": null,
   "image_region_of_interest": null,

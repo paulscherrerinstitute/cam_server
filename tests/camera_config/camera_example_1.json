@@ -3,5 +3,6 @@
   "prefix": "EPICS_example_1",
   "mirror_x": true,
   "mirror_y": true,
-  "rotate": 1
+  "rotate": 1,
+  "camera_calibration": null,
 }

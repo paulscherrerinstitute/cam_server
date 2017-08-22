@@ -3,5 +3,13 @@
   "prefix": "EPICS_example_2",
   "mirror_x": false,
   "mirror_y": true,
-  "rotate": 2
+  "rotate": 2,
+
+  "camera_calibration": {
+    "reference_marker": [ 0, 0, 100, 100 ],
+    "reference_marker_width": 100.0,
+    "reference_marker_height": 100.0,
+    "angle_horizontal": 0.0,
+    "angle_vertical": 0.0
+  }
 }
