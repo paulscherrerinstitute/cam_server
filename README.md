@@ -28,6 +28,7 @@ also provides a processing pipeline and a REST interface to control both the cam
     1. [Get the simulation camera stream](#get_simulation_camera_stream)
     2. [Get a basic pipeline with a simulated camera](#basic_pipeline)
     3. [Create a pipeline instance with background](#private_pipeline)
+8. [Deploy in production](#deploy_in_production)
     
 <a id="build"></a>
 ## Build
@@ -722,3 +723,46 @@ instance_id, pipeline_stream_address = pipeline_client.create_instance_from_conf
 
 # TODO: Continue as in the example above.
 ```
+
+<a id="deploy_in_production"></a>
+## Deploy in production
+
+Before deploying in production, make sure the latest version was tagged in git (this triggers the Travis build) and 
+that the Travis build completed successfully (the new cam_server package in available in anaconda). After this 2 steps,
+you need to build the new version of the docker image (the docker image checks out the latest version of cam_server 
+from Anaconda). The docker image version and the cam_server version should always match - If they don't, something went 
+wrong.
+
+### Production configuration
+Login to the target system, where cam_server will be running. Checkout the production configuration into the root 
+of the target system filesystem.
+
+```bash
+cd /
+git clone https://git.psi.ch/controls_highlevel_applications/cam_server_configuration.git
+```
+
+### Setup the cam_server as a service
+On the target system, copy **docker/camera_server.service** and **docker/pipeline_server.service** into 
+**/etc/systemd/system**.
+
+Then need to reload the systemctl daemon:
+```bash
+systemctl daemon-reload
+```
+
+### Run the servers
+Using systemctl you then run both servers:
+```bash
+systemctl start camera_server.service
+systemctl start pipeline_server.service
+```
+
+### Inspecting server logs
+To inspect the logs for each server, use journalctl:
+```bash
+journalctl -u camera_server.service
+journalctl -u pipeline_server.service
+```
+
+Note: The '-f' flag will make you follow the log file.
