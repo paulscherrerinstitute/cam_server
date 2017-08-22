@@ -121,17 +121,17 @@ class CameraConfig:
         self.camera_name = camera_name
         self.parameters = {}
 
-        if parameters:
+        if parameters is not None:
             self.parameters = parameters
         else:
             self.parameters = OrderedDict({
-                "prefix": camera_name,
-                "mirror_x": False,
-                "mirror_y": False,
-                "rotate": 0
+                "prefix": camera_name
             })
 
-        self.validate_camera_config(self.parameters)
+        # Expand the config with the default values.
+        self.parameters = CameraConfig.expand_config(self.parameters)
+
+        CameraConfig.validate_camera_config(self.parameters)
 
     def get_configuration(self):
         # Validate before passing on, since anyone can change the dictionary content.
@@ -157,6 +157,9 @@ class CameraConfig:
         if not configuration:
             raise ValueError("Config object cannot be empty.\nConfig: %s" % configuration)
 
+        if "prefix" not in configuration:
+            raise ValueError("Prefix not specified in configuration.")
+
         def verify_attributes(section_name, section, mandatory_attributes):
             missing_attributes = [attr for attr in mandatory_attributes if attr not in section]
 
@@ -165,9 +168,7 @@ class CameraConfig:
                                  (section_name, missing_attributes))
 
         # Verify root attributes.
-        additional_mandatory_attributes = ["prefix"]
-        verify_attributes("configuration", configuration,
-                          CameraConfig.DEFAULT_CONFIGURATION.keys() + additional_mandatory_attributes)
+        verify_attributes("configuration", configuration, CameraConfig.DEFAULT_CONFIGURATION.keys())
 
         camera_calibration = configuration["camera_calibration"]
         if camera_calibration:
