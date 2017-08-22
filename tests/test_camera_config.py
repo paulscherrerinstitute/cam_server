@@ -1,6 +1,8 @@
 import unittest
 
+from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.receiver import CameraSimulation
+from cam_server.utils import update_camera_config
 from tests.helpers.factory import get_test_instance_manager
 
 
@@ -50,6 +52,9 @@ class CameraConfigTest(unittest.TestCase):
 
         self.assertDictEqual(camera_config_1.parameters, camera_config_2.parameters, "Configs should be identical.")
 
+        self.assertIsNone(camera_config_1.parameters["camera_calibration"])
+        self.assertIsNone(camera_config_2.parameters["camera_calibration"])
+
         instance_manager.config_manager.delete_camera_config("test_camera_2")
 
         self.assertListEqual(sorted(instance_manager.config_manager.get_camera_list()),
@@ -66,7 +71,8 @@ class CameraConfigTest(unittest.TestCase):
             "prefix": "EPICS_example_1",
             "mirror_x": False,
             "mirror_y": True,
-            "rotate": 1
+            "rotate": 1,
+            "camera_calibration": None
         }
 
         instance_manager = get_test_instance_manager()
@@ -107,6 +113,50 @@ class CameraConfigTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Config 'different_name' does not exist."):
             instance_manager.config_manager.get_camera_config("different_name")
+
+    def test_default_config(self):
+        configuration = {
+            "prefix": "simulation"
+        }
+
+        configuration = CameraConfig("simulation", configuration)
+        complete_config = configuration.get_configuration()
+
+        self.assertIsNone(complete_config["camera_calibration"])
+        self.assertFalse(complete_config["mirror_x"])
+        self.assertFalse(complete_config["mirror_y"])
+        self.assertEqual(complete_config["rotate"], 0)
+
+        configuration = {
+            "prefix": "simulation",
+            "camera_calibration": {}
+        }
+
+        configuration = CameraConfig("simulation", configuration)
+        complete_config = configuration.get_configuration()
+
+        self.assertSetEqual(set(complete_config["camera_calibration"].keys()),
+                            set(CameraConfig.DEFAULT_CAMERA_CALIBRATION.keys()),
+                            "Missing keys in camera calibration.")
+
+    def test_update_camera_config(self):
+        config = {
+            "prefix": "simulation",
+            "camera_calibration": {
+                "reference_marker": [0, 0, 100, 100],
+                "reference_marker_width": 100.0,
+                "reference_marker_height": 100.0,
+                "angle_horizontal": 0.0,
+                "angle_vertical": 0.0
+            }
+        }
+
+        updated_config = update_camera_config(config, {"camera_calibration": {"angle_horizontal": 10}})
+
+        self.assertEqual(updated_config["camera_calibration"]["angle_horizontal"], 10)
+
+        updated_config = update_camera_config(updated_config, {"camera_calibration": None})
+        self.assertIsNone(updated_config["camera_calibration"])
 
 
 if __name__ == '__main__':

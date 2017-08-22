@@ -83,7 +83,7 @@ class CameraConfigManager(object):
 
         camera_config.parameters.update(config_updates)
 
-        self.config_provider.save_config(camera_name, camera_config.get_configurationCame())
+        self.config_provider.save_config(camera_name, camera_config.get_configuration())
 
     def get_camera_geometry(self, camera_name):
         """

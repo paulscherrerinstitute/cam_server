@@ -23,13 +23,29 @@ def update_pipeline_config(current_config, config_updates):
                 old_section.update(config_updates.get(section_name))
                 config_updates[section_name] = old_section
 
-    update_subsection("camera_calibration")
     update_subsection("image_good_region")
     update_subsection("image_slices")
 
     current_config.update(config_updates)
 
     return current_config
+
+
+def update_camera_config(current_config, config_updates):
+    def update_subsection(section_name):
+        if config_updates.get(section_name) is not None:
+            old_section = current_config.get(section_name)
+
+            if old_section:
+                old_section.update(config_updates.get(section_name))
+                config_updates[section_name] = old_section
+
+    update_subsection("camera_calibration")
+
+    current_config.update(config_updates)
+
+    return current_config
+
 
 
 def get_port_generator(port_range):

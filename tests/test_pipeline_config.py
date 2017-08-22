@@ -119,7 +119,7 @@ class PipelineConfigTest(unittest.TestCase):
         configuration = {
             "camera_name": "simulation",
             "image_background": "test_background",
-            "camera_calibration": {
+            "image_good_region": {
 
             }
         }
@@ -127,13 +127,10 @@ class PipelineConfigTest(unittest.TestCase):
         configuration = PipelineConfig("test", configuration)
         complete_config = configuration.get_configuration()
 
-        self.assertIsNone(complete_config["image_good_region"], "This section should be None.")
         self.assertIsNone(complete_config["image_slices"], "This section should be None.")
 
-        self.assertSetEqual(set(complete_config["camera_calibration"].keys()),
-                            set(["reference_marker", "reference_marker_width", "reference_marker_height",
-                                 "angle_horizontal", "angle_vertical"]),
-                            "Missing keys in camera calibration.")
+        self.assertSetEqual(set(complete_config["image_good_region"].keys()),
+                            set(["threshold", "gfscale"]))
 
         configuration = {
             "camera_name": "simulation",
@@ -159,10 +156,10 @@ class PipelineConfigTest(unittest.TestCase):
 
         old_config = PipelineConfig("test", configuration).get_configuration()
 
-        config_updates = {"camera_calibration": {}}
+        config_updates = {"image_good_region": {}}
         updated_config = update_pipeline_config(old_config, config_updates)
 
-        self.assertIsNotNone(updated_config["camera_calibration"])
+        self.assertIsNotNone(updated_config["image_good_region"])
 
         configuration = {
             "camera_name": "simulation",
@@ -185,13 +182,6 @@ class PipelineConfigTest(unittest.TestCase):
 
         configuration = {
             "camera_name": "name 1",
-            "camera_calibration": {
-                "reference_marker": [0, 0, 100, 100],
-                "reference_marker_width": 100.0,
-                "reference_marker_height": 100.0,
-                "angle_horizontal": 0.0,
-                "angle_vertical": 0.0
-            },
             "image_background": "test",
             "image_threshold": 1,
             "image_region_of_interest": [0, 1, 2, 3],
@@ -209,13 +199,6 @@ class PipelineConfigTest(unittest.TestCase):
 
         config_updates = {
             "camera_name": "name 2",
-            "camera_calibration": {
-                "reference_marker": [1, 2, 3, 4],
-                "reference_marker_width": 5.0,
-                "reference_marker_height": 6.0,
-                "angle_horizontal": 7.0,
-                "angle_vertical": 8.0
-            },
             "image_background_enable": True,
             "image_background": "test_2",
             "image_threshold": 2,
@@ -232,9 +215,6 @@ class PipelineConfigTest(unittest.TestCase):
 
         updated_config = update_pipeline_config(old_config, config_updates)
 
-        self.assertDictEqual(updated_config["camera_calibration"], config_updates["camera_calibration"],
-                             "Everything was not updated properly.")
-
         self.assertDictEqual(updated_config["image_good_region"], config_updates["image_good_region"],
                              "Everything was not updated properly.")
 
@@ -248,13 +228,6 @@ class PipelineConfigTest(unittest.TestCase):
 
         updated_config = update_pipeline_config(updated_config, {"camera_name": None})
         self.assertEqual(updated_config["camera_name"], None)
-
-        updated_config = update_pipeline_config(updated_config, {"camera_calibration": {"reference_marker": None}})
-        self.assertEqual(updated_config["camera_calibration"]["reference_marker"], None)
-        self.assertEqual(updated_config["camera_calibration"]["reference_marker_width"], 5.0)
-
-        updated_config = update_pipeline_config(updated_config, {"camera_calibration": None})
-        self.assertEqual(updated_config["camera_calibration"], None)
 
         updated_config = update_pipeline_config(updated_config, {"image_background": None})
         self.assertEqual(updated_config["image_background"], None)
