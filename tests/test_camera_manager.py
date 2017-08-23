@@ -189,10 +189,6 @@ class CameraTest(unittest.TestCase):
             self.assertEqual(x_axis_3.shape[0], sim_y)
             self.assertEqual(y_axis_3.shape[0], sim_x)
 
-        # Calibration should not change.
-        self.assertFalse(numpy.array_equal(x_axis_2, x_axis_3))
-        self.assertFalse(numpy.array_equal(y_axis_2, y_axis_3))
-
         self.instance_manager.stop_all_instances()
 
     def test_custom_hostname(self):

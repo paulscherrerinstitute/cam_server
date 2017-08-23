@@ -76,7 +76,8 @@ class PipelineProcessingTest(unittest.TestCase):
 
         pipeline_parameters = {
             "camera_name": "simulation",
-            "image_background": "max_background"
+            "image_background": "max_background",
+            "image_threshold": 0
         }
 
         max_background = numpy.zeros(shape=(y_size, x_size))

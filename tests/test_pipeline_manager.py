@@ -293,7 +293,8 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertFalse(numpy.array_equal(image_data.data.data["image"].value, black_image),
                          "Background should not be yet applied.")
 
-        instance_manager.update_instance_config(pipeline_id, {"image_background_enable": True})
+        instance_manager.update_instance_config(pipeline_id, {"image_background_enable": True,
+                                                              "image_threshold": 0})
 
         # Give it some time to load the background.
         sleep(0.5)
