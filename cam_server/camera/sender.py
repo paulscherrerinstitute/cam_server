@@ -29,18 +29,21 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
                          (camera.get_name(), config.MFLOW_NO_CLIENTS_TIMEOUT))
             stop_event.set()
 
+        def process_parameters():
+            nonlocal x_size, y_size, x_axis, y_axis
+            x_size, y_size = camera.get_geometry()
+            x_axis, y_axis = camera.get_x_y_axis()
+            sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
+                                                  "shape": [y_size, x_size],
+                                                  "type": "float32"})
+
+        x_size = y_size = x_axis = y_axis = None
         camera.connect()
-        x_size, y_size = camera.get_geometry()
-        x_axis, y_axis = camera.get_x_y_axis()
 
         sender = Sender(port=port, mode=PUB,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
 
         # Register the bsread channels - compress only the image.
-        sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
-                                              "shape": [y_size, x_size],
-                                              "type": "float32"})
-
         sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
                                               "type": "int64"})
 
@@ -58,17 +61,11 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
 
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
 
+        process_parameters()
         statistics.counter = 0
 
         def collect_and_send(image, timestamp):
-
-            while not parameter_queue.empty():
-                new_parameters = parameter_queue.get()
-                camera.camera_config.set_configuration(new_parameters)
-
-                nonlocal x_size, y_size, x_axis, y_axis
-                x_size, y_size = camera.get_geometry()
-                x_axis, y_axis = camera.get_x_y_axis()
+            nonlocal x_size, y_size, x_axis, y_axis
 
             # Data to be sent over the stream.
             data = {"image": image,
@@ -82,6 +79,12 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
                 sender.send(data=data, check_data=False)
             except Again:
                 _logger.warning("Send timeout. Lost image with timestamp '%s'." % timestamp)
+
+            while not parameter_queue.empty():
+                new_parameters = parameter_queue.get()
+                camera.camera_config.set_configuration(new_parameters)
+
+                process_parameters()
 
         camera.add_callback(collect_and_send)
 

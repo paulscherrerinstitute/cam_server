@@ -37,13 +37,13 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
         _logger.debug("Image width %d and height %d.", size_x, size_y)
 
-        return parameters, background_array, size_x, size_y
+        return parameters, background_array
 
     source = None
     sender = None
 
     try:
-        pipeline_parameters, image_background_array, x_size, y_size = process_pipeline_parameters()
+        pipeline_parameters, image_background_array = process_pipeline_parameters()
 
         camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
         _logger.debug("Connecting to camera stream address %s.", camera_stream_address)
@@ -71,7 +71,7 @@ def receive_process_send(stop_event, statistics, parameter_queue,
                 while not parameter_queue.empty():
                     new_parameters = parameter_queue.get()
                     pipeline_config.set_configuration(new_parameters)
-                    pipeline_parameters, image_background_array, x_size, y_size = process_pipeline_parameters()
+                    pipeline_parameters, image_background_array = process_pipeline_parameters()
 
                 data = source.receive()
 
@@ -87,8 +87,8 @@ def receive_process_send(stop_event, statistics, parameter_queue,
                 processed_data = process_image(image, timestamp, x_axis, y_axis,
                                                pipeline_parameters, image_background_array)
 
-                processed_data["width"] = x_size
-                processed_data["height"] = y_size
+                processed_data["width"] = processed_data["image"].shape[1]
+                processed_data["height"] = processed_data["image"].shape[0]
 
                 sender.send(data=processed_data)
 

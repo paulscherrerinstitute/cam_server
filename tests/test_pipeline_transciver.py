@@ -119,6 +119,74 @@ class PipelineTransceiverTest(unittest.TestCase):
         stop_event.set()
         thread.join()
 
+    def test_rotate_camera(self):
+        manager = multiprocessing.Manager()
+        stop_event = multiprocessing.Event()
+        statistics = manager.Namespace()
+        parameter_queue = multiprocessing.Queue()
+
+        pipeline_config = PipelineConfig("test_pipeline", parameters={
+            "camera_name": "simulation"
+        })
+
+        background_manager = MockBackgroundManager()
+
+        simulated_camera_shape = (960, 1280)
+
+        def send():
+            receive_process_send(stop_event, statistics, parameter_queue, self.client, pipeline_config,
+                                 12000, background_manager)
+
+        thread = Thread(target=send)
+        thread.start()
+
+        with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
+            data = stream.receive()
+            self.assertIsNotNone(data, "Received None message.")
+
+            x_size = data.data.data["width"].value
+            y_size = data.data.data["height"].value
+            x_axis = data.data.data["x_axis"].value
+            y_axis = data.data.data["y_axis"].value
+            image_shape = data.data.data["image"].value.shape
+
+            self.assertEqual(x_size, simulated_camera_shape[1])
+            self.assertEqual(y_size, simulated_camera_shape[0])
+
+            # Sanity checks.
+            self.assertEqual(x_size, len(x_axis))
+            self.assertEqual(y_size, len(y_axis))
+            self.assertEqual(image_shape, (y_size, x_size))
+
+            # Rotate the image by 90 degree.
+            camera_config = self.client.get_camera_config("simulation")
+            camera_config["rotate"] = 1
+            self.client.set_camera_config("simulation", camera_config)
+
+            # Make a few frames pass.
+            for _ in range(5):
+                data = stream.receive()
+
+            self.assertIsNotNone(data, "Received None message.")
+
+            x_size = data.data.data["width"].value
+            y_size = data.data.data["height"].value
+            x_axis = data.data.data["x_axis"].value
+            y_axis = data.data.data["y_axis"].value
+            image_shape = data.data.data["image"].value.shape
+
+            # X and Y size should be inverted.
+            self.assertEqual(x_size, simulated_camera_shape[0])
+            self.assertEqual(y_size, simulated_camera_shape[1])
+
+            # Sanity checks.
+            self.assertEqual(x_size, len(x_axis))
+            self.assertEqual(y_size, len(y_axis))
+            self.assertEqual(image_shape, (y_size, x_size))
+
+        stop_event.set()
+        thread.join()
+
 
 if __name__ == '__main__':
     unittest.main()
