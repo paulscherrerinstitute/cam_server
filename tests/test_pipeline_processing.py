@@ -44,7 +44,6 @@ class PipelineProcessingTest(unittest.TestCase):
                              "The passed and the received processing parameters are not the same.")
 
     def test_image_background(self):
-
         pipeline_parameters = {
             "camera_name": "simulation",
             "image_background": "white_background"
@@ -140,6 +139,33 @@ class PipelineProcessingTest(unittest.TestCase):
 
         self.assertTrue(numpy.array_equal(result["image"], image),
                         "The image should be the same as the original image.")
+
+    def test_wrong_background_size(self):
+        pipeline_parameters = {
+            "camera_name": "simulation",
+            "image_background": "white_background"
+        }
+
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        image = simulated_camera.get_image()
+        x_axis, y_axis = simulated_camera.get_x_y_axis()
+
+        background_provider = MockBackgroundManager()
+
+        # Invalid background size.
+        background_provider.save_background("white_background", numpy.zeros(shape=(100, 100)),
+                                            append_timestamp=False)
+
+        parameters = PipelineConfig("test_pipeline", pipeline_parameters).get_configuration()
+        image_background_array = background_provider.get_background("white_background")
+
+        with self.assertRaisesRegex(RuntimeError, "Invalid background_image size "):
+            process_image(image=image,
+                          timestamp=time.time(),
+                          x_axis=x_axis,
+                          y_axis=y_axis,
+                          parameters=parameters,
+                          image_background_array=image_background_array)
 
     def test_region_of_interest(self):
         # TODO: Write tests.

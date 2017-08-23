@@ -1,4 +1,0 @@
-Probably need to pass the epics environment variables to the camera_server docker container
--e
-EPICS_CA_ADDR_LIST=172.26.0.255 172.26.2.255 172.26.8.255 172.26.16.255 172.26.24.255 172.26.32.255 172.26.40.255 172.26.110.255 172.26.111.255 172.26.120.255
-EPICS_CA_SERVER_PORT=5064
