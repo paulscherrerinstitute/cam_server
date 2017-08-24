@@ -12,14 +12,9 @@ class Camera:
 
     def __init__(self, camera_config):
         """
-        Parameters
-        ----------
-        prefix      prefix of cam_server channel
-        mirror_x    mirror image on x axis
-        mirror_y    mirror image on y axis
-        rotate      number of 90deg rotation 0=0deg 1=90deg, 2=180deg, ...
+        Create EPICS camera source.
+        :param camera_config: Config of the camera.
         """
-
         self.camera_config = camera_config
 
         # Width and height of the raw image
