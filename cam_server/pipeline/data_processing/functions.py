@@ -125,8 +125,8 @@ def gauss_fit(profile, axis):
 
 
 def _gauss_function(x, offset, amplitude, center, standard_deviation):
-    # return amplitude * numpy.exp(-(x - center) ** 2 / (2 * standard_deviation ** 2)) - offset
-    return offset + amplitude * numpy.exp(-(numpy.power((x - center), 2) / (2 * numpy.power(standard_deviation, 2))))
+    # return offset + amplitude * numpy.exp(-(numpy.power((x - center), 2) / (2 * numpy.power(standard_deviation, 2))))
+    return offset + amplitude * numpy.exp(-(x - center) ** 2 / (2 * standard_deviation ** 2))
 
 
 def _gauss_fit(axis, profile, center_of_mass=None):
