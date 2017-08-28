@@ -472,7 +472,7 @@ class PipelineManagerTest(unittest.TestCase):
             instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
 
         # Wait for the instances to die.
-        sleep(3)
+        sleep(5)
 
         self.assertEqual(len(instance_manager.get_info()["active_instances"]), 0,
                          "All instances should be dead by now.")

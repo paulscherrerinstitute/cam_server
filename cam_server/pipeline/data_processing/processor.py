@@ -15,7 +15,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
     return_value = dict()
 
     if image_background_array is not None:
-        image = functions.subtract_background(image, image_background_array)
+        functions.subtract_background(image, image_background_array)
 
     image_threshold = parameters.get("image_threshold")
     if image_threshold is not None:
@@ -157,8 +157,8 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                     # TODO need to calculate: slope * sigma(x)^2
                     return_value["coupling"] = slope * (gr_x_fit_standard_deviation ** 2)
 
-                except:  # Except for slices
-                    _logger.exception('Unable to apply slices')
+                except TypeError as e:  # Except for slices
+                    _logger.info('Unable to apply slices', e)
 
         except:  # Except for good region
             _logger.exception('Unable to detect good region')
