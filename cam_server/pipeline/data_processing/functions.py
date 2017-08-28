@@ -28,7 +28,6 @@ def get_region_of_interest(image, offset_x, size_x, offset_y, size_y):
 
 def apply_threshold(image, threshold=1.0):
     image[image < threshold] = 0
-    return image
 
 
 def get_min_max(image):

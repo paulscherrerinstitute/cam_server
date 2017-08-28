@@ -5,7 +5,6 @@ import time
 
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.receiver import CameraSimulation
-from cam_server.pipeline.data_processing import functions
 from cam_server.pipeline.data_processing.processor import process_image
 
 
@@ -42,10 +41,6 @@ class PipelinePerformanceTest(unittest.TestCase):
         }
 
         profile = LineProfiler(process_image)
-        profile.add_function(functions.gauss_fit)
-        profile.add_function(functions._gauss_fit)
-        profile.add_function(functions._gauss_function)
-
         process_image_wrapper = profile(process_image)
 
         n_iterations = 100

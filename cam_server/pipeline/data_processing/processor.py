@@ -19,7 +19,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
 
     image_threshold = parameters.get("image_threshold")
     if image_threshold is not None:
-        image = functions.apply_threshold(image, image_threshold)
+        functions.apply_threshold(image, image_threshold)
 
     image_region_of_interest = parameters.get("image_region_of_interest")
     if image_region_of_interest:
