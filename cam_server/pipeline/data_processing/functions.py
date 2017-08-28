@@ -5,11 +5,12 @@ import numpy
 import scipy
 import scipy.misc
 import scipy.optimize
-import logging
 
 from matplotlib import cm
 
 from cam_server import config
+
+_logging = getLogger(__name__)
 
 
 def subtract_background(image, background_image):
@@ -47,35 +48,34 @@ def get_intensity(profile):
 def find_index(axis, item):
     """ Find the index of the axis value that corresponds to the passed value/item"""
 
-    axis_length = len(axis)
-    first = 0
-    last = axis_length - 1
-
     left_bigger_right = axis[0] > axis[1]  # if true axis looks like this [5, 4, 3, 2, 1, 0]
 
-    # Binary search for item
-    while first <= last:
-        midpoint = int((first + last) // 2)
+    # Descending order -> [9, 8, 7, 6]
+    if left_bigger_right:
+        # Item value 10 -> go to first section.
+        if item > axis[0]:
+            return 0
 
-        if (midpoint+1) < axis_length:
-            if axis[midpoint] <= item < axis[midpoint+1]:
-                break
-            elif axis[midpoint] > item >= axis[midpoint+1]:
-                midpoint += 1
-                break
+        # Item value 5 -> go to last section.
+        if item < axis[-1]:
+            return len(axis) - 1
 
-        if left_bigger_right:
-            if item > axis[midpoint]:
-                last = midpoint - 1
-            else:
-                first = midpoint + 1
-        else:
-            if item < axis[midpoint]:
-                last = midpoint - 1
-            else:
-                first = midpoint + 1
+        # Item value insert index - 1 to get in which section belongs.
+        # Negate the array and number to search from the right.
+        return numpy.searchsorted(-axis, -item) - 1
 
-    return midpoint
+    # Ascending order -> [6, 7, 8, 9]
+    else:
+        # Item value 5 -> go to first section.
+        if item < axis[0]:
+            return 0
+
+        # Item value 10 -> go to last section.
+        if item > axis[-1]:
+            return len(axis) - 1
+
+        # Item value insert index - 1 to get in which section belongs.
+        return numpy.searchsorted(axis, item) - 1
 
 
 def get_good_region_profile(profile, threshold=0.3, gfscale=1.8):
@@ -179,7 +179,7 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
 
     if not number_of_slices % 2:
         # Add a middle slice if number of slices is even - as middle slice is half/half on center
-        logging.info('Add additional middle slice')
+        _logging.info('Add additional middle slice')
         number_of_slices += 1
 
     size_slice = scaling * standard_deviation / number_of_slices
@@ -189,8 +189,8 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
     n_pixel_half_slice = abs(index_half_slice - index_center)
 
     if n_pixel_half_slice < 1:
-        logging.info('Calculated number of pixel of a slice size [%d] is less than 1 - default to 1' %
-                     n_pixel_half_slice)
+        _logging.info('Calculated number of pixel of a slice size [%d] is less than 1 - default to 1',
+                      n_pixel_half_slice)
         n_pixel_half_slice = 1
 
     n_pixel_slice = 2 * n_pixel_half_slice
@@ -211,7 +211,7 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
         start_index -= n_pixel_slice
         end_index += n_pixel_slice
         if start_index < 0 or end_index >= number_of_elements_axis:
-            logging.info('Stopping slice calculation as they are out of range ...')
+            _logging.info('Stopping slice calculation as they are out of range ...')
             # Start index cannot be smaller than 0 and end index cannot e larger than len(axis)
             break
         list_slices_indexes.insert(0, start_index)
@@ -247,7 +247,7 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
             slice_data.append(([x_axis[list_slices[i]+n_pixel_half_slice], center_y], standard_deviation,
                                pixel_intensity))
         else:
-            logging.info('Drop slice')
+            _logging.info('Drop slice')
 
     return slice_data
 
@@ -277,7 +277,7 @@ def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, sca
             slice_data.append(([center_x, y_axis[list_slices[i]+n_pixel_half_slice]], standard_deviation,
                                pixel_intensity))
         else:
-            logging.info('Drop slice')
+            _logging.info('Drop slice')
 
     return slice_data
 
@@ -293,9 +293,6 @@ def linear_fit(x, y):  # x/y arrays
     optimal_parameter, covariance = scipy.optimize.curve_fit(_linear_function, x, y)  # No initial guesses
 
     return optimal_parameter  # returns [slope, offset]
-
-
-_logging = getLogger(__name__)
 
 
 def get_png_from_image(image_raw_bytes, scale=None, min_value=None, max_value=None, colormap_name=None):
