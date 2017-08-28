@@ -59,9 +59,8 @@ def find_index(axis, item):
         if item < axis[-1]:
             return len(axis) - 1
 
-        # Item value insert index - 1 to get in which section belongs.
         # Negate the array and number to search from the right.
-        return numpy.searchsorted(-axis, -item) - 1
+        return numpy.searchsorted(-axis, -item)
 
     # Ascending order -> [6, 7, 8, 9]
     else:
@@ -73,8 +72,14 @@ def find_index(axis, item):
         if item > axis[-1]:
             return len(axis) - 1
 
-        # Item value insert index - 1 to get in which section belongs.
-        return numpy.searchsorted(axis, item) - 1
+        insert_index = numpy.searchsorted(axis, item)
+
+        # If the value is the same as the array value at the given index, use this index directly.
+        if axis[insert_index] == item:
+            return insert_index
+
+        # Otherwise return the previous section index.
+        return insert_index - 1
 
 
 def get_good_region_profile(profile, threshold=0.3, gfscale=1.8):
