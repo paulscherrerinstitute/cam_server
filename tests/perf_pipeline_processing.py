@@ -27,15 +27,15 @@ class PipelinePerformanceTest(unittest.TestCase):
         parameters = {
 
             "image_threshold": 0.5,
-            "image_region_of_interest": [0, 100, 0, 100],
+            "image_region_of_interest": [0, 1100, 0, 860],
 
             "image_good_region": {
-                "threshold": 0.9,
-                "gfscale": 3
+                "threshold": 0.3,
+                "gfscale": 1.8
             },
 
             "image_slices": {
-                "number_of_slices": 1,
+                "number_of_slices": 5,
                 "scale": 1.0
             }
         }
@@ -43,7 +43,7 @@ class PipelinePerformanceTest(unittest.TestCase):
         profile = LineProfiler(process_image)
         process_image_wrapper = profile(process_image)
 
-        n_iterations = 100
+        n_iterations = 300
 
         for _ in range(n_iterations):
             process_image_wrapper(image=image,

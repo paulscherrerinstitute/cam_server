@@ -18,8 +18,7 @@ def subtract_background(image, background_image):
     if image.shape != background_image.shape:
         raise RuntimeError("Invalid background_image size %s compared to image %s" % (background_image.shape,
                                                                                       image.shape))
-
-    numpy.subtract(image, background_image, image)
+    return image - background_image
 
 
 def get_region_of_interest(image, offset_x, size_x, offset_y, size_y):
@@ -228,8 +227,8 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
 
 def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, scaling=2, number_of_slices=10):
     """
-    Calculate slices and their statistics 
-    :return: <center [x,y]>, <standard deviation>, <intensity> 
+    Calculate slices and their statistics
+    :return: <center [x,y]>, <standard deviation>, <intensity>
     """
 
     list_slices, n_pixel_half_slice = calculate_slices(x_axis, x_center, x_standard_deviation, scaling,
@@ -258,8 +257,8 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
 
 def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, scaling=2, number_of_slices=10):
     """
-    Calculate slices and their statistics 
-    :return: <center [x,y]>, <standard deviation>, <intensity> 
+    Calculate slices and their statistics
+    :return: <center [x,y]>, <standard deviation>, <intensity>
     """
 
     list_slices, n_pixel_half_slice = calculate_slices(y_axis, y_center, y_standard_deviation, scaling,
