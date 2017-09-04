@@ -755,10 +755,10 @@ with source(host=stream_host, port=stream_port, mode=SUB) as input_stream:
     message = input_stream.receive()
     
     # Print out the received stream data - dictionary.
-    print(message.data.data)
+    print("Dictionary with data:\n", message.data.data)
     
     # Print out the X center of mass.
-    print(message.data.data["x_center_of_mass"].value)
+    print("X center of mass: ", message.data.data["x_center_of_mass"].value)
 
 ```
 
