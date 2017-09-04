@@ -28,6 +28,7 @@ also provides a processing pipeline and a REST interface to control both the cam
     1. [Get the simulation camera stream](#get_simulation_camera_stream)
     2. [Get a basic pipeline with a simulated camera](#basic_pipeline)
     3. [Create a pipeline instance with background](#private_pipeline)
+    3. [Read the stream for a given camera name](#read_camera_stream)
 8. [Deploy in production](#deploy_in_production)
     
 <a id="build"></a>
@@ -722,6 +723,43 @@ pipeline_config = {"camera_name": camera_name,
 instance_id, pipeline_stream_address = pipeline_client.create_instance_from_config(pipeline_config)
 
 # TODO: Continue as in the example above.
+```
+
+<a id="read_camera_stream"></a>
+### Read the stream for a given camera name
+
+```python
+from cam_server import PipelineClient
+from cam_server.utils import get_host_port_from_stream_address
+from bsread import source, SUB
+
+# Define the camera name you want to read.
+camera_name = "SAROP21-PPRM102"
+
+# First create the pipeline for the selected camera.
+client = PipelineClient("http://sf-daqsync-01:8889")
+instance_id, stream_address = client.create_instance_from_config({"camera_name": camera_name})
+
+# Extract the stream host and port from the stream_address.
+stream_host, stream_port = get_host_port_from_stream_address(stream_address)
+
+# Check if your instance is running on the server.
+if instance_id not in client.get_server_info()["active_instances"]:
+    raise ValueError("Requested pipeline is not running.")
+
+# Open connection to the stream. When exiting the 'with' section, the source disconnects by itself.
+with source(host=stream_host, port=stream_port, mode=SUB) as input_stream:
+    input_stream.connect()
+    
+    # Read one message.
+    message = input_stream.receive()
+    
+    # Print out the received stream data - dictionary.
+    print(message.data.data)
+    
+    # Print out the X center of mass.
+    print(message.data.data["x_center_of_mass"].value)
+
 ```
 
 <a id="deploy_in_production"></a>
