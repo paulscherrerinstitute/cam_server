@@ -76,6 +76,39 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
     image_good_region = parameters.get("image_good_region")
     if image_good_region:
         try:
+
+            def initialize_values():
+                # Initialize the good region parameters.
+                return_value["good_region"] = None
+                return_value["gr_x_axis"] = None
+                return_value["gr_y_axis"] = None
+
+                return_value["gr_x_fit_gauss_function"] = None
+                return_value["gr_x_fit_offset"] = None
+                return_value["gr_x_fit_amplitude"] = None
+                return_value["gr_x_fit_standard_deviation"] = None
+                return_value["gr_x_fit_mean"] = None
+
+                return_value["gr_y_fit_gauss_function"] = None
+                return_value["gr_y_fit_offset"] = None
+                return_value["gr_y_fit_amplitude"] = None
+                return_value["gr_y_fit_standard_deviation"] = None
+                return_value["gr_y_fit_mean"] = None
+
+                # Initialize the image slices parameters.
+                image_slices = parameters.get("image_slices")
+                if image_slices:
+                    number_of_slices = image_slices["number_of_slices"]
+
+                    for counter in range(number_of_slices):
+                        return_value["slice_%s_center_x" % counter] = None
+                        return_value["slice_%s_center_y" % counter] = None
+                        return_value["slice_%s_standard_deviation" % counter] = None
+                        return_value["slice_%s_intensity" % counter] = None
+
+            # Good region and slices should be None if cannot be calculated.
+            initialize_values()
+
             threshold = image_good_region["threshold"]
             gfscale = image_good_region["gfscale"]
 
