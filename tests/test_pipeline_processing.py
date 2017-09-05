@@ -168,9 +168,70 @@ class PipelineProcessingTest(unittest.TestCase):
                           parameters=parameters,
                           image_background_array=image_background_array)
 
-    def test_region_of_interest(self):
-        # TODO: Write tests.
-        pass
+    def test_region_of_interest_default_values(self):
+
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        image = simulated_camera.get_image()
+        x_axis, y_axis = simulated_camera.get_x_y_axis()
+
+        parameters = PipelineConfig("test_pipeline", {
+            "camera_name": "simulation"
+        }).get_configuration()
+
+        good_region_keys = set(["good_region", "gr_x_axis", "gr_y_axis", "gr_x_fit_gauss_function", "gr_x_fit_offset",
+                                "gr_x_fit_amplitude", "gr_x_fit_standard_deviation", "gr_x_fit_mean",
+                                "gr_y_fit_gauss_function", "gr_y_fit_offset", "gr_y_fit_amplitude",
+                                "gr_y_fit_standard_deviation", "gr_y_fit_mean"])
+
+        slices_key_formats = set(["slice_%s_center_x", "slice_%s_center_y", "slice_%s_standard_deviation",
+                                  "slice_%s_intensity"])
+
+        result = process_image(image=image,
+                               timestamp=time.time(),
+                               x_axis=x_axis,
+                               y_axis=y_axis,
+                               parameters=parameters)
+
+        self.assertFalse(any((x in result for x in good_region_keys)), 'There should not be good region keys.')
+
+        parameters = PipelineConfig("test_pipeline", {
+            "camera_name": "simulation",
+            "image_good_region": {
+                "threshold": 99999
+            }
+        }).get_configuration()
+
+        result = process_image(image=image,
+                               timestamp=time.time(),
+                               x_axis=x_axis,
+                               y_axis=y_axis,
+                               parameters=parameters)
+
+        self.assertTrue(all((x in result for x in good_region_keys)), 'There should be good region keys.')
+        self.assertTrue(all((result[x] is None for x in good_region_keys)), 'All values should be None.')
+
+        number_of_slices = 2
+
+        parameters = PipelineConfig("test_pipeline", {
+            "camera_name": "simulation",
+            "image_good_region": {
+                "threshold": 99999
+            },
+            "image_slices": {
+                "number_of_slices": number_of_slices
+            }
+        }).get_configuration()
+
+        result = process_image(image=image,
+                               timestamp=time.time(),
+                               x_axis=x_axis,
+                               y_axis=y_axis,
+                               parameters=parameters)
+
+        self.assertTrue(all((x in result for x in good_region_keys)), 'There should be good region keys.')
+        self.assertTrue(all((x in result for x in (x % counter
+                                                   for x in slices_key_formats
+                                                   for counter in range(number_of_slices)))))
 
     def test_good_region(self):
         # TODO: Write tests.

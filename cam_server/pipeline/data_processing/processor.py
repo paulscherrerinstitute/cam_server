@@ -96,15 +96,13 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                 return_value["gr_y_fit_mean"] = None
 
                 # Initialize the image slices parameters.
-                image_slices = parameters.get("image_slices")
-                if image_slices:
-                    number_of_slices = image_slices["number_of_slices"]
-
-                    for counter in range(number_of_slices):
-                        return_value["slice_%s_center_x" % counter] = None
-                        return_value["slice_%s_center_y" % counter] = None
-                        return_value["slice_%s_standard_deviation" % counter] = None
-                        return_value["slice_%s_intensity" % counter] = None
+                slices = parameters.get("image_slices")
+                if slices:
+                    for i in range(slices["number_of_slices"]):
+                        return_value["slice_%s_center_x" % i] = None
+                        return_value["slice_%s_center_y" % i] = None
+                        return_value["slice_%s_standard_deviation" % i] = None
+                        return_value["slice_%s_intensity" % i] = None
 
             # Good region and slices should be None if cannot be calculated.
             initialize_values()
