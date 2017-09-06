@@ -11,7 +11,7 @@ def validate_response(server_response):
 
 
 class PipelineClient(object):
-    def __init__(self, address="http://0.0.0.0:8889/"):
+    def __init__(self, address="http://sf-daqsync-01:8889/"):
         """
         :param address: Address of the pipeline API, e.g. http://localhost:10000
         """

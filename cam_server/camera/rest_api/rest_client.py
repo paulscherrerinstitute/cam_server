@@ -11,7 +11,7 @@ def validate_response(server_response):
 
 
 class CamClient(object):
-    def __init__(self, address="http://0.0.0.0:8888/"):
+    def __init__(self, address="http://sf-daqsync-01:8888/"):
         """
         :param address: Address of the cam API, e.g. http://localhost:10000
         """
