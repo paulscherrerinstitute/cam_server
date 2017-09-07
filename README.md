@@ -269,7 +269,7 @@ Class definition:
 ```
 class CamClient()
   
-  __init__(self, address='http://0.0.0.0:8888/')
+  __init__(self, address='http://sf-daqsync-01:8888/')
     :param address: Address of the cam API, e.g. http://localhost:10000
   
   delete_camera_config(self, camera_name)
@@ -337,7 +337,7 @@ Class definition:
 ```
 class PipelineClient(builtins.object)
   
-  __init__(self, address='http://0.0.0.0:8889/')
+  __init__(self, address='http://sf-daqsync-01:8889/')
       :param address: Address of the pipeline API, e.g. http://localhost:10000
   
   collect_background(self, camera_name, n_images=None)
