@@ -45,14 +45,27 @@ class PipelineClientTest(unittest.TestCase):
         self.cam_client.stop_all_cameras()
         self.pipeline_client.stop_all_instances()
 
-        os.kill(self.cam_process.pid, signal.SIGINT)
-        os.kill(self.pipeline_process.pid, signal.SIGINT)
         try:
             os.remove(os.path.join(self.pipeline_config_folder, "testing_config.json"))
         except:
             pass
+
+        try:
+            self.cam_client.delete_camera_config("test_camera")
+        except:
+            pass
+
+        try:
+            self.pipeline_client.delete_pipeline_config("test_pipeline")
+        except:
+            pass
+
+        os.kill(self.cam_process.pid, signal.SIGINT)
+        os.kill(self.pipeline_process.pid, signal.SIGINT)
+
         # Wait for the server to die.
         sleep(1)
+
 
     def test_get_simulated_camera(self):
         from cam_server import CamClient
@@ -164,6 +177,76 @@ class PipelineClientTest(unittest.TestCase):
         self.assertIsNotNone(data)
         self.assertEqual(image_width, 1280)
         self.assertIsNotNone(image_height, 960)
+
+    def test_modify_camera_config(self):
+        self.cam_client.set_camera_config("test_camera", self.cam_client.get_camera_config("camera_example_2"))
+        from cam_server import CamClient
+
+        # Initialize the camera client.
+        cam_client = CamClient()
+        cam_client = self.cam_client
+
+        # Print the list of available cameras.
+        print(cam_client.get_cameras())
+
+        # TODO: Put the name of the camera you want to modify.
+        camera_to_modify = "test_camera"
+
+        # Retrieve the camera config.
+        camera_config = cam_client.get_camera_config(camera_to_modify)
+
+        # Change the mirror_x setting.
+        camera_config["mirror_x"] = False
+        # Change the camera_calibration setting.
+        camera_config["camera_calibration"] = {
+            "reference_marker": [0, 0, 100, 100],
+            "reference_marker_width": 100.0,
+            "reference_marker_height": 100.0,
+            "angle_horizontal": 0.0,
+            "angle_vertical": 0.0
+        }
+
+        # Save the camera configuration.
+        cam_client.set_camera_config(camera_to_modify, camera_config)
+
+        # You can also save the same (or another) config under a different camera name.
+        cam_client.set_camera_config("camera_to_delete", camera_config)
+
+        # And also delete camera configs.
+        cam_client.delete_camera_config("camera_to_delete")
+
+    def test_modify_pipeline_config(self):
+        self.pipeline_client.save_pipeline_config("test_pipeline",
+                                                  self.pipeline_client.get_pipeline_config("pipeline_example_1"))
+
+        from cam_server import PipelineClient
+
+        # Initialize the pipeline client.
+        pipeline_client = PipelineClient()
+        pipeline_client = self.pipeline_client
+
+        # Print the list of available pipelines.
+        print(pipeline_client.get_pipelines())
+
+        # TODO: Put the name of the pipeline you want to modify.
+        pipeline_to_modify = "test_pipeline"
+
+        # Retrieve the camera config.
+        pipeline_config = pipeline_client.get_pipeline_config(pipeline_to_modify)
+
+        # Change the image threshold.
+        pipeline_config["image_threshold"] = 0.5
+        # Change the image region of interest.
+        pipeline_config["image_region_of_interest"] = [0, 100, 0, 100]
+
+        # Save the camera configuration.
+        pipeline_client.save_pipeline_config(pipeline_to_modify, pipeline_config)
+
+        # You can also save the same (or another) config under a different camera name.
+        pipeline_client.save_pipeline_config("pipeline_to_delete", pipeline_config)
+
+        # And also delete camera configs.
+        pipeline_client.delete_pipeline_config("pipeline_to_delete")
 
 
 if __name__ == '__main__':

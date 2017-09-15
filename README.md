@@ -28,7 +28,9 @@ also provides a processing pipeline and a REST interface to control both the cam
     1. [Get the simulation camera stream](#get_simulation_camera_stream)
     2. [Get a basic pipeline with a simulated camera](#basic_pipeline)
     3. [Create a pipeline instance with background](#private_pipeline)
-    3. [Read the stream for a given camera name](#read_camera_stream)
+    4. [Read the stream for a given camera name](#read_camera_stream)
+    5. [Modifying camera config](#modify_camera_config)
+    6. [Modifying pipeline config](#modify_pipeline_config)
 8. [Deploy in production](#deploy_in_production)
     
 <a id="build"></a>
@@ -761,6 +763,87 @@ with source(host=stream_host, port=stream_port, mode=SUB) as input_stream:
     print("X center of mass: ", message.data.data["x_center_of_mass"].value)
 
 ```
+
+<a id="modify_camera_config"></a>
+### Modifying camera config
+When modifying the camera config, the changes are applied immediately. As soon as you call **set\_camera\_config** the 
+changes will be reflected in the camera stream within a couple of frames.
+
+```python
+from cam_server import CamClient
+
+# Initialize the camera client.
+cam_client = CamClient()
+
+# Print the list of available cameras.
+print(cam_client.get_cameras())
+
+# TODO: Put the name of the camera you want to modify.
+camera_to_modify = "test_camera"
+
+# Retrieve the camera config.
+camera_config = cam_client.get_camera_config(camera_to_modify)
+
+# Change the mirror_x setting.
+camera_config["mirror_x"] = False
+# Change the camera_calibration setting.
+camera_config["camera_calibration"] = {
+    "reference_marker": [ 0, 0, 100, 100 ],
+    "reference_marker_width": 100.0,
+    "reference_marker_height": 100.0,
+    "angle_horizontal": 0.0,
+    "angle_vertical": 0.0
+}
+
+# Save the camera configuration.
+cam_client.set_camera_config(camera_to_modify, camera_config)
+
+# You can also save the same (or another) config under a different camera name.
+cam_client.set_camera_config("camera_to_delete", camera_config)
+
+# And also delete camera configs.
+cam_client.delete_camera_config("camera_to_delete")
+```
+
+<a id="modify_pipeline_config"></a>
+### Modifying pipeline config
+Please note that modifying the pipeline config works differently than modifying the camera config. 
+When using **save\_pipeline\_config**, the changes do not affect existing pipelines. You need to restart or recreate 
+the pipeline for the changes to be applied.
+
+You can however modify an existing instance config, by calling **set\_instance\_config**. The changes will be 
+reflected in the pipeline stream within a couple of frames.
+
+```python
+from cam_server import PipelineClient
+
+# Initialize the pipeline client.
+pipeline_client = PipelineClient()
+
+# Print the list of available pipelines.
+print(pipeline_client.get_pipelines())
+
+# TODO: Put the name of the pipeline you want to modify.
+pipeline_to_modify = "test_pipeline"
+
+# Retrieve the camera config.
+pipeline_config = pipeline_client.get_pipeline_config(pipeline_to_modify)
+
+# Change the image threshold.
+pipeline_config["image_threshold"] = 0.5
+# Change the image region of interest.
+pipeline_config["image_region_of_interest"] = [0, 100, 0, 100]
+
+# Save the camera configuration.
+pipeline_client.save_pipeline_config(pipeline_to_modify, pipeline_config)
+
+# You can also save the same (or another) config under a different camera name.
+pipeline_client.save_pipeline_config("pipeline_to_delete", pipeline_config)
+
+# And also delete camera configs.
+pipeline_client.delete_pipeline_config("pipeline_to_delete")
+```
+
 
 <a id="deploy_in_production"></a>
 ## Deploy in production
