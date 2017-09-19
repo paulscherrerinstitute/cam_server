@@ -853,7 +853,7 @@ This example shows how to create a new camera config.
 from cam_server import CamClient
 
 # Initialize the camera client.
-cam_client = CamClient()
+cam_client = CamClient("http://sf-daqsync-01:8888/")
 
 # Specify the desired camera config.
 camera_config = {
