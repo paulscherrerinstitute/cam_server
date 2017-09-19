@@ -879,10 +879,8 @@ new_camera_name = "new_camera_name"
 cam_client.set_camera_config(new_camera_name, camera_config)
 
 
-
-
 # In case you need to, delete the camera config you just added.
-cam_client.cam_client.delete_camera_config(new_camera_name)
+# cam_client.cam_client.delete_camera_config(new_camera_name)
 ```
 
 <a id="deploy_in_production"></a>
