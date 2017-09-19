@@ -31,6 +31,7 @@ also provides a processing pipeline and a REST interface to control both the cam
     4. [Read the stream for a given camera name](#read_camera_stream)
     5. [Modifying camera config](#modify_camera_config)
     6. [Modifying pipeline config](#modify_pipeline_config)
+    7. [Create a new camera](#create_camera_config)
 8. [Deploy in production](#deploy_in_production)
     
 <a id="build"></a>
@@ -844,6 +845,45 @@ pipeline_client.save_pipeline_config("pipeline_to_delete", pipeline_config)
 pipeline_client.delete_pipeline_config("pipeline_to_delete")
 ```
 
+<a id="create_camera_config"></a>
+### Create a new camera
+This example shows how to create a new camera config.
+
+```python
+from cam_server import CamClient
+
+# Initialize the camera client.
+cam_client = CamClient()
+
+# Specify the desired camera config.
+camera_config = {
+  "name": "camera_example_3",
+  "prefix": "EPICS:CAM1:EXAMPLE",
+  "mirror_x": False,
+  "mirror_y": False,
+  "rotate": 0,
+
+  "camera_calibration": {
+    "reference_marker": [ 0, 0, 100, 100 ],
+    "reference_marker_width": 100.0,
+    "reference_marker_height": 100.0,
+    "angle_horizontal": 0.0,
+    "angle_vertical": 0.0
+  }
+}
+
+# Specify the new camera name.
+new_camera_name = "new_camera_name"
+
+# Save the camera configuration.
+cam_client.set_camera_config(new_camera_name, camera_config)
+
+
+
+
+# In case you need to, delete the camera config you just added.
+cam_client.cam_client.delete_camera_config(new_camera_name)
+```
 
 <a id="deploy_in_production"></a>
 ## Deploy in production

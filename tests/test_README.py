@@ -248,6 +248,38 @@ class PipelineClientTest(unittest.TestCase):
         # And also delete camera configs.
         pipeline_client.delete_pipeline_config("pipeline_to_delete")
 
+    def test_create_camera(self):
+
+        # Specify the desired camera config.
+        camera_config = {
+            "name": "camera_example_3",
+            "prefix": "EPICS:CAM1:EXAMPLE",
+            "mirror_x": False,
+            "mirror_y": False,
+            "rotate": 0,
+
+            "camera_calibration": {
+                "reference_marker": [0, 0, 100, 100],
+                "reference_marker_width": 100.0,
+                "reference_marker_height": 100.0,
+                "angle_horizontal": 0.0,
+                "angle_vertical": 0.0
+            }
+        }
+
+        # Specify the new camera name.
+        new_camera_name = "new_camera_name"
+
+        # Save the camera configuration.
+        self.cam_client.set_camera_config(new_camera_name, camera_config)
+
+        self.assertTrue(new_camera_name in self.cam_client.get_cameras())
+
+        # Delete the camera config you just added.
+        self.cam_client.delete_camera_config(new_camera_name)
+
+        self.assertTrue(new_camera_name not in self.cam_client.get_cameras())
+
 
 if __name__ == '__main__':
     unittest.main()
