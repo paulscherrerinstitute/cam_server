@@ -294,6 +294,16 @@ class PipelineConfigTest(unittest.TestCase):
                          PipelineConfig.DEFAULT_CONFIGURATION["image_background_enable"],
                          "Default value not applied. It should not be None.")
 
+    def test_invalid_number_of_slices(self):
+        configuration = {"camera_name": "simulation",
+                         "image_slices": {
+                             "number_of_slices": 1.2}
+                         }
+
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+        with self.assertRaisesRegex(ValueError, "number_of_slices must be an integer"):
+            PipelineConfig.validate_pipeline_config(expanded_configuration)
+
 
 if __name__ == '__main__':
     unittest.main()

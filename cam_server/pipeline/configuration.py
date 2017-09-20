@@ -190,6 +190,9 @@ class PipelineConfig:
         if image_slices:
             verify_attributes("image_slices", image_slices, PipelineConfig.DEFAULT_IMAGE_SLICES)
 
+            if not isinstance(configuration["image_slices"]["number_of_slices"], int):
+                raise ValueError("number_of_slices must be an integer.")
+
     @staticmethod
     def expand_config(configuration):
 
