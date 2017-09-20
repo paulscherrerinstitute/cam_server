@@ -32,7 +32,7 @@ also provides a processing pipeline and a REST interface to control both the cam
     5. [Modifying camera config](#modify_camera_config)
     6. [Modifying pipeline config](#modify_pipeline_config)
     7. [Create a new camera](#create_camera_config)
-8. [Deploy in production](#deploy_in_production)
+    8. [Get single message from screen_panel stream](#single_message_screen_panel)
     
 <a id="build"></a>
 ## Build
@@ -422,6 +422,12 @@ class PipelineClient(builtins.object)
   stop_instance(self, instance_id)
       Stop the pipeline.
       :param instance_id: Name of the pipeline to stop.
+      
+  get_instance_message(self, instance_id):
+       
+      Get a single message from a stream instance.
+      :param instance_id: Instance id of the stream.
+      :return: Message from the stream.
 
 ```
 
@@ -880,6 +886,27 @@ cam_client.set_camera_config(new_camera_name, camera_config)
 
 # In case you need to, delete the camera config you just added.
 # cam_client.cam_client.delete_camera_config(new_camera_name)
+```
+
+<a id="single_message_screen_panel"></a>
+### Get single message from screen_panel stream
+You should have the screen_panel open, with the camera you want to acquire running. We will connect to the same 
+stream instance as the screen_panel uses, which means that all the changes done in the screen panel will also be 
+reflected in our acquisition (you can configure what you want to acquire in the screen panel).
+
+```python
+from cam_server import PipelineClient
+
+# Instantiate the pipeline client.
+pipeline_client = PipelineClient("http://sf-daqsync-01:8889/")
+
+# Name of the camera we want to get a message from.
+camera_name = "simulation"
+# Screen panel defines the instance name as: [CAMERA_NAME]_sp1
+instance_name = camera_name + "_sp1"
+
+# Get the data.
+data = pipeline_client.get_instance_message(instance_name)
 ```
 
 <a id="deploy_in_production"></a>

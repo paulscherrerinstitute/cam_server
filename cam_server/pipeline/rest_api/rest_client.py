@@ -1,6 +1,8 @@
 import requests
+from bsread import source, SUB
 
 from cam_server import config
+from cam_server.utils import get_host_port_from_stream_address
 
 
 def validate_response(server_response):
@@ -216,3 +218,17 @@ class PipelineClient(object):
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["cameras"]
+
+    def get_instance_message(self, instance_id):
+        """
+        Get a single message from a stream instance.
+        :param instance_id: Instance id of the stream.
+        :return: Message from the stream.
+        """
+        instance_address = self.get_instance_stream(instance_id)
+        host, port = get_host_port_from_stream_address(instance_address)
+
+        with source(host=host, port=port, mode=SUB) as stream:
+            message = stream.receive()
+
+        return message

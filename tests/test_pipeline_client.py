@@ -239,6 +239,10 @@ class PipelineClientTest(unittest.TestCase):
         self.assertEqual(self.pipeline_client.get_instance_config("custom_instance")["image_threshold"], 20,
                          "Instance should not have changed.")
 
+        data = self.pipeline_client.get_instance_message("custom_instance")
+        self.assertIsNotNone(data)
+        self.assertTrue("image" in data.data.data)
+
         self.pipeline_client.stop_instance("custom_instance")
 
         self.pipeline_client.create_instance_from_name("testing_config", "custom_instance")

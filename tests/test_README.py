@@ -280,6 +280,20 @@ class PipelineClientTest(unittest.TestCase):
 
         self.assertTrue(new_camera_name not in self.cam_client.get_cameras())
 
+    def get_single_message(self):
+        self.pipeline_client.create_instance_from_name("pipeline_example_1", "simulation_sp1")
+
+        # Name of the camera we want to get a message from.
+        camera_name = "simulation"
+        # Screen panel defines the instance name as: [CAMERA_NAME]_sp1
+        instance_name = camera_name + "_sp1"
+
+        # Get the data.
+        data = self.pipeline_client.get_instance_message(instance_name)
+
+        self.assertIsNotNone(data)
+        self.assertTrue("image" in data.data.data)
+
 
 if __name__ == '__main__':
     unittest.main()
