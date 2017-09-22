@@ -1,6 +1,6 @@
 from logging import getLogger
 
-from bsread import Source, PUB, SUB
+from bsread import Source, PUB, SUB, PUSH
 from bsread.sender import Sender
 
 from cam_server import config
@@ -109,8 +109,74 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             sender.close()
 
 
-def store_pipeline():
-    pass
+def store_pipeline(stop_event, statistics, parameter_queue,
+                   cam_client, pipeline_config, output_stream_port, background_manager):
+    def no_client_timeout():
+        _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance." %
+                        config.MFLOW_NO_CLIENTS_TIMEOUT)
+        stop_event.set()
+
+    source = None
+    sender = None
+
+    try:
+
+        camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
+        _logger.debug("Connecting to camera stream address %s.", camera_stream_address)
+
+        source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
+
+        source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
+
+        source.connect()
+
+        _logger.debug("Opening output stream on port %d.", output_stream_port)
+
+        sender = Sender(port=output_stream_port, mode=PUSH,
+                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
+
+        sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
+        # TODO: Register proper channels.
+
+        # Indicate that the startup was successful.
+        stop_event.clear()
+
+        _logger.debug("Transceiver started.")
+
+        while not stop_event.is_set():
+            try:
+
+                data = source.receive()
+
+                # In case of receiving error or timeout, the returned data is None.
+                if data is None:
+                    continue
+
+                forward_data = {"image": data.data.data["image"].value,
+                                "timestamp": data.data.data["timestamp"].value,
+                                "x_axis": data.data.data["x_axis"].value,
+                                "y_axis": data.data.data["y_axis"].value,
+                                "width": data.data.data["width"].value,
+                                "height": data.data.data["height"].value}
+
+                sender.send(data=forward_data)
+
+            except:
+                _logger.exception("Could not process message.")
+                stop_event.set()
+
+        _logger.info("Stopping transceiver.")
+
+    except:
+        _logger.exception("Exception while trying to start the receive and process thread.")
+        raise
+
+    finally:
+        if source:
+            source.disconnect()
+
+        if sender:
+            sender.close()
 
 
 pipeline_name_to_pipeline_function_mapping = {

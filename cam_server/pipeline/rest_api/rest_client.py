@@ -226,6 +226,13 @@ class PipelineClient(object):
         :return: Message from the stream.
         """
         instance_address = self.get_instance_stream(instance_id)
+
+        instance_config = self.get_instance_config(instance_id)
+        pipeline_type = instance_config["pipeline_type"]
+
+        if pipeline_type != "processing":
+            raise ValueError("Cannot get message from '%s' pipeline type." % pipeline_type)
+
         host, port = get_host_port_from_stream_address(instance_address)
 
         with source(host=host, port=port, mode=SUB) as stream:

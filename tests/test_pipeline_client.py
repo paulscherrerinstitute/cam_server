@@ -6,7 +6,7 @@ from multiprocessing import Process
 from time import sleep
 
 import numpy
-from bsread import source, SUB
+from bsread import source, SUB, PULL
 
 from cam_server import CamClient, PipelineClient
 from cam_server.pipeline.configuration import PipelineConfig
@@ -71,6 +71,10 @@ class PipelineClientTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Camera name not specified in configuration."):
             self.pipeline_client.save_pipeline_config("testing_config", {"invalid": "config"})
+
+        with self.assertRaisesRegex(ValueError, "pipeline_type 'invalid' not present in mapping. Available"):
+            self.pipeline_client.save_pipeline_config("testing_config", {"camera_name": "simulation",
+                                                                         "pipeline_type": "invalid"})
 
         self.assertListEqual(self.pipeline_client.get_pipelines(), expected_pipelines + ["testing_config"],
                              "Testing config was not added.")
@@ -267,6 +271,22 @@ class PipelineClientTest(unittest.TestCase):
 
         self.assertEqual(set(self.pipeline_client.get_cameras()), set(expected_cameras),
                          "Expected cameras not present.")
+
+        self.pipeline_client.stop_all_instances()
+
+    def test_store_pipeline(self):
+        instance_id, stream_address = self.pipeline_client.create_instance_from_config(
+            {"camera_name": "simulation", "pipeline_type": "store"})
+
+        with self.assertRaisesRegex(ValueError, "Cannot get message from 'store' pipeline type."):
+            self.pipeline_client.get_instance_message(instance_id)
+
+        host, port = get_host_port_from_stream_address(stream_address)
+
+        with source(host=host, port=port, mode=PULL) as stream:
+            data = stream.receive()
+
+        self.assertIsNotNone(data)
 
         self.pipeline_client.stop_all_instances()
 

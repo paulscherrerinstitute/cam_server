@@ -9,10 +9,10 @@ from time import sleep
 import multiprocessing
 
 import numpy
-from bsread import SUB, source
-from cam_server import CamClient, config
+from bsread import SUB, source, PULL
+from cam_server import CamClient
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server.pipeline.transceiver import processing_pipeline
+from cam_server.pipeline.transceiver import processing_pipeline, store_pipeline
 from cam_server.start_camera_server import start_camera_server
 from tests.helpers.factory import MockBackgroundManager
 
@@ -184,6 +184,35 @@ class PipelineTransceiverTest(unittest.TestCase):
             self.assertEqual(x_size, len(x_axis))
             self.assertEqual(y_size, len(y_axis))
             self.assertEqual(image_shape, (y_size, x_size))
+
+        stop_event.set()
+        thread.join()
+
+    def test_store_pipeline_with_simulated_camera(self):
+        manager = multiprocessing.Manager()
+        stop_event = multiprocessing.Event()
+        statistics = manager.Namespace()
+        parameter_queue = multiprocessing.Queue()
+
+        pipeline_config = PipelineConfig("test_pipeline")
+
+        def send():
+            store_pipeline(stop_event, statistics, parameter_queue, self.client,
+                           pipeline_config, 12000, MockBackgroundManager())
+
+        thread = Thread(target=send)
+        thread.start()
+
+        sleep(0.5)
+
+        with source(host="127.0.0.1", port=12000, mode=PULL) as stream:
+            data = stream.receive()
+            self.assertIsNotNone(data, "Received None message.")
+
+            required_keys = set(["image", "timestamp", "x_axis", "y_axis", "width", "height"])
+
+            self.assertSetEqual(required_keys, set(data.data.data.keys()),
+                                "Missing required keys in pipeline output bsread message.")
 
         stop_event.set()
         thread.join()
