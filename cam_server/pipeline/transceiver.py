@@ -1,6 +1,5 @@
 from logging import getLogger
 
-import numpy
 from bsread import Source, PUB, SUB
 from bsread.sender import Sender
 
@@ -11,8 +10,8 @@ from cam_server.utils import get_host_port_from_stream_address
 _logger = getLogger(__name__)
 
 
-def receive_process_send(stop_event, statistics, parameter_queue,
-                         cam_client, pipeline_config, output_stream_port, background_manager):
+def processing_pipeline(stop_event, statistics, parameter_queue,
+                        cam_client, pipeline_config, output_stream_port, background_manager):
     def no_client_timeout():
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance." %
                         config.MFLOW_NO_CLIENTS_TIMEOUT)
@@ -108,3 +107,21 @@ def receive_process_send(stop_event, statistics, parameter_queue,
 
         if sender:
             sender.close()
+
+
+def store_pipeline():
+    pass
+
+
+pipeline_name_to_pipeline_function_mapping = {
+    "processing": processing_pipeline,
+    "store": store_pipeline
+}
+
+
+def get_pipeline_function(pipeline_type_name):
+    if pipeline_type_name not in pipeline_name_to_pipeline_function_mapping:
+        raise ValueError("pipeline_type '%s' not present in mapping. Available: %s." %
+                         (pipeline_type_name, list(pipeline_name_to_pipeline_function_mapping.keys())))
+
+    return pipeline_name_to_pipeline_function_mapping[pipeline_type_name]

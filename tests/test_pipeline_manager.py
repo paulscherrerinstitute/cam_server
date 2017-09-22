@@ -210,7 +210,8 @@ class PipelineManagerTest(unittest.TestCase):
             "image_slices": {
                 "number_of_slices": 6,
                 "scale": 7
-            }
+            },
+            "pipeline_type": "processing"
         }
 
         pipeline_manager.update_instance_config(instance_id, config_updates)
@@ -247,6 +248,11 @@ class PipelineManagerTest(unittest.TestCase):
         pipeline_manager.update_instance_config(instance_id, {"image_good_region": {"gfscale": None}})
         self.assertEqual(pipeline_manager.get_instance(instance_id).get_configuration()["image_good_region"]["gfscale"],
                          PipelineConfig.DEFAULT_IMAGE_GOOD_REGION["gfscale"],
+                         "Default value not set correctly.")
+
+        pipeline_manager.update_instance_config(instance_id, {"pipeline_type": None})
+        self.assertEqual(pipeline_manager.get_instance(instance_id).get_configuration()["pipeline_type"],
+                         PipelineConfig.DEFAULT_CONFIGURATION["pipeline_type"],
                          "Default value not set correctly.")
 
         pipeline_manager.stop_all_instances()

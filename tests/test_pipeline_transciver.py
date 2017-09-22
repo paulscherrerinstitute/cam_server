@@ -12,7 +12,7 @@ import numpy
 from bsread import SUB, source
 from cam_server import CamClient, config
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server.pipeline.transceiver import receive_process_send
+from cam_server.pipeline.transceiver import processing_pipeline
 from cam_server.start_camera_server import start_camera_server
 from tests.helpers.factory import MockBackgroundManager
 
@@ -57,8 +57,8 @@ class PipelineTransceiverTest(unittest.TestCase):
         pipeline_config = PipelineConfig("test_pipeline")
 
         def send():
-            receive_process_send(stop_event, statistics, parameter_queue, self.client,
-                                 pipeline_config, 12000, MockBackgroundManager())
+            processing_pipeline(stop_event, statistics, parameter_queue, self.client,
+                                pipeline_config, 12000, MockBackgroundManager())
 
         thread = Thread(target=send)
         thread.start()
@@ -95,8 +95,8 @@ class PipelineTransceiverTest(unittest.TestCase):
         background_manager = MockBackgroundManager()
 
         with self.assertRaises(Exception):
-            receive_process_send(stop_event, statistics, parameter_queue, self.client, pipeline_config,
-                                 12000, background_manager)
+            processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
+                                12000, background_manager)
 
         simulated_camera_shape = (960, 1280)
 
@@ -105,8 +105,8 @@ class PipelineTransceiverTest(unittest.TestCase):
         background_manager.save_background("full_background", background_array, append_timestamp=False)
 
         def send():
-            receive_process_send(stop_event, statistics, parameter_queue, self.client, pipeline_config,
-                                 12000, background_manager)
+            processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
+                                12000, background_manager)
 
         thread = Thread(target=send)
         thread.start()
@@ -135,8 +135,8 @@ class PipelineTransceiverTest(unittest.TestCase):
         simulated_camera_shape = (960, 1280)
 
         def send():
-            receive_process_send(stop_event, statistics, parameter_queue, self.client, pipeline_config,
-                                 12000, background_manager)
+            processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
+                                12000, background_manager)
 
         thread = Thread(target=send)
         thread.start()

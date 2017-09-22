@@ -13,5 +13,6 @@
   "image_slices": {
     "number_of_slices": 1,
     "scale": 1.0
-  }
+  },
+  "pipeline_type": "processing"
 }

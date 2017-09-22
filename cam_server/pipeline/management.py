@@ -5,7 +5,7 @@ from logging import getLogger
 from cam_server import config
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server.pipeline.transceiver import receive_process_send
+from cam_server.pipeline.transceiver import get_pipeline_function
 from cam_server.utils import update_pipeline_config, get_port_generator
 
 _logger = getLogger(__name__)
@@ -79,13 +79,13 @@ class PipelineInstanceManager(InstanceManager):
             raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
 
         if configuration:
-            pipeline = PipelineConfig(instance_id, configuration)
+            pipeline_config = PipelineConfig(instance_id, configuration)
         else:
-            pipeline = self.config_manager.load_pipeline(pipeline_name)
+            pipeline_config = self.config_manager.load_pipeline(pipeline_name)
 
         stream_port = self._get_next_available_port(instance_id)
 
-        camera_name = pipeline.get_camera_name()
+        camera_name = pipeline_config.get_camera_name()
 
         if not self.cam_server_client.is_camera_online(camera_name):
             raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
@@ -95,8 +95,8 @@ class PipelineInstanceManager(InstanceManager):
 
         self.add_instance(instance_id, PipelineInstance(
             instance_id=instance_id,
-            process_function=receive_process_send,
-            pipeline_config=pipeline,
+            process_function=get_pipeline_function(pipeline_config.get_pipeline_type()),
+            pipeline_config=pipeline_config,
             output_stream_port=stream_port,
             cam_client=self.cam_server_client,
             background_manager=self.background_manager,
@@ -105,9 +105,9 @@ class PipelineInstanceManager(InstanceManager):
 
         self.start_instance(instance_id)
 
-        pipeline = self.get_instance(instance_id)
+        pipeline_instance = self.get_instance(instance_id)
 
-        return pipeline.get_instance_id(), pipeline.get_stream_address()
+        return pipeline_instance.get_instance_id(), pipeline_instance.get_stream_address()
 
     def get_instance_stream(self, instance_id):
         self._delete_stopped_instance(instance_id)
@@ -133,7 +133,7 @@ class PipelineInstanceManager(InstanceManager):
 
         self.add_instance(instance_id, PipelineInstance(
             instance_id=instance_id,
-            process_function=receive_process_send,
+            process_function=get_pipeline_function(pipeline_config.get_pipeline_type()),
             pipeline_config=pipeline_config,
             output_stream_port=stream_port,
             cam_client=self.cam_server_client,

@@ -210,7 +210,8 @@ class PipelineConfigTest(unittest.TestCase):
             "image_slices": {
                 "number_of_slices": 6,
                 "scale": 7
-            }
+            },
+            "pipeline_type": "processing"
         }
 
         updated_config = update_pipeline_config(old_config, config_updates)
@@ -255,6 +256,9 @@ class PipelineConfigTest(unittest.TestCase):
         updated_config = update_pipeline_config(updated_config, {"image_background_enable": None})
         self.assertEqual(updated_config["image_background_enable"], None)
 
+        updated_config = update_pipeline_config(updated_config, {"pipeline_type": None})
+        self.assertEqual(updated_config["pipeline_type"], None)
+
         self.assertTrue(all(value is None for value in updated_config.values()))
 
     def test_expand_pipeline_config(self):
@@ -267,6 +271,10 @@ class PipelineConfigTest(unittest.TestCase):
         expanded_configuration = PipelineConfig.expand_config(configuration)
         self.assertEqual(expanded_configuration["image_slices"]["number_of_slices"],
                          PipelineConfig.DEFAULT_IMAGE_SLICES["number_of_slices"],
+                         "Default not applied.")
+
+        self.assertEqual(expanded_configuration["pipeline_type"],
+                         PipelineConfig.DEFAULT_CONFIGURATION["pipeline_type"],
                          "Default not applied.")
 
         configuration = {"camera_name": "simulation",
@@ -302,6 +310,16 @@ class PipelineConfigTest(unittest.TestCase):
 
         expanded_configuration = PipelineConfig.expand_config(configuration)
         with self.assertRaisesRegex(ValueError, "number_of_slices must be an integer"):
+            PipelineConfig.validate_pipeline_config(expanded_configuration)
+
+    def test_invalid_pipeline_type(self):
+        configuration = {"camera_name": "simulation"}
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+        PipelineConfig.validate_pipeline_config(expanded_configuration)
+
+        expanded_configuration["pipeline_type"] = "invalid"
+
+        with self.assertRaisesRegex(ValueError, "pipeline_type 'invalid' not present in mapping. Available:"):
             PipelineConfig.validate_pipeline_config(expanded_configuration)
 
 

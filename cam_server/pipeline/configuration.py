@@ -8,6 +8,8 @@ from os.path import basename
 
 import numpy
 
+from cam_server.pipeline.transceiver import get_pipeline_function
+
 
 class PipelineConfigManager(object):
     def __init__(self, config_provider):
@@ -112,7 +114,8 @@ class PipelineConfig:
         "image_threshold": None,
         "image_region_of_interest": None,
         "image_good_region": None,
-        "image_slices": None
+        "image_slices": None,
+        "pipeline_type": "processing"
     }
 
     DEFAULT_IMAGE_GOOD_REGION = {
@@ -193,6 +196,10 @@ class PipelineConfig:
             if not isinstance(configuration["image_slices"]["number_of_slices"], int):
                 raise ValueError("number_of_slices must be an integer.")
 
+        # Verify if the pipeline exists.
+        get_pipeline_function(configuration["pipeline_type"])
+
+
     @staticmethod
     def expand_config(configuration):
 
@@ -219,3 +226,6 @@ class PipelineConfig:
 
     def get_camera_name(self):
         return self.parameters["camera_name"]
+
+    def get_pipeline_type(self):
+        return self.parameters["pipeline_type"]
