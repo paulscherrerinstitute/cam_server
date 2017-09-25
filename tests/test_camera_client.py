@@ -131,6 +131,7 @@ class CameraClientTest(unittest.TestCase):
 
         instance_info = self.client.get_server_info()["active_instances"]["simulation"]
         self.assertTrue("last_start_time" in instance_info)
+        self.assertTrue("statistics" in instance_info)
 
         # Collect from the pipeline.
         with source(host=camera_host, port=camera_port, mode=SUB) as stream:

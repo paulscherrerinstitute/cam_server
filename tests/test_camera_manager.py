@@ -222,6 +222,13 @@ class CameraTest(unittest.TestCase):
         self.assertNotEqual(simulation_start_time_1, simulation_start_time_3,
                             "Camera was restarted, last_start_time should be different.")
 
+    def test_statistics(self):
+        self.instance_manager.get_camera_stream("simulation")
+        latest_statistics = self.instance_manager.get_instance("simulation").get_statistics()
+
+        self.assertTrue("n_clients" in latest_statistics)
+        self.assertTrue("input_throughput" in latest_statistics)
+
 
 if __name__ == '__main__':
     unittest.main()

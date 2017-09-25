@@ -106,6 +106,9 @@ class InstanceWrapper:
         self.stop_event.set()
 
         self.statistics = self.manager.Namespace()
+        self.statistics.input_throughput = 0
+        self.statistics.n_clients = 0
+
         self.parameter_queue = multiprocessing.Queue()
 
         self.last_start_time = None
@@ -168,3 +171,7 @@ class InstanceWrapper:
 
     def get_instance_id(self):
         return self.instance_name
+
+    def get_statistics(self):
+        return {"input_throughput": self.statistics.input_throughput,
+                "n_clients": self.statistics.n_clients}

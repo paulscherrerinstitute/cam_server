@@ -509,5 +509,13 @@ class PipelineManagerTest(unittest.TestCase):
 
         instance_manager.stop_all_instances()
 
+    def test_statistics(self):
+        instance_manager = get_test_pipeline_manager_with_real_cam()
+        instance_id_0, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+        latest_statistics = instance_manager.get_instance(instance_id_0).get_statistics()
+
+        self.assertTrue("n_clients" in latest_statistics)
+        self.assertTrue("input_throughput" in latest_statistics)
+
 if __name__ == '__main__':
     unittest.main()

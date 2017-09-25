@@ -12,6 +12,8 @@ _logger = getLogger(__name__)
 
 def processing_pipeline(stop_event, statistics, parameter_queue,
                         cam_client, pipeline_config, output_stream_port, background_manager):
+    # TODO: Implement statistics: n_clients, input_throughput
+
     def no_client_timeout():
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance." %
                         config.MFLOW_NO_CLIENTS_TIMEOUT)
@@ -111,6 +113,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
 def store_pipeline(stop_event, statistics, parameter_queue,
                    cam_client, pipeline_config, output_stream_port, background_manager):
+    # TODO: Implement statistics: n_clients, input_throughput
+
     def no_client_timeout():
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance." %
                         config.MFLOW_NO_CLIENTS_TIMEOUT)

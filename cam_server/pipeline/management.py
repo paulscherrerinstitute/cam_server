@@ -198,7 +198,8 @@ class PipelineInstance(InstanceWrapper):
                 "config": self.pipeline_config.get_configuration(),
                 "instance_id": self.get_instance_id(),
                 "read_only": self.read_only_config,
-                "last_start_time": self.last_start_time}
+                "last_start_time": self.last_start_time,
+                "statistics": self.get_statistics()}
 
     def get_configuration(self):
         return self.pipeline_config.get_configuration()
