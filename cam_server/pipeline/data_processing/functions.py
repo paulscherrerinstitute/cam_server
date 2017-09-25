@@ -177,13 +177,11 @@ def slice_image(image, number_of_slices=1, vertical=False):
     return slices
 
 
-def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slices=10):
+def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slices=9):
     """ Calculate index list for slices based on the given axis """
 
-    if not number_of_slices % 2:
-        # Add a middle slice if number of slices is even - as middle slice is half/half on center
-        _logging.info('Add additional middle slice')
-        number_of_slices += 1
+    if number_of_slices % 2 == 0:
+        raise ValueError("Number of slices must be odd.")
 
     size_slice = scaling * standard_deviation / number_of_slices
 

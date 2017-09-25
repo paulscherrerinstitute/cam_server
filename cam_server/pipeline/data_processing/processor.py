@@ -77,7 +77,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
     if image_good_region:
         try:
 
-            def initialize_values():
+            def initialize_good_region_values():
                 # Initialize the good region parameters.
                 return_value["good_region"] = None
                 return_value["gr_x_axis"] = None
@@ -95,17 +95,21 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                 return_value["gr_y_fit_standard_deviation"] = None
                 return_value["gr_y_fit_mean"] = None
 
-                # Initialize the image slices parameters.
                 slices = parameters.get("image_slices")
                 if slices:
-                    for i in range(slices["number_of_slices"]):
-                        return_value["slice_%s_center_x" % i] = None
-                        return_value["slice_%s_center_y" % i] = None
-                        return_value["slice_%s_standard_deviation" % i] = None
-                        return_value["slice_%s_intensity" % i] = None
+                    initialize_slices_values(slices["number_of_slices"])
+
+            def initialize_slices_values(number_of_slices):
+                return_value["n_slices"] = number_of_slices
+
+                for i in range(number_of_slices):
+                    return_value["slice_%s_center_x" % i] = None
+                    return_value["slice_%s_center_y" % i] = None
+                    return_value["slice_%s_standard_deviation" % i] = None
+                    return_value["slice_%s_intensity" % i] = None
 
             # Good region and slices should be None if cannot be calculated.
-            initialize_values()
+            initialize_good_region_values()
 
             threshold = image_good_region["threshold"]
             gfscale = image_good_region["gfscale"]
@@ -153,19 +157,26 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
             if image_slices:
 
                 scale = image_slices["scale"]
-                number_of_slices = image_slices["number_of_slices"]
+                n_slices = image_slices["number_of_slices"]
+
+                # Adjust the number of slices to be odd.
+                if n_slices % 2 == 0:
+                    # Add a middle slice if number of slices is even - as middle slice is half/half on center
+                    _logger.info('Add additional middle slice')
+                    n_slices += 1
+                    initialize_slices_values(n_slices)
 
                 try:
                     x_slice_data = functions.get_x_slices_data(good_region, good_region_x_axis, good_region_y_axis,
                                                                gr_x_fit_mean, gr_x_fit_standard_deviation,
                                                                scaling=scale,
-                                                               number_of_slices=number_of_slices)
+                                                               number_of_slices=n_slices)
 
                     y_slice_data = functions.get_y_slices_data(good_region, good_region_x_axis, good_region_y_axis,
                                                                gr_y_fit_mean,
                                                                gr_y_fit_standard_deviation,
                                                                scaling=scale,
-                                                               number_of_slices=number_of_slices)
+                                                               number_of_slices=n_slices)
 
                     # Add return values
                     counter = 0

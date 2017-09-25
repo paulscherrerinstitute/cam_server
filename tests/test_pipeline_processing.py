@@ -8,6 +8,7 @@ import numpy
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.receiver import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
+from cam_server.pipeline.data_processing.functions import calculate_slices
 from cam_server.pipeline.data_processing.processor import process_image
 from tests.helpers.factory import MockBackgroundManager
 
@@ -240,6 +241,10 @@ class PipelineProcessingTest(unittest.TestCase):
     def test_slices(self):
         # TODO: Write tests.
         pass
+
+    def test_calculate_slices_invalid_input(self):
+        with self.assertRaisesRegex(ValueError, "Number of slices must be odd."):
+            calculate_slices(None, None, None, None, 2)
 
 
 if __name__ == '__main__':
