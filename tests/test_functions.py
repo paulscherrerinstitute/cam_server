@@ -33,7 +33,7 @@ class FunctionsTest(unittest.TestCase):
         axis = numpy.array(range(size)).astype('f')
 
         indexes, n_indices_half_slice = calculate_slices(axis, center, standard_deviation,
-                                                         scaling=2, number_of_slices=10)
+                                                         scaling=2, number_of_slices=11)
         # we expect 11 slices - as the middle slice is half half in the center, therefore 12 indexes are needed
         self.assertEqual(len(indexes), 12)
 
@@ -74,7 +74,7 @@ class FunctionsTest(unittest.TestCase):
         axis = numpy.array(range(size)).astype('f')
 
         indexes, n_indices_half_slice = calculate_slices(axis, center, standard_deviation,
-                                                         scaling=2, number_of_slices=10)
+                                                         scaling=2, number_of_slices=11)
 
         # 2*12/11 /2  = 1.0909...  - We expect a half slice size to be 1
         self.assertEqual(n_indices_half_slice, 1)

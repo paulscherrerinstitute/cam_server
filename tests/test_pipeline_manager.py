@@ -517,5 +517,7 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertTrue("n_clients" in latest_statistics)
         self.assertTrue("input_throughput" in latest_statistics)
 
+        instance_manager.stop_all_instances()
+
 if __name__ == '__main__':
     unittest.main()
