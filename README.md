@@ -83,12 +83,18 @@ conda config --add channels paulscherrerinstitute
 
 <a id="docker_build"></a>
 ### Docker build
-To build the docker image run (from project root):
+**Warning**: When you build the docker image with **build.sh**, your built will be pushed to the PSI repo as the 
+latest cam_server version. Please use the **build.sh** script only if you are sure that this is what you want.
+
+To build the docker image, run the build from the **docker/** folder:
 ```bash
-./docker/build.sh
+./build.sh
 ```
 
-Before building the docker image, make sure the latest version of the library is available in anaconda.
+Before building the docker image, make sure the latest version of the library is available in Anaconda.
+
+**Please note**: There is no need to build the image if you just want to run the docker container. 
+Please see the **Running the server** chapter.
 
 <a id="basic_concepts"></a>
 ## Basic concepts
