@@ -209,6 +209,7 @@ pipeline is added to the output bsread stream in the
 - **image\_slices** (Default _None_): 
     - number_of_slices (Default _1_): Desired number of slices.
     - scale (Default _2.0_): Good region scale in for slicing purposes.
+    - orientation (Default _vertical_): Orientation of the slices. Can be 'vertical' or 'horizontal'.
 
 #### Example
 ```json
@@ -235,7 +236,8 @@ pipeline is added to the output bsread stream in the
 
   "image_slices": {
     "number_of_slices": 1,
-    "scale": 1.0
+    "scale": 1.0,
+    "orientation": "vertical"
   }
 }
 ```

@@ -12,7 +12,8 @@
 
   "image_slices": {
     "number_of_slices": 1,
-    "scale": 1.0
+    "scale": 1.0,
+    "orientation": "vertical"
   },
   "pipeline_type": "processing"
 }

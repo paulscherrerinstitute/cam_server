@@ -239,8 +239,60 @@ class PipelineProcessingTest(unittest.TestCase):
         pass
 
     def test_slices(self):
-        # TODO: Write tests.
-        pass
+
+        def run_the_pipeline(configuration):
+            parameters = PipelineConfig("test_pipeline", configuration).get_configuration()
+
+            simulated_camera = CameraSimulation(CameraConfig("simulation"))
+            image = simulated_camera.get_image()
+            x_axis, y_axis = simulated_camera.get_x_y_axis()
+
+            return process_image(image=image, timestamp=time.time(), x_axis=x_axis, y_axis=y_axis,
+                                 parameters=parameters)
+
+        pipeline_configuration = {
+            "camera_name": "simulation",
+            "image_good_region": {
+                "threshold": 1
+            },
+            "image_slices": {
+                "number_of_slices": 9
+            }
+        }
+
+        result = run_the_pipeline(pipeline_configuration)
+
+        self.assertEqual(result["slice_number"], 9)
+        self.assertEqual(result["slice_orientation"], "vertical", "Default slice orientation should be vertical.")
+        self.assertTrue("slice_length" in result)
+
+        pipeline_configuration = {
+            "camera_name": "simulation",
+            "image_good_region": {
+                "threshold": 1
+            },
+            "image_slices": {
+                "orientation": "horizontal"
+            }
+        }
+
+        result = run_the_pipeline(pipeline_configuration)
+
+        self.assertEqual(result["slice_orientation"], "horizontal")
+        self.assertTrue("slice_length" in result)
+
+        with self.assertRaisesRegex(ValueError, "Invalid slice orientation 'invalid'."):
+            pipeline_configuration = {
+                "camera_name": "simulation",
+                "image_good_region": {
+                    "threshold": 1
+                },
+                "image_slices": {
+                    "orientation": "invalid"
+                }
+            }
+
+            run_the_pipeline(pipeline_configuration)
 
     def test_calculate_slices_invalid_input(self):
         with self.assertRaisesRegex(ValueError, "Number of slices must be odd."):

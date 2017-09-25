@@ -97,10 +97,11 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
 
                 slices = parameters.get("image_slices")
                 if slices:
+                    return_value["slice_orientation"] = slices["orientation"]
                     initialize_slices_values(slices["number_of_slices"])
 
             def initialize_slices_values(number_of_slices):
-                return_value["n_slices"] = number_of_slices
+                return_value["slice_number"] = number_of_slices
                 return_value["slice_length"] = None
 
                 for i in range(number_of_slices):
@@ -158,31 +159,41 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
             if image_slices:
 
                 scale = image_slices["scale"]
-                n_slices = image_slices["number_of_slices"]
+                slice_number = image_slices["number_of_slices"]
+                orientation = image_slices["orientation"]
 
                 # Adjust the number of slices to be odd.
-                if n_slices % 2 == 0:
+                if slice_number % 2 == 0:
                     # Add a middle slice if number of slices is even - as middle slice is half/half on center
                     _logger.info('Add additional middle slice')
-                    n_slices += 1
-                    initialize_slices_values(n_slices)
+                    slice_number += 1
+                    initialize_slices_values(slice_number)
 
                 try:
                     x_slice_data, x_slice_length = functions.get_x_slices_data(good_region, good_region_x_axis,
                                                                                good_region_y_axis, gr_x_fit_mean,
                                                                                gr_x_fit_standard_deviation,
                                                                                scaling=scale,
-                                                                               number_of_slices=n_slices)
+                                                                               number_of_slices=slice_number)
 
                     y_slice_data, y_slice_length = functions.get_y_slices_data(good_region, good_region_x_axis,
                                                                                good_region_y_axis, gr_y_fit_mean,
                                                                                gr_y_fit_standard_deviation,
                                                                                scaling=scale,
-                                                                               number_of_slices=n_slices)
+                                                                               number_of_slices=slice_number)
                     # TODO: Config to change this?
-                    orientation_slices = y_slice_data
-                    slice_length = y_slice_length
-                    coupling_slices = x_slice_data
+                    if orientation == "vertical":
+                        orientation_slices = y_slice_data
+                        slice_length = y_slice_length
+                        coupling_slices = x_slice_data
+
+                    elif orientation == "horizontal":
+                        orientation_slices = x_slice_data
+                        slice_length = x_slice_length
+                        coupling_slices = y_slice_data
+
+                    else:
+                        raise ValueError("Invalid slice orientation '%s'." % orientation)
 
                     return_value["slice_length"] = slice_length
 

@@ -125,7 +125,8 @@ class PipelineConfig:
 
     DEFAULT_IMAGE_SLICES = {
         "number_of_slices": 1,
-        "scale": 2
+        "scale": 2,
+        "orientation": "vertical"
     }
 
     def __init__(self, pipeline_name, parameters=None):
@@ -193,8 +194,12 @@ class PipelineConfig:
         if image_slices:
             verify_attributes("image_slices", image_slices, PipelineConfig.DEFAULT_IMAGE_SLICES)
 
-            if not isinstance(configuration["image_slices"]["number_of_slices"], int):
+            if not isinstance(image_slices["number_of_slices"], int):
                 raise ValueError("number_of_slices must be an integer.")
+
+            if image_slices["orientation"] not in ("vertical", "horizontal"):
+                raise ValueError("Invalid slice orientation '%s'. Slices orientation can be 'vertical' or 'horizontal'."
+                                 % image_slices["orientation"])
 
         # Verify if the pipeline exists.
         get_pipeline_function(configuration["pipeline_type"])
