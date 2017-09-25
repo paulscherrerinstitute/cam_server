@@ -232,6 +232,9 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
     list_slices, n_pixel_half_slice = calculate_slices(x_axis, x_center, x_standard_deviation, scaling,
                                                        number_of_slices)
 
+    # TODO: Where to get the slice length from?
+    slice_length = 0
+
     slice_data = []
 
     for i in range(len(list_slices) - 1):
@@ -250,7 +253,7 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
         else:
             _logging.info('Drop slice')
 
-    return slice_data
+    return slice_data, slice_length
 
 
 def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, scaling=2, number_of_slices=11):
@@ -261,6 +264,9 @@ def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, sca
 
     list_slices, n_pixel_half_slice = calculate_slices(y_axis, y_center, y_standard_deviation, scaling,
                                                        number_of_slices)
+
+    # TODO: Where to get the slice length from?
+    slice_length = 0
 
     slice_data = []
 
@@ -280,7 +286,7 @@ def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, sca
         else:
             _logging.info('Drop slice')
 
-    return slice_data
+    return slice_data, slice_length
 
 
 def _linear_function(x, slope, offset):

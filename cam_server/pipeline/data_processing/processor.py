@@ -101,6 +101,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
 
             def initialize_slices_values(number_of_slices):
                 return_value["n_slices"] = number_of_slices
+                return_value["slice_length"] = None
 
                 for i in range(number_of_slices):
                     return_value["slice_%s_center_x" % i] = None
@@ -167,20 +168,27 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                     initialize_slices_values(n_slices)
 
                 try:
-                    x_slice_data = functions.get_x_slices_data(good_region, good_region_x_axis, good_region_y_axis,
-                                                               gr_x_fit_mean, gr_x_fit_standard_deviation,
-                                                               scaling=scale,
-                                                               number_of_slices=n_slices)
+                    x_slice_data, x_slice_length = functions.get_x_slices_data(good_region, good_region_x_axis,
+                                                                               good_region_y_axis, gr_x_fit_mean,
+                                                                               gr_x_fit_standard_deviation,
+                                                                               scaling=scale,
+                                                                               number_of_slices=n_slices)
 
-                    y_slice_data = functions.get_y_slices_data(good_region, good_region_x_axis, good_region_y_axis,
-                                                               gr_y_fit_mean,
-                                                               gr_y_fit_standard_deviation,
-                                                               scaling=scale,
-                                                               number_of_slices=n_slices)
+                    y_slice_data, y_slice_length = functions.get_y_slices_data(good_region, good_region_x_axis,
+                                                                               good_region_y_axis, gr_y_fit_mean,
+                                                                               gr_y_fit_standard_deviation,
+                                                                               scaling=scale,
+                                                                               number_of_slices=n_slices)
+                    # TODO: Config to change this?
+                    orientation_slices = y_slice_data
+                    slice_length = y_slice_length
+                    coupling_slices = x_slice_data
+
+                    return_value["slice_length"] = slice_length
 
                     # Add return values
                     counter = 0
-                    for data in y_slice_data:
+                    for data in orientation_slices:
                         return_value["slice_%s_center_x" % counter] = data[0][0]
                         return_value["slice_%s_center_y" % counter] = data[0][1]
                         return_value["slice_%s_standard_deviation" % counter] = data[1]
@@ -190,7 +198,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                     # Calculate x/y coupling
                     x = []
                     y = []
-                    for data in x_slice_data:
+                    for data in coupling_slices:
                         x.append(float(data[0][0]))  # x
                         y.append(float(data[0][1]))  # y
 
