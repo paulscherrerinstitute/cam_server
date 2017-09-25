@@ -223,7 +223,7 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
     return list_slices_indexes, n_pixel_half_slice
 
 
-def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, scaling=2, number_of_slices=10):
+def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, scaling=2, number_of_slices=11):
     """
     Calculate slices and their statistics
     :return: <center [x,y]>, <standard deviation>, <intensity>
@@ -253,7 +253,7 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
     return slice_data
 
 
-def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, scaling=2, number_of_slices=10):
+def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, scaling=2, number_of_slices=11):
     """
     Calculate slices and their statistics
     :return: <center [x,y]>, <standard deviation>, <intensity>
