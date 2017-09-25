@@ -73,7 +73,8 @@ class CameraInstance(InstanceWrapper):
         return {"stream_address": self.stream_address,
                 "is_stream_active": self.is_running(),
                 "camera_geometry": self.camera.get_geometry(),
-                "camera_name": self.camera.get_name()}
+                "camera_name": self.camera.get_name(),
+                "last_start_time": self.last_start_time}
 
     def get_configuration(self):
         return self.camera.camera_config.get_configuration()

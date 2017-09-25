@@ -129,6 +129,9 @@ class CameraClientTest(unittest.TestCase):
         camera_host, camera_port = get_host_port_from_stream_address(stream_address)
         sim_x, sim_y = CameraSimulation(CameraConfig("simulation")).get_geometry()
 
+        instance_info = self.client.get_server_info()["active_instances"]["simulation"]
+        self.assertTrue("last_start_time" in instance_info)
+
         # Collect from the pipeline.
         with source(host=camera_host, port=camera_port, mode=SUB) as stream:
             data = stream.receive()

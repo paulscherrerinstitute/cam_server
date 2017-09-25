@@ -207,5 +207,21 @@ class CameraTest(unittest.TestCase):
         self.instance_manager.get_camera_stream("simulation")
         self.assertIsNotNone(self.instance_manager.get_instance("simulation").get_configuration())
 
+    def test_last_start_time(self):
+        self.instance_manager.get_camera_stream("simulation")
+        simulation_start_time_1 = self.instance_manager.get_info()['active_instances']['simulation']['last_start_time']
+
+        self.instance_manager.get_camera_stream("simulation")
+        simulation_start_time_2 = self.instance_manager.get_info()['active_instances']['simulation']['last_start_time']
+        self.assertEqual(simulation_start_time_1, simulation_start_time_2,
+                         "Camera was still running, timestamp should be the same.")
+
+        self.instance_manager.stop_instance("simulation")
+        self.instance_manager.get_camera_stream("simulation")
+        simulation_start_time_3 = self.instance_manager.get_info()['active_instances']['simulation']['last_start_time']
+        self.assertNotEqual(simulation_start_time_1, simulation_start_time_3,
+                            "Camera was restarted, last_start_time should be different.")
+
+
 if __name__ == '__main__':
     unittest.main()

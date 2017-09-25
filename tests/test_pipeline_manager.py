@@ -496,5 +496,18 @@ class PipelineManagerTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Camera camera_example_1 is not online. Cannot start pipeline."):
             instance_manager.create_pipeline(configuration={"camera_name": "camera_example_1"})
 
+    def test_last_start_time(self):
+        instance_manager = get_test_pipeline_manager_with_real_cam()
+        instance_id_0, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
+
+        pipeline_info = instance_manager.get_instance(instance_id_0).get_info()
+        self.assertTrue("last_start_time" in pipeline_info)
+
+        last_time = pipeline_info["last_start_time"]
+        new_last_time = instance_manager.get_instance(instance_id_0).get_info()["last_start_time"]
+        self.assertEqual(last_time, new_last_time, "The instance was still running, the times should be the same.")
+
+        instance_manager.stop_all_instances()
+
 if __name__ == '__main__':
     unittest.main()

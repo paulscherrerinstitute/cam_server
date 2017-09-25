@@ -100,6 +100,9 @@ class PipelineClientTest(unittest.TestCase):
         instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("testing_config")
         instance_id_2, instance_stream_2 = self.pipeline_client.create_instance_from_name("testing_config")
 
+        instance_info = self.pipeline_client.get_instance_info(instance_id_1)
+        self.assertTrue("last_start_time" in instance_info)
+
         with self.assertRaisesRegex(ValueError, "Cannot change the camera name on a running instance. "
                                                 "Stop the instance first."):
             self.pipeline_client.set_instance_config(instance_id_1, {"camera_name": "different_camera"})

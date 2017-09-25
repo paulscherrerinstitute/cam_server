@@ -108,6 +108,8 @@ class InstanceWrapper:
         self.statistics = self.manager.Namespace()
         self.parameter_queue = multiprocessing.Queue()
 
+        self.last_start_time = None
+
     def start(self):
         if self.process and self.process.is_alive():
             _logger.info("Instance '%s' already running.", self.instance_name)
@@ -131,6 +133,8 @@ class InstanceWrapper:
                                 self.instance_name
                 _logger.error(error_message)
                 raise Exception(error_message)
+
+        self.last_start_time = time.strftime(config.TIME_FORMAT)
 
     def stop(self):
         if not self.process:

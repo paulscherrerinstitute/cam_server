@@ -54,3 +54,9 @@ PIPELINE_DEFAULT_N_IMAGES_FOR_BACKGROUND = 10
 PROCESS_COMMUNICATION_TIMEOUT = 5
 # Interval used when polling the state from the process.
 PROCESS_POLL_INTERVAL = 0.1
+
+####################
+# General settings #
+####################
+
+TIME_FORMAT = "%Y-%m-%d %H%:%M:%S UTC%z"
