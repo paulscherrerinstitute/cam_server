@@ -210,7 +210,7 @@ class PipelineProcessingTest(unittest.TestCase):
         self.assertTrue(all((x in result for x in good_region_keys)), 'There should be good region keys.')
         self.assertTrue(all((result[x] is None for x in good_region_keys)), 'All values should be None.')
 
-        number_of_slices = 2
+        number_of_slices = 7
 
         parameters = PipelineConfig("test_pipeline", {
             "camera_name": "simulation",
