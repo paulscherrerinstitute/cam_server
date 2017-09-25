@@ -94,7 +94,8 @@ To build the docker image, run the build from the **docker/** folder:
 Before building the docker image, make sure the latest version of the library is available in Anaconda.
 
 **Please note**: There is no need to build the image if you just want to run the docker container. 
-Please see the **Running the server** chapter.
+Please see the [Docker Container](#run_docker_container) chapter.
+
 
 <a id="basic_concepts"></a>
 ## Basic concepts
