@@ -189,7 +189,7 @@ class PipelineClientTest(unittest.TestCase):
         # Print the list of available cameras.
         print(cam_client.get_cameras())
 
-        # TODO: Put the name of the camera you want to modify.
+        # Put the name of the camera you want to modify.
         camera_to_modify = "test_camera"
 
         # Retrieve the camera config.
@@ -228,7 +228,7 @@ class PipelineClientTest(unittest.TestCase):
         # Print the list of available pipelines.
         print(pipeline_client.get_pipelines())
 
-        # TODO: Put the name of the pipeline you want to modify.
+        # Put the name of the pipeline you want to modify.
         pipeline_to_modify = "test_pipeline"
 
         # Retrieve the camera config.

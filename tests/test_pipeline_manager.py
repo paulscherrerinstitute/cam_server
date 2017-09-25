@@ -209,7 +209,8 @@ class PipelineManagerTest(unittest.TestCase):
             },
             "image_slices": {
                 "number_of_slices": 6,
-                "scale": 7
+                "scale": 7,
+                "orientation": "vertical"
             },
             "pipeline_type": "processing"
         }

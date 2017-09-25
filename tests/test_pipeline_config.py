@@ -146,7 +146,7 @@ class PipelineConfigTest(unittest.TestCase):
                             "Missing keys in camera calibration.")
 
         self.assertSetEqual(set(complete_config["image_slices"].keys()),
-                            set(["number_of_slices", "scale"]),
+                            set(["number_of_slices", "scale", "orientation"]),
                             "Missing keys in camera calibration.")
 
     def test_update_pipeline_config(self):
