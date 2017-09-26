@@ -181,18 +181,14 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                                                                                gr_y_fit_standard_deviation,
                                                                                scaling=scale,
                                                                                number_of_slices=slice_number)
-                    # TODO: Config to change this?
+
                     if orientation == "vertical":
-                        orientation_slices = y_slice_data
+                        slice_data = y_slice_data
                         slice_length = y_slice_length
-                        coupling_slices = x_slice_data
-                        standard_deviation = gr_x_fit_standard_deviation
 
                     elif orientation == "horizontal":
-                        orientation_slices = x_slice_data
+                        slice_data = x_slice_data
                         slice_length = x_slice_length
-                        coupling_slices = y_slice_data
-                        standard_deviation = gr_y_fit_standard_deviation
 
                     else:
                         raise ValueError("Invalid slice orientation '%s'." % orientation)
@@ -201,23 +197,22 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
 
                     # Add return values
                     counter = 0
-                    for data in orientation_slices:
+                    for data in slice_data:
                         return_value["slice_%s_center_x" % counter] = data[0][0]
                         return_value["slice_%s_center_y" % counter] = data[0][1]
                         return_value["slice_%s_standard_deviation" % counter] = data[1]
                         return_value["slice_%s_intensity" % counter] = data[2]
                         counter += 1
 
-                    # TODO: Ask Eduard about if this is useful when we have 'horizontal' slices.
-                    # Calculate x/y coupling
+                    # Calculate x/y coupling, always out of horizontal (x axis) slices.
                     x = []
                     y = []
-                    for data in coupling_slices:
+                    for data in x_slice_data:
                         x.append(float(data[0][0]))  # x
                         y.append(float(data[0][1]))  # y
 
                     slope, offset = functions.linear_fit(x, y)
-                    return_value["coupling"] = slope * (standard_deviation ** 2)
+                    return_value["coupling"] = slope * (gr_x_fit_standard_deviation ** 2)
 
                 except:  # Except for slices
                     _logger.exception('Unable to apply slices')
