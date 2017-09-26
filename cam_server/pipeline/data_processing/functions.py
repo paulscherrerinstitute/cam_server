@@ -188,7 +188,6 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
     index_center = find_index(axis, center)
     index_half_slice = find_index(axis, center + size_slice / 2)
     n_pixel_half_slice = abs(index_half_slice - index_center)
-    slice_length = abs(axis[index_half_slice] - axis[index_center]) * 2
 
     if n_pixel_half_slice < 1:
         _logging.info('Calculated number of pixel of a slice size [%d] is less than 1 - default to 1',
@@ -198,7 +197,6 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
     n_pixel_slice = 2 * n_pixel_half_slice
 
     list_slices_indexes = []
-    counter_slices = number_of_slices
 
     # Add middle slice - located half/half on center
     start_index = index_center - n_pixel_half_slice
@@ -206,8 +204,13 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
     list_slices_indexes.append(start_index)
     list_slices_indexes.append(end_index)
 
+    # The slice length is the difference in axis value from the start to the end of the axis.
+    slice_length = abs(axis[start_index] - axis[end_index])
+
+    # We subtract 1 because we already added the middle slice.
+    counter_slices = number_of_slices - 1
+
     # Calculate outer slices
-    counter_slices -= 1
     number_of_elements_axis = len(axis)
     while counter_slices > 0:
         start_index -= n_pixel_slice

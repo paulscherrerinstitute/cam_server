@@ -32,8 +32,11 @@ class FunctionsTest(unittest.TestCase):
 
         axis = numpy.array(range(size)).astype('f')
 
-        indexes, n_indices_half_slice = calculate_slices(axis, center, standard_deviation,
-                                                         scaling=2, number_of_slices=11)
+        indexes, n_indices_half_slice, slice_length = calculate_slices(axis, center, standard_deviation,
+                                                                       scaling=2, number_of_slices=11)
+        self.assertEqual(slice_length, abs(axis[0]-axis[n_indices_half_slice*2]),
+                         "The slice length should be the difference between the start and stop index of the axis value")
+
         # we expect 11 slices - as the middle slice is half half in the center, therefore 12 indexes are needed
         self.assertEqual(len(indexes), 12)
 
@@ -49,8 +52,11 @@ class FunctionsTest(unittest.TestCase):
         # move the axis values to the left
         axis = numpy.array(range(100, 100 + size)).astype('f')
 
-        indexes, n_indices_half_slice = calculate_slices(axis, center, standard_deviation,
-                                                         scaling=2, number_of_slices=5)
+        indexes, n_indices_half_slice, slice_length = calculate_slices(axis, center, standard_deviation,
+                                                                       scaling=2, number_of_slices=5)
+        self.assertEqual(slice_length, abs(axis[0] - axis[n_indices_half_slice * 2]),
+                         "The slice length should be the difference between the start and stop index of the axis value")
+
         # we expect 5 slices - therefore 6 indexes are needed
         self.assertEqual(len(indexes), 6)
 
@@ -62,8 +68,11 @@ class FunctionsTest(unittest.TestCase):
         self.assertEqual(indexes, [190, 194, 198, 202, 206, 210])
 
         standard_deviation = 3
-        indexes, n_indices_half_slice = calculate_slices(axis, center, standard_deviation,
-                                                         scaling=2, number_of_slices=5)
+        indexes, n_indices_half_slice, slice_length = calculate_slices(axis, center, standard_deviation,
+                                                                       scaling=2, number_of_slices=5)
+        self.assertEqual(slice_length, abs(axis[0] - axis[n_indices_half_slice * 2]),
+                         "The slice length should be the difference between the start and stop index of the axis value")
+
         # 2*6/5 /2 = 0.6 - We expect a half slice size to be at least 1
         self.assertEqual(n_indices_half_slice, 1)
 
@@ -73,8 +82,11 @@ class FunctionsTest(unittest.TestCase):
 
         axis = numpy.array(range(size)).astype('f')
 
-        indexes, n_indices_half_slice = calculate_slices(axis, center, standard_deviation,
-                                                         scaling=2, number_of_slices=11)
+        indexes, n_indices_half_slice, slice_length = calculate_slices(axis, center, standard_deviation,
+                                                                       scaling=2, number_of_slices=11)
+
+        self.assertEqual(slice_length, abs(axis[0] - axis[n_indices_half_slice * 2]),
+                         "The slice length should be the difference between the start and stop index of the axis value")
 
         # 2*12/11 /2  = 1.0909...  - We expect a half slice size to be 1
         self.assertEqual(n_indices_half_slice, 1)
