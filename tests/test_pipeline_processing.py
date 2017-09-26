@@ -240,14 +240,17 @@ class PipelineProcessingTest(unittest.TestCase):
 
     def test_slices(self):
 
-        def run_the_pipeline(configuration):
+        def run_the_pipeline(configuration, simulated_image=None):
             parameters = PipelineConfig("test_pipeline", configuration).get_configuration()
 
             simulated_camera = CameraSimulation(CameraConfig("simulation"))
-            image = simulated_camera.get_image()
+
+            if simulated_image is None:
+                simulated_image = simulated_camera.get_image()
+
             x_axis, y_axis = simulated_camera.get_x_y_axis()
 
-            return process_image(image=image, timestamp=time.time(), x_axis=x_axis, y_axis=y_axis,
+            return process_image(image=simulated_image, timestamp=time.time(), x_axis=x_axis, y_axis=y_axis,
                                  parameters=parameters)
 
         pipeline_configuration = {
@@ -293,6 +296,41 @@ class PipelineProcessingTest(unittest.TestCase):
             }
 
             run_the_pipeline(pipeline_configuration)
+
+        image = CameraSimulation(CameraConfig("simulation")).get_image()
+
+        pipeline_configuration = {
+            "camera_name": "simulation",
+            "image_good_region": {
+                "threshold": 0.1
+            },
+            "image_slices": {
+                "orientation": "vertical"
+            }
+        }
+
+        result_1 = run_the_pipeline(pipeline_configuration, image)
+        result_2 = run_the_pipeline(pipeline_configuration, image)
+
+        # 2 calculations with the same data should give the same result.
+        self.assertEqual(result_1["slice_0_center_x"], result_2["slice_0_center_x"])
+        self.assertEqual(result_1["slice_0_center_y"], result_2["slice_0_center_y"])
+
+        pipeline_configuration = {
+            "camera_name": "simulation",
+            "image_good_region": {
+                "threshold": 0.1
+            },
+            "image_slices": {
+                "orientation": "horizontal"
+            }
+        }
+
+        result_3 = run_the_pipeline(pipeline_configuration, image)
+
+        # If we orientate the slices horizontally, the slice center has to change.
+        self.assertNotEqual(result_1["slice_0_center_x"], result_3["slice_0_center_x"])
+        self.assertNotEqual(result_1["slice_0_center_y"], result_3["slice_0_center_y"])
 
     def test_calculate_slices_invalid_input(self):
         with self.assertRaisesRegex(ValueError, "Number of slices must be odd."):
