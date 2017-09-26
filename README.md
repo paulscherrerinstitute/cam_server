@@ -154,9 +154,9 @@ We currently store the configurations in files, but REDIS is planned to be used 
 
 The expected folder structure for the configuration (which can be changed by passing parameters to the executables):
 
-- configuration/camera : Folder where JSON files with camera configurations are located.
-- configuration/pipeline : Folder where JSON files with pipeline configurations are located.
-- configuration/background : Folder where NPY files with camera backgrounds are located.
+- configuration/camera_config : Folder where JSON files with camera configurations are located.
+- configuration/pipeline_config : Folder where JSON files with pipeline configurations are located.
+- configuration/background_config : Folder where NPY files with camera backgrounds are located.
 
 <a id="camera_configuration"></a>
 ### Camera configuration
