@@ -246,11 +246,11 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
             slice_y_profile = slice_n.sum(1)
             pixel_intensity = slice_n.sum()
 
-            gauss_function, offset, amplitude, center_y, standard_deviation, _, _ = gauss_fit(slice_y_profile, y_axis)
-
             # Does x need to be the middle of slice? - currently it is
-            slice_data.append(([x_axis[list_slices[i] + n_pixel_half_slice], center_y], standard_deviation,
-                               pixel_intensity))
+            center_x = x_axis[list_slices[i] + n_pixel_half_slice]
+
+            gauss_function, offset, amplitude, center_y, standard_deviation, _, _ = gauss_fit(slice_y_profile, y_axis)
+            slice_data.append(([center_x, center_y], standard_deviation, pixel_intensity))
         else:
             _logging.info('Drop slice')
 
