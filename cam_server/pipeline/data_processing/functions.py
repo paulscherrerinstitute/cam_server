@@ -168,11 +168,11 @@ def slice_image(image, number_of_slices=1, vertical=False):
     if vertical:
         image = image.T  # transpose
 
-    slice_size = image.shape[0]/number_of_slices
+    slice_size = image.shape[0] / number_of_slices
     slices = numpy.empty((number_of_slices, image.shape[1]))
 
     for i in range(number_of_slices):
-        slices[i] = image[i*slice_size:(i+1)*slice_size, :].sum(0)
+        slices[i] = image[i * slice_size:(i + 1) * slice_size, :].sum(0)
 
     return slices
 
@@ -188,6 +188,7 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
     index_center = find_index(axis, center)
     index_half_slice = find_index(axis, center + size_slice / 2)
     n_pixel_half_slice = abs(index_half_slice - index_center)
+    slice_length = abs(axis[index_half_slice] - axis[index_center]) * 2
 
     if n_pixel_half_slice < 1:
         _logging.info('Calculated number of pixel of a slice size [%d] is less than 1 - default to 1',
@@ -220,7 +221,7 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
 
         counter_slices -= 2
 
-    return list_slices_indexes, n_pixel_half_slice
+    return list_slices_indexes, n_pixel_half_slice, slice_length
 
 
 def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, scaling=2, number_of_slices=11):
@@ -229,11 +230,8 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
     :return: <center [x,y]>, <standard deviation>, <intensity>
     """
 
-    list_slices, n_pixel_half_slice = calculate_slices(x_axis, x_center, x_standard_deviation, scaling,
-                                                       number_of_slices)
-
-    # TODO: Where to get the slice length from?
-    slice_length = 0
+    list_slices, n_pixel_half_slice, slice_length = calculate_slices(x_axis, x_center, x_standard_deviation, scaling,
+                                                                     number_of_slices)
 
     slice_data = []
 
@@ -248,7 +246,7 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
             gauss_function, offset, amplitude, center_y, standard_deviation, _, _ = gauss_fit(slice_y_profile, y_axis)
 
             # Does x need to be the middle of slice? - currently it is
-            slice_data.append(([x_axis[list_slices[i]+n_pixel_half_slice], center_y], standard_deviation,
+            slice_data.append(([x_axis[list_slices[i] + n_pixel_half_slice], center_y], standard_deviation,
                                pixel_intensity))
         else:
             _logging.info('Drop slice')
@@ -262,11 +260,8 @@ def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, sca
     :return: <center [x,y]>, <standard deviation>, <intensity>
     """
 
-    list_slices, n_pixel_half_slice = calculate_slices(y_axis, y_center, y_standard_deviation, scaling,
-                                                       number_of_slices)
-
-    # TODO: Where to get the slice length from?
-    slice_length = 0
+    list_slices, n_pixel_half_slice, slice_length = calculate_slices(y_axis, y_center, y_standard_deviation, scaling,
+                                                                     number_of_slices)
 
     slice_data = []
 
@@ -281,7 +276,7 @@ def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, sca
             gauss_function, offset, amplitude, center_x, standard_deviation, _, _ = gauss_fit(slice_x_profile, x_axis)
 
             # Does x need to be the middle of slice? - currently it is
-            slice_data.append(([center_x, y_axis[list_slices[i]+n_pixel_half_slice]], standard_deviation,
+            slice_data.append(([center_x, y_axis[list_slices[i] + n_pixel_half_slice]], standard_deviation,
                                pixel_intensity))
         else:
             _logging.info('Drop slice')
