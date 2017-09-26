@@ -101,7 +101,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                     initialize_slices_values(slices["number_of_slices"])
 
             def initialize_slices_values(number_of_slices):
-                return_value["slice_number"] = number_of_slices
+                return_value["slice_amount"] = number_of_slices
                 return_value["slice_length"] = None
 
                 for i in range(number_of_slices):
@@ -186,11 +186,13 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                         orientation_slices = y_slice_data
                         slice_length = y_slice_length
                         coupling_slices = x_slice_data
+                        standard_deviation = gr_x_fit_standard_deviation
 
                     elif orientation == "horizontal":
                         orientation_slices = x_slice_data
                         slice_length = x_slice_length
                         coupling_slices = y_slice_data
+                        standard_deviation = gr_y_fit_standard_deviation
 
                     else:
                         raise ValueError("Invalid slice orientation '%s'." % orientation)
@@ -206,6 +208,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                         return_value["slice_%s_intensity" % counter] = data[2]
                         counter += 1
 
+                    # TODO: Ask Eduard about if this is useful when we have 'horizontal' slices.
                     # Calculate x/y coupling
                     x = []
                     y = []
@@ -214,9 +217,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                         y.append(float(data[0][1]))  # y
 
                     slope, offset = functions.linear_fit(x, y)
-
-                    # TODO need to calculate: slope * sigma(x)^2
-                    return_value["coupling"] = slope * (gr_x_fit_standard_deviation ** 2)
+                    return_value["coupling"] = slope * (standard_deviation ** 2)
 
                 except:  # Except for slices
                     _logger.exception('Unable to apply slices')

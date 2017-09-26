@@ -262,7 +262,7 @@ class PipelineProcessingTest(unittest.TestCase):
 
         result = run_the_pipeline(pipeline_configuration)
 
-        self.assertEqual(result["slice_number"], 9)
+        self.assertEqual(result["slice_amount"], 9)
         self.assertEqual(result["slice_orientation"], "vertical", "Default slice orientation should be vertical.")
         self.assertTrue("slice_length" in result)
 
