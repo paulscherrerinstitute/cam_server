@@ -126,7 +126,8 @@ def store_pipeline(stop_event, statistics, parameter_queue,
     try:
 
         camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
-        _logger.debug("Connecting to camera stream address %s.", camera_stream_address)
+        camera_name = pipeline_config.get_camera_name()
+        _logger.debug("Connecting to camera %s on stream address %s.", camera_name, camera_stream_address)
 
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
 
@@ -156,12 +157,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
                 if data is None:
                     continue
 
-                forward_data = {"image": data.data.data["image"].value,
-                                "timestamp": data.data.data["timestamp"].value,
-                                "x_axis": data.data.data["x_axis"].value,
-                                "y_axis": data.data.data["y_axis"].value,
-                                "width": data.data.data["width"].value,
-                                "height": data.data.data["height"].value}
+                forward_data = {camera_name: data.data.data["image"].value}
 
                 sender.send(data=forward_data)
 
