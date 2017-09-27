@@ -209,7 +209,7 @@ class PipelineTransceiverTest(unittest.TestCase):
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
 
-            required_keys = set(["image", "timestamp", "x_axis", "y_axis", "width", "height"])
+            required_keys = set(["simulation"])
 
             self.assertSetEqual(required_keys, set(data.data.data.keys()),
                                 "Missing required keys in pipeline output bsread message.")
