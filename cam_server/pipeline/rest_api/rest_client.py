@@ -94,8 +94,8 @@ class PipelineClient(object):
         :param configuration: Configuration of the instance.
         :return: Pipeline instance stream.
         """
-        rest_endpoint = "/instance"
-        server_response = requests.get(self.api_address_format % rest_endpoint,
+        rest_endpoint = "/instance/"
+        server_response = requests.post(self.api_address_format % rest_endpoint,
                                        json=configuration).json()
 
         return validate_response(server_response)["stream"]
