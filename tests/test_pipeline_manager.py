@@ -543,8 +543,7 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertNotEqual(instance_stream_1, instance_stream_3)
 
         instance_id_4, instance_stream_4 = instance_manager.create_pipeline(configuration=configuration_1)
-        instance_id_5, instance_stream_5 = instance_manager.get_instance_stream_from_config(
-            configuration=configuration_1)
+        instance_id_5, instance_stream_5 = instance_manager.get_instance_stream_from_config(configuration_1)
 
         self.assertFalse(instance_manager.get_instance(instance_id_4).is_read_only_config())
         self.assertTrue(instance_manager.get_instance(instance_id_5).is_read_only_config())
@@ -554,6 +553,22 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertNotEqual(instance_stream_4, instance_stream_5,
                             "Only read only instances can be returned by get_instance_stream_from_config.")
 
+        instance_manager.stop_all_instances()
+
+        old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
+        config.MFLOW_NO_CLIENTS_TIMEOUT = 1
+
+        instance_id_6, instance_stream_6 = instance_manager.get_instance_stream_from_config(configuration_1)
+        # Lets be sure that the instance goes down.
+        sleep(2)
+        self.assertFalse(instance_id_6 in instance_manager.get_info()["active_instances"],
+                         "Instance not stopped yet.")
+
+        instance_id_7, instance_stream_7 = instance_manager.get_instance_stream_from_config(configuration_1)
+
+        self.assertNotEqual(instance_id_6, instance_id_7, "A new instance id should be assigned here.")
+
+        config.MFLOW_NO_CLIENTS_TIMEOUT = old_timeout
         instance_manager.stop_all_instances()
 
 

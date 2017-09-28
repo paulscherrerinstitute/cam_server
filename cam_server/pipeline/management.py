@@ -141,13 +141,16 @@ class PipelineInstanceManager(InstanceManager):
         pipeline_config = PipelineConfig(None, parameters=configuration)
 
         instance_id = self._find_instance_id_with_config(pipeline_config)
-        if instance_id is None:
-            instance_id = str(uuid.uuid4())
-
         self._delete_stopped_instance(instance_id)
 
         if self.is_instance_present(instance_id):
             return instance_id, self.get_instance(instance_id).get_stream_address()
+        else:
+            # If the instance is not present, it was deleted because it was stopped.
+            instance_id = None
+
+        if instance_id is None:
+            instance_id = str(uuid.uuid4())
 
         self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=True)
 
