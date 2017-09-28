@@ -76,7 +76,7 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
                     "y_axis": y_axis}
 
             try:
-                sender.send(data=data, check_data=False)
+                sender.send(data=data, timestamp=timestamp, check_data=False)
             except Again:
                 _logger.warning("Send timeout. Lost image with timestamp '%s'." % timestamp)
 

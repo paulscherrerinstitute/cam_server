@@ -91,7 +91,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 processed_data["width"] = processed_data["image"].shape[1]
                 processed_data["height"] = processed_data["image"].shape[0]
 
-                sender.send(data=processed_data)
+                sender.send(data=processed_data, timestamp=timestamp)
 
             except:
                 _logger.exception("Could not process message.")
