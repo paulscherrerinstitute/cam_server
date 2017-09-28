@@ -59,8 +59,7 @@ class PipelineClientTest(unittest.TestCase):
         sleep(1)
 
     def test_client(self):
-        expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3", "pipeline_example_4",
-                              "store_simulation"]
+        expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3", "pipeline_example_4"]
         self.assertListEqual(self.pipeline_client.get_pipelines(), expected_pipelines,
                              "Test config pipelines have changed?")
 
@@ -277,6 +276,15 @@ class PipelineClientTest(unittest.TestCase):
         self.assertEqual(set(self.pipeline_client.get_cameras()), set(expected_cameras),
                          "Expected cameras not present.")
 
+        configuration = {"camera_name": "simulation",
+                         "threshold": 50}
+
+        stream_address_1 = self.pipeline_client.get_instance_stream_from_config(configuration)
+        stream_address_2 = self.pipeline_client.get_instance_stream_from_config(configuration)
+
+        self.assertEqual(stream_address_1, stream_address_2,
+                         "Requesting the same config should give you the same instance.")
+
         self.pipeline_client.stop_all_instances()
 
     def test_store_pipeline(self):
@@ -294,14 +302,6 @@ class PipelineClientTest(unittest.TestCase):
         self.assertIsNotNone(data)
         self.assertEqual(len(data.data.data), 1, "Only the image should be present in the received data.")
         self.assertTrue("simulation" in data.data.data, "Camera name should be used instead of 'image'.")
-
-        self.pipeline_client.stop_all_instances()
-
-        stream_address_1 = self.pipeline_client.get_instance_stream("store_simulation")
-        stream_address_2 = self.pipeline_client.get_instance_stream("store_simulation")
-
-        self.assertEqual(stream_address_1, stream_address_2,
-                         "Requesting the same storage pipeline twice should return the same stream address.")
 
         self.pipeline_client.stop_all_instances()
 

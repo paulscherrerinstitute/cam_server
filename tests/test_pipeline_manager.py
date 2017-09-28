@@ -520,5 +520,42 @@ class PipelineManagerTest(unittest.TestCase):
 
         instance_manager.stop_all_instances()
 
+    def test_get_instance_from_config(self):
+        instance_manager = get_test_pipeline_manager_with_real_cam()
+        configuration_1 = {"camera_name": "simulation",
+                           "pipeline_type": "store"}
+
+        instance_id_1, instance_stream_1 = instance_manager.get_instance_stream_from_config(configuration_1)
+        instance_id_2, instance_stream_2 = instance_manager.get_instance_stream_from_config(configuration_1)
+
+        self.assertEqual(instance_id_1, instance_id_2)
+        self.assertEqual(instance_stream_1, instance_stream_2)
+        self.assertTrue(instance_manager.get_instance(instance_id_1).is_read_only_config())
+
+        configuration_2 = {"camera_name": "simulation",
+                           "pipeline_type": "processing"}
+
+        instance_id_3, instance_stream_3 = instance_manager.get_instance_stream_from_config(configuration_2)
+
+        self.assertTrue(instance_manager.get_instance(instance_id_3).is_read_only_config())
+
+        self.assertNotEqual(instance_id_1, instance_id_3)
+        self.assertNotEqual(instance_stream_1, instance_stream_3)
+
+        instance_id_4, instance_stream_4 = instance_manager.create_pipeline(configuration=configuration_1)
+        instance_id_5, instance_stream_5 = instance_manager.get_instance_stream_from_config(
+            configuration=configuration_1)
+
+        self.assertFalse(instance_manager.get_instance(instance_id_4).is_read_only_config())
+        self.assertTrue(instance_manager.get_instance(instance_id_5).is_read_only_config())
+
+        self.assertNotEqual(instance_id_4, instance_id_5,
+                            "Only read only instances can be returned by get_instance_stream_from_config.")
+        self.assertNotEqual(instance_stream_4, instance_stream_5,
+                            "Only read only instances can be returned by get_instance_stream_from_config.")
+
+        instance_manager.stop_all_instances()
+
+
 if __name__ == '__main__':
     unittest.main()

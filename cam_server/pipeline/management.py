@@ -54,6 +54,30 @@ class PipelineInstanceManager(InstanceManager):
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
 
+    def _create_and_start_pipeline(self, instance_id, pipeline_config, read_only_pipeline):
+        stream_port = self._get_next_available_port(instance_id)
+
+        camera_name = pipeline_config.get_camera_name()
+
+        if not self.cam_server_client.is_camera_online(camera_name):
+            raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
+
+        _logger.info("Creating pipeline on port '%d' for camera '%s'. instance_id=%s",
+                     instance_id, stream_port, camera_name, instance_id)
+
+        self.add_instance(instance_id, PipelineInstance(
+            instance_id=instance_id,
+            process_function=get_pipeline_function(pipeline_config.get_pipeline_type()),
+            pipeline_config=pipeline_config,
+            output_stream_port=stream_port,
+            cam_client=self.cam_server_client,
+            background_manager=self.background_manager,
+            hostname=self.hostname,
+            read_only_config=read_only_pipeline
+        ))
+
+        self.start_instance(instance_id)
+
     def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
         """
         Create the pipeline stream address. Either pass the pipeline name, or the configuration.
@@ -83,27 +107,7 @@ class PipelineInstanceManager(InstanceManager):
         else:
             pipeline_config = self.config_manager.load_pipeline(pipeline_name)
 
-        stream_port = self._get_next_available_port(instance_id)
-
-        camera_name = pipeline_config.get_camera_name()
-
-        if not self.cam_server_client.is_camera_online(camera_name):
-            raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
-
-        _logger.info("Creating pipeline '%s' on port '%d' for camera '%s'. instance_id=%s",
-                     pipeline_name, stream_port, camera_name, instance_id)
-
-        self.add_instance(instance_id, PipelineInstance(
-            instance_id=instance_id,
-            process_function=get_pipeline_function(pipeline_config.get_pipeline_type()),
-            pipeline_config=pipeline_config,
-            output_stream_port=stream_port,
-            cam_client=self.cam_server_client,
-            background_manager=self.background_manager,
-            hostname=self.hostname
-        ))
-
-        self.start_instance(instance_id)
+        self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=False)
 
         pipeline_instance = self.get_instance(instance_id)
 
@@ -121,30 +125,33 @@ class PipelineInstanceManager(InstanceManager):
             raise ValueError("Instance '%s' is not present on server and it is not a saved pipeline name." %
                              instance_id)
 
-        stream_port = self._get_next_available_port(instance_id)
-
-        camera_name = pipeline_config.get_camera_name()
-
-        if not self.cam_server_client.is_camera_online(camera_name):
-            raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
-
-        _logger.info("Creating pipeline '%s' on port '%d' for camera '%s'. instance_id=%s",
-                     instance_id, stream_port, camera_name, instance_id)
-
-        self.add_instance(instance_id, PipelineInstance(
-            instance_id=instance_id,
-            process_function=get_pipeline_function(pipeline_config.get_pipeline_type()),
-            pipeline_config=pipeline_config,
-            output_stream_port=stream_port,
-            cam_client=self.cam_server_client,
-            background_manager=self.background_manager,
-            hostname=self.hostname,
-            read_only_config=True  # Implicitly created instances are read only.
-        ))
-
-        self.start_instance(instance_id)
+        self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=True)
 
         return self.get_instance(instance_id).get_stream_address()
+
+    def _find_instance_id_with_config(self, pipeline_config):
+        # Search for read-only pipelines with the same config.
+        for read_only_instance in (x for x in self.instances.values() if x.is_read_only_config()):
+            if pipeline_config == read_only_instance.pipeline_config:
+                return read_only_instance.get_instance_id()
+
+        return None
+
+    def get_instance_stream_from_config(self, configuration):
+        pipeline_config = PipelineConfig(None, parameters=configuration)
+
+        instance_id = self._find_instance_id_with_config(pipeline_config)
+        if instance_id is None:
+            instance_id = str(uuid.uuid4())
+
+        self._delete_stopped_instance(instance_id)
+
+        if self.is_instance_present(instance_id):
+            return instance_id, self.get_instance(instance_id).get_stream_address()
+
+        self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=True)
+
+        return instance_id, self.get_instance(instance_id).get_stream_address()
 
     def update_instance_config(self, instance_id, config_updates):
         self._delete_stopped_instance(instance_id)
@@ -227,3 +234,6 @@ class PipelineInstance(InstanceWrapper):
 
     def get_stream_port(self):
         return self.stream_port
+
+    def is_read_only_config(self):
+        return self.read_only_config

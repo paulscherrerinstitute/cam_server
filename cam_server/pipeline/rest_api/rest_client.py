@@ -86,6 +86,20 @@ class PipelineClient(object):
 
         return validate_response(server_response)["stream"]
 
+    def get_instance_stream_from_config(self, configuration):
+        """
+        Return an instance stream with the matching configuration.
+        If the instance does not exist, it will be created.
+        Instance will be read only - no config changes will be allowed.
+        :param configuration: Configuration of the instance.
+        :return: Pipeline instance stream.
+        """
+        rest_endpoint = "/instance"
+        server_response = requests.get(self.api_address_format % rest_endpoint,
+                                       json=configuration).json()
+
+        return validate_response(server_response)["stream"]
+
     def create_instance_from_name(self, pipeline_name, instance_id=None):
         """
         Create a pipeline from a config file. Pipeline config can be changed.

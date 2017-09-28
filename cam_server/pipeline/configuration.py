@@ -204,7 +204,6 @@ class PipelineConfig:
         # Verify if the pipeline exists.
         get_pipeline_function(configuration["pipeline_type"])
 
-
     @staticmethod
     def expand_config(configuration):
 
@@ -234,3 +233,13 @@ class PipelineConfig:
 
     def get_pipeline_type(self):
         return self.parameters["pipeline_type"]
+
+    def __eq__(self, other):
+        """
+        If the parameters are equal, the pipelines are equal.
+        """
+        if isinstance(other, self.__class__):
+            return self.parameters == other.parameters
+
+        return False
+

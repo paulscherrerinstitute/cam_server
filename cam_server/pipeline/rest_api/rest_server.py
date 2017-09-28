@@ -72,6 +72,18 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Stream address for pipeline %s." % instance_id,
                 "stream": stream_address}
 
+    @app.get(api_root_address + '/instance')
+    def get_instance_stream_from_config():
+        pipeline_config = request.json
+
+        instance_id, stream_address = instance_manager.get_instance_stream_from_config(configuration=pipeline_config)
+
+        return {"state": "ok",
+                "status": "Stream address for pipeline %s." % instance_id,
+                "instance_id": instance_id,
+                "stream": stream_address,
+                "config": instance_manager.get_instance(instance_id).get_configuration()}
+
     @app.get(api_root_address + '/instance/<instance_id>/info')
     def get_instance_info(instance_id):
         return {"state": "ok",
