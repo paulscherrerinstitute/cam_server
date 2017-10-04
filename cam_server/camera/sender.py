@@ -1,6 +1,5 @@
 from logging import getLogger
 
-import numpy
 from bsread.sender import Sender, PUB
 from zmq import Again
 
@@ -9,8 +8,8 @@ from cam_server import config
 _logger = getLogger(__name__)
 
 
-def process_camera_stream(stop_event, statistics, parameter_queue,
-                          camera, port):
+def process_epics_camera(stop_event, statistics, parameter_queue,
+                         camera, port):
     """
     Start the camera stream and listen for image monitors. This function blocks until stop_event is set.
     :param stop_event: Event when to stop the process.
@@ -103,3 +102,17 @@ def process_camera_stream(stop_event, statistics, parameter_queue,
 
         if sender:
             sender.close()
+
+
+source_type_to_sender_function_mapping = {
+    "epics": process_epics_camera,
+    "simulation": process_epics_camera
+}
+
+
+def get_sender_function(source_type_name):
+    if source_type_name not in source_type_to_sender_function_mapping:
+        raise ValueError("source_type '%s' not present in sender function mapping. Available: %s." %
+                         (source_type_name, list(source_type_to_sender_function_mapping.keys())))
+
+    return source_type_to_sender_function_mapping[source_type_name]

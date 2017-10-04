@@ -2,7 +2,7 @@ import socket
 from logging import getLogger
 
 from cam_server import config
-from cam_server.camera.sender import process_camera_stream
+from cam_server.camera.sender import get_sender_function
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 from cam_server.utils import get_port_generator
 
@@ -37,8 +37,10 @@ class CameraInstanceManager(InstanceManager):
 
             _logger.info("Creating camera instance '%s' on port %d.", camera_name, stream_port)
 
+            camera_config = self.config_manager.get_camera_config(camera_name)
+
             self.add_instance(camera_name, CameraInstance(
-                process_function=process_camera_stream,
+                process_function=get_sender_function(camera_config.get_source_type()),
                 camera=camera,
                 stream_port=stream_port,
                 hostname=self.hostname

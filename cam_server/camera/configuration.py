@@ -1,8 +1,7 @@
 import copy
 from collections import OrderedDict
 
-from cam_server.camera.source.epics import Camera
-from cam_server.camera.source.simulation import CameraSimulation
+from cam_server.camera.source.utils import get_source_class
 
 
 class CameraConfigManager(object):
@@ -16,9 +15,6 @@ class CameraConfigManager(object):
         """
         configured_cameras = self.config_provider.get_available_configs()
 
-        # Add simulation cam_server.
-        configured_cameras.append('simulation')
-
         return configured_cameras
 
     def get_camera_config(self, camera_name):
@@ -27,12 +23,7 @@ class CameraConfigManager(object):
         :param camera_name: Name of the cam_server to retrieve the config for.
         :return: Camera config dictionary.
         """
-        # Simulation cam_server is not defined in the config.
-        if camera_name.lower() == "simulation":
-            configuration = None
-        else:
-            configuration = self.config_provider.get_config(camera_name)
-
+        configuration = self.config_provider.get_config(camera_name)
         return CameraConfig(camera_name, parameters=configuration)
 
     def delete_camera_config(self, camera_name):
@@ -40,10 +31,6 @@ class CameraConfigManager(object):
         Delete an existing config.
         :param camera_name: Name of the camera to delete.
         """
-
-        # Simulation cam_server is not defined in the config.
-        if camera_name.lower() == "simulation":
-            raise ValueError("Cannot delete simulation camera.")
 
         if camera_name not in self.get_camera_list():
             raise ValueError("Config '%s' does not exist." % camera_name)
@@ -56,13 +43,10 @@ class CameraConfigManager(object):
         :param camera_name: Camera to load.
         :return: Camera instance.
         """
-        # Simulation cam_server is not defined in the config.
-        if camera_name.lower() == 'simulation':
-            return CameraSimulation(CameraConfig("simulation"))
-
         camera_config = self.get_camera_config(camera_name)
+        camera_class = get_source_class(camera_config.get_source_type())
 
-        return Camera(camera_config)
+        return camera_class(camera_config)
 
     def save_camera_config(self, camera_name, config):
         """
@@ -72,8 +56,7 @@ class CameraConfigManager(object):
         """
         CameraConfig.validate_camera_config(config)
 
-        if not camera_name.lower() == 'simulation':
-            self.config_provider.save_config(camera_name, config)
+        self.config_provider.save_config(camera_name, config)
 
     def get_camera_geometry(self, camera_name):
         """
@@ -96,7 +79,8 @@ class CameraConfig:
         "camera_calibration": None,
         "mirror_x": False,
         "mirror_y": False,
-        "rotate": 0
+        "rotate": 0,
+        "source_type": "epics"
     }
 
     DEFAULT_CAMERA_CALIBRATION = {
@@ -136,6 +120,9 @@ class CameraConfig:
 
     def get_name(self):
         return self.camera_name
+
+    def get_source_type(self):
+        return self.parameters["source_type"]
 
     @staticmethod
     def validate_camera_config(configuration):
