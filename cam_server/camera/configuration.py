@@ -1,8 +1,8 @@
+import copy
 from collections import OrderedDict
 
-import copy
-
-from cam_server.camera.receiver import CameraSimulation, Camera
+from cam_server.camera.source.epics import Camera
+from cam_server.camera.source.simulation import CameraSimulation
 
 
 class CameraConfigManager(object):

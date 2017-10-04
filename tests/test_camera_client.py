@@ -1,7 +1,6 @@
 import os
 import signal
 import unittest
-
 from multiprocessing import Process
 from time import sleep
 
@@ -9,7 +8,7 @@ from bsread import source, SUB
 
 from cam_server import CamClient
 from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.receiver import CameraSimulation
+from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import get_host_port_from_stream_address
 

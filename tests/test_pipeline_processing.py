@@ -1,12 +1,11 @@
 import json
-import unittest
-
 import time
+import unittest
 
 import numpy
 
 from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.receiver import CameraSimulation
+from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.data_processing.functions import calculate_slices
 from cam_server.pipeline.data_processing.processor import process_image

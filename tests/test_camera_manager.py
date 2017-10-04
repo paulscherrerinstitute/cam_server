@@ -1,17 +1,16 @@
 import imghdr
 import unittest
+from io import BytesIO
 from time import sleep
 
 import numpy
 from PIL import Image
-from io import BytesIO
-
 from bsread import source, SUB
 
 from cam_server import config
 from cam_server.camera.configuration import CameraConfigManager, CameraConfig
 from cam_server.camera.management import CameraInstanceManager
-from cam_server.camera.receiver import CameraSimulation
+from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.data_processing.functions import get_png_from_image
 from cam_server.utils import get_host_port_from_stream_address, update_camera_config
 from tests.helpers.factory import get_test_instance_manager, MockConfigStorage

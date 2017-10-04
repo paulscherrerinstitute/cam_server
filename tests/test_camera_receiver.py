@@ -1,9 +1,7 @@
 import unittest
 
-import multiprocessing
-
 from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.receiver import CameraSimulation
+from cam_server.camera.source.simulation import CameraSimulation
 
 
 class CameraReceiverTest(unittest.TestCase):

@@ -1,7 +1,7 @@
 import unittest
 
 from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.receiver import CameraSimulation
+from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.utils import update_camera_config
 from tests.helpers.factory import get_test_instance_manager
 
