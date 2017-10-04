@@ -77,7 +77,8 @@ class CameraInstance(InstanceWrapper):
                 "camera_geometry": self.camera.get_geometry(),
                 "camera_name": self.camera.get_name(),
                 "last_start_time": self.last_start_time,
-                "statistics": self.get_statistics()}
+                "statistics": self.get_statistics(),
+                "config": self.get_configuration()}
 
     def get_configuration(self):
         return self.camera.camera_config.get_configuration()
