@@ -134,8 +134,8 @@ class CameraConfig:
         if not configuration:
             raise ValueError("Config object cannot be empty. Config: %s" % configuration)
 
-        if "prefix" not in configuration:
-            raise ValueError("Prefix not specified in configuration.")
+        if "source" not in configuration:
+            raise ValueError("'source' not specified in configuration.")
 
         def verify_attributes(section_name, section, mandatory_attributes):
             missing_attributes = [attr for attr in mandatory_attributes if attr not in section]

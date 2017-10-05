@@ -1,6 +1,7 @@
 {
   "name": "camera_example_4",
-  "prefix": "EPICS_example_4",
+  "source": "EPICS_example_4",
+  "source_type": "epics",
   "mirror_x": true,
   "mirror_y": false,
   "rotate": 4,

@@ -165,7 +165,8 @@ For camera configuration, all fields must be specified, and there is no defaulti
 #### Configuration parameters
 
 - **name**: Name of the camera.
-- **prefix**: PV prefix to connect to the camera.
+- **source**: Source of the camera (PV prefix, bsread stream)
+- **source_type**: Type of the source (available: epics, bsread)
 - **mirror\_x**: Mirror camera image over X axis.
 - **mirror\_y**: Mirror camera image over Y axis.
 - **rotate**: how many times to rotate the camera image by 90 degrees.
@@ -174,7 +175,8 @@ For camera configuration, all fields must be specified, and there is no defaulti
 ```json
 {
   "name": "example_4",
-  "prefix": "EPICS_example_4",
+  "source": "EPICS_example_4",
+  "source_type": "epics",
   "mirror_x": true,
   "mirror_y": false,
   "rotate": 4
@@ -873,7 +875,8 @@ cam_client = CamClient("http://sf-daqsync-01:8888/")
 # Specify the desired camera config.
 camera_config = {
   "name": "camera_example_3",
-  "prefix": "EPICS:CAM1:EXAMPLE",
+  "source": "EPICS:CAM1:EXAMPLE",
+  "source_type": "epics",
   "mirror_x": False,
   "mirror_y": False,
   "rotate": 0,
