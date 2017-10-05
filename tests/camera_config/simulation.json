@@ -1,5 +1,9 @@
 {
-  "name": "simulation",
-  "source": "",
-  "source_type": "simulation"
+ "camera_calibration": null,
+ "name": "simulation",
+ "source_type": "simulation",
+ "rotate": 0,
+ "mirror_x": false,
+ "source": "",
+ "mirror_y": false
 }
