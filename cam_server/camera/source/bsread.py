@@ -1,11 +1,11 @@
 from logging import getLogger
 
-from cam_server.camera.source.epics import Camera
+from cam_server.camera.source.epics import CameraEpics
 
 _logger = getLogger(__name__)
 
 
-class CameraBsread(Camera):
+class CameraBsread(CameraEpics):
     def __init__(self, camera_config):
         super(CameraBsread, self).__init__(camera_config)
 

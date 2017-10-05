@@ -4,12 +4,12 @@ from threading import Event, Thread
 import numpy
 
 from logging import getLogger
-from cam_server.camera.source.epics import Camera
+from cam_server.camera.source.epics import CameraEpics
 
 _logger = getLogger(__name__)
 
 
-class CameraSimulation(Camera):
+class CameraSimulation(CameraEpics):
     """
     Camera simulation for debugging purposes.
     """

@@ -6,7 +6,7 @@ from logging import getLogger
 _logger = getLogger(__name__)
 
 
-class Camera:
+class CameraEpics:
 
     def __init__(self, camera_config):
         """
