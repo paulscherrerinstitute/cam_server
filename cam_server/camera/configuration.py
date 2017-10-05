@@ -97,10 +97,6 @@ class CameraConfig:
 
         if parameters is not None:
             self.parameters = parameters
-        else:
-            self.parameters = OrderedDict({
-                "prefix": camera_name
-            })
 
         # Expand the config with the default values.
         self.parameters = CameraConfig.expand_config(self.parameters)

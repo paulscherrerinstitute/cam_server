@@ -29,7 +29,8 @@ class ConfigFileStorageTest(unittest.TestCase):
 
         expected_config_example_1 = {
             "name": "camera_example_1",
-            "prefix": "EPICS_example_1",
+            "source": "EPICS_example_1",
+            "source_type": "epics",
             "mirror_x": True,
             "mirror_y": True,
             "rotate": 1,
@@ -43,7 +44,8 @@ class ConfigFileStorageTest(unittest.TestCase):
     def test_set_config(self):
         config_to_save = {
             "name": "test_config",
-            "prefix": "test",
+            "source": "test",
+            "source_type": "epics",
             "mirror_x": True,
             "mirror_y": False,
             "rotate": 4
@@ -57,7 +59,8 @@ class ConfigFileStorageTest(unittest.TestCase):
 
         config_to_modify_and_save = {
             "name": "invalid_name",
-            "prefix": "test",
+            "source": "test",
+            "source_type": "epics",
             "mirror_x": True,
             "mirror_y": False,
             "rotate": 4
@@ -72,7 +75,8 @@ class ConfigFileStorageTest(unittest.TestCase):
     def test_delete_config(self):
         config_to_save = {
             "name": "test_config",
-            "prefix": "test",
+            "source": "test",
+            "source_type": "epics",
             "mirror_x": True,
             "mirror_y": False,
             "rotate": 4

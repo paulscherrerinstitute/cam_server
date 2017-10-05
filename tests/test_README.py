@@ -253,7 +253,8 @@ class PipelineClientTest(unittest.TestCase):
         # Specify the desired camera config.
         camera_config = {
             "name": "camera_example_3",
-            "prefix": "EPICS:CAM1:EXAMPLE",
+            "source": "EPICS:CAM1:EXAMPLE",
+            "source_type": "epics",
             "mirror_x": False,
             "mirror_y": False,
             "rotate": 0,

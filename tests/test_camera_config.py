@@ -7,20 +7,6 @@ from tests.helpers.factory import get_test_instance_manager
 
 
 class CameraConfigTest(unittest.TestCase):
-    def test_simulation_camera(self):
-        instance_manager = get_test_instance_manager()
-
-        cameras = instance_manager.get_camera_list()
-        self.assertListEqual(cameras, ["simulation"], "Simulation camera missing in config.")
-
-        width, height = instance_manager.config_manager.get_camera_geometry("simulation")
-        self.assertTrue(width > 0 and height > 0, "Width and height need to be positive numbers.")
-
-        configuration = instance_manager.config_manager.get_camera_config("simulation")
-        self.assertIsNotNone(configuration, "Configuration for the simulated camera should exist.")
-
-        with self.assertRaisesRegex(ValueError, "Cannot delete simulation camera."):
-            instance_manager.config_manager.delete_camera_config("simulation")
 
     def test_set_get_camera_config(self):
         instance_manager = get_test_instance_manager()
@@ -33,10 +19,11 @@ class CameraConfigTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Config object cannot be empty. Config: {}"):
             instance_manager.config_manager.save_camera_config("test_camera_1", {})
 
-        with self.assertRaisesRegex(ValueError, "The following mandatory attributes were not found in the "):
-            instance_manager.config_manager.save_camera_config("test_camera_1", {"prefix": "test"})
+        with self.assertRaisesRegex(ValueError, "not specified in configuration"):
+            instance_manager.config_manager.save_camera_config("test_camera_1", {"test": "test"})
 
-        instance_manager.config_manager.save_camera_config("test_camera_1", {"prefix": "test",
+        instance_manager.config_manager.save_camera_config("test_camera_1", {"source": "test",
+                                                                             "source_type": "epics",
                                                                              "mirror_x": False,
                                                                              "mirror_y": False,
                                                                              "rotate": 0,
@@ -44,7 +31,8 @@ class CameraConfigTest(unittest.TestCase):
         camera = instance_manager.config_manager.load_camera("test_camera_1")
         self.assertIsNotNone(camera, "Retrieved camera config works.")
 
-        camera_config = {"prefix": "EPICS_PREFIX",
+        camera_config = {"source": "EPICS_PREFIX",
+                         "source_type": "epics",
                          "mirror_x": True,
                          "mirror_y": True,
                          "rotate": 3,
@@ -64,21 +52,14 @@ class CameraConfigTest(unittest.TestCase):
 
         instance_manager.config_manager.delete_camera_config("test_camera_2")
 
-        self.assertListEqual(sorted(instance_manager.config_manager.get_camera_list()),
-                             sorted(["simulation", "test_camera_1"]),
+        self.assertListEqual(instance_manager.config_manager.get_camera_list(), ["test_camera_1"],
                              "Test camera was not deleted successfully.")
-
-        # Simulation camera cannot be saved - config should not match.
-        simulation_config_before = instance_manager.config_manager.get_camera_config("simulation").get_configuration()
-        instance_manager.config_manager.save_camera_config("simulation", camera_config)
-        simulation_config_after = instance_manager.config_manager.get_camera_config("simulation").get_configuration()
-
-        self.assertDictEqual(simulation_config_before, simulation_config_after)
 
     def test_load_camera(self):
         expected_config_example_1 = {
             "name": "camera_example_1",
-            "prefix": "EPICS_example_1",
+            "source": "EPICS_example_1",
+            "source_type": "epics",
             "mirror_x": False,
             "mirror_y": True,
             "rotate": 1,
@@ -98,6 +79,18 @@ class CameraConfigTest(unittest.TestCase):
         self.assertDictEqual(camera.camera_config.get_configuration(), expected_config_example_1,
                              "Camera not as expected")
 
+        simulation_config = {
+            "name": "simulation",
+            "source": None,
+            "source_type": "simulation",
+            "mirror_x": False,
+            "mirror_y": False,
+            "rotate": 0,
+            "camera_calibration": None
+        }
+
+        instance_manager.config_manager.save_camera_config("simulation", simulation_config)
+
         simulated_camera = instance_manager.config_manager.load_camera("simulation")
 
         self.assertTrue(isinstance(simulated_camera, CameraSimulation),
@@ -111,7 +104,8 @@ class CameraConfigTest(unittest.TestCase):
 
         example_test = {
             "name": "camera_example_1",
-            "prefix": "EPICS_example_1",
+            "source": "EPICS_example_1",
+            "source_type": "epics",
             "mirror_x": False,
             "mirror_y": True,
             "rotate": 1,
@@ -127,7 +121,7 @@ class CameraConfigTest(unittest.TestCase):
 
     def test_default_config(self):
         configuration = {
-            "prefix": "simulation"
+            "source": "simulation"
         }
 
         configuration = CameraConfig("simulation", configuration)
@@ -139,7 +133,7 @@ class CameraConfigTest(unittest.TestCase):
         self.assertEqual(complete_config["rotate"], 0)
 
         configuration = {
-            "prefix": "simulation",
+            "source": "simulation",
             "camera_calibration": {}
         }
 
@@ -152,7 +146,8 @@ class CameraConfigTest(unittest.TestCase):
 
     def test_update_camera_config(self):
         config = {
-            "prefix": "simulation",
+            "source": "simulation",
+            "source_type": "simulation",
             "camera_calibration": {
                 "reference_marker": [0, 0, 100, 100],
                 "reference_marker_width": 100.0,

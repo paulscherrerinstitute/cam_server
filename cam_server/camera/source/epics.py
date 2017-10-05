@@ -22,7 +22,7 @@ class Camera:
         self.channel_image = None
 
     def verify_camera_online(self):
-        camera_prefix = self.camera_config.parameters["prefix"]
+        camera_prefix = self.camera_config.parameters["source"]
         camera_init_pv = camera_prefix + ":INIT"
 
         channel_init = epics.PV(camera_init_pv)
@@ -37,8 +37,8 @@ class Camera:
         self.verify_camera_online()
 
         # Retrieve with and height of cam_server image.
-        camera_width_pv = self.camera_config.parameters["prefix"] + ":WIDTH"
-        camera_height_pv = self.camera_config.parameters["prefix"] + ":HEIGHT"
+        camera_width_pv = self.camera_config.parameters["source"] + ":WIDTH"
+        camera_height_pv = self.camera_config.parameters["source"] + ":HEIGHT"
 
         _logger.debug("Checking camera WIDTH '%s' and HEIGHT '%s' PV.", camera_width_pv, camera_height_pv)
 
@@ -50,13 +50,13 @@ class Camera:
 
         if not self.width_raw or not self.height_raw:
             raise RuntimeError("Could not fetch width and height for cam_server:{}".format(
-                self.camera_config.parameters["prefix"]))
+                self.camera_config.parameters["source"]))
 
         channel_width.disconnect()
         channel_height.disconnect()
 
         # Connect image channel
-        self.channel_image = epics.PV(self.camera_config.parameters["prefix"] + ":FPICTURE", auto_monitor=True)
+        self.channel_image = epics.PV(self.camera_config.parameters["source"] + ":FPICTURE", auto_monitor=True)
         self.channel_image.wait_for_connection(1.0)  # 1 second default connection timeout
 
         if not self.channel_image.connected:
