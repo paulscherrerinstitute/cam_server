@@ -135,12 +135,6 @@ class PipelineConfig:
 
         if parameters is not None:
             self.parameters = parameters
-        else:
-            # Default pipeline parameters.
-            self.parameters = OrderedDict(
-                {
-                    "camera_name": "simulation"
-                })
 
         # Expand the config with the default values.
         self.parameters = PipelineConfig.expand_config(self.parameters)
