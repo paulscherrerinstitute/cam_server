@@ -138,9 +138,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         colormap_name = request.params.get("colormap")
 
         # Retrieve a single image from the camera.
-        camera.connect()
         image_raw_bytes = camera.get_image(raw=raw)
-        camera.disconnect()
 
         image = get_png_from_image(image_raw_bytes, scale, min_value, max_value, colormap_name)
 

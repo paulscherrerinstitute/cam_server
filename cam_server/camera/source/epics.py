@@ -16,8 +16,8 @@ class Camera:
         self.camera_config = camera_config
 
         # Width and height of the raw image
-        self.width_raw = 0
-        self.height_raw = 0
+        self.width_raw = None
+        self.height_raw = None
 
         self.channel_image = None
 
@@ -106,10 +106,24 @@ class Camera:
         return numpy.ascontiguousarray(value)
 
     def get_image(self, raw=False):
-        value = self.channel_image.get()
+        # If we are not connected to the image channel, we have to do this first.
+        if self.channel_image is None:
+            self.connect()
+            value = self.channel_image.get()
+            self.disconnect()
+
+        # If we are already connected, just grab the next image.
+        else:
+            value = self.channel_image.get()
+
         return self._get_image(value, raw=raw)
 
     def get_geometry(self):
+        # We cannot get the geometry until we connect to the camera for the first time.
+        if self.width_raw is None or self.height_raw is None:
+            self.connect()
+            self.disconnect()
+
         rotate = self.camera_config.parameters["rotate"]
         if rotate == 1 or rotate == 3:
             # If rotating by 90 degree, height becomes width.

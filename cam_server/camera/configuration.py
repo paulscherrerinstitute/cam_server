@@ -63,11 +63,7 @@ class CameraConfigManager(object):
         :return: (width, height)
         """
         camera = self.load_camera(camera_name)
-
-        camera.connect()
         width, height = camera.get_geometry()
-        camera.disconnect()
-
         return width, height
 
 
