@@ -104,9 +104,23 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
             sender.close()
 
 
+def process_bsread_camera(stop_event, statistics, parameter_queue,
+                          camera, port):
+    """
+    Start the camera stream and receive the incoming bsread streams. This function blocks until stop_event is set.
+    :param stop_event: Event when to stop the process.
+    :param statistics: Statistics namespace.
+    :param parameter_queue: Parameters queue to be passed to the pipeline.
+    :param camera: Camera instance to get the stream from.
+    :param port: Port to use to bind the output stream.
+    """
+    pass
+
+
 source_type_to_sender_function_mapping = {
     "epics": process_epics_camera,
-    "simulation": process_epics_camera
+    "simulation": process_epics_camera,
+    "bsread": process_bsread_camera
 }
 
 
