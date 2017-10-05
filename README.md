@@ -166,10 +166,18 @@ For camera configuration, all fields must be specified, and there is no defaulti
 
 - **name**: Name of the camera.
 - **source**: Source of the camera (PV prefix, bsread stream)
-- **source_type**: Type of the source (available: epics, bsread)
+- **source_type**: Type of the source (available: epics, bsread, simulation)
 - **mirror\_x**: Mirror camera image over X axis.
 - **mirror\_y**: Mirror camera image over Y axis.
 - **rotate**: how many times to rotate the camera image by 90 degrees.
+
+##### Source type
+cam_server can connect to different type of sources. The type of source you select defines the meaning of the 
+**source** field in the configuration:
+
+- source_type = "epics" : Connect to an Epics camera. The 'source' field is the camera prefix.
+- source_type = "bsread" : Connect to a bsread stream. The 'source' field is the stream address.
+- source_type = "simulation": Generate simulated images. The 'source' can be anything, but it must NOT be None.
 
 #### Example
 ```json
