@@ -36,7 +36,8 @@ class PipelinePerformanceTest(unittest.TestCase):
 
             "image_slices": {
                 "number_of_slices": 5,
-                "scale": 1.0
+                "scale": 1.0,
+                "orientation": "horizontal"
             }
         }
 

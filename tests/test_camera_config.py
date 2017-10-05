@@ -81,7 +81,7 @@ class CameraConfigTest(unittest.TestCase):
 
         simulation_config = {
             "name": "simulation",
-            "source": None,
+            "source": "",
             "source_type": "simulation",
             "mirror_x": False,
             "mirror_y": False,
@@ -131,6 +131,7 @@ class CameraConfigTest(unittest.TestCase):
         self.assertFalse(complete_config["mirror_x"])
         self.assertFalse(complete_config["mirror_y"])
         self.assertEqual(complete_config["rotate"], 0)
+        self.assertEqual(complete_config["source_type"], "epics")
 
         configuration = {
             "source": "simulation",
@@ -163,6 +164,15 @@ class CameraConfigTest(unittest.TestCase):
 
         updated_config = update_camera_config(updated_config, {"camera_calibration": None})
         self.assertIsNone(updated_config["camera_calibration"])
+
+    def test_invalid_source_type(self):
+        configuration = {
+            "source": "simulation",
+            "source_type": "invalid"
+        }
+
+        with self.assertRaisesRegex(ValueError, "Invalid source_type "):
+            configuration = CameraConfig("simulation", configuration)
 
 
 if __name__ == '__main__':

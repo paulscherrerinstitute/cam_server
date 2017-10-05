@@ -22,6 +22,9 @@ class CameraTest(unittest.TestCase):
     def setUp(self):
         self.instance_manager = get_test_instance_manager()
 
+        self.instance_manager.config_manager.save_camera_config(self.simulation_camera,
+                                                                CameraConfig("simulation").get_configuration())
+
     def tearDown(self):
         self.instance_manager.stop_all_instances()
         sleep(1)
@@ -193,6 +196,7 @@ class CameraTest(unittest.TestCase):
     def test_custom_hostname(self):
         config_manager = CameraConfigManager(config_provider=MockConfigStorage())
         camera_instance_manager = CameraInstanceManager(config_manager, hostname="custom_cam_hostname")
+        config_manager.save_camera_config("simulation", CameraConfig("simulation").get_configuration())
 
         stream_address = camera_instance_manager.get_camera_stream("simulation")
         self.assertTrue(stream_address.startswith("tcp://custom_cam_hostname"))

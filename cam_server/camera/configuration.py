@@ -1,7 +1,5 @@
 import copy
-from collections import OrderedDict
-
-from cam_server.camera.source.utils import get_source_class
+from cam_server.camera.source.utils import get_source_class, source_type_to_source_class_mapping
 
 
 class CameraConfigManager(object):
@@ -97,6 +95,9 @@ class CameraConfig:
 
         if parameters is not None:
             self.parameters = parameters
+        else:
+            self.parameters = {"source": "simulation",
+                               "source_type": "simulation"}
 
         # Expand the config with the default values.
         self.parameters = CameraConfig.expand_config(self.parameters)
@@ -146,6 +147,12 @@ class CameraConfig:
         camera_calibration = configuration["camera_calibration"]
         if camera_calibration:
             verify_attributes("camera_calibration", camera_calibration, CameraConfig.DEFAULT_CAMERA_CALIBRATION)
+
+        available_source_types = source_type_to_source_class_mapping.keys()
+
+        if configuration["source_type"] not in available_source_types:
+            raise ValueError("Invalid source_type '%s'. Available: %s." % (configuration["source_type"],
+                                                                           list(available_source_types)))
 
     @staticmethod
     def expand_config(configuration):

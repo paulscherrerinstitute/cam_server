@@ -124,11 +124,13 @@ class CameraClientTest(unittest.TestCase):
 
         self.assertFalse(self.client.is_camera_online("camera_example_1"), "Epics not working in this tests.")
 
-        stream_address = self.client.get_camera_stream("simulation")
+        self.client.set_camera_config("simulation_temp", self.client.get_camera_config("simulation"))
+
+        stream_address = self.client.get_camera_stream("simulation_temp")
         camera_host, camera_port = get_host_port_from_stream_address(stream_address)
         sim_x, sim_y = CameraSimulation(CameraConfig("simulation")).get_geometry()
 
-        instance_info = self.client.get_server_info()["active_instances"]["simulation"]
+        instance_info = self.client.get_server_info()["active_instances"]["simulation_temp"]
         self.assertTrue("last_start_time" in instance_info)
         self.assertTrue("statistics" in instance_info)
 
@@ -148,9 +150,9 @@ class CameraClientTest(unittest.TestCase):
             self.assertEqual(x_axis_1.shape[0], sim_x)
             self.assertEqual(y_axis_1.shape[0], sim_y)
 
-        camera_config = self.client.get_camera_config("simulation")
+        camera_config = self.client.get_camera_config("simulation_temp")
         camera_config["rotate"] = 1
-        self.client.set_camera_config("simulation", camera_config)
+        self.client.set_camera_config("simulation_temp", camera_config)
         sleep(0.5)
 
         # Collect from the pipeline.
@@ -171,6 +173,7 @@ class CameraClientTest(unittest.TestCase):
             self.assertEqual(x_axis_2.shape[0], sim_y)
             self.assertEqual(y_axis_2.shape[0], sim_x)
 
+        self.client.delete_camera_config("simulation_temp")
         self.client.stop_all_cameras()
 
 

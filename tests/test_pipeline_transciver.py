@@ -126,8 +126,10 @@ class PipelineTransceiverTest(unittest.TestCase):
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
 
+        self.client.set_camera_config("simulation_temp", self.client.get_camera_config("simulation"))
+
         pipeline_config = PipelineConfig("test_pipeline", parameters={
-            "camera_name": "simulation"
+            "camera_name": "simulation_temp"
         })
 
         background_manager = MockBackgroundManager()
@@ -160,9 +162,9 @@ class PipelineTransceiverTest(unittest.TestCase):
             self.assertEqual(image_shape, (y_size, x_size))
 
             # Rotate the image by 90 degree.
-            camera_config = self.client.get_camera_config("simulation")
+            camera_config = self.client.get_camera_config("simulation_temp")
             camera_config["rotate"] = 1
-            self.client.set_camera_config("simulation", camera_config)
+            self.client.set_camera_config("simulation_temp", camera_config)
 
             # Make a few frames pass.
             for _ in range(5):
@@ -184,6 +186,8 @@ class PipelineTransceiverTest(unittest.TestCase):
             self.assertEqual(x_size, len(x_axis))
             self.assertEqual(y_size, len(y_axis))
             self.assertEqual(image_shape, (y_size, x_size))
+
+        self.client.delete_camera_config("simulation_temp")
 
         stop_event.set()
         thread.join()
