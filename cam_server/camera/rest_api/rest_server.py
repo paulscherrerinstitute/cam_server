@@ -8,7 +8,6 @@ from cam_server import config
 from cam_server.camera.configuration import CameraConfig
 from cam_server.instance_management import rest_api
 from cam_server.pipeline.data_processing.functions import get_png_from_image
-from cam_server.utils import update_camera_config
 
 _logger = logging.getLogger(__name__)
 

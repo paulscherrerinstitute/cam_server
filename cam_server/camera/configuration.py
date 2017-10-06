@@ -117,6 +117,9 @@ class CameraConfig:
     def get_source_type(self):
         return self.parameters["source_type"]
 
+    def get_source(self):
+        return self.parameters["source"]
+
     @staticmethod
     def validate_camera_config(configuration):
         """
