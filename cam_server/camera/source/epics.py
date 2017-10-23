@@ -3,6 +3,8 @@ import numpy
 
 from logging import getLogger
 
+from cam_server import config
+
 _logger = getLogger(__name__)
 
 
@@ -23,7 +25,7 @@ class CameraEpics:
 
     def verify_camera_online(self):
         camera_prefix = self.camera_config.get_source()
-        camera_init_pv = camera_prefix + ":INIT"
+        camera_init_pv = camera_prefix + config.EPICS_PV_SUFFIX_STATUS
 
         channel_init = epics.PV(camera_init_pv)
         channel_init_value = channel_init.get(as_string=True)
@@ -32,21 +34,18 @@ class CameraEpics:
         if channel_init_value != 'INIT':
             raise RuntimeError("Camera with prefix {} not online - Status {}".format(camera_prefix, channel_init_value))
 
-    def connect(self):
-
-        self.verify_camera_online()
-
+    def _collect_camera_settings(self):
         # Retrieve with and height of cam_server image.
-        camera_width_pv = self.camera_config.get_source() + ":WIDTH"
-        camera_height_pv = self.camera_config.get_source() + ":HEIGHT"
+        camera_width_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_WIDTH
+        camera_height_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_HEIGHT
 
         _logger.debug("Checking camera WIDTH '%s' and HEIGHT '%s' PV.", camera_width_pv, camera_height_pv)
 
         channel_width = epics.PV(camera_width_pv)
         channel_height = epics.PV(camera_height_pv)
 
-        self.width_raw = int(channel_width.get(timeout=4))
-        self.height_raw = int(channel_height.get(timeout=4))
+        self.width_raw = int(channel_width.get(timeout=config.EPICS_TIMEOUT_GET))
+        self.height_raw = int(channel_height.get(timeout=config.EPICS_TIMEOUT_GET))
 
         if not self.width_raw or not self.height_raw:
             raise RuntimeError("Could not fetch width and height for cam_server:{}".format(
@@ -55,9 +54,14 @@ class CameraEpics:
         channel_width.disconnect()
         channel_height.disconnect()
 
+    def connect(self):
+
+        self.verify_camera_online()
+        self._collect_camera_settings()
+
         # Connect image channel
-        self.channel_image = epics.PV(self.camera_config.get_source() + ":FPICTURE", auto_monitor=True)
-        self.channel_image.wait_for_connection(1.0)  # 1 second default connection timeout
+        self.channel_image = epics.PV(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_IMAGE, auto_monitor=True)
+        self.channel_image.wait_for_connection(config.EPICS_TIMEOUT_CONNECTION)  # 1 second default connection timeout
 
         if not self.channel_image.connected:
             raise RuntimeError("Could not connect to: {}".format(self.channel_image.pvname))
@@ -119,10 +123,8 @@ class CameraEpics:
         return self._get_image(value, raw=raw)
 
     def get_geometry(self):
-        # We cannot get the geometry until we connect to the camera for the first time.
         if self.width_raw is None or self.height_raw is None:
-            self.connect()
-            self.disconnect()
+            self._collect_camera_settings()
 
         rotate = self.camera_config.parameters["rotate"]
         if rotate == 1 or rotate == 3:

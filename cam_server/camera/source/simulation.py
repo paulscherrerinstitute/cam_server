@@ -17,6 +17,7 @@ class CameraSimulation(CameraEpics):
     def verify_camera_online(self):
         return True
 
+    # TODO: Make this a config.
     def __init__(self, camera_config, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
                  beam_size_x=100, beam_size_y=20, frame_rate=10, simulation_interval=0.1):
         """
