@@ -577,6 +577,8 @@ class PipelineManagerTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "is not present on server and it is not a saved"):
             instance_manager.get_instance_stream("simulation_sp1")
 
+        instance_manager.stop_all_instances()
+
 
 if __name__ == '__main__':
     unittest.main()
