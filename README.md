@@ -4,27 +4,31 @@
 Cam server is an epics - bsread interface that converts epics enabled camera into a bs_read stream. In addition it 
 also provides a processing pipeline and a REST interface to control both the cameras and the pipeline.
 
+**WARNING**: Please note that for normal users, only **PipelineClient** should be used. CamClient is used by the 
+underlying infrastructure to provide camera images to the pipeline server.
+
 # Table of content
-1. [Build](#build)
+1. [Quick start](#quick_start)
+2. [Build](#build)
     1. [Conda setup](#conda_setup)
     2. [Local build](#local_build)
     3. [Docker build](#docker_build)
-2. [Basic concepts](#basic_concepts)
+3. [Basic concepts](#basic_concepts)
     1. [Requesting a stream and instance management](#reqeust_a_stream)
     2. [Shared and private pipeline instances](#shared_and_private)
     3. [Configuration versioning and camera background in the pipeline server](#configuration_versioning)
-3. [Configuration](#configuration)
+4. [Configuration](#configuration)
     1. [Camera configuration](#camera_configuration)
     2. [Pipeline configuration](#pipeline_configuration)
-4. [Web interface](#web_interface)
+5. [Web interface](#web_interface)
     1. [Python client](#python_client)
     2. [REST API](#rest_api)
-5. [Running the servers](#running_the_servers)
+6. [Running the servers](#running_the_servers)
     1. [Camera_server](#run_camera_server)
     2. [Pipeline server](#run_pipeline_server)
     3. [Docker Container](#run_docker_container)
-6. [Production configuration](#production_configuration)
-7. [Examples](#examples)
+7. [Production configuration](#production_configuration)
+8. [Examples](#examples)
     1. [Get the simulation camera stream](#get_simulation_camera_stream)
     2. [Get a basic pipeline with a simulated camera](#basic_pipeline)
     3. [Create a pipeline instance with background](#private_pipeline)
@@ -33,6 +37,54 @@ also provides a processing pipeline and a REST interface to control both the cam
     6. [Modifying pipeline config](#modify_pipeline_config)
     7. [Create a new camera](#create_camera_config)
     8. [Get single message from screen_panel stream](#single_message_screen_panel)
+    
+<a id="quick_start"></a>
+## Quick start    
+The example below shows how to access the camera stream you have currently open in a screen_panel instance.
+This should be one of the most common use cases.
+
+Open screen_panel to the camera you want to stream. Configure the stream in the desired way using screen_panel.
+Do not close screen_panel - let it run. When you are satisfied with the image (and calculated fields), run the script:
+
+```python
+from cam_server import PipelineClient
+from cam_server.utils import get_host_port_from_stream_address
+from bsread import source, SUB
+
+# Create a pipeline client.
+client = PipelineClient()
+
+# Define the camera name you want to read. This should be the same camera you are streaming in screen panel.
+camera_name = "simulation"
+
+# Format of the instance id when screen_panel creates a pipeline.
+pipeline_instance_id = camera_name + "_sp1"
+
+# Get the stream for the pipelie instance.
+stream_address = client.get_instance_stream(pipeline_instance_id)
+
+# Extract the stream host and port from the stream_address.
+stream_host, stream_port = get_host_port_from_stream_address(stream_address)
+
+# Open connection to the stream. When exiting the 'with' section, the source disconnects by itself.
+with source(host=stream_host, port=stream_port, mode=SUB) as input_stream:
+    input_stream.connect()
+    
+    # Read one message.
+    message = input_stream.receive()
+    
+    # Print out the received stream data - dictionary.
+    print("Dictionary with data:\n", message.data.data)
+    
+    # Print out the X center of mass.
+    print("X center of mass: ", message.data.data["x_center_of_mass"].value)
+```
+
+Whenever screen_panel starts start streaming a camera, it creates a pipeline named 
+"**[camera\_name]**_sp1". You can connect to this instance with the **get\_instance\_stream** function of the client.
+
+All the changes to the stream (config changes) done in the screen_panel will be reflected in the stream after a couple 
+of images.
     
 <a id="build"></a>
 ## Build
@@ -281,6 +333,10 @@ There are 2 classes available to communicate with the camera and pipeline server
 around REST API calls (see next chapters).
 
 #### CamClient
+
+**WARNING**: Please note that for normal users, only **PipelineClient** should be used. CamClient is used by the 
+underlying infrastructure to provide camera images to the pipeline server.
+
 Import and create a cam client instance:
 ```python
 from cam_server import CamClient
@@ -454,6 +510,9 @@ class PipelineClient(builtins.object)
 ### REST API
 
 #### Camera server API
+
+**WARNING**: Please note that for normal users, only the **Pipeline server API** should be used. The Camera server API 
+is used by the underlying infrastructure to provide camera images to the pipeline server.
 
 In the API description, localhost and port 8888 are assumed. Please change this for your specific case.
 
@@ -645,6 +704,10 @@ actual path.
 
 <a id="get_simulation_camera_stream"></a>
 ### Get the simulation camera stream
+
+**WARNING**: This example should not be used by normal users. CamClient is used by the 
+underlying infrastructure to provide camera images to the pipeline server. See PipelineClient for a 
+user oriented client.
 
 This is just an example on how you can retrieve the raw image from the camera. You **should not** do this for 
 the normal use case. See next example for a more common use.

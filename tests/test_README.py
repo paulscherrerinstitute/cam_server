@@ -66,6 +66,46 @@ class PipelineClientTest(unittest.TestCase):
         # Wait for the server to die.
         sleep(1)
 
+    def test_quick_start(self):
+        from cam_server import PipelineClient
+        from cam_server.utils import get_host_port_from_stream_address
+        from bsread import source, SUB
+
+        # Create a pipeline client.
+        client = PipelineClient()
+
+        # ADDITIONAL, FOR THE TEST
+        camera_name = "simulation"
+        client = self.pipeline_client
+        client.create_instance_from_config(configuration={"camera_name": camera_name}, instance_id=camera_name+"_sp1")
+
+        # Define the camera name you want to read. This should be the same camera you are streaming in screen panel.
+        camera_name = "simulation"
+
+        # Format of the instance id when screen_panel creates a pipeline.
+        pipeline_instance_id = camera_name + "_sp1"
+
+        # Get the stream for the pipelie instance.
+        stream_address = client.get_instance_stream(pipeline_instance_id)
+
+        # Extract the stream host and port from the stream_address.
+        stream_host, stream_port = get_host_port_from_stream_address(stream_address)
+
+        # Open connection to the stream. When exiting the 'with' section, the source disconnects by itself.
+        with source(host=stream_host, port=stream_port, mode=SUB) as input_stream:
+            input_stream.connect()
+
+            # Read one message.
+            message = input_stream.receive()
+
+            # Print out the received stream data - dictionary.
+            print("Dictionary with data:\n", message.data.data)
+
+            # Print out the X center of mass.
+            print("X center of mass: ", message.data.data["x_center_of_mass"].value)
+
+        # ADDITIONAL, FOR THE TEST
+        client.stop_all_instances()
 
     def test_get_simulated_camera(self):
         from cam_server import CamClient
