@@ -222,6 +222,12 @@ For camera configuration, all fields must be specified, and there is no defaulti
 - **mirror\_x**: Mirror camera image over X axis.
 - **mirror\_y**: Mirror camera image over Y axis.
 - **rotate**: how many times to rotate the camera image by 90 degrees.
+- **camera\_calibration** (Default _None_): Info on how to convert the camera pixels into engineering units.
+    - reference_marker (Default _[0, 0, 100, 100]_): Reference markers placement.
+    - reference_marker_width (Default _100.0_): Width of reference markers.
+    - reference_marker_height (Default _100.0_): Height of reference markers.
+    - angle_horizontal (Default _0.0_): Horizontal angle.
+    - angle_vertical (Default _0.0_): Vertical angle.
 
 ##### Source type
 cam_server can connect to different type of sources. The type of source you select defines the meaning of the 
@@ -239,7 +245,15 @@ cam_server can connect to different type of sources. The type of source you sele
   "source_type": "epics",
   "mirror_x": true,
   "mirror_y": false,
-  "rotate": 4
+  "rotate": 4,
+  
+  "camera_calibration": {
+    "reference_marker": [ 0, 0, 100, 100 ],
+    "reference_marker_width": 100.0,
+    "reference_marker_height": 100.0,
+    "angle_horizontal": 0.0,
+    "angle_vertical": 0.0
+  }
 }
 ```
 
@@ -255,12 +269,6 @@ pipeline is added to the output bsread stream in the
 #### Configuration parameters
 
 - **camera\_name** : Name of the camera to use as a pipeline source.
-- **camera\_calibration** (Default _None_): Info on how to convert the camera pixels into engineering units.
-    - reference_marker (Default _[0, 0, 100, 100]_): Reference markers placement.
-    - reference_marker_width (Default _100.0_): Width of reference markers.
-    - reference_marker_height (Default _100.0_): Height of reference markers.
-    - angle_horizontal (Default _0.0_): Horizontal angle.
-    - angle_vertical (Default _0.0_): Vertical angle.
 - **image\_background** (Default _None_): Background to subtract from the original image.
 - **image\_background_enable** (Default _False_): Enable or disale the image_background subtraction.
 - **image\_threshold** (Default _None_): Minimum value of each pixel. Pixels below the threshold are converted to 0.
@@ -277,14 +285,6 @@ pipeline is added to the output bsread stream in the
 ```json
 {
   "camera_name": "simulation",
-
-  "camera_calibration": {
-    "reference_marker": [ 0, 0, 100, 100 ],
-    "reference_marker_width": 100.0,
-    "reference_marker_height": 100.0,
-    "angle_horizontal": 0.0,
-    "angle_vertical": 0.0
-  },
 
   "image_background": null,
   "image_background_enable": false,
