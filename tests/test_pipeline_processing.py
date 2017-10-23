@@ -32,7 +32,7 @@ class PipelineProcessingTest(unittest.TestCase):
                                      'x_fit_gauss_function', 'y_center_of_mass', 'min_value', 'y_fit_mean',
                                      'x_fit_mean', 'x_rms', 'y_fit_amplitude', 'x_fit_amplitude',
                                      'y_fit_gauss_function', 'x_fit_standard_deviation', 'y_fit_offset',
-                                     "processing_parameters"]
+                                     "processing_parameters", "intensity"]
 
         self.assertSetEqual(set(required_fields_in_result), set(result.keys()),
                             "Not all required keys are present in the result")
@@ -334,6 +334,29 @@ class PipelineProcessingTest(unittest.TestCase):
     def test_calculate_slices_invalid_input(self):
         with self.assertRaisesRegex(ValueError, "Number of slices must be odd."):
             calculate_slices(None, None, None, None, 2)
+
+    def test_intensity(self):
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        image = simulated_camera.get_image()
+        x_axis, y_axis = simulated_camera.get_x_y_axis()
+
+        parameters = PipelineConfig("test_pipeline", {
+            "camera_name": "simulation"
+        }).get_configuration()
+
+        result = process_image(image=image,
+                               timestamp=time.time(),
+                               x_axis=x_axis,
+                               y_axis=y_axis,
+                               parameters=parameters)
+
+        x_sum = result["x_profile"].sum()
+        y_sum = result["y_profile"].sum()
+
+        # The sums of X and Y profile should always give us the same result as the intensity.
+        self.assertEqual(x_sum, result["intensity"])
+        self.assertEqual(y_sum, result["intensity"])
+
 
 
 if __name__ == '__main__':

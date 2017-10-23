@@ -40,6 +40,9 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
     x_fit_gauss_function, x_fit_offset, x_fit_amplitude, x_fit_mean, x_fit_standard_deviation, x_center_of_mass, x_rms = x_fit
     y_fit_gauss_function, y_fit_offset, y_fit_amplitude, y_fit_mean, y_fit_standard_deviation, y_center_of_mass, y_rms = y_fit
 
+    # Could be also y_profile.sum() -> it should give the same result.
+    intensity = x_profile.sum()
+
     # Add return values
     return_value["x_axis"] = x_axis
     return_value["y_axis"] = y_axis
@@ -49,6 +52,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
     return_value["max_value"] = max_value
     return_value["x_profile"] = x_profile
     return_value["y_profile"] = y_profile
+    return_value["intensity"] = intensity
 
     # Needed for config traceability.
     return_value["processing_parameters"] = json.dumps(parameters)
