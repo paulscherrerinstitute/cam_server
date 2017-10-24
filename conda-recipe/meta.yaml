@@ -15,7 +15,7 @@ requirements:
     run:
         - python
         - requests
-        - bsread >=0.9.4
+        - bsread >=0.9.9
         - bottle
         - numpy
         - scipy
