@@ -61,9 +61,9 @@ PROCESS_POLL_INTERVAL = 0.1
 
 TIME_FORMAT = "%Y-%m-%d %H%:%M:%S UTC%z"
 
-####################
+##################
 # EPICS settings #
-####################
+##################
 
 EPICS_TIMEOUT_CONNECTION = 1.0
 EPICS_TIMEOUT_GET = 4
@@ -73,3 +73,30 @@ EPICS_PV_SUFFIX_WIDTH = ":WIDTH"
 EPICS_PV_SUFFIX_HEIGHT = ":HEIGHT"
 EPICS_PV_SUFFIX_IMAGE = ":FPICTURE"
 EPICS_PV_SUFFIX_STREAM_ADDRESS = ":STREAM_ADDRESS"
+
+################
+# ZMQ settings #
+################
+
+ZMQ_RECEIVE_TIMEOUT = 1000
+
+#################
+# TEMP settings #
+#################
+
+TEMP_PV_TO_BSREAD_STREAM_ADDRESS = {
+    'SARCL01-DSCR170': 'tcp://sf-sioc-cs-63.psi.ch:9000',
+    'S10MA01-DSCR090': 'tcp://sf-sioc-cs-31.psi.ch:9010',
+    'S10DI01-DSCR020': 'tcp://sf-sioc-cs-21.psi.ch:9000',
+    'SARBD02-DSCR050': 'tcp://sf-sioc-cs-62.psi.ch:9000',
+    'S10BD01-DSCR030': 'tcp://sf-sioc-cs-21.psi.ch:9010',
+    'S10BC02-DSCR220': 'tcp://sf-sioc-cs-31.psi.ch:9000',
+    'SARCL02-DSCR280': 'tcp://sf-sioc-cs-63.psi.ch:9010',
+    'SARMA02-DSCR030': 'tcp://sf-sioc-cs-61.psi.ch:9000',
+    'SLG-LCAM-C102': 'tcp://sf-sioc-cs-11.psi.ch:8020',
+    'SINBC02-DSRM310': 'tcp://sf-sioc-cs-13.psi.ch:9010',
+    'SINLH02-DSCR220': 'tcp://sf-sioc-cs-11.psi.ch:9020',
+    'SINEG01-DSCR190': 'tcp://sf-sioc-cs-11.psi.ch:9000',
+    'SARBD01-DSCR050': 'tcp://sf-sioc-cs-61.psi.ch:9010',
+    'SARBD01-DSCR110': 'tcp://sf-sioc-cs-62.psi.ch:9010'
+}
