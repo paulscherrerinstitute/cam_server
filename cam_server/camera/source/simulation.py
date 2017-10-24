@@ -65,7 +65,7 @@ class CameraSimulation(CameraEpics):
         """
 
         if raw:
-            image = numpy.zeros((self.size_y, self.size_x))
+            image = numpy.zeros((self.height_raw, self.width_raw))
         else:
             beam_x = numpy.linspace(-self.beam_size_x + numpy.random.rand(),
                                     self.beam_size_x + numpy.random.rand(),

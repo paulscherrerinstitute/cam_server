@@ -176,6 +176,10 @@ class CameraClientTest(unittest.TestCase):
         self.client.delete_camera_config("simulation_temp")
         self.client.stop_all_cameras()
 
+        image = self.client.get_camera_image("simulation")
+        self.assertGreater(len(image.content), 0)
+
+
 
 if __name__ == '__main__':
     unittest.main()

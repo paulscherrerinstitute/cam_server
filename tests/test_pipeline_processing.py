@@ -357,6 +357,14 @@ class PipelineProcessingTest(unittest.TestCase):
         self.assertEqual(x_sum, result["intensity"])
         self.assertEqual(y_sum, result["intensity"])
 
+    def test_get_image(self):
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        image = simulated_camera.get_image()
+        self.assertIsNotNone(image)
+
+        raw_image = simulated_camera.get_image(raw=True)
+        self.assertIsNotNone(raw_image)
+
 
 
 if __name__ == '__main__':

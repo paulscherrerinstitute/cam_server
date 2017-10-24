@@ -110,7 +110,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s/image" % camera_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint)
         return server_response
 
     def get_camera_stream(self, camera_name):
