@@ -170,8 +170,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
 
         while not stop_event.is_set():
             try:
-                nonlocal x_size, y_size, x_axis, y_axis
-
                 data = camera_stream.receive()
 
                 # In case of receiving error or timeout, the returned data is None.

@@ -176,7 +176,6 @@ class CameraClientTest(unittest.TestCase):
             self.assertEqual(y_axis_2.shape[0], sim_x)
 
         self.client.delete_camera_config("simulation_temp")
-        self.client.stop_all_cameras()
 
         image = self.client.get_camera_image("simulation")
         self.assertGreater(len(image.content), 0)
@@ -191,6 +190,8 @@ class CameraClientTest(unittest.TestCase):
 
         image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
         self.assertIsNotNone(image_array)
+
+        self.client.stop_all_cameras()
 
 
 if __name__ == '__main__':

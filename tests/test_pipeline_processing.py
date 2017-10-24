@@ -354,8 +354,8 @@ class PipelineProcessingTest(unittest.TestCase):
         y_sum = result["y_profile"].sum()
 
         # The sums of X and Y profile should always give us the same result as the intensity.
-        self.assertEqual(x_sum, result["intensity"])
-        self.assertEqual(y_sum, result["intensity"])
+        self.assertAlmostEqual(x_sum, result["intensity"])
+        self.assertAlmostEqual(y_sum, result["intensity"])
 
     def test_get_image(self):
         simulated_camera = CameraSimulation(CameraConfig("simulation"))
