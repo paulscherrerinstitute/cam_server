@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 
@@ -143,6 +144,29 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         response.set_header('Content-type', 'image/png')
         return image
+
+    @app.get(api_root_address + '/<camera_name>/image_bytes')
+    def get_camera_image_bytes(camera_name):
+        """
+        Return the camera image bytes.
+        :param camera_name: Name of the camera to grab the image from.
+        :return: JSON with details and byte stream.
+        """
+
+        camera = instance_manager.config_manager.load_camera(camera_name)
+
+        # Retrieve a single image from the camera.
+        image_bytes = camera.get_image()
+
+        base64_bytes = base64.b64encode(image_bytes)
+        image_shape = image_bytes.shape
+        image_dtype = image_bytes.dtype.descr[0][1]
+
+        return {"state": "ok",
+                "status": "Image bytes of camera '%s'." % camera_name,
+                "image": {"bytes": base64_bytes.decode("utf-8"),
+                          "shape": image_shape,
+                          "dtype": image_dtype}}
 
     @app.error(405)
     def method_not_allowed(res):

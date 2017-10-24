@@ -373,6 +373,11 @@ class CamClient()
       :param camera_name: Camera name.
       :return: server_response content (PNG).
   
+  def get_camera_image_bytes(self, camera_name):
+      Return the cam image bytes.
+      :param camera_name: Camera name.
+      :return: JSON with bytes and metadata.
+  
   get_camera_stream(self, camera_name)
       Get the camera stream address.
       :param camera_name: Name of the camera to get the address for.
@@ -536,6 +541,9 @@ In the API description, localhost and port 8888 are assumed. Please change this 
     
 * `GET localhost:8888/api/v1/cam/<camera_name>/image` - get one PNG image of the camera.
     - Returns a PNG image
+    
+* `GET localhost:8888/api/v1/cam/<camera_name>/image_bytes` - get one PNG image of the camera.
+    - Returns JSON with Base64, UTF-8 image bytes and metadata.
     
 * `GET localhost:8888/api/v1/cam/info` - return info on the camera manager.
     - Response specific field: "info" - JSON with instance info.

@@ -113,6 +113,17 @@ class CamClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint)
         return server_response
 
+    def get_camera_image_bytes(self, camera_name):
+        """
+        Return the cam image bytes.
+        :param camera_name: Camera name.
+        :return: JSON with bytes and metadata.
+        """
+        rest_endpoint = "/%s/image_bytes" % camera_name
+
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["image"]
+
     def get_camera_stream(self, camera_name):
         """
         Get the camera stream address.

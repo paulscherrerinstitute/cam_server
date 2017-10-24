@@ -1,9 +1,11 @@
+import base64
 import os
 import signal
 import unittest
 from multiprocessing import Process
 from time import sleep
 
+import numpy
 from bsread import source, SUB
 
 from cam_server import CamClient
@@ -179,6 +181,16 @@ class CameraClientTest(unittest.TestCase):
         image = self.client.get_camera_image("simulation")
         self.assertGreater(len(image.content), 0)
 
+        image = self.client.get_camera_image_bytes("simulation")
+        dtype = image["dtype"]
+        shape = image["shape"]
+        bytes = base64.b64decode(image["bytes"].encode())
+
+        x_size, y_size = CameraSimulation(CameraConfig("simulation")).get_geometry()
+        self.assertEqual(shape, [y_size, x_size])
+
+        image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
+        self.assertIsNotNone(image_array)
 
 
 if __name__ == '__main__':
