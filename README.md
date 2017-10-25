@@ -1027,6 +1027,14 @@ Then need to reload the systemctl daemon:
 systemctl daemon-reload
 ```
 
+### Verifying the configuration
+On the target system, copy **docker/validate_configs.sh** into your home folder.
+Run it to verify if the deployed configurations are valid for the current version of the cam_server.
+
+```bash
+./validate_configs.sh
+```
+
 ### Run the servers
 Using systemctl you then run both servers:
 ```bash
