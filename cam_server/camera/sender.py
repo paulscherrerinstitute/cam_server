@@ -126,32 +126,19 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
 
         def process_parameters():
             nonlocal x_size, y_size, x_axis, y_axis
-            x_size, y_size = camera.get_geometry()
             x_axis, y_axis = camera.get_x_y_axis()
-            sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
-                                                  "shape": [y_size, x_size],
-                                                  "type": "float32"})
+            x_size, y_size = camera.get_geometry()
+
+        # TODO: Use to register proper channels. But be aware that the size and dtype can change during the running.
+        # def register_image_channel(size_x, size_y, dtype):
+        #     sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
+        #                                           "shape": [size_x, size_y],
+        #                                           "type": dtype})
 
         x_size = y_size = x_axis = y_axis = None
 
         sender = Sender(port=port, mode=PUB,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
-
-        # Register the bsread channels - compress only the image.
-        sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                              "type": "int64"})
-
-        sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                               "type": "int64"})
-
-        sender.add_channel("timestamp", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                                  "type": "float64"})
-
-        sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                               "type": "float32"})
-
-        sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                               "type": "float32"})
 
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
 
@@ -161,8 +148,9 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
         _logger.info("Connecting to camera '%s' over bsread.", camera_name)
 
         process_parameters()
-        statistics.counter = 0
+        # register_image_channel(x_size, y_size, dtype)
 
+        statistics.counter = 0
         camera_stream.connect()
 
         # This signals that the camera has successfully started.
@@ -170,6 +158,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
 
         while not stop_event.is_set():
             try:
+
                 data = camera_stream.receive()
 
                 # In case of receiving error or timeout, the returned data is None.
@@ -177,21 +166,26 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
                     continue
 
                 image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
-                height, width, = image.shape
+
+                # Numpy is slowest dimension first, but bsread is fastest dimension first.
+                height, width = image.shape
+
                 pulse_id = data.data.pulse_id
 
                 timestamp_s = data.data.global_timestamp
                 timestamp_ns = data.data.global_timestamp_offset
                 timestamp = timestamp_s + (timestamp_ns / 1e9)
 
-                data = {"image": image,
-                        "height": height,
-                        "width": width,
-                        "x_axis": x_axis,
-                        "y_axis": y_axis,
-                        "timestamp": timestamp}
+                data = {
+                    "image": image,
+                    "height": height,
+                    "width": width,
+                    "x_axis": x_axis,
+                    "y_axis": y_axis,
+                    "timestamp": timestamp
+                }
 
-                sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=False)
+                sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
 
                 while not parameter_queue.empty():
                     new_parameters = parameter_queue.get()
@@ -200,7 +194,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
                     process_parameters()
 
             except:
-                _logger.exception("Could not process message.")
+                _logger.exception("Could not process message.", e)
                 stop_event.set()
 
         _logger.info("Stopping transceiver.")
