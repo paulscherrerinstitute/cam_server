@@ -18,7 +18,7 @@ MFLOW_NO_CLIENTS_TIMEOUT = 10
 ###################
 
 # Each camera config gets assigned one port.
-CAMERA_STREAM_PORT_RANGE = (10100, 10201)
+CAMERA_STREAM_PORT_RANGE = (10100, 10301)
 # Default folder for camera configs.
 DEFAULT_CAMERA_CONFIG_FOLDER = "configuration/camera_config"
 # Default colormap to use when getting an image from the camera.
