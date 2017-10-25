@@ -59,7 +59,7 @@ PROCESS_POLL_INTERVAL = 0.1
 # General settings #
 ####################
 
-TIME_FORMAT = "%Y-%m-%d %H%:%M:%S UTC%z"
+TIME_FORMAT = "%Y-%m-%d %H:%M:%S UTC%z"
 
 ##################
 # EPICS settings #
