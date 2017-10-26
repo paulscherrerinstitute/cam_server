@@ -181,7 +181,7 @@ class PipelineProcessingTest(unittest.TestCase):
         good_region_keys = set(["good_region", "gr_x_axis", "gr_y_axis", "gr_x_fit_gauss_function", "gr_x_fit_offset",
                                 "gr_x_fit_amplitude", "gr_x_fit_standard_deviation", "gr_x_fit_mean",
                                 "gr_y_fit_gauss_function", "gr_y_fit_offset", "gr_y_fit_amplitude",
-                                "gr_y_fit_standard_deviation", "gr_y_fit_mean"])
+                                "gr_y_fit_standard_deviation", "gr_y_fit_mean", "gr_intensity"])
 
         slices_key_formats = set(["slice_%s_center_x", "slice_%s_center_y", "slice_%s_standard_deviation",
                                   "slice_%s_intensity"])
@@ -354,8 +354,8 @@ class PipelineProcessingTest(unittest.TestCase):
         y_sum = result["y_profile"].sum()
 
         # The sums of X and Y profile should always give us the same result as the intensity.
-        self.assertAlmostEqual(x_sum, result["intensity"], places=3)
-        self.assertAlmostEqual(y_sum, result["intensity"], places=3)
+        self.assertAlmostEqual(x_sum, result["intensity"], delta=10000)
+        self.assertAlmostEqual(y_sum, result["intensity"], delta=10000)
 
     def test_get_image(self):
         simulated_camera = CameraSimulation(CameraConfig("simulation"))

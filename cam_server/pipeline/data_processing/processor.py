@@ -98,6 +98,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                 return_value["gr_y_fit_amplitude"] = None
                 return_value["gr_y_fit_standard_deviation"] = None
                 return_value["gr_y_fit_mean"] = None
+                return_value["gr_intensity"] = None
 
                 slices = parameters.get("image_slices")
                 if slices:
@@ -133,6 +134,9 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
             # Get profiles of the good region
             (good_region_x_profile, good_region_y_profile) = functions.get_x_y_profile(good_region)
 
+            # Could be also good_region_y_profile.sum() -> it should give the same result.
+            good_region_intensity = good_region_x_profile.sum()
+
             # Fit the profiles
             good_region_x_fit = functions.gauss_fit(good_region_x_profile, good_region_x_axis)
             good_region_y_fit = functions.gauss_fit(good_region_y_profile, good_region_y_axis)
@@ -157,6 +161,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
             return_value["gr_y_fit_amplitude"] = gr_y_fit_amplitude
             return_value["gr_y_fit_standard_deviation"] = gr_y_fit_standard_deviation
             return_value["gr_y_fit_mean"] = gr_y_fit_mean
+            return_value["gr_intensity"] = good_region_intensity
 
             image_slices = parameters.get("image_slices")
 
