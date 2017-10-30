@@ -18,16 +18,15 @@ class PipelinePerformanceTest(unittest.TestCase):
         except ImportError:
             return
 
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
-        image = simulated_camera.get_image()
+        simulated_camera = CameraSimulation(CameraConfig("simulation"), size_x=2048, size_y=2048)
         x_axis, y_axis = simulated_camera.get_x_y_axis()
         x_size, y_size = simulated_camera.get_geometry()
-        image_background_array = numpy.zeros(shape=(y_size, x_size))
+        image_background_array = numpy.zeros(shape=(y_size, x_size), dtype="uint16") + 3
 
         parameters = {
 
-            "image_threshold": 0.5,
-            "image_region_of_interest": [0, 1100, 0, 860],
+            "image_threshold": 1,
+            "image_region_of_interest": [0, 2048, 0, 2048],
 
             "image_good_region": {
                 "threshold": 0.3,
@@ -46,13 +45,28 @@ class PipelinePerformanceTest(unittest.TestCase):
 
         n_iterations = 300
 
+        print("Generating images.")
+
+        images = []
         for _ in range(n_iterations):
+            images.append(simulated_camera.get_image())
+
+        print("Processing images.")
+
+        start_time = time.time()
+        for image in images:
             process_image_wrapper(image=image,
                                   timestamp=time.time(),
                                   x_axis=x_axis,
                                   y_axis=y_axis,
                                   parameters=parameters,
                                   image_background_array=image_background_array)
+        end_time = time.time()
+
+        time_difference = end_time - start_time
+        rate = n_iterations / time_difference
+
+        print("Processing rate: ", rate)
 
         profile.print_stats()
 

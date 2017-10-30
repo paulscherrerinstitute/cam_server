@@ -86,11 +86,6 @@ class CameraEpics:
         if value is None:
             return None
 
-        # Convert type - we are using f because of better performance
-        # floats (32bit-ones) are way faster to calculate than 16 bit ints, actually even faster than native
-        # int type (32/64uint) since we can leverage SIMD instructions (SSE/SSE2 on Intels).
-        value = value.astype('u2').astype(numpy.float32)
-
         # Shape image
         value = value[:(self.width_raw * self.height_raw)].reshape((self.height_raw, self.width_raw))
 

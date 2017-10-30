@@ -86,6 +86,8 @@ class CameraSimulation(CameraEpics):
         image.clip(0, 0.9, out=image)
         image *= (numpy.power(2, 16) - 1)
 
+        image = image.astype("uint16")
+
         return self._get_image(image, raw=raw)
 
     def connect(self):
