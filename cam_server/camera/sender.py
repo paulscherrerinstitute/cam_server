@@ -34,7 +34,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
             x_axis, y_axis = camera.get_x_y_axis()
             sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
                                                   "shape": [x_size, y_size],
-                                                  "type": "float32"})
+                                                  "type": "uint16"})
 
         x_size = y_size = x_axis = y_axis = None
         camera.connect()
