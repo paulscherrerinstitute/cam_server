@@ -304,7 +304,8 @@ class PipelineProcessingTest(unittest.TestCase):
                 "threshold": 0.1
             },
             "image_slices": {
-                "orientation": "vertical"
+                "orientation": "vertical",
+                "number_of_slices": 3
             }
         }
 
@@ -321,7 +322,8 @@ class PipelineProcessingTest(unittest.TestCase):
                 "threshold": 0.1
             },
             "image_slices": {
-                "orientation": "horizontal"
+                "orientation": "horizontal",
+                "number_of_slices": 3
             }
         }
 

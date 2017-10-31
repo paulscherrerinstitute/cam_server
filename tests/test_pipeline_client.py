@@ -39,18 +39,20 @@ class PipelineClientTest(unittest.TestCase):
                                                                             cam_server_address))
         self.pipeline_process.start()
 
-        # Give it some time to start.
-        sleep(1)
-
         self.cam_client = CamClient(cam_server_address)
         self.pipeline_client = PipelineClient(pipeline_server_address)
 
+        # Give it some time to start.
+        sleep(1)
+
     def tearDown(self):
-        self.cam_client.stop_all_cameras()
-        self.pipeline_client.stop_all_instances()
 
         os.kill(self.cam_process.pid, signal.SIGINT)
         os.kill(self.pipeline_process.pid, signal.SIGINT)
+
+        self.cam_process.join()
+        self.pipeline_process.join()
+
         try:
             os.remove(os.path.join(self.pipeline_config_folder, "testing_config.json"))
         except:
@@ -286,8 +288,8 @@ class PipelineClientTest(unittest.TestCase):
                          "Requesting the same config should give you the same instance.")
 
         self.pipeline_client.stop_all_instances()
+        self.cam_client.stop_all_cameras()
 
-    def test_store_pipeline(self):
         instance_id, stream_address = self.pipeline_client.create_instance_from_config(
             {"camera_name": "simulation", "pipeline_type": "store"})
 
