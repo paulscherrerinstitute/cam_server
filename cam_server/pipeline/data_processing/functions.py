@@ -74,7 +74,7 @@ def find_index(axis, item):
         insert_index = numpy.searchsorted(axis, item)
 
         # If the value is the same as the array value at the given index, use this index directly.
-        if axis[insert_index] == item:
+        if insert_index < len(axis) and axis[insert_index] == item:
             return insert_index
 
         # Otherwise return the previous section index.
@@ -310,6 +310,8 @@ def get_png_from_image(image_raw_bytes, scale=None, min_value=None, max_value=No
     :param colormap_name: Colormap to use. See http://matplotlib.org/examples/color/colormaps_reference.html
     :return: PNG image.
     """
+
+    image_raw_bytes = image_raw_bytes.astype("float64")
 
     if scale:
         shape_0 = int(image_raw_bytes.shape[0] * scale)
