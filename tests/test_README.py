@@ -56,6 +56,11 @@ class PipelineClientTest(unittest.TestCase):
             pass
 
         try:
+            os.remove("testing_dump.h5")
+        except:
+            pass
+
+        try:
             self.pipeline_client.delete_pipeline_config("test_pipeline")
         except:
             pass
@@ -334,6 +339,25 @@ class PipelineClientTest(unittest.TestCase):
 
         self.assertIsNotNone(data)
         self.assertTrue("image" in data.data.data)
+
+    def test_save_camera_stream_to_h5(self):
+        from bsread import h5, SUB
+
+        camera_name = "simulation"
+        file_name = "testing_dump.h5"
+        n_messages = 10
+
+        # Change to match your camera server
+        server_address = "http://0.0.0.0:8889"
+
+        client = PipelineClient(server_address)
+
+        instance_id, stream_address = client.create_instance_from_config({"camera_name": camera_name})
+
+        # The output file 'output.h5' has 10 images from the simulation camera stream.
+        h5.receive(source=stream_address, file_name=file_name, mode=SUB, n_messages=n_messages)
+
+        self.assertTrue(os.path.exists(file_name))
 
 
 if __name__ == '__main__':

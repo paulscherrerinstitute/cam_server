@@ -37,6 +37,9 @@ underlying infrastructure to provide camera images to the pipeline server.
     6. [Modifying pipeline config](#modify_pipeline_config)
     7. [Create a new camera](#create_camera_config)
     8. [Get single message from screen_panel stream](#single_message_screen_panel)
+    9. [Save camera stream to H5 file](#stream_to_h5_file)
+9. [Deploy in production](#deploy_in_production)
+
     
 <a id="quick_start"></a>
 ## Quick start    
@@ -725,11 +728,8 @@ from cam_server import CamClient
 from cam_server.utils import get_host_port_from_stream_address
 from bsread import source, SUB
 
-# Change to match your camera server
-server_address = "http://0.0.0.0:8888"
-
 # Initialize the client.
-camera_client = CamClient(server_address)
+camera_client = CamClient()
 
 # Get stream address of simulation camera. Stream address in format tcp://hostname:port.
 camera_stream_address = camera_client.get_camera_stream("simulation")
@@ -767,11 +767,8 @@ from cam_server import PipelineClient
 from cam_server.utils import get_host_port_from_stream_address
 from bsread import source, SUB
 
-# Change to match your pipeline server
-server_address = "http://0.0.0.0:8889"
-
 # Initialize the client.
-pipeline_client = PipelineClient(server_address)
+pipeline_client = PipelineClient()
 
 # Setup the pipeline config. Use the simulation camera as the pipeline source.
 pipeline_config = {"camera_name": "simulation"}
@@ -804,12 +801,10 @@ background for the simulation camera and apply it to the pipeline.
 ```python
 from cam_server import PipelineClient
 
-# Change to match your pipeline server
-server_address = "http://0.0.0.0:8889"
 camera_name = "simulation"
 
 # Initialize the client.
-pipeline_client = PipelineClient(server_address)
+pipeline_client = PipelineClient()
 
 # Collect the background for the given camera.
 background_id = pipeline_client.collect_background(camera_name)
@@ -836,7 +831,7 @@ from bsread import source, SUB
 camera_name = "SAROP21-PPRM102"
 
 # First create the pipeline for the selected camera.
-client = PipelineClient("http://sf-daqsync-01:8889")
+client = PipelineClient()
 instance_id, stream_address = client.create_instance_from_config({"camera_name": camera_name})
 
 # Extract the stream host and port from the stream_address.
@@ -949,7 +944,7 @@ This example shows how to create a new camera config.
 from cam_server import CamClient
 
 # Initialize the camera client.
-cam_client = CamClient("http://sf-daqsync-01:8888/")
+cam_client = CamClient()
 
 # Specify the desired camera config.
 camera_config = {
@@ -989,7 +984,7 @@ reflected in our acquisition (you can configure what you want to acquire in the 
 from cam_server import PipelineClient
 
 # Instantiate the pipeline client.
-pipeline_client = PipelineClient("http://sf-daqsync-01:8889/")
+pipeline_client = PipelineClient()
 
 # Name of the camera we want to get a message from.
 camera_name = "simulation"
@@ -998,6 +993,24 @@ instance_name = camera_name + "_sp1"
 
 # Get the data.
 data = pipeline_client.get_instance_message(instance_name)
+```
+
+<a id="stream_to_h5_file"></a>
+### Save camera stream to H5 file
+```python
+from bsread import h5, SUB
+from cam_server import *
+
+camera_name = "simulation"
+file_name = "output.h5"
+n_messages = 10
+
+client = PipelineClient()
+
+instance_id, stream_address = client.create_instance_from_config({"camera_name": camera_name})
+
+# The output file 'output.h5' has 10 images from the simulation camera stream.
+h5.receive(source=stream_address, file_name=file_name, mode=SUB, n_messages=n_messages)
 ```
 
 <a id="deploy_in_production"></a>
