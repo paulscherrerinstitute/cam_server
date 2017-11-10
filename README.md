@@ -999,7 +999,7 @@ data = pipeline_client.get_instance_message(instance_name)
 ### Save camera stream to H5 file
 ```python
 from bsread import h5, SUB
-from cam_server import *
+from cam_server import PipelineClient
 
 camera_name = "simulation"
 file_name = "output.h5"
