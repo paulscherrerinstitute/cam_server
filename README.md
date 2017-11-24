@@ -1,10 +1,10 @@
 [![Build Status](https://travis-ci.org/datastreaming/cam_server.svg?branch=master)](https://travis-ci.org/datastreaming/cam_server) [![Build status](https://ci.appveyor.com/api/projects/status/0vyk18qxnqk2cmvx?svg=true)](https://ci.appveyor.com/project/Babicaa/cam-server)
 
 # Camera and Pipeline server
-Cam server is an epics - bsread interface that converts epics enabled camera into a bs_read stream. In addition it 
+Cam server is an epics - bsread interface that converts epics enabled camera into a bs_read stream. In addition it
 also provides a processing pipeline and a REST interface to control both the cameras and the pipeline.
 
-**WARNING**: Please note that for normal users, only **PipelineClient** should be used. CamClient is used by the 
+**WARNING**: Please note that for normal users, only **PipelineClient** should be used. CamClient is used by the
 underlying infrastructure to provide camera images to the pipeline server.
 
 # Table of content
@@ -40,7 +40,7 @@ underlying infrastructure to provide camera images to the pipeline server.
     9. [Save camera stream to H5 file](#stream_to_h5_file)
 9. [Deploy in production](#deploy_in_production)
 
-    
+
 <a id="quick_start"></a>
 ## Quick start    
 The example below shows how to access the camera stream you have currently open in a screen_panel instance.
@@ -72,23 +72,23 @@ stream_host, stream_port = get_host_port_from_stream_address(stream_address)
 # Open connection to the stream. When exiting the 'with' section, the source disconnects by itself.
 with source(host=stream_host, port=stream_port, mode=SUB) as input_stream:
     input_stream.connect()
-    
+
     # Read one message.
     message = input_stream.receive()
-    
+
     # Print out the received stream data - dictionary.
     print("Dictionary with data:\n", message.data.data)
-    
+
     # Print out the X center of mass.
     print("X center of mass: ", message.data.data["x_center_of_mass"].value)
 ```
 
-Whenever screen_panel starts start streaming a camera, it creates a pipeline named 
+Whenever screen_panel starts start streaming a camera, it creates a pipeline named
 "**[camera\_name]**_sp1". You can connect to this instance with the **get\_instance\_stream** function of the client.
 
-All the changes to the stream (config changes) done in the screen_panel will be reflected in the stream after a couple 
+All the changes to the stream (config changes) done in the screen_panel will be reflected in the stream after a couple
 of images.
-    
+
 <a id="build"></a>
 ## Build
 
@@ -129,7 +129,7 @@ The library relies on the following packages:
 - matplotlib
 - pillow
 
-In case you are using conda to install the packages, you might need to add the **paulscherrerinstitute** channel to 
+In case you are using conda to install the packages, you might need to add the **paulscherrerinstitute** channel to
 your conda config:
 
 ```
@@ -138,7 +138,7 @@ conda config --add channels paulscherrerinstitute
 
 <a id="docker_build"></a>
 ### Docker build
-**Warning**: When you build the docker image with **build.sh**, your built will be pushed to the PSI repo as the 
+**Warning**: When you build the docker image with **build.sh**, your built will be pushed to the PSI repo as the
 latest cam_server version. Please use the **build.sh** script only if you are sure that this is what you want.
 
 To build the docker image, run the build from the **docker/** folder:
@@ -148,7 +148,7 @@ To build the docker image, run the build from the **docker/** folder:
 
 Before building the docker image, make sure the latest version of the library is available in Anaconda.
 
-**Please note**: There is no need to build the image if you just want to run the docker container. 
+**Please note**: There is no need to build the image if you just want to run the docker container.
 Please see the [Docker Container](#run_docker_container) chapter.
 
 
@@ -158,48 +158,48 @@ Please see the [Docker Container](#run_docker_container) chapter.
 <a id="request_a_stream"></a>
 ### Requesting a stream and instance management
 
-Instance management is done automatically. Once you request a stream, you have a fixed amount of time 
-(no clients timeout) to connect to the stream. If you do not connect in the given time, the stream will automatically 
-be stopped. In this case, you will need to request the stream again. 
+Instance management is done automatically. Once you request a stream, you have a fixed amount of time
+(no clients timeout) to connect to the stream. If you do not connect in the given time, the stream will automatically
+be stopped. In this case, you will need to request the stream again.
 
-The same is true when disconnecting from the stream. You do not need to take any actions to close the pipeline or 
+The same is true when disconnecting from the stream. You do not need to take any actions to close the pipeline or
 camera stream, as they will close themselves automatically after the configured time has elapsed.
 
 There are however 2 methods available for manual instance management:
 - stop_instance
 - stop_all_instances
 
-They are not meant to be used during normal operations, but only as administrative methods if something does not work 
+They are not meant to be used during normal operations, but only as administrative methods if something does not work
 as expected.
 
 <a id="shared_and_private"></a>
 ### Shared and private pipeline instances
 
-The difference between shared and private pipeline instances in mainly in the fact that shared instances are 
-read only (the pipeline config cannot be changed). This is done to prevent the interaction between different users 
-- if 2 people are independently viewing the same pipeline at the same time, we need to prevent to any of them to change 
+The difference between shared and private pipeline instances in mainly in the fact that shared instances are
+read only (the pipeline config cannot be changed). This is done to prevent the interaction between different users
+- if 2 people are independently viewing the same pipeline at the same time, we need to prevent to any of them to change
 what the other receives. If you need to change the pipeline parameters, you need to create a private pipeline instance.
 
-Shared instances are named after the pipeline config they are created from. For example, if you have a saved pipeline 
-with the name 'simulation_pipeline', the shared instance instance_id will be 'simulation_pipeline'. Private instances 
-can have a custom instance_id you provide, or an automatically generated one. 
+Shared instances are named after the pipeline config they are created from. For example, if you have a saved pipeline
+with the name 'simulation_pipeline', the shared instance instance_id will be 'simulation_pipeline'. Private instances
+can have a custom instance_id you provide, or an automatically generated one.
 In any case, the given instance_id must be unique.
 
-You can share the private pipeline as well - all you need to share is the instance_id. But you need to be 
+You can share the private pipeline as well - all you need to share is the instance_id. But you need to be
 aware that anyone having your instance_id can change any parameter on the pipeline.
 
 <a id="configuration_versioning"></a>
 ### Configuration versioning and camera background in the pipeline server
 We have a requirement to be always able to access the original configuration with which the image was processed.
 
-The configuration used by the pipeline for image processing is explicitly added to each bs_read message. The 
-configuration is added as a JSON object (string representation) in the **processing\_parameters** field. 
-Since this config is included with every message, there is no need to version the 
+The configuration used by the pipeline for image processing is explicitly added to each bs_read message. The
+configuration is added as a JSON object (string representation) in the **processing\_parameters** field.
+Since this config is included with every message, there is no need to version the
 processing parameters on the pipeline server. You can retrieve the processing parameters for each frame individually
 (the processing parameters can change from frame to frame).
 
-Backgrounds, on the other hand, are not included into this field - just the background id is (since the background is 
-a large image, it does not make sense to include it in every message). As a consequence, backgrounds can never be 
+Backgrounds, on the other hand, are not included into this field - just the background id is (since the background is
+a large image, it does not make sense to include it in every message). As a consequence, backgrounds can never be
 deleted and need to be versioned on the pipeline server. All backgrounds need to be backed up regularly.
 
 <a id="configuration"></a>
@@ -233,7 +233,7 @@ For camera configuration, all fields must be specified, and there is no defaulti
     - angle_vertical (Default _0.0_): Vertical angle.
 
 ##### Source type
-cam_server can connect to different type of sources. The type of source you select defines the meaning of the 
+cam_server can connect to different type of sources. The type of source you select defines the meaning of the
 **source** field in the configuration:
 
 - source_type = "epics" : Connect to an Epics camera. The 'source' field is the camera prefix.
@@ -249,7 +249,7 @@ cam_server can connect to different type of sources. The type of source you sele
   "mirror_x": true,
   "mirror_y": false,
   "rotate": 4,
-  
+
   "camera_calibration": {
     "reference_marker": [ 0, 0, 100, 100 ],
     "reference_marker_width": 100.0,
@@ -263,10 +263,10 @@ cam_server can connect to different type of sources. The type of source you sele
 <a id="pipeline_configuration"></a>
 ### Pipeline configuration
 
-Configuration changes can for the pipeline can be incremental - you need to specify only the fields that you want 
-to change. A valid configuration must have only the **camera_name** specified, all other fields will be 
-defaulted to **None** (or False, in the case of "image_background_enable"). The complete configuration used for the 
-pipeline is added to the output bsread stream in the 
+Configuration changes can for the pipeline can be incremental - you need to specify only the fields that you want
+to change. A valid configuration must have only the **camera_name** specified, all other fields will be
+defaulted to **None** (or False, in the case of "image_background_enable"). The complete configuration used for the
+pipeline is added to the output bsread stream in the
 **processing\_parameters** field.
 
 #### Configuration parameters
@@ -279,7 +279,7 @@ pipeline is added to the output bsread stream in the
 - **image\_good\_region** (Default _None_): Good region to use for fits and slices.
     - threshold (Default _0.3_): Threshold to apply on each pixel.
     - gfscale (Default _1.8_): Scale to extend the good region.
-- **image\_slices** (Default _None_): 
+- **image\_slices** (Default _None_):
     - number_of_slices (Default _1_): Desired number of slices.
     - scale (Default _2.0_): Good region scale in for slicing purposes.
     - orientation (Default _vertical_): Orientation of the slices. Can be 'vertical' or 'horizontal'.
@@ -316,15 +316,15 @@ The cam_server is divided into 2 parts:
 
 Operations on both server are accessible via the REST api and also via a python client class (that calls the REST api).
 
-As an end user you should interact mostly with the pipeline, with the exception of cases where you need the raw 
-image coming directly from the camera - even in this case, it is advisable to create a new pipeline without processing 
-and use the stream from the pipeline. In this way, we lower the network load on the system (only one instance of 
+As an end user you should interact mostly with the pipeline, with the exception of cases where you need the raw
+image coming directly from the camera - even in this case, it is advisable to create a new pipeline without processing
+and use the stream from the pipeline. In this way, we lower the network load on the system (only one instance of
 camera stream, that is shared by many pipelines).
 
 All request (with the exception of **get\_camera\_image**) return a JSON with the following fields:
 - **state** - \["ok", "error"\]
 - **status** - What happened on the server or error message, depending on the state.
-- Optional request specific field - \["cameras", "geometry", "info", "stream", "config", "pipelines", 
+- Optional request specific field - \["cameras", "geometry", "info", "stream", "config", "pipelines",
 "instance_id", "background_id"\]
 
 For more information on what each command does check the **API** section in this document.
@@ -332,12 +332,12 @@ For more information on what each command does check the **API** section in this
 <a id="python_client"></a>
 ### Python client
 
-There are 2 classes available to communicate with the camera and pipeline server. They are basically just wrappers 
+There are 2 classes available to communicate with the camera and pipeline server. They are basically just wrappers
 around REST API calls (see next chapters).
 
 #### CamClient
 
-**WARNING**: Please note that for normal users, only **PipelineClient** should be used. CamClient is used by the 
+**WARNING**: Please note that for normal users, only **PipelineClient** should be used. CamClient is used by the
 underlying infrastructure to provide camera images to the pipeline server.
 
 Import and create a cam client instance:
@@ -349,62 +349,62 @@ client = CamClient()
 Class definition:
 ```
 class CamClient()
-  
+
   __init__(self, address='http://sf-daqsync-01:8888/')
     :param address: Address of the cam API, e.g. http://localhost:10000
-  
+
   delete_camera_config(self, camera_name)
       Delete config of camera.
       :param camera_name: Camera to set the config to.
       :return: Actual applied config.
-  
+
   get_address(self)
       Return the REST api endpoint address.
-  
+
   get_camera_config(self, camera_name)
       Return the cam configuration.
       :param camera_name: Name of the cam.
       :return: Camera configuration.
-  
+
   get_camera_geometry(self, camera_name)
       Get cam geometry.
       :param camera_name: Name of the cam.
       :return: Camera geometry.
-  
+
   get_camera_image(self, camera_name)
       Return the cam image in PNG format.
       :param camera_name: Camera name.
       :return: server_response content (PNG).
-  
+
   def get_camera_image_bytes(self, camera_name):
       Return the cam image bytes.
       :param camera_name: Camera name.
       :return: JSON with bytes and metadata.
-  
+
   get_camera_stream(self, camera_name)
       Get the camera stream address.
       :param camera_name: Name of the camera to get the address for.
       :return: Stream address.
-  
+
   get_cameras(self)
       List existing cameras.
       :return: Currently existing cameras.
-  
+
   get_server_info(self)
       Return the info of the cam server instance.
       For administrative purposes only.
       :return: Status of the server
-  
+
   set_camera_config(self, camera_name, configuration)
       Set config on camera.
       :param camera_name: Camera to set the config to.
       :param configuration: Config to set, in dictionary format.
       :return: Actual applied config.
-  
+
   stop_all_cameras(self)
       Stop all the cameras on the server.
       :return: Response.
-  
+
   stop_camera(self, camera_name)
       Stop the camera.
       :param camera_name: Name of the camera to stop.
@@ -422,92 +422,92 @@ client = PipelineClient()
 Class definition:
 ```
 class PipelineClient(builtins.object)
-  
+
   __init__(self, address='http://sf-daqsync-01:8889/')
       :param address: Address of the pipeline API, e.g. http://localhost:10000
-  
+
   collect_background(self, camera_name, n_images=None)
       Collect the background image on the selected camera.
       :param camera_name: Name of the camera to collect the background on.
       :param n_images: Number of images to collect the background on.
       :return: Background id.
-  
+
   create_instance_from_config(self, configuration, instance_id=None)
       Create a pipeline from the provided config. Pipeline config can be changed.
       :param configuration: Config to use with the pipeline.
       :param instance_id: User specified instance id. GUID used if not specified.
       :return: Pipeline instance stream.
-  
+
   create_instance_from_name(self, pipeline_name, instance_id=None)
       Create a pipeline from a config file. Pipeline config can be changed.
       :param pipeline_name: Name of the pipeline to create.
       :param instance_id: User specified instance id. GUID used if not specified.
       :return: Pipeline instance stream.
-  
+
   delete_pipeline_config(self, pipeline_name)
       Delete a pipeline config.
       :param pipeline_name: Name of pipeline config to delete.
-  
+
   get_cameras(self)
       List available cameras.
       :return: Currently available cameras.
-  
+
   get_instance_config(self, instance_id)
       Return the instance configuration.
       :param instance_id: Id of the instance.
       :return: Pipeline configuration.
-  
+
   get_instance_info(self, instance_id)
       Return the instance info.
       :param instance_id: Id of the instance.
       :return: Pipeline instance info.
-  
+
   get_instance_stream(self, instance_id)
       Return the instance stream. If the instance does not exist, it will be created.
       Instance will be read only - no config changes will be allowed.
       :param instance_id: Id of the instance.
       :return: Pipeline instance stream.
-  
+
   get_latest_background(self, camera_name)
       Return the latest collected background for a camera.
       :param camera_name: Name of the camera to return the background.
       :return: Background id.
-  
+
   get_pipeline_config(self, pipeline_name)
       Return the pipeline configuration.
       :param pipeline_name: Name of the pipeline.
       :return: Pipeline configuration.
-  
+
   get_pipelines(self)
       List existing pipelines.
       :return: Currently existing cameras.
-  
+
   get_server_info(self)
       Return the info of the cam server instance.
       For administrative purposes only.
       :return: Status of the server
-  
+
   save_pipeline_config(self, pipeline_name, configuration)
       Set config of the pipeline.
       :param pipeline_name: Pipeline to save the config for.
       :param configuration: Config to save, in dictionary format.
       :return: Actual applied config.
-  
+
   set_instance_config(self, instance_id, configuration)
       Set config of the instance.
       :param instance_id: Instance to apply the config for.
       :param configuration: Config to apply, in dictionary format.
       :return: Actual applied config.
-  
+
   stop_all_instances(self)
       Stop all the pipelines on the server.
-  
+
   stop_instance(self, instance_id)
       Stop the pipeline.
       :param instance_id: Name of the pipeline to stop.
-      
+
   get_instance_message(self, instance_id):
-       
+
       Get a single message from a stream instance.
       :param instance_id: Instance id of the stream.
       :return: Message from the stream.
@@ -519,41 +519,41 @@ class PipelineClient(builtins.object)
 
 #### Camera server API
 
-**WARNING**: Please note that for normal users, only the **Pipeline server API** should be used. The Camera server API 
+**WARNING**: Please note that for normal users, only the **Pipeline server API** should be used. The Camera server API
 is used by the underlying infrastructure to provide camera images to the pipeline server.
 
 In the API description, localhost and port 8888 are assumed. Please change this for your specific case.
 
 * `GET localhost:8888/api/v1/cam` - get the list of available cameras.
     - Response specific field: "cameras" - List of cameras.
-    
+
 * `GET localhost:8888/api/v1/cam/<camera_name>` - get the camera stream.
     - Response specific field: "stream" - Stream address.
-    
+
 * `GET localhost:8888/api/v1/cam/<camera_name>/config` - get camera config.
     - Response specific field: "config" - configuration JSON.
-    
+
 * `POST localhost:8888/api/v1/cam/<camera_name>/config` - set camera config.
     - Response specific field: "config" configuration JSON.
-    
+
 * `DELETE localhost:8888/api/v1/cam/<camera_name>/config` - delete the camera config.
     - Response specific field: None
-    
+
 * `GET localhost:8888/api/v1/cam/<camera_name>/geometry` - get the geometry of the camera.
     - Response specific field: "geometry" - \[width, height\] of image
-    
+
 * `GET localhost:8888/api/v1/cam/<camera_name>/image` - get one PNG image of the camera.
     - Returns a PNG image
-    
+
 * `GET localhost:8888/api/v1/cam/<camera_name>/image_bytes` - get one PNG image of the camera.
     - Returns JSON with Base64, UTF-8 image bytes and metadata.
-    
+
 * `GET localhost:8888/api/v1/cam/info` - return info on the camera manager.
     - Response specific field: "info" - JSON with instance info.
-    
+
 * `DELETE localhost:8888/api/v1/cam` - stop all camera instances.
     - Response specific field: None
-    
+
 * `DELETE localhost:8888/api/v1/cam/<camera_name>` - stop the camera instance.
     - Response specific field: None
 
@@ -563,49 +563,49 @@ In the API description, localhost and port 8889 are assumed. Please change this 
 
 * `GET localhost:8889/api/v1/pipeline` - get the list of available pipelines.
     - Response specific field: "pipelines" - List of pipelines.
-    
+
 * `POST localhost:8889/api/v1/pipeline?instance_id=id` - create a pipeline by passing its config as a JSON payload.
     - Query parameter: instance_id (optional) - request a specific instance id. Must be unique.
     - Response specific field: "instance_id", "stream", "config"
-    
+
 * `POST localhost:8889/api/v1/pipeline/<pipeline_name>?instance_id=id` - create a pipeline from a named config.
     - Query parameter: instance_id (optional) - request a specific instance id. Must be unique.
     - Response specific field: "instance_id", "stream", "config"
-    
+
 * `GET localhost:8889/api/v1/pipeline/instance/<instance_id>` - get pipeline instance stream address.
     - Response specific field: "stream" - Stream address of the pipeline instance.
-   
+
 * `GET localhost:8889/api/v1/pipeline/instance/<instance_id>/info` - get pipeline instance info.
     - Response specific field: "info" - JSON with instance info.
-    
+
 * `GET localhost:8889/api/v1/pipeline/instance/<instance_id>/config` - get pipeline instance config.
     - Response specific field: "config" - JSON instance config.
-    
+
 * `POST localhost:8889/api/v1/pipeline/instance/<instance_id>/config` - set pipeline instance config - JSON payload.
     - Response specific field: "config" - JSON instance config.
-    
+
 * `GET localhost:8889/api/v1/pipeline/<pipeline_name>/config` - get named pipeline config.
     - Response specific field: "config" - JSON named pipeline config.
-    
+
 * `POST localhost:8889/api/v1/pipeline/<pipeline_name>/config` - set named pipeline config - JSON payload.
     - Response specific field: "config" - JSON named pipeline config.
-    
+
 * `GET localhost:8889/api/v1/pipeline/camera` - return the list of available cameras.
     - Response specific field: "cameras" - List of cameras.
-    
+
 * `POST localhost:8889/api/v1/pipeline/camera/<camera_name>/background?n_images=10` - collect background for the camera.
     - Query parameter: n_images (optional) = how many images to average for the background.
     - Response specific field: "background_id" - ID of the acquired background.
-    
+
 * `GET localhost:8889/api/v1/pipeline/camera/<camera_name>/background` - return latest background for camera.
     - Response specific field: "background_id" - ID of the latest background for the camera.
-    
+
 * `GET localhost:8889/api/v1/pipeline/info` - return info on the pipeline manager.
     - Response specific field: "info" -  JSON with instance info.
-    
+
 * `DELETE localhost:8889/api/v1/pipeline` - stop all pipeline instances.
     - Response specific field: None
-    
+
 * `DELETE localhost:8889/api/v1/pipeline/<instance_id>` - stop the pipeline instance.
     - Response specific field: None
 
@@ -621,8 +621,8 @@ The two servers are:
 
 You can also use the docker container directly - it setups and starts both servers.
 
-Before you can run the servers, you need to have (and specify where you have it) the cameras, pipelines and background 
-configurations. In this repo, you can find the test configurations inside the **tests/** folder. To use the 
+Before you can run the servers, you need to have (and specify where you have it) the cameras, pipelines and background
+configurations. In this repo, you can find the test configurations inside the **tests/** folder. To use the
 production configuration, see **Production configuration** chapter below.
 
 <a id="run_camera_server"></a>
@@ -680,10 +680,10 @@ To execute the application inside a docker container, you must first start it (f
 docker run --net=host -it -v /CURRENT_DIR/tests:/configuration docker.psi.ch:5000/cam_server
 ```
 
-**WARNING**: Docker needs (at least on OSX) a full path for the -v option. Replace the **CURRENT\_DIR** with your 
+**WARNING**: Docker needs (at least on OSX) a full path for the -v option. Replace the **CURRENT\_DIR** with your
 actual path.
 
-This will map the test configuration (-v option) to the /configuration folder inside the container. 
+This will map the test configuration (-v option) to the /configuration folder inside the container.
 If you need to have the production configuration, see the next chapter.
 
 Once in the container bash, you can start the two servers:
@@ -707,7 +707,7 @@ And later, when you start the docker container, map the configuration using the 
 docker run --net=host -it -v /CURRENT_DIR/cam_server_configuration/configuration:/configuration docker.psi.ch:5000/cam_server
 ```
 
-**WARNING**: Docker needs (at least on OSX) a full path for the -v option. Replace the **CURRENT\_DIR** with your 
+**WARNING**: Docker needs (at least on OSX) a full path for the -v option. Replace the **CURRENT\_DIR** with your
 actual path.
 
 <a id="examples"></a>
@@ -716,11 +716,11 @@ actual path.
 <a id="get_simulation_camera_stream"></a>
 ### Get the simulation camera stream
 
-**WARNING**: This example should not be used by normal users. CamClient is used by the 
-underlying infrastructure to provide camera images to the pipeline server. See PipelineClient for a 
+**WARNING**: This example should not be used by normal users. CamClient is used by the
+underlying infrastructure to provide camera images to the pipeline server. See PipelineClient for a
 user oriented client.
 
-This is just an example on how you can retrieve the raw image from the camera. You **should not** do this for 
+This is just an example on how you can retrieve the raw image from the camera. You **should not** do this for
 the normal use case. See next example for a more common use.
 
 ```python
@@ -753,13 +753,13 @@ print("Image data: %s" % image_bytes)
 <a id="basic_pipeline"></a>
 ### Get a basic pipeline with a simulated camera
 
-In contrast with the example above, where we just request a camera stream, we have to create a pipeline instance 
-in this example. We create a pipeline instance by specifying which camera - simulation in our example - to use as 
+In contrast with the example above, where we just request a camera stream, we have to create a pipeline instance
+in this example. We create a pipeline instance by specifying which camera - simulation in our example - to use as
 the pipeline source.
 
-By not giving any additional pipeline parameters, the image will in fact be exactly the same as the one in the 
-previous example. Even if requesting a raw camera image, it is still advisable to use the PipelineClient (and create 
-an empty pipeline as in the example below) because the CamClient might change and be moved to a different server out 
+By not giving any additional pipeline parameters, the image will in fact be exactly the same as the one in the
+previous example. Even if requesting a raw camera image, it is still advisable to use the PipelineClient (and create
+an empty pipeline as in the example below) because the CamClient might change and be moved to a different server out
 of your reach.
 
 ```python
@@ -795,7 +795,7 @@ print("Image data: %s" % image_bytes)
 <a id="private_pipeline"></a>
 ### Create a pipeline instance with background
 
-This example is the continuation of the previous example. Before creating our own pipeline, we collect the 
+This example is the continuation of the previous example. Before creating our own pipeline, we collect the
 background for the simulation camera and apply it to the pipeline.
 
 ```python
@@ -844,13 +844,13 @@ if instance_id not in client.get_server_info()["active_instances"]:
 # Open connection to the stream. When exiting the 'with' section, the source disconnects by itself.
 with source(host=stream_host, port=stream_port, mode=SUB) as input_stream:
     input_stream.connect()
-    
+
     # Read one message.
     message = input_stream.receive()
-    
+
     # Print out the received stream data - dictionary.
     print("Dictionary with data:\n", message.data.data)
-    
+
     # Print out the X center of mass.
     print("X center of mass: ", message.data.data["x_center_of_mass"].value)
 
@@ -858,7 +858,7 @@ with source(host=stream_host, port=stream_port, mode=SUB) as input_stream:
 
 <a id="modify_camera_config"></a>
 ### Modifying camera config
-When modifying the camera config, the changes are applied immediately. As soon as you call **set\_camera\_config** the 
+When modifying the camera config, the changes are applied immediately. As soon as you call **set\_camera\_config** the
 changes will be reflected in the camera stream within a couple of frames.
 
 ```python
@@ -899,11 +899,11 @@ cam_client.delete_camera_config("camera_to_delete")
 
 <a id="modify_pipeline_config"></a>
 ### Modifying pipeline config
-Please note that modifying the pipeline config works differently than modifying the camera config. 
-When using **save\_pipeline\_config**, the changes do not affect existing pipelines. You need to restart or recreate 
+Please note that modifying the pipeline config works differently than modifying the camera config.
+When using **save\_pipeline\_config**, the changes do not affect existing pipelines. You need to restart or recreate
 the pipeline for the changes to be applied.
 
-You can however modify an existing instance config, by calling **set\_instance\_config**. The changes will be 
+You can however modify an existing instance config, by calling **set\_instance\_config**. The changes will be
 reflected in the pipeline stream within a couple of frames.
 
 ```python
@@ -976,8 +976,8 @@ cam_client.set_camera_config(new_camera_name, camera_config)
 
 <a id="single_message_screen_panel"></a>
 ### Get single message from screen_panel stream
-You should have the screen_panel open, with the camera you want to acquire running. We will connect to the same 
-stream instance as the screen_panel uses, which means that all the changes done in the screen panel will also be 
+You should have the screen_panel open, with the camera you want to acquire running. We will connect to the same
+stream instance as the screen_panel uses, which means that all the changes done in the screen panel will also be
 reflected in our acquisition (you can configure what you want to acquire in the screen panel).
 
 ```python
@@ -1013,17 +1013,41 @@ instance_id, stream_address = client.create_instance_from_config({"camera_name":
 h5.receive(source=stream_address, file_name=file_name, mode=SUB, n_messages=n_messages)
 ```
 
+#### Commandline
+
+Following script can be used to dump the camera stream to an hdf5 file using the `bs h5` tool. The process to use this script is to
+
+1) Open ScreenPanel and select desired camera
+2) (Optional) Configure all the calculations you are interested in in the ScreenPanel
+3) Use the script as follows (if you name the script `record_camera`): `record_camera <camera_name> <filename>`
+
+```bash
+#!/bin/bash
+
+if (( $# != 2 )); then
+    echo "usage: $0 <camera> <filename>"
+    exit -1
+fi
+
+CAMERA_NAME=$1
+FILENAME=$2
+
+STREAM=$(curl -s http://sf-daqsync-01:8889/api/v1/pipeline/instance/${CAMERA_NAME}_sp1 | sed -e 's/.*"stream": "\([^"]*\)".*/\1/')
+echo $STREAM
+bs h5 -s $STREAM -m sub $FILENAME
+```
+
 <a id="deploy_in_production"></a>
 ## Deploy in production
 
-Before deploying in production, make sure the latest version was tagged in git (this triggers the Travis build) and 
+Before deploying in production, make sure the latest version was tagged in git (this triggers the Travis build) and
 that the Travis build completed successfully (the new cam_server package in available in anaconda). After this 2 steps,
-you need to build the new version of the docker image (the docker image checks out the latest version of cam_server 
-from Anaconda). The docker image version and the cam_server version should always match - If they don't, something went 
+you need to build the new version of the docker image (the docker image checks out the latest version of cam_server
+from Anaconda). The docker image version and the cam_server version should always match - If they don't, something went
 wrong.
 
 ### Production configuration
-Login to the target system, where cam_server will be running. Checkout the production configuration into the root 
+Login to the target system, where cam_server will be running. Checkout the production configuration into the root
 of the target system filesystem.
 
 ```bash
@@ -1032,7 +1056,7 @@ git clone https://git.psi.ch/controls_highlevel_applications/cam_server_configur
 ```
 
 ### Setup the cam_server as a service
-On the target system, copy **docker/camera_server.service** and **docker/pipeline_server.service** into 
+On the target system, copy **docker/camera_server.service** and **docker/pipeline_server.service** into
 **/etc/systemd/system**.
 
 Then need to reload the systemctl daemon:
