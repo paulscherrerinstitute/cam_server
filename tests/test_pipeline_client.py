@@ -80,7 +80,9 @@ class PipelineClientTest(unittest.TestCase):
             self.pipeline_client.save_pipeline_config("testing_config", {"camera_name": "simulation",
                                                                          "pipeline_type": "invalid"})
 
-        self.assertSetEqual(set(self.pipeline_client.get_pipelines()), expected_pipelines + set("testing_config"),
+        expected_pipelines.add("testing_config")
+
+        self.assertSetEqual(set(self.pipeline_client.get_pipelines()), expected_pipelines,
                             "Testing config was not added.")
 
         stream_address_1 = self.pipeline_client.get_instance_stream("testing_config")
