@@ -54,6 +54,16 @@ def get_port_generator(port_range):
     return cycle(iter(range(*port_range)))
 
 
+def sum_images(image, accumulator_image):
+
+    if accumulator_image is None:
+        accumulator_image = numpy.array(image).astype(dtype="uint64")
+    else:
+        accumulator_image += image
+
+    return accumulator_image
+
+
 def collect_background(camera_name, stream_address, n_images, background_manager):
 
     try:
@@ -66,11 +76,7 @@ def collect_background(camera_name, stream_address, n_images, background_manager
 
                 data = stream.receive()
                 image = data.data.data["image"].value
-
-                if accumulator_image is None:
-                    accumulator_image = numpy.array(image)
-                else:
-                    accumulator_image += image
+                accumulator_image = sum_images(image, accumulator_image)
 
         background_prefix = camera_name
         background_image = accumulator_image / n_images

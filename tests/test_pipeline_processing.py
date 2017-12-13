@@ -9,6 +9,7 @@ from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.data_processing.functions import calculate_slices
 from cam_server.pipeline.data_processing.processor import process_image
+from cam_server.utils import sum_images
 from tests.helpers.factory import MockBackgroundManager
 
 
@@ -367,6 +368,20 @@ class PipelineProcessingTest(unittest.TestCase):
         raw_image = simulated_camera.get_image(raw=True)
         self.assertIsNotNone(raw_image)
 
+    def test_sum_images(self):
+        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        image = simulated_camera.get_image()
+        accumulated_image = None
+
+        n_images = 1000
+
+        for _ in range(n_images):
+            accumulated_image = sum_images(image=image, accumulator_image=accumulated_image)
+
+        processed_image = accumulated_image / n_images
+        processed_image = processed_image.astype(dtype="uint16")
+
+        numpy.testing.assert_array_equal(image, processed_image)
 
 
 if __name__ == '__main__':
