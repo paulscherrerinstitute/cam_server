@@ -4,7 +4,7 @@ import numpy
 from logging import getLogger
 
 from cam_server import config
-from cam_server.camera.source.utils import transform_image
+from cam_server.camera.source.common import transform_image
 
 _logger = getLogger(__name__)
 
