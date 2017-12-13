@@ -81,17 +81,20 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     continue
 
                 image = data.data.data["image"].value
-                timestamp = data.data.data["timestamp"].value
                 x_axis = data.data.data["x_axis"].value
                 y_axis = data.data.data["y_axis"].value
+                processing_timestamp = data.data.data["timestamp"].value
 
-                processed_data = process_image(image, timestamp, x_axis, y_axis,
+                processed_data = process_image(image, processing_timestamp, x_axis, y_axis,
                                                pipeline_parameters, image_background_array)
 
                 processed_data["width"] = processed_data["image"].shape[1]
                 processed_data["height"] = processed_data["image"].shape[0]
 
-                sender.send(data=processed_data, timestamp=timestamp)
+                pulse_id = data.data.pulse_id
+                timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
+
+                sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
 
             except:
                 _logger.exception("Could not process message.")
@@ -159,7 +162,10 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
                 forward_data = {camera_name: data.data.data["image"].value}
 
-                sender.send(data=forward_data)
+                pulse_id = data.data.pulse_id
+                timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
+
+                sender.send(data=forward_data, pulse_id=pulse_id, timestamp=timestamp)
 
             except:
                 _logger.exception("Could not process message.")
