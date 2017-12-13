@@ -62,8 +62,8 @@ class PipelineInstanceManager(InstanceManager):
         if not self.cam_server_client.is_camera_online(camera_name):
             raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
 
-        _logger.info("Creating pipeline on port '%d' for camera '%s'. instance_id=%s",
-                     instance_id, stream_port, camera_name, instance_id)
+        _logger.info("Creating pipeline on port '%s' for camera '%s'. instance_id=%s",
+                     stream_port, camera_name, instance_id)
 
         self.add_instance(instance_id, PipelineInstance(
             instance_id=instance_id,
