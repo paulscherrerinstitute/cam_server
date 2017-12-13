@@ -18,6 +18,8 @@ class CameraBsread(CameraEpics):
     def _collect_camera_settings(self):
         super(CameraBsread, self)._collect_camera_settings()
 
+        _logger.info("Collecting bsread camera settings.")
+
         # TODO: When camera IOC supports bsread source field, uncomment this.
 
         # bsread_source_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_STREAM_ADDRESS
