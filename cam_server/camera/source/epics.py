@@ -96,7 +96,6 @@ class CameraEpics:
 
         return transform_image(value, self.camera_config)
 
-
     def get_image(self, raw=False):
         # If we are not connected to the image channel, we have to do this first.
         if self.channel_image is None:

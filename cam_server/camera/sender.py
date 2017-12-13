@@ -168,7 +168,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
 
                 image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
 
-                # Rotate and mirror the image if needed.
+                # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
                 image = transform_image(image, camera.camera_config)
 
                 # Numpy is slowest dimension first, but bsread is fastest dimension first.
