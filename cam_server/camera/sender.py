@@ -4,6 +4,7 @@ from bsread.sender import Sender, PUB
 from zmq import Again
 
 from cam_server import config
+from cam_server.camera.source.utils import transform_image
 
 _logger = getLogger(__name__)
 
@@ -166,6 +167,9 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
                     continue
 
                 image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
+
+                # Rotate and mirror the image if needed.
+                image = transform_image(image, camera.camera_config)
 
                 # Numpy is slowest dimension first, but bsread is fastest dimension first.
                 height, width = image.shape

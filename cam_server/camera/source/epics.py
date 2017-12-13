@@ -4,6 +4,7 @@ import numpy
 from logging import getLogger
 
 from cam_server import config
+from cam_server.camera.source.utils import transform_image
 
 _logger = getLogger(__name__)
 
@@ -93,16 +94,8 @@ class CameraEpics:
         if raw:
             return value
 
-        # Correct image
-        if self.camera_config.parameters["mirror_x"]:
-            value = numpy.fliplr(value)
+        return transform_image(value, self.camera_config)
 
-        if self.camera_config.parameters["mirror_y"]:
-            value = numpy.flipud(value)
-
-        value = numpy.rot90(value, self.camera_config.parameters["rotate"])
-
-        return numpy.ascontiguousarray(value)
 
     def get_image(self, raw=False):
         # If we are not connected to the image channel, we have to do this first.
