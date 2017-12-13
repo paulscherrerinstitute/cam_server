@@ -75,6 +75,9 @@ def collect_background(camera_name, stream_address, n_images, background_manager
         background_prefix = camera_name
         background_image = accumulator_image / n_images
 
+        # Convert image to uint16.
+        background_image = background_image.astype(dtype="uint16")
+
         background_id = background_manager.save_background(background_prefix, background_image)
 
         return background_id

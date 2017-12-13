@@ -163,6 +163,10 @@ class PipelineManagerTest(unittest.TestCase):
                          data.data.data["image"].value.shape,
                          "Background and image have to be of the same shape.")
 
+        self.assertEqual(instance_manager.background_manager.get_background(background_id).dtype,
+                         data.data.data["image"].value.dtype,
+                         "Background and image have to be of the same dtype.")
+
         instance_manager.stop_all_instances()
 
     def test_custom_hostname(self):
