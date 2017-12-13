@@ -71,7 +71,7 @@ class PipelineClientTest(unittest.TestCase):
         # Wait for the server to die.
         sleep(1)
 
-    def test_quick_start(self):
+    def test_a_quick_start(self):
         from cam_server import PipelineClient
         from cam_server.utils import get_host_port_from_stream_address
         from bsread import source, SUB
@@ -108,9 +108,6 @@ class PipelineClientTest(unittest.TestCase):
 
             # Print out the X center of mass.
             print("X center of mass: ", message.data.data["x_center_of_mass"].value)
-
-        # ADDITIONAL, FOR THE TEST
-        client.stop_all_instances()
 
     def test_get_simulated_camera(self):
         from cam_server import CamClient

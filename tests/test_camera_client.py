@@ -48,10 +48,10 @@ class CameraClientTest(unittest.TestCase):
         self.assertIsNot(server_info["active_instances"],
                          "There should be no running instances.")
 
-        expected_cameras = ["camera_example_1", "camera_example_2", "camera_example_3", "camera_example_4",
-                            "simulation"]
+        expected_cameras = set(["camera_example_1", "camera_example_2", "camera_example_3", "camera_example_4",
+                                "simulation"])
 
-        self.assertListEqual(self.client.get_cameras(), expected_cameras, "Not getting all expected cameras")
+        self.assertSetEqual(set(self.client.get_cameras()), expected_cameras, "Not getting all expected cameras")
 
         camera_stream_address = self.client.get_camera_stream("simulation")
 

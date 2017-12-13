@@ -61,9 +61,11 @@ class PipelineClientTest(unittest.TestCase):
         sleep(1)
 
     def test_client(self):
-        expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3", "pipeline_example_4"]
-        self.assertListEqual(self.pipeline_client.get_pipelines(), expected_pipelines,
-                             "Test config pipelines have changed?")
+        expected_pipelines = set(["pipeline_example_1", "pipeline_example_2", "pipeline_example_3",
+                                  "pipeline_example_4"])
+
+        self.assertSetEqual(set(self.pipeline_client.get_pipelines()), expected_pipelines,
+                            "Test config pipelines have changed?")
 
         camera_config = self.pipeline_client.get_pipeline_config("pipeline_example_4")
         self.pipeline_client.save_pipeline_config("testing_config", camera_config)
@@ -78,8 +80,8 @@ class PipelineClientTest(unittest.TestCase):
             self.pipeline_client.save_pipeline_config("testing_config", {"camera_name": "simulation",
                                                                          "pipeline_type": "invalid"})
 
-        self.assertListEqual(self.pipeline_client.get_pipelines(), expected_pipelines + ["testing_config"],
-                             "Testing config was not added.")
+        self.assertSetEqual(set(self.pipeline_client.get_pipelines()), expected_pipelines + set("testing_config"),
+                            "Testing config was not added.")
 
         stream_address_1 = self.pipeline_client.get_instance_stream("testing_config")
         stream_address_2 = self.pipeline_client.get_instance_stream("testing_config")
