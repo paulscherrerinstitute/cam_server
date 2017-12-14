@@ -383,6 +383,45 @@ class PipelineProcessingTest(unittest.TestCase):
 
         numpy.testing.assert_array_equal(image, processed_image)
 
+    def test_profiles(self):
+        height = 10
+        width = 10
+
+        square_start = 4
+        square_end = 6
+        n_pixels = square_end - square_start
+        pixel_value = 10000
+
+        image = numpy.zeros((height, width), dtype="uint16")
+        x_axis = numpy.linspace(0, width - 1, width, dtype='f')
+        y_axis = numpy.linspace(0, height - 1, height, dtype='f')
+
+        parameters = PipelineConfig("test_pipeline", {
+            "camera_name": "simulation"
+        }).get_configuration()
+
+        # Add signal in the center
+        image[square_start:square_end, square_start:square_end] = 10000
+
+        result = process_image(image=image,
+                               timestamp=time.time(),
+                               x_axis=x_axis,
+                               y_axis=y_axis,
+                               parameters=parameters)
+
+        x_profile = result["x_profile"]
+        y_profile = result["y_profile"]
+
+        numpy.testing.assert_array_equal(x_profile[0:square_start], numpy.zeros(shape=square_start))
+        numpy.testing.assert_array_equal(x_profile[square_start:square_end], numpy.zeros(shape=n_pixels) +
+                                         (n_pixels * pixel_value))
+        numpy.testing.assert_array_equal(x_profile[square_end], numpy.zeros(shape=width-square_end))
+
+        numpy.testing.assert_array_equal(y_profile[0:square_start], numpy.zeros(shape=square_start))
+        numpy.testing.assert_array_equal(y_profile[square_start:square_end], numpy.zeros(shape=n_pixels) +
+                                         (n_pixels * pixel_value))
+        numpy.testing.assert_array_equal(y_profile[square_end], numpy.zeros(shape=height - square_end))
+
 
 if __name__ == '__main__':
     unittest.main()
