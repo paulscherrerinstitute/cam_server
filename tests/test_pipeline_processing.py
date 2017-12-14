@@ -182,7 +182,8 @@ class PipelineProcessingTest(unittest.TestCase):
         good_region_keys = set(["good_region", "gr_x_axis", "gr_y_axis", "gr_x_fit_gauss_function", "gr_x_fit_offset",
                                 "gr_x_fit_amplitude", "gr_x_fit_standard_deviation", "gr_x_fit_mean",
                                 "gr_y_fit_gauss_function", "gr_y_fit_offset", "gr_y_fit_amplitude",
-                                "gr_y_fit_standard_deviation", "gr_y_fit_mean", "gr_intensity"])
+                                "gr_y_fit_standard_deviation", "gr_y_fit_mean", "gr_intensity",
+                                "gr_x_profile", "gr_y_profile"])
 
         slices_key_formats = set(["slice_%s_center_x", "slice_%s_center_y", "slice_%s_standard_deviation",
                                   "slice_%s_intensity"])

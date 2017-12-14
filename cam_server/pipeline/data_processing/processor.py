@@ -86,6 +86,8 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                 return_value["good_region"] = None
                 return_value["gr_x_axis"] = None
                 return_value["gr_y_axis"] = None
+                return_value["gr_x_profile"] = None
+                return_value["gr_y_profile"] = None
 
                 return_value["gr_x_fit_gauss_function"] = None
                 return_value["gr_x_fit_offset"] = None
@@ -149,6 +151,8 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                                            good_region_y_end]
             return_value["gr_x_axis"] = good_region_x_axis
             return_value["gr_y_axis"] = good_region_y_axis
+            return_value["gr_x_profile"] = good_region_x_profile
+            return_value["gr_y_profile"] = good_region_y_profile
 
             return_value["gr_x_fit_gauss_function"] = gr_x_fit_gauss_function
             return_value["gr_x_fit_offset"] = gr_x_fit_offset
