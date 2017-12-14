@@ -220,6 +220,10 @@ class CameraTest(unittest.TestCase):
                          "Camera was still running, timestamp should be the same.")
 
         self.instance_manager.stop_instance("simulation")
+
+        # We do not have seconds in the timestamp - the second value should change.
+        sleep(1)
+
         self.instance_manager.get_camera_stream("simulation")
         simulation_start_time_3 = self.instance_manager.get_info()['active_instances']['simulation']['last_start_time']
         self.assertNotEqual(simulation_start_time_1, simulation_start_time_3,
