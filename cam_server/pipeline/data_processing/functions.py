@@ -133,6 +133,7 @@ def _gauss_function(x, offset, amplitude, center, standard_deviation):
 
 
 def _gauss_fit(axis, profile, center_of_mass=None):
+
     offset = profile.min()  # Minimum is good estimation of offset
     amplitude = profile.max() - offset  # Max value is a good estimation of amplitude
 
@@ -147,7 +148,7 @@ def _gauss_fit(axis, profile, center_of_mass=None):
 
     try:
         # It shows up that fastest fitting is when sampling period is around sigma value
-        optimal_parameter, _ = scipy.optimize.curve_fit(_gauss_function, axis, profile,
+        optimal_parameter, _ = scipy.optimize.curve_fit(_gauss_function, axis, profile.astype("float32"),
                                                         p0=[offset, amplitude, center, standard_deviation])
     except BaseException as e:
         # print(e)
