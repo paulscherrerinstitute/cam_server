@@ -116,6 +116,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
     :param port: Port to use to bind the output stream.
     """
     sender = None
+    camera_stream = None
 
     try:
 
@@ -197,14 +198,14 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
 
                     process_parameters()
 
-            except:
+            except Exception as e:
                 _logger.exception("Could not process message.", e)
                 stop_event.set()
 
         _logger.info("Stopping transceiver.")
 
-    except:
-        _logger.exception("Error while processing camera stream.")
+    except Exception as e:
+        _logger.exception("Error while processing camera stream.", e)
 
     finally:
         # Wait for termination / update configuration / etc.

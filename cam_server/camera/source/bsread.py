@@ -35,7 +35,7 @@ class CameraBsread(CameraEpics):
             raise RuntimeError("Could not fetch bsread stream address for cam_server:{}".format(
                 self.camera_config.get_source()))
 
-        bsread_source_pv.disconnect()
+        bsread_source.disconnect()
 
     def get_stream(self):
 
