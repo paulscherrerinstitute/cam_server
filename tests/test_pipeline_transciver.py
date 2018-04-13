@@ -199,6 +199,8 @@ class PipelineTransceiverTest(unittest.TestCase):
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
 
+        self.client.stop_all_cameras()
+
         pipeline_config = PipelineConfig("test_pipeline")
 
         def send():
