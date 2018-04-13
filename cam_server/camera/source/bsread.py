@@ -1,8 +1,8 @@
 from logging import getLogger
 
+import epics
 from bsread import PULL, Source
 from cam_server import config
-from cam_server.camera.source import epics
 
 from cam_server.camera.source.epics import CameraEpics
 from cam_server.utils import get_host_port_from_stream_address
