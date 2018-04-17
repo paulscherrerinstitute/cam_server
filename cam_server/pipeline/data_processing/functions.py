@@ -197,33 +197,38 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
 
     n_pixel_slice = 2 * n_pixel_half_slice
 
-    list_slices_indexes = []
-
     # Add middle slice - located half/half on center
     start_index = index_center - n_pixel_half_slice
     end_index = index_center + n_pixel_half_slice
-    list_slices_indexes.append(start_index)
-    list_slices_indexes.append(end_index)
 
-    # The slice length is the difference in axis value from the start to the end of the axis.
-    slice_length = abs(axis[start_index] - axis[end_index])
+    list_slices_indexes = []
+    slice_length = None
 
-    # We subtract 1 because we already added the middle slice.
-    counter_slices = number_of_slices - 1
-
-    # Calculate outer slices
     number_of_elements_axis = len(axis)
-    while counter_slices > 0:
-        start_index -= n_pixel_slice
-        end_index += n_pixel_slice
-        if start_index < 0 or end_index >= number_of_elements_axis:
-            _logging.info('Stopping slice calculation as they are out of range ...')
-            # Start index cannot be smaller than 0 and end index cannot e larger than len(axis)
-            break
-        list_slices_indexes.insert(0, start_index)
+
+    if start_index >= 0 and end_index < number_of_elements_axis:
+
+        list_slices_indexes.append(start_index)
         list_slices_indexes.append(end_index)
 
-        counter_slices -= 2
+        # The slice length is the difference in axis value from the start to the end of the axis.
+        slice_length = abs(axis[start_index] - axis[end_index])
+
+        # We subtract 1 because we already added the middle slice.
+        counter_slices = number_of_slices - 1
+
+        # Calculate outer slices
+        while counter_slices > 0:
+            start_index -= n_pixel_slice
+            end_index += n_pixel_slice
+            if start_index < 0 or end_index >= number_of_elements_axis:
+                _logging.info('Stopping slice calculation as they are out of range ...')
+                # Start index cannot be smaller than 0 and end index cannot e larger than len(axis)
+                break
+            list_slices_indexes.insert(0, start_index)
+            list_slices_indexes.append(end_index)
+
+            counter_slices -= 2
 
     return list_slices_indexes, n_pixel_half_slice, slice_length
 
