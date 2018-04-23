@@ -18,7 +18,7 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
         image = functions.subtract_background(image, image_background_array)
 
     image_threshold = parameters.get("image_threshold")
-    if image_threshold is not None:
+    if image_threshold is not None and image_threshold > 0:
         functions.apply_threshold(image, image_threshold)
 
     image_region_of_interest = parameters.get("image_region_of_interest")
