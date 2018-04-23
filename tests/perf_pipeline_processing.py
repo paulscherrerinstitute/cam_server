@@ -5,6 +5,7 @@ import numpy
 
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
+from cam_server.pipeline.data_processing import functions
 from cam_server.pipeline.data_processing.processor import process_image
 
 
@@ -69,6 +70,34 @@ class PipelinePerformanceTest(unittest.TestCase):
         print("Processing rate: ", rate)
 
         profile.print_stats()
+
+    def test_single_function(self):
+        # Profile only if LineProfiler present.
+        # To install: conda install line_profiler
+        try:
+            from line_profiler import LineProfiler
+        except ImportError:
+            return
+
+        function_to_perf = functions.apply_threshold
+        n_iterations = 200
+        n_tests = 5
+
+        simulated_camera = CameraSimulation(CameraConfig("simulation"), size_x=2048, size_y=2048)
+
+        for _ in range(n_tests):
+
+            profile = LineProfiler()
+            wrapped_function = profile(function_to_perf)
+
+            images = []
+            for _ in range(n_iterations):
+                images.append(simulated_camera.get_image())
+
+            for image in images:
+                wrapped_function(image, 40)
+
+            profile.print_stats()
 
 
 if __name__ == '__main__':
