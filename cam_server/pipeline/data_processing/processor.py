@@ -117,6 +117,10 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                     return_value["slice_%s_standard_deviation" % i] = None
                     return_value["slice_%s_intensity" % i] = None
 
+                return_value["coupling"] = None
+                return_value["coupling_slope"] = None
+                return_value["coupling_offset"] = None
+
             # Good region and slices should be None if cannot be calculated.
             initialize_good_region_values()
 
@@ -226,6 +230,8 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
 
                     slope, offset = functions.linear_fit(x, y)
                     return_value["coupling"] = slope * (gr_x_fit_standard_deviation ** 2)
+                    return_value["coupling_slope"] = slope
+                    return_value["coupling_offset"] = offset
 
                 except:  # Except for slices
                     _logger.exception('Unable to apply slices')
