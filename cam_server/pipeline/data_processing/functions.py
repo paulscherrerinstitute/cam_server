@@ -306,6 +306,16 @@ def linear_fit(x, y):  # x/y arrays
     return optimal_parameter  # returns [slope, offset]
 
 
+def _quadratic_function(x, a, b, c):
+    return a * x ** 2 + b * x + c
+
+
+def quadratic_fit(x, y):
+    optimal_parameter, covariance = scipy.optimize.curve_fit(_quadratic_function, x, y)
+
+    return optimal_parameter
+
+
 def get_png_from_image(image_raw_bytes, scale=None, min_value=None, max_value=None, colormap_name=None):
     """
     Generate an image from the provided camera.
