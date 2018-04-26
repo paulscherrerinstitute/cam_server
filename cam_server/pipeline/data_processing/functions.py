@@ -18,7 +18,12 @@ def subtract_background(image, background_image):
     if image.shape != background_image.shape:
         raise RuntimeError("Invalid background_image size %s compared to image %s" % (background_image.shape,
                                                                                       image.shape))
-    return image - background_image
+
+    mask_for_zeros = (background_image > image)
+    numpy.subtract(image, background_image.astype("uint16"), image)
+    image[mask_for_zeros] = 0
+
+    return image
 
 
 def get_region_of_interest(image, offset_x, size_x, offset_y, size_y):

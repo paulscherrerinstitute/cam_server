@@ -81,7 +81,7 @@ class PipelineProcessingTest(unittest.TestCase):
             "image_threshold": 0
         }
 
-        max_background = numpy.zeros(shape=(y_size, x_size))
+        max_background = numpy.zeros(shape=(y_size, x_size), dtype="uint16")
         max_background.fill(max_value_in_image)
         background_provider.save_background("max_background", max_background, append_timestamp=False)
 
