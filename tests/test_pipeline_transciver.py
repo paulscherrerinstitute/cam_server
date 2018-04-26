@@ -45,8 +45,9 @@ class PipelineTransceiverTest(unittest.TestCase):
             os.remove(os.path.join(self.config_folder, "testing_camera.json"))
         except:
             pass
+
         # Wait for the server to die.
-        sleep(1)
+        sleep(2)
 
     def test_pipeline_with_simulation_camera(self):
         manager = multiprocessing.Manager()
