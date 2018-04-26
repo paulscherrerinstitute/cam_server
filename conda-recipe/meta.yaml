@@ -27,6 +27,7 @@ build:
   entry_points:
     - camera_server = cam_server.start_camera_server:main
     - pipeline_server = cam_server.start_pipeline_server:main
+    - proxy_pipeline_server = cam_server.start_proxy_pipeline_server:main
     - validate_configs = cam_server.validate_configs:main
 
 about:

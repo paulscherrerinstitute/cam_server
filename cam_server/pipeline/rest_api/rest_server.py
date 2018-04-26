@@ -45,6 +45,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         instance_id, stream_address = instance_manager.create_pipeline(configuration=pipeline_config,
                                                                        instance_id=user_instance_id)
 
+        # TODO: Remove dependency on instance.
+
         return {"state": "ok",
                 "status": "Stream address for pipeline %s." % instance_id,
                 "instance_id": instance_id,
@@ -57,6 +59,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         instance_id, stream_address = instance_manager.create_pipeline(pipeline_name=pipeline_name,
                                                                        instance_id=user_instance_id)
+
+        # TODO: Remove dependency on instance.
 
         return {"state": "ok",
                 "status": "Stream address for pipeline %s." % instance_id,
@@ -78,6 +82,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         instance_id, stream_address = instance_manager.get_instance_stream_from_config(configuration=pipeline_config)
 
+        # TODO: Remove dependency on instance.
+
         return {"state": "ok",
                 "status": "Stream address for pipeline %s." % instance_id,
                 "instance_id": instance_id,
@@ -86,12 +92,18 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     @app.get(api_root_address + '/instance/<instance_id>/info')
     def get_instance_info(instance_id):
+
+        # TODO: Remove dependency on instance.
+
         return {"state": "ok",
                 "status": "Pipeline instance %s info retrieved." % instance_id,
                 "info": instance_manager.get_instance(instance_id).get_info()}
 
     @app.get(api_root_address + '/instance/<instance_id>/config')
     def get_instance_config(instance_id):
+
+        # TODO: Remove dependency on instance.
+
         return {"state": "ok",
                 "status": "Pipeline instance %s info retrieved." % instance_id,
                 "config": instance_manager.get_instance(instance_id).get_configuration()}
@@ -105,18 +117,25 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         instance_manager.update_instance_config(instance_id, config_updates)
 
+        # TODO: Remove dependency on instance.
+
         return {"state": "ok",
                 "status": "Pipeline instance %s configuration changed." % instance_id,
                 "config": instance_manager.get_instance(instance_id).get_configuration()}
 
     @app.get(api_root_address + '/<pipeline_name>/config')
     def get_pipeline_config(pipeline_name):
+
+        # TODO: Remove dependency on config_manager.
+
         return {"state": "ok",
                 "status": "Pipeline %s configuration retrieved." % pipeline_name,
                 "config": instance_manager.config_manager.get_pipeline_config(pipeline_name)}
 
     @app.post(api_root_address + '/<pipeline_name>/config')
     def set_pipeline_config(pipeline_name):
+
+        # TODO: Remove dependency on config_manager.
 
         instance_manager.config_manager.save_pipeline_config(pipeline_name, request.json)
 
@@ -126,6 +145,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     @app.delete(api_root_address + '/<pipeline_name>/config')
     def delete_pipeline_config(pipeline_name):
+
+        # TODO: Remove dependency on config_manager.
 
         instance_manager.config_manager.delete_pipeline_config(pipeline_name)
 
@@ -141,6 +162,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         except ValueError:
             raise ValueError("n_images must be a number.")
 
+        # TODO: Move logic to instance manager.
+
         stream_address = instance_manager.cam_server_client.get_camera_stream(camera_name)
 
         background_id = collect_background(camera_name, stream_address, number_of_images,
@@ -153,6 +176,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     @app.get(api_root_address + '/camera/<camera_name>/background')
     def get_latest_background_for_camera(camera_name):
 
+        # TODO: Remove dependency to instance_manager
+
         background_id = instance_manager.background_manager.get_latest_background_id(camera_name)
 
         return {"state": "ok",
@@ -161,6 +186,8 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     @app.get(api_root_address + '/camera')
     def get_camera_list():
+
+        # TODO: Remove dependency on cam_server_client.
 
         return {"state": "ok",
                 "status": "List of available cameras.",
