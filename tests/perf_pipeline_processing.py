@@ -79,7 +79,7 @@ class PipelinePerformanceTest(unittest.TestCase):
         except ImportError:
             return
 
-        function_to_perf = functions.get_min_max
+        function_to_perf = functions.subtract_background
         n_iterations = 200
         n_tests = 5
 
@@ -91,11 +91,14 @@ class PipelinePerformanceTest(unittest.TestCase):
             wrapped_function = profile(function_to_perf)
 
             images = []
+            backgrounds = []
+
             for _ in range(n_iterations):
                 images.append(simulated_camera.get_image())
+                backgrounds.append(simulated_camera.get_image())
 
-            for image in images:
-                wrapped_function(image)
+            for index in range(n_iterations):
+                wrapped_function(images[index], backgrounds[index])
 
             profile.print_stats()
 
