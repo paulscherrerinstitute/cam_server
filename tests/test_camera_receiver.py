@@ -1,5 +1,6 @@
 import unittest
 
+from cam_server import config
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 
@@ -41,6 +42,20 @@ class CameraReceiverTest(unittest.TestCase):
         self.assertEqual(x_axis.shape[0], size_x)
         self.assertEqual(y_axis.shape[0], size_y)
 
+    def test_camera_simulation_interval(self):
+        camera = CameraSimulation(CameraConfig("simulation"))
+
+        self.assertEqual(camera.simulation_interval, config.DEFAULT_CAMERA_SIMULATION_INTERVAL)
+
+        new_simulation_interval = 1
+        camera_config = CameraConfig("simulation")
+        configuration = camera_config.get_configuration()
+        configuration["simulation_interval"] = new_simulation_interval
+        camera_config.set_configuration(configuration)
+
+        camera = CameraSimulation(camera_config)
+
+        self.assertEqual(camera.simulation_interval, new_simulation_interval)
 
 if __name__ == '__main__':
     unittest.main()
