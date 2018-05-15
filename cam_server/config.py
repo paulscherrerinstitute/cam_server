@@ -30,6 +30,8 @@ CAMERA_BSREAD_DATA_HEADER_COMPRESSION = None
 CAMERA_BSREAD_IMAGE_COMPRESSION = None
 # Compression for scalar attributes.
 CAMERA_BSREAD_SCALAR_COMPRESSION = None
+# Default interval for simulation camera.
+DEFAULT_CAMERA_SIMULATION_INTERVAL = 0.1
 
 #####################
 # Pipeline settings #

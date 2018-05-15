@@ -4,6 +4,8 @@ from threading import Event, Thread
 import numpy
 
 from logging import getLogger
+
+from cam_server import config
 from cam_server.camera.source.epics import CameraEpics
 
 _logger = getLogger(__name__)
@@ -19,7 +21,7 @@ class CameraSimulation(CameraEpics):
 
     # TODO: Make this a config.
     def __init__(self, camera_config, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
-                 beam_size_x=100, beam_size_y=20, frame_rate=10, simulation_interval=0.1):
+                 beam_size_x=100, beam_size_y=20, frame_rate=10, simulation_interval=None):
         """
         Initialize the camera simulation.
         :param size_x: Image width.
@@ -32,6 +34,12 @@ class CameraSimulation(CameraEpics):
         :param simulation_interval: Interval between frames on the simulated camera.
         """
         super(CameraSimulation, self).__init__(camera_config)
+
+        if not simulation_interval or simulation_interval < 0:
+            simulation_interval = config.DEFAULT_CAMERA_SIMULATION_INTERVAL
+
+        if "simulation_interval" in camera_config.get_configuration():
+            simulation_interval = camera_config.get_configuration()["simulation_interval"]
 
         self.frame_rate = frame_rate
         self.width_raw = size_x
