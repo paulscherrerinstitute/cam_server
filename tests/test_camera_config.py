@@ -7,7 +7,6 @@ from tests.helpers.factory import get_test_instance_manager
 
 
 class CameraConfigTest(unittest.TestCase):
-
     def test_set_get_camera_config(self):
         instance_manager = get_test_instance_manager()
 
@@ -173,6 +172,27 @@ class CameraConfigTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Invalid source_type "):
             configuration = CameraConfig("simulation", configuration)
+
+    def test_save_simulation_camera_interval(self):
+        instance_manager = get_test_instance_manager()
+
+        configuration = {
+            "source": "test_with_interval",
+            "source_type": "simulation",
+            "simulation_interval": 1,
+            'camera_calibration': None,
+            'mirror_x': False,
+            'rotate': 0,
+            'mirror_y': False
+        }
+
+        instance_manager.config_manager.save_camera_config("test_with_interval", configuration)
+
+        camera = instance_manager.config_manager.load_camera("test_with_interval")
+
+        self.assertEqual(camera.simulation_interval, configuration["simulation_interval"])
+
+        instance_manager.config_manager.delete_camera_config("test_with_interval")
 
 
 if __name__ == '__main__':
