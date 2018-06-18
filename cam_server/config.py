@@ -53,7 +53,7 @@ PIPELINE_DEFAULT_N_IMAGES_FOR_BACKGROUND = 10
 ################
 
 # Time to wait for the process to execute the requested action.
-PROCESS_COMMUNICATION_TIMEOUT = 5
+PROCESS_COMMUNICATION_TIMEOUT = 10
 # Interval used when polling the state from the process.
 PROCESS_POLL_INTERVAL = 0.1
 
