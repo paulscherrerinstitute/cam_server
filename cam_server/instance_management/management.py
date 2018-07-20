@@ -2,7 +2,6 @@ import multiprocessing
 import time
 from logging import getLogger
 
-#from multiprocessing import Process
 from epics.multiproc import CAProcess as Process
 
 from cam_server import config
