@@ -6,6 +6,7 @@ import os
 
 from copy import deepcopy
 
+from cam_server import config
 from cam_server.pipeline.configuration import BackgroundImageManager, PipelineConfig
 from cam_server.utils import update_pipeline_config
 from tests.helpers.factory import get_test_pipeline_manager
@@ -321,6 +322,37 @@ class PipelineConfigTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "pipeline_type 'invalid' not present in mapping. Available:"):
             PipelineConfig.validate_pipeline_config(expanded_configuration)
+
+    def test_store_pipeline_port_requirement(self):
+        configuration = {"camera_name": "simulation",
+                         "pipeline_type": "store"}
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+
+        with self.assertRaisesRegex(ValueError, "stream_port"):
+            PipelineConfig.validate_pipeline_config(expanded_configuration)
+
+        configuration = {"camera_name": "simulation",
+                         "pipeline_type": "store",
+                         "stream_port": "test"}
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+
+        with self.assertRaisesRegex(ValueError, "must be an integer"):
+            PipelineConfig.validate_pipeline_config(expanded_configuration)
+
+        configuration = {"camera_name": "simulation",
+                         "pipeline_type": "store",
+                         "stream_port": config.PIPELINE_STREAM_PORT_RANGE[0]}
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+
+        with self.assertRaisesRegex(ValueError, "must be outside of"):
+            PipelineConfig.validate_pipeline_config(expanded_configuration)
+
+        configuration = {"camera_name": "simulation",
+                         "pipeline_type": "store",
+                         "stream_port": config.PIPELINE_STREAM_PORT_RANGE[1]+1}
+        expanded_configuration = PipelineConfig.expand_config(configuration)
+        PipelineConfig.validate_pipeline_config(expanded_configuration)
+
 
 
 if __name__ == '__main__':

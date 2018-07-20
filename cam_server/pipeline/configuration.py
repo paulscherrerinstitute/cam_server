@@ -8,6 +8,7 @@ from os.path import basename
 
 import numpy
 
+from cam_server import config
 from cam_server.pipeline.transceiver import get_pipeline_function
 
 
@@ -203,6 +204,22 @@ class PipelineConfig:
 
         # Verify if the pipeline exists.
         get_pipeline_function(configuration["pipeline_type"])
+
+        if configuration["pipeline_type"] == "store":
+
+            if "stream_port" not in configuration:
+                raise ValueError("Pipelines with pipeline_type='store' need 'stream_port' specified. "
+                                 "Config: %s" % configuration)
+
+            stream_port = configuration["stream_port"]
+            if not isinstance(stream_port, int):
+                raise ValueError("Property 'stream_port' must be an integer. Config: %s" % configuration)
+
+            if config.PIPELINE_STREAM_PORT_RANGE[0] <= stream_port <= config.PIPELINE_STREAM_PORT_RANGE[1]:
+                raise ValueError("Property 'stream_port' must be outside of the PIPELINE_STREAM_PORT_RANGE."
+                                 "Stream port range: %s Config: %s" % (config.PIPELINE_STREAM_PORT_RANGE,
+                                                                       configuration))
+
 
     @staticmethod
     def expand_config(configuration):
