@@ -8,7 +8,7 @@ also provides a processing pipeline and a REST interface to control both the cam
 underlying infrastructure to provide camera images to the pipeline server.
 
 # Table of content
-1. [Quick start](#quick_start)
+1. [Quick start (Get stream from screen panel)](#quick_start)
 2. [Build](#build)
     1. [Conda setup](#conda_setup)
     2. [Local build](#local_build)
@@ -43,7 +43,7 @@ underlying infrastructure to provide camera images to the pipeline server.
 
 
 <a id="quick_start"></a>
-## Quick start    
+## Quick start (Get stream from screen panel)
 The example below shows how to access the camera stream you have currently open in a screen_panel instance.
 This should be one of the most common use cases.
 
