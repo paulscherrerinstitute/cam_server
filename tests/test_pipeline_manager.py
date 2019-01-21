@@ -527,7 +527,9 @@ class PipelineManagerTest(unittest.TestCase):
     def test_get_instance_from_config(self):
         instance_manager = get_test_pipeline_manager_with_real_cam()
         configuration_1 = {"camera_name": "simulation",
-                           "pipeline_type": "store"}
+                           "pipeline_type": "store",
+                           "stream_port": 10000,
+                           }
 
         instance_id_1, instance_stream_1 = instance_manager.get_instance_stream_from_config(configuration_1)
         instance_id_2, instance_stream_2 = instance_manager.get_instance_stream_from_config(configuration_1)

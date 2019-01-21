@@ -295,7 +295,7 @@ class PipelineClientTest(unittest.TestCase):
         self.cam_client.stop_all_cameras()
 
         instance_id, stream_address = self.pipeline_client.create_instance_from_config(
-            {"camera_name": "simulation", "pipeline_type": "store"})
+            {"camera_name": "simulation", "pipeline_type": "store", 'stream_port':10000})
 
         with self.assertRaisesRegex(ValueError, "Cannot get message from 'store' pipeline type."):
             self.pipeline_client.get_instance_message(instance_id)
