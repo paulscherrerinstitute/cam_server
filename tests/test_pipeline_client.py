@@ -61,11 +61,12 @@ class PipelineClientTest(unittest.TestCase):
         sleep(1)
 
     def test_client(self):
-        expected_pipelines = set(["pipeline_example_1", "pipeline_example_2", "pipeline_example_3",
-                                  "pipeline_example_4"])
-
-        self.assertSetEqual(set(self.pipeline_client.get_pipelines()), expected_pipelines,
+        expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3",
+                                  "pipeline_example_4"]
+        for pipeline in  expected_pipelines:
+            self.assertIn(pipeline, self.pipeline_client.get_pipelines(),
                             "Test config pipelines have changed?")
+        expected_pipelines = set(self.pipeline_client.get_pipelines())
 
         camera_config = self.pipeline_client.get_pipeline_config("pipeline_example_4")
         self.pipeline_client.save_pipeline_config("testing_config", camera_config)
