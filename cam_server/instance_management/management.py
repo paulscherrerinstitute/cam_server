@@ -60,8 +60,6 @@ class InstanceManager(object):
         if not instance.is_running():
             instance.start()
 
-        instance.start()
-
     def stop_instance(self, instance_name):
         """
         Terminate the instance of the specified name.
