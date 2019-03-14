@@ -28,7 +28,7 @@ class PipelineInstanceManager(InstanceManager):
 
     def _get_next_available_port(self, instance_id):
         # Clean up any stopped instances.
-        instance_ids = list(self.instances.keys())
+        instance_ids = list(self._used_ports.values())
         for instance_id in instance_ids:
             self._delete_stopped_instance(instance_id)
 
@@ -45,11 +45,14 @@ class PipelineInstanceManager(InstanceManager):
     def _delete_stopped_instance(self, instance_id):
         # If instance is present but not running, delete it.
         if self.is_instance_present(instance_id) and not self.get_instance(instance_id).is_running():
-            stream_port = self.get_instance(instance_id).get_stream_port()
-
+            port = self.get_instance(instance_id).get_stream_port()
             self.delete_instance(instance_id)
-
-            del self._used_ports[stream_port]
+            self._used_ports.pop(port, None)
+        elif not self.is_instance_present(instance_id):
+            for port, id in self._used_ports.items():
+                if id == instance_id:
+                    self._used_ports.pop(port, None)
+                    break
 
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
