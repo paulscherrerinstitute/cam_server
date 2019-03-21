@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/datastreaming/cam_server.svg?branch=master)](https://travis-ci.org/datastreaming/cam_server) [![Build status](https://ci.appveyor.com/api/projects/status/0vyk18qxnqk2cmvx?svg=true)](https://ci.appveyor.com/project/Babicaa/cam-server)
+[![Build Status](https://travis-ci.org/paulscherrerinstitute/cam_server.svg?branch=master)](https://travis-ci.org/datastreaming/cam_server) [![Build status](https://ci.appveyor.com/api/projects/status/0vyk18qxnqk2cmvx?svg=true)](https://ci.appveyor.com/project/Babicaa/cam-server)
 
 # Camera and Pipeline server
 Cam server is an epics - bsread interface that converts epics enabled camera into a bs_read stream. In addition it
