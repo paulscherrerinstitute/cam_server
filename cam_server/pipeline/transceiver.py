@@ -1,4 +1,6 @@
 from logging import getLogger
+from importlib import import_module
+from imp import load_source
 
 from bsread import Source, PUB, SUB, PUSH
 from bsread.sender import Sender
@@ -40,8 +42,23 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         return parameters, background_array
 
-    source = None
-    sender = None
+    functions = {}
+
+    def get_function(name, reload=False):
+        if not name:
+            return process_image  # default
+        try:
+            f = functions.get(name)
+            if (not f) or reload:
+                if '/' in name:
+                    mod = load_source('mod', name)
+                else:
+                    mod = import_module("cam_server.pipeline.data_processing." + str(name))
+                functions[name] = f = mod.process_image
+            return f
+        except:
+            _logger.exception("Could not import function: " + str(name))
+            return None
 
     try:
         pipeline_parameters, image_background_array = process_pipeline_parameters()
@@ -85,7 +102,11 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 y_axis = data.data.data["y_axis"].value
                 processing_timestamp = data.data.data["timestamp"].value
 
-                processed_data = process_image(image, processing_timestamp, x_axis, y_axis,
+                function = get_function(pipeline_parameters.get("function"), pipeline_parameters.get("reload"))
+                if not function:
+                    continue
+
+                processed_data = function(image, processing_timestamp, x_axis, y_axis,
                                                pipeline_parameters, image_background_array)
 
                 processed_data["width"] = processed_data["image"].shape[1]
@@ -187,7 +208,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
 pipeline_name_to_pipeline_function_mapping = {
     "processing": processing_pipeline,
-    "store": store_pipeline
+    store: store_pipeline
 }
 
 

@@ -284,6 +284,13 @@ pipeline is added to the output bsread stream in the
     - number_of_slices (Default _1_): Desired number of slices.
     - scale (Default _2.0_): Good region scale in for slicing purposes.
     - orientation (Default _vertical_): Orientation of the slices. Can be 'vertical' or 'horizontal'.
+- **pipeline\_type** (Default _'processing_):
+    - _'processing'_ or _'store'_
+- **function** (Default _None_):
+    - Redefine processing function (function name or file name implementing _process_image_ function). Only relevant for pipeline\_type = _'processing'_.
+    - function = _'transparent'_ for no calculations.
+- **reload** (Default _False_):
+    - If True reloads the processing function on each image. For performance reasons the function is not reloaded by default. Should be set to True only for testing new functions.
 
 #### Example
 ```json
