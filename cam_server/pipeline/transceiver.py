@@ -15,20 +15,22 @@ _logger = getLogger(__name__)
 def processing_pipeline(stop_event, statistics, parameter_queue,
                         cam_client, pipeline_config, output_stream_port, background_manager):
     # TODO: Implement statistics: n_clients, input_throughput
-
+    camera_name = pipeline_config.get_camera_name()
+    log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
     def no_client_timeout():
-        _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance." %
-                        config.MFLOW_NO_CLIENTS_TIMEOUT)
+        _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
+                        config.MFLOW_NO_CLIENTS_TIMEOUT, log_tag)
         stop_event.set()
 
     def process_pipeline_parameters():
         parameters = pipeline_config.get_configuration()
-        _logger.debug("Processing pipeline parameters %s.", parameters)
+
+        _logger.debug("Processing pipeline parameters %s. %s", parameters, log_tag)
 
         background_array = None
         if parameters.get("image_background_enable"):
             background_id = pipeline_config.get_background_id()
-            _logger.debug("Image background enabled. Using background_id %s.", background_id)
+            _logger.debug("Image background enabled. Using background_id %s. %s", background_id, log_tag)
 
             background_array = background_manager.get_background(background_id)
 
@@ -38,7 +40,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         if image_region_of_interest:
             _, size_x, _, size_y = image_region_of_interest
 
-        _logger.debug("Image width %d and height %d.", size_x, size_y)
+        _logger.debug("Image width %d and height %d. %s", size_x, size_y, log_tag)
 
         return parameters, background_array
 
@@ -50,6 +52,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         try:
             f = functions.get(name)
             if (not f) or reload:
+                if (not f):
+                    _logger.info("Importing function %s. %s", name, log_tag)
+                else:
+                    _logger.debug("Reloading function %s. %s", name, log_tag)
                 if '/' in name:
                     mod = load_source('mod', name)
                 else:
@@ -57,21 +63,21 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 functions[name] = f = mod.process_image
             return f
         except:
-            _logger.exception("Could not import function: " + str(name))
+            _logger.exception("Could not import function: %s. %s", str(name), log_tag)
             return None
 
     try:
         pipeline_parameters, image_background_array = process_pipeline_parameters()
 
         camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
-        _logger.debug("Connecting to camera stream address %s.", camera_stream_address)
+        _logger.warning("Connecting to camera stream address %s. %s", camera_stream_address, log_tag)
 
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
 
         source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
         source.connect()
 
-        _logger.debug("Opening output stream on port %d.", output_stream_port)
+        _logger.debug("Opening output stream on port %d. %s", output_stream_port, log_tag)
 
         sender = Sender(port=output_stream_port, mode=PUB,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
@@ -82,7 +88,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         # Indicate that the startup was successful.
         stop_event.clear()
 
-        _logger.debug("Transceiver started.")
+        _logger.debug("Transceiver started. %s", log_tag)
 
         while not stop_event.is_set():
             try:
@@ -118,13 +124,13 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
 
             except:
-                _logger.exception("Could not process message.")
+                _logger.exception("Could not process message. %s",  log_tag)
                 stop_event.set()
 
-        _logger.info("Stopping transceiver.")
+        _logger.info("Stopping transceiver. %s", log_tag)
 
     except:
-        _logger.exception("Exception while trying to start the receive and process thread.")
+        _logger.exception("Exception while trying to start the receive and process thread. %s", log_tag)
         raise
 
     finally:
@@ -140,18 +146,19 @@ def store_pipeline(stop_event, statistics, parameter_queue,
     # TODO: Implement statistics: n_clients, input_throughput
 
     def no_client_timeout():
-        _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance." %
-                        config.MFLOW_NO_CLIENTS_TIMEOUT)
+        _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
+                        config.MFLOW_NO_CLIENTS_TIMEOUT, log_tag)
         stop_event.set()
 
     source = None
     sender = None
 
     try:
-
-        camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
         camera_name = pipeline_config.get_camera_name()
-        _logger.debug("Connecting to camera %s on stream address %s.", camera_name, camera_stream_address)
+        log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
+        camera_stream_address = cam_client.get_camera_stream(camera_name)
+
+        _logger.debug("Connecting to camera stream address %s. %s", camera_stream_address, log_tag)
 
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
 
@@ -159,7 +166,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
         source.connect()
 
-        _logger.debug("Opening output stream on port %d.", output_stream_port)
+        _logger.debug("Opening output stream on port %d. %s", output_stream_port,  log_tag)
 
         sender = Sender(port=output_stream_port, mode=PUSH,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
@@ -170,11 +177,10 @@ def store_pipeline(stop_event, statistics, parameter_queue,
         # Indicate that the startup was successful.
         stop_event.clear()
 
-        _logger.debug("Transceiver started.")
+        _logger.debug("Transceiver started. %s", log_tag)
 
         while not stop_event.is_set():
             try:
-
                 data = source.receive()
 
                 # In case of receiving error or timeout, the returned data is None.
@@ -189,13 +195,13 @@ def store_pipeline(stop_event, statistics, parameter_queue,
                 sender.send(data=forward_data, pulse_id=pulse_id, timestamp=timestamp)
 
             except:
-                _logger.exception("Could not process message.")
+                _logger.exception("Could not process message. %s", log_tag)
                 stop_event.set()
 
-        _logger.info("Stopping transceiver.")
+        _logger.info("Stopping transceiver. %s", log_tag)
 
     except:
-        _logger.exception("Exception while trying to start the receive and process thread.")
+        _logger.exception("Exception while trying to start the receive and process thread. %s", log_tag)
         raise
 
     finally:
@@ -208,7 +214,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
 pipeline_name_to_pipeline_function_mapping = {
     "processing": processing_pipeline,
-    store: store_pipeline
+    "store": store_pipeline
 }
 
 

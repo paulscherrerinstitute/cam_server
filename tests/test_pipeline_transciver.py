@@ -226,5 +226,34 @@ class PipelineTransceiverTest(unittest.TestCase):
         thread.join()
 
 
+    def test_transparent_pipeline(self):
+        manager = multiprocessing.Manager()
+        stop_event = multiprocessing.Event()
+        statistics = manager.Namespace()
+        parameter_queue = multiprocessing.Queue()
+
+        pipeline_config = PipelineConfig("test_pipeline", parameters={"camera_name": "simulation",
+                                                                      "function":"transparent"})
+
+        def send():
+            processing_pipeline(stop_event, statistics, parameter_queue, self.client,
+                                pipeline_config, 12000, MockBackgroundManager())
+
+        thread = Thread(target=send)
+        thread.start()
+
+        with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
+            data = stream.receive()
+            self.assertIsNotNone(data, "Received None message.")
+
+            required_keys = set(["image", "timestamp", "width", "height", "x_axis", "y_axis", "processing_parameters"])
+
+            self.assertSetEqual(required_keys, set(data.data.data.keys()),
+                                "Missing required keys in pipeline output bsread message.")
+
+        stop_event.set()
+        thread.join()
+
+
 if __name__ == '__main__':
     unittest.main()

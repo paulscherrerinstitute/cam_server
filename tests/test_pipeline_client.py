@@ -1,6 +1,7 @@
 import os
 import signal
 import unittest
+import time
 
 from multiprocessing import Process
 from time import sleep
@@ -278,7 +279,7 @@ class PipelineClientTest(unittest.TestCase):
             self.pipeline_client.get_latest_background("does not exist")
 
         expected_cameras = ['camera_example_1', 'camera_example_3', 'camera_example_2', 'camera_example_4',
-                            'simulation']
+                            'simulation', 'simulation2']
 
         self.assertEqual(set(self.pipeline_client.get_cameras()), set(expected_cameras),
                          "Expected cameras not present.")
@@ -311,6 +312,19 @@ class PipelineClientTest(unittest.TestCase):
         self.assertTrue("simulation" in data.data.data, "Camera name should be used instead of 'image'.")
 
         self.pipeline_client.stop_all_instances()
+
+
+    def test_transparent_pipeline(self):
+        instance_id, instance_stream = self.pipeline_client.create_instance_from_name("simulation")
+        cfg = self.pipeline_client.get_instance_config(instance_id)
+        cfg["function"] = "transparent"
+        self.pipeline_client.set_instance_config(instance_id, cfg)
+        time.sleep(.5)
+        data = self.pipeline_client.get_instance_message(instance_id)
+        self.assertIsNotNone(data)
+        # Cam_server fields + processing_parameters
+        required_fields = set(["image", "timestamp", "width", "height", "x_axis", "y_axis", "processing_parameters"])
+        self.assertSetEqual(required_fields, set(data.data.data.keys()), "Bad transparent pipeline fields.")
 
 
 if __name__ == '__main__':

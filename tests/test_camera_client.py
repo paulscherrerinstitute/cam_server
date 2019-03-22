@@ -49,7 +49,7 @@ class CameraClientTest(unittest.TestCase):
                          "There should be no running instances.")
 
         expected_cameras = set(["camera_example_1", "camera_example_2", "camera_example_3", "camera_example_4",
-                                "simulation"])
+                                "simulation", "simulation2"])
 
         self.assertSetEqual(set(self.client.get_cameras()), expected_cameras, "Not getting all expected cameras")
 
