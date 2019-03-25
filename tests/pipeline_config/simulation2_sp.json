@@ -1,0 +1,12 @@
+{
+ "image_background_enable": false,
+ "image_background": null,
+ "image_threshold": null,
+ "image_region_of_interest": null,
+ "image_good_region": null,
+ "image_slices": null,
+ "pipeline_type": "processing",
+ "camera_name": "simulation",
+ "name": "simulation_sp",
+ "function":"transparent"
+}

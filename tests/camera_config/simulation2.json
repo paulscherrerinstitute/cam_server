@@ -1,0 +1,20 @@
+{
+ "camera_calibration": {
+  "reference_marker": [
+   211,
+   173,
+   1063,
+   793
+  ],
+  "reference_marker_width": 30000.0,
+  "reference_marker_height": 30000.0,
+  "angle_horizontal": 0.0,
+  "angle_vertical": 0.0
+ },
+ "mirror_x": false,
+ "mirror_y": false,
+ "rotate": 0,
+ "source_type": "simulation",
+ "name": "simulation",
+ "source": ""
+}
