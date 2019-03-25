@@ -253,3 +253,25 @@ class PipelineClient(object):
             message = stream.receive()
 
         return message
+
+    def get_background_image(self, background_name):
+        """
+        Return a background image in PNG format.
+        :param background_name: Background file name.
+        :return: server_response content (PNG).
+        """
+        rest_endpoint = "/background/%s/image" % background_name
+
+        server_response = requests.get(self.api_address_format % rest_endpoint)
+        return server_response
+
+    def get_background_image_bytes(self, background_name):
+        """
+        Return the bytes of a a background file.
+        :param background_name: Background file name.
+        :return: JSON with bytes and metadata.
+        """
+        rest_endpoint = "/background/%s/image_bytes" % background_name
+
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["image"]

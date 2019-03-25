@@ -1,3 +1,4 @@
+import base64
 import os
 import signal
 import unittest
@@ -10,6 +11,8 @@ import numpy
 from bsread import source, SUB, PULL
 
 from cam_server import CamClient, PipelineClient
+from cam_server.camera.configuration import CameraConfig
+from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
@@ -326,6 +329,22 @@ class PipelineClientTest(unittest.TestCase):
         required_fields = set(["image", "timestamp", "width", "height", "x_axis", "y_axis", "processing_parameters"])
         self.assertSetEqual(required_fields, set(data.data.data.keys()), "Bad transparent pipeline fields.")
 
+    def test_background_file(self):
+
+        bg = self.pipeline_client.get_latest_background("simulation")
+        image = self.pipeline_client.get_background_image(bg)
+        self.assertGreater(len(image.content), 0)
+
+        image = self.pipeline_client.get_background_image_bytes(bg)
+        dtype = image["dtype"]
+        shape = image["shape"]
+        bytes = base64.b64decode(image["bytes"].encode())
+
+        x_size, y_size = CameraSimulation(CameraConfig("simulation")).get_geometry()
+        self.assertEqual(shape, [y_size, x_size])
+
+        image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
+        self.assertIsNotNone(image_array)
 
 if __name__ == '__main__':
     unittest.main()

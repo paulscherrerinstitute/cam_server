@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 
@@ -7,6 +8,7 @@ from bottle import request, response
 from cam_server import config
 from cam_server.instance_management import rest_api
 from cam_server.utils import collect_background
+from cam_server.pipeline.data_processing.functions import get_png_from_image
 
 _logger = logging.getLogger(__name__)
 
@@ -192,6 +194,48 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         return {"state": "ok",
                 "status": "List of available cameras.",
                 "cameras": instance_manager.cam_server_client.get_cameras()}
+
+
+    @app.get(api_root_address + '/background/<background_name>/image')
+    def get_background_image(background_name):
+        """
+        Return a background file in PNG format. URL parameters available:
+        scale=[float], min_value=[float], max_value[float], colormap[string].
+        Colormap: See http://matplotlib.org/examples/color/colormaps_reference.html
+        :param background_name: Background file name.
+        :return: PNG image.
+        """
+
+        scale = float(request.params["scale"]) if "scale" in request.params else None
+        min_value = float(request.params["min_value"]) if "min_value" in request.params else None
+        max_value = float(request.params["max_value"]) if "max_value" in request.params else None
+        colormap_name = request.params.get("colormap")
+
+        image_raw_bytes = instance_manager.background_manager.get_background(background_name)
+
+        image = get_png_from_image(image_raw_bytes, scale, min_value, max_value, colormap_name)
+
+        response.set_header('Content-type', 'image/png')
+        return image
+
+    @app.get(api_root_address + '/background/<background_name>/image_bytes')
+    def get_background_image_bytes(background_name):
+        """
+        Return the bytes of aa a background file.
+        :param background_name: Background file name.
+        :return: JSON with details and byte stream.
+        """
+        image_bytes = instance_manager.background_manager.get_background(background_name)
+
+        base64_bytes = base64.b64encode(image_bytes)
+        image_shape = image_bytes.shape
+        image_dtype = image_bytes.dtype.descr[0][1]
+
+        return {"state": "ok",
+                "status": "Background file '%s'." % background_name,
+                "image": {"bytes": base64_bytes.decode("utf-8"),
+                          "shape": image_shape,
+                          "dtype": image_dtype}}
 
     @app.error(405)
     def method_not_allowed(res):
