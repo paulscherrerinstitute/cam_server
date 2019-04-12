@@ -32,7 +32,7 @@ class PipelineClientTest(unittest.TestCase):
 
         cam_server_address = "http://%s:%s" % (self.host, self.cam_port)
         pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_port)
-
+        """
         self.cam_process = Process(target=start_camera_server, args=(self.host, self.cam_port,
                                                                      self.cam_config_folder))
         self.cam_process.start()
@@ -42,27 +42,27 @@ class PipelineClientTest(unittest.TestCase):
                                                                             self.background_config_folder,
                                                                             cam_server_address))
         self.pipeline_process.start()
-
+        """
         self.cam_client = CamClient(cam_server_address)
         self.pipeline_client = PipelineClient(pipeline_server_address)
 
         # Give it some time to start.
-        sleep(1)
+        #sleep(1)
 
     def tearDown(self):
-
+        """
         os.kill(self.cam_process.pid, signal.SIGINT)
         os.kill(self.pipeline_process.pid, signal.SIGINT)
 
         self.cam_process.join()
         self.pipeline_process.join()
-
+        """
         try:
             os.remove(os.path.join(self.pipeline_config_folder, "testing_config.json"))
         except:
             pass
         # Wait for the server to die.
-        sleep(1)
+        #sleep(1)
 
     def test_client(self):
         expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3",

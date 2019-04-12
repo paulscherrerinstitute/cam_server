@@ -23,24 +23,28 @@ class CameraClientTest(unittest.TestCase):
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         self.config_folder = os.path.join(test_base_dir, "camera_config/")
 
-        self.process = Process(target=start_camera_server, args=(self.host, self.port, self.config_folder))
-        self.process.start()
+        #self.process = Process(target=start_camera_server, args=(self.host, self.port, self.config_folder))
+        #self.process.start()
 
         # Give it some time to start.
-        sleep(0.5)
+        #sleep(0.5)
 
         server_address = "http://%s:%s" % (self.host, self.port)
         self.client = CamClient(server_address)
 
     def tearDown(self):
         self.client.stop_all_cameras()
-        os.kill(self.process.pid, signal.SIGINT)
+        #os.kill(self.process.pid, signal.SIGINT)
         try:
             os.remove(os.path.join(self.config_folder, "testing_camera.json"))
         except:
             pass
+        try:
+            os.remove(os.path.join(self.config_folder, "simulation_temp.json"))
+        except:
+            pass
         # Wait for the server to die.
-        sleep(1)
+        #sleep(1)
 
     def test_client(self):
         server_info = self.client.get_server_info()
@@ -142,7 +146,8 @@ class CameraClientTest(unittest.TestCase):
 
             x_size = data.data.data["width"].value
             y_size = data.data.data["height"].value
-
+            print(data.data.data)
+            print (x_size, y_size)
             self.assertEqual(x_size, sim_x)
             self.assertEqual(y_size, sim_y)
 
