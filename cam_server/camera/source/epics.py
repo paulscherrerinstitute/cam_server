@@ -33,7 +33,7 @@ class CameraEpics:
         channel_init.disconnect()
 
         if channel_init_value != 'INIT':
-            raise RuntimeError("Camera with prefix {} not online - Status {}".format(camera_prefix, channel_init_value))
+            raise RuntimeError(("Camera with prefix %s not online - Status %s" % (camera_prefix, channel_init_value)))
 
     def _collect_camera_settings(self):
         # Retrieve with and height of cam_server image.
