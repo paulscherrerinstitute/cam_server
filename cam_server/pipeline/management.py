@@ -190,7 +190,7 @@ class PipelineInstanceManager(InstanceManager):
         return self.get_instance(instance_id).get_configuration()
 
     def get_instance_info(self, instance_id):
-        return instance_manager.get_instance(instance_id).get_info()
+        return self.get_instance(instance_id).get_info()
 
 
 class PipelineInstance(InstanceWrapper):
