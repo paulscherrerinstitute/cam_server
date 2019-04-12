@@ -234,9 +234,9 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
                     return_value["coupling_offset"] = offset
 
                 except:  # Except for slices
-                    _logger.exception('Unable to apply slices')
+                    _logger.debug('Unable to apply slices')
 
         except:  # Except for good region
-            _logger.exception('Unable to detect good region')
+            _logger.debug('Unable to detect good region')
 
     return return_value

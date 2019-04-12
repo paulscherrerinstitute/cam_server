@@ -52,9 +52,20 @@ class Proxy:
     def set_camera_instance_config(self, camera_name, new_config):
         server = self.get_server(camera_name)
         if server is not None:
-            #TODO: the config will be written twice
             server.set_camera_config(camera_name, new_config)
+        try:
+            self.config_manager.save_camera_config(camera_name, new_config)
+        except:
+            pass
 
+    def delete_camera_config(self, camera_name):
+        server = self.get_server(camera_name)
+        if server is not None:
+            server.delete_camera_config(camera_name)
+        try:
+            self.config_manager.delete_camera_config(camera_name)
+        except:
+            pass
     #TODO: get_camera_image and get_camera_image_bytes conect diretly to the camera.
     #      What should do if there is a connected server to that camera?
 

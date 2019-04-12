@@ -103,8 +103,8 @@ class PipelineClient(object):
         rest_endpoint = "/instance/"
         server_response = requests.post(self.api_address_format % rest_endpoint,
                                        json=configuration).json()
-
-        return validate_response(server_response)["stream"]
+        validate_response(server_response)
+        return server_response["instance_id"], server_response["stream"]
 
     def create_instance_from_name(self, pipeline_name, instance_id=None):
         """

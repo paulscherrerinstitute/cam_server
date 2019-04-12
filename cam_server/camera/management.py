@@ -51,11 +51,16 @@ class CameraInstanceManager(InstanceManager):
         return self.get_instance(camera_name).get_stream_address()
 
     def set_camera_instance_config(self, camera_name, new_config):
+        self.config_manager.save_camera_config(camera_name, new_config)
+
         if not self.is_instance_present(camera_name):
             return
 
         camera_instance = self.get_instance(camera_name)
         camera_instance.set_parameter(new_config)
+
+    def delete_camera_config(self, camera_name):
+        self.config_manager.delete_camera_config(camera_name)
 
 
 class CameraInstance(InstanceWrapper):

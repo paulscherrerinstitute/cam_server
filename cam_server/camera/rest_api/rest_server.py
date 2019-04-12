@@ -88,8 +88,6 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         """
 
         new_config = CameraConfig(camera_name, request.json).get_configuration()
-
-        instance_manager.config_manager.save_camera_config(camera_name, new_config)
         instance_manager.set_camera_instance_config(camera_name, new_config)
 
         return {"state": "ok",
@@ -103,7 +101,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         :param camera_name: Name of the camera to delete the config for.
         """
 
-        instance_manager.config_manager.delete_camera_config(camera_name)
+        instance_manager.delete_camera_config(camera_name)
 
         return {"state": "ok",
                 "status": "Camera %s configuration deleted." % camera_name}

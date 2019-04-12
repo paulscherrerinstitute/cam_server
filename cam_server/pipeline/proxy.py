@@ -33,7 +33,8 @@ class Proxy:
                 pass
 
     def stop_instance(self, instance_name):
-        server = self.get_server(instance_name)
+        status = self.get_status()
+        server = self.get_server(instance_name, status)
         if server is not None:
             _logger.info("Stopping %s at %s", instance_name, server.get_address())
             server.stop_instance(instance_name)
@@ -54,13 +55,13 @@ class Proxy:
         server = self.get_server(instance_name)
         if server is not None:
             return server.get_instance_config(instance_name)
-        raise Exception("Invalid instance: " + str(instance_name))
+        raise ValueError("Instance '%s' does not exist." % instance_name)
 
-    def get_instance_info(self, instance_id):
+    def get_instance_info(self, instance_name):
         server = self.get_server(instance_name)
         if server is not None:
             return server.get_instance_info(instance_name)
-        raise Exception("Invalid instance: " + str(instance_name))
+        raise ValueError("Instance '%s' does not exist." % instance_name)
 
     def get_instance_stream(self, instance_name):
         status = self.get_status()
@@ -75,14 +76,11 @@ class Proxy:
 
     def get_instance_stream_from_config(self, configuration):
         #TODO
-        #status = self.get_status()
+        status = self.get_status()
         #server = self.get_server_for_camera(camera_name, status)
         server = self.default_server
         if server is None:
             server = self.get_free_server(status)
-            _logger.info("Creating stream to %s at %s", instance_name, server.get_address())
-        else:
-            _logger.info("Connecting to stream %s at %s", instance_name, server.get_address())
         return server.get_instance_stream_from_config(configuration)
 
 
