@@ -1,6 +1,7 @@
 import argparse
 import logging
 
+import os
 import bottle
 from cam_server import config
 from cam_server.camera.configuration import CameraConfigManager
