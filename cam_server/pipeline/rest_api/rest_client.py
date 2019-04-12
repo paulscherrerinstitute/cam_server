@@ -17,8 +17,14 @@ class PipelineClient(object):
         """
         :param address: Address of the pipeline API, e.g. http://localhost:10000
         """
-
+        self.address = address
         self.api_address_format = address.rstrip("/") + config.API_PREFIX + config.PIPELINE_REST_INTERFACE_PREFIX + "%s"
+
+    def get_address(self):
+        """
+        Return the REST api endpoint address.
+        """
+        return self.address
 
     def get_server_info(self):
         """

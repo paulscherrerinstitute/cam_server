@@ -186,6 +186,12 @@ class PipelineInstanceManager(InstanceManager):
         for instance_id in instance_ids:
             self.stop_instance(instance_id)
 
+    def get_instance_configuration(self, instance_id):
+        return self.get_instance(instance_id).get_configuration()
+
+    def get_instance_info(self, instance_id):
+        return instance_manager.get_instance(instance_id).get_info()
+
 
 class PipelineInstance(InstanceWrapper):
     def __init__(self, instance_id, process_function, pipeline_config, output_stream_port, cam_client,

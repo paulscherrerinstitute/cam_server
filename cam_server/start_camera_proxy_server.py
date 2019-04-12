@@ -1,6 +1,5 @@
 import argparse
 import logging
-import os
 
 import bottle
 from cam_server import config
@@ -16,7 +15,11 @@ _logger = logging.getLogger(__name__)
 
 
 def start_camera_proxy_server(host, port, servers, config_base, hostname=None):
-    config = []
+    if not os.path.isdir(config_base):
+        _logger.error("Configuration directory '%s' does not exist." % config_base)
+        exit(-1)
+
+
     sever_pool = []
     try:
         servers = [s.strip() for s in servers.split(",")]
@@ -51,7 +54,7 @@ def main():
     parser.add_argument('-b', '--base', default=config.DEFAULT_CAMERA_CONFIG_FOLDER,
                         help="(Camera) Configuration base directory")
     parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
-    parser.add_argument("--log_level", default='INFO',
+    parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
     arguments = parser.parse_args()

@@ -53,7 +53,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Stream address for pipeline %s." % instance_id,
                 "instance_id": instance_id,
                 "stream": stream_address,
-                "config": instance_manager.get_instance(instance_id).get_configuration()}
+                "config": instance_manager.get_instance_configuration(instance_id)}
 
     @app.post(api_root_address + '/<pipeline_name>')
     def create_pipeline_from_name(pipeline_name):
@@ -68,7 +68,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Stream address for pipeline %s." % instance_id,
                 "instance_id": instance_id,
                 "stream": stream_address,
-                "config": instance_manager.get_instance(instance_id).get_configuration()}
+                "config": instance_manager.get_instance_configuration(instance_id)}
 
     @app.get(api_root_address + '/instance/<instance_id>')
     def get_instance_stream(instance_id):
@@ -90,7 +90,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Stream address for pipeline %s." % instance_id,
                 "instance_id": instance_id,
                 "stream": stream_address,
-                "config": instance_manager.get_instance(instance_id).get_configuration()}
+                "config": instance_manager.get_instance_configuration(instance_id)}
 
     @app.get(api_root_address + '/instance/<instance_id>/info')
     def get_instance_info(instance_id):
@@ -99,7 +99,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         return {"state": "ok",
                 "status": "Pipeline instance %s info retrieved." % instance_id,
-                "info": instance_manager.get_instance(instance_id).get_info()}
+                "info": instance_manager.get_instance_info(instance_id)}
 
     @app.get(api_root_address + '/instance/<instance_id>/config')
     def get_instance_config(instance_id):
@@ -108,7 +108,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         return {"state": "ok",
                 "status": "Pipeline instance %s info retrieved." % instance_id,
-                "config": instance_manager.get_instance(instance_id).get_configuration()}
+                "config": instance_manager.get_instance_configuration(instance_id)}
 
     @app.post(api_root_address + '/instance/<instance_id>/config')
     def set_instance_config(instance_id):
@@ -123,7 +123,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         return {"state": "ok",
                 "status": "Pipeline instance %s configuration changed." % instance_id,
-                "config": instance_manager.get_instance(instance_id).get_configuration()}
+                "config": instance_manager.get_instance_configuration(instance_id)}
 
     @app.get(api_root_address + '/<pipeline_name>/config')
     def get_pipeline_config(pipeline_name):
