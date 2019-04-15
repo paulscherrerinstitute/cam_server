@@ -11,6 +11,7 @@ from bsread import source, SUB
 from cam_server import CamClient
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
+from cam_server.start_camera_server import start_camera_server
 from cam_server.start_camera_proxy_server import start_camera_proxy_server
 from cam_server.utils import get_host_port_from_stream_address
 
@@ -20,36 +21,40 @@ class CameraClientProxyTest(unittest.TestCase):
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         self.config_folder = os.path.join(test_base_dir, "camera_config/")
 
-        self.cam_server_host = "0.0.0.0"
+        self.host = "0.0.0.0"
         self.cam_server_port = 8888
-        #self.process_camserver = Process(target=start_camera_server, args=(self.cam_server_host, self.cam_server_port, self.config_folder))
-        #self.process_camserver.start()
-        #sleep(0.25) # Give it some time to start.
+        self.cam_proxy_port = 8898
+        cam_server_address = "http://%s:%s" % (self.host, self.cam_server_port)
+
+        self.process_camserver = Process(target=start_camera_server, args=(self.host, self.cam_server_port, self.config_folder))
+        self.process_camserver.start()
+        sleep(0.25) # Give it some time to start.
+
 
         self.cam_proxy_host = "0.0.0.0"
-        self.cam_proxy_port = 8898
-        #self.process_camproxy = Process(target=start_camera_proxy_server,
-        #                   args=(self.cam_proxy_host, self.cam_proxy_port, [self.cam_server_host + str(self.cam_server_port),], self.config_folder))
-        #self.process_camproxy.start()
-        #sleep(0.25) # Give it some time to start.
 
-        server_address = "http://%s:%s" % (self.cam_proxy_host, self.cam_proxy_port)
+        self.process_camproxy = Process(target=start_camera_proxy_server,
+                                        args=(self.host, self.cam_proxy_port, cam_server_address , self.config_folder))
+        self.process_camproxy.start()
+        sleep(0.25) # Give it some time to start.
+
+        server_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
         self.client = CamClient(server_address)
 
     def tearDown(self):
         self.client.stop_all_cameras()
-        #os.kill(self.process_camproxy.pid, signal.SIGINT)
-        #os.kill(self.process_camserver.pid, signal.SIGINT)
-        try:
-            os.remove(os.path.join(self.config_folder, "testing_camera.json"))
-        except:
-            pass
-        try:
-            os.remove(os.path.join(self.config_folder, "simulation_temp.json"))
-        except:
-            pass
+        for p in self.process_camproxy.pid,self.process_camserver.pid:
+            try:
+                os.kill(p, signal.SIGINT)
+            except:
+                pass
+        for f in "testing_config.json","testing_camera.json":
+            try:
+                os.remove(os.path.join(self.pipeline_config_folder, f))
+            except:
+                pass
         # Wait for the server to die.
-        #sleep(1)
+        sleep(1)
 
     def test_client(self):
         server_info = self.client.get_server_info()
@@ -59,7 +64,6 @@ class CameraClientProxyTest(unittest.TestCase):
 
         expected_cameras = set(["camera_example_1", "camera_example_2", "camera_example_3", "camera_example_4",
                                 "simulation", "simulation2"])
-        print (self.client.get_cameras())
         self.assertSetEqual(set(self.client.get_cameras()), expected_cameras, "Not getting all expected cameras")
 
         camera_stream_address = self.client.get_camera_stream("simulation")
@@ -144,15 +148,12 @@ class CameraClientProxyTest(unittest.TestCase):
         instance_info = self.client.get_server_info()["active_instances"]["simulation_temp"]
         self.assertTrue("last_start_time" in instance_info)
         self.assertTrue("statistics" in instance_info)
-        print(instance_info)
         # Collect from the pipeline.
         with source(host=camera_host, port=camera_port, mode=SUB) as stream:
             data = stream.receive()
 
             x_size = data.data.data["width"].value
             y_size = data.data.data["height"].value
-            print(data.data.data)
-            print (x_size, y_size)
             self.assertEqual(x_size, sim_x)
             self.assertEqual(y_size, sim_y)
 
@@ -185,7 +186,6 @@ class CameraClientProxyTest(unittest.TestCase):
             self.assertEqual(x_axis_2.shape[0], sim_y)
             self.assertEqual(y_axis_2.shape[0], sim_x)
 
-        #self.client.stop_camera("simulation_temp")
         self.client.delete_camera_config("simulation_temp")
 
         image = self.client.get_camera_image("simulation")

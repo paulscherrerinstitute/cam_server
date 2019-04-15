@@ -39,7 +39,6 @@ class PipelineClientTest(unittest.TestCase):
         cam_server_proxy_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
         pipeline_server_proxy_address = "http://%s:%s" % (self.host, self.pipeline_proxy_port)
 
-        """
         self.cam_process = Process(target=start_camera_server, args=(self.host, self.cam_port,
                                                                      self.cam_config_folder))
         self.cam_process.start()
@@ -51,42 +50,44 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_process.start()
 
         self.cam_proxy_process =Process(target=start_camera_proxy_server, args=(self.host, self.cam_proxy_port,
-                                             [self.host + str(self.cam_port)], self.config_folder))
+                                             cam_server_address, self.cam_config_folder))
         self.cam_proxy_process.start()
-
-        self.pipeline_proxy_process = Process(target=start_pipeline_proxy_server, args=(self.host, self.pipeline_port,
-                                                                            [self.host + str( self.pipeline_proxy_port), ],
+        print (self.host, self.pipeline_proxy_port,pipeline_server_address,
                                                                             self.pipeline_config_folder,
                                                                             self.background_config_folder,
-                                                                            cam_server_address))
+                                                                            cam_server_proxy_address)
+        self.pipeline_proxy_process = Process(target=start_pipeline_proxy_server, args=(self.host, self.pipeline_proxy_port,
+                                                                            pipeline_server_address,
+                                                                            self.pipeline_config_folder,
+                                                                            self.background_config_folder,
+                                                                            cam_server_proxy_address))
         self.pipeline_proxy_process.start()
-        """
 
         self.cam_client = CamClient(cam_server_proxy_address)
         self.pipeline_client = PipelineClient(pipeline_server_proxy_address)
 
         # Give it some time to start.
-        #sleep(1)
+        sleep(1)
 
     def tearDown(self):
-        """
-        os.kill(self.cam_process.pid, signal.SIGINT)
-        os.kill(self.pipeline_process.pid, signal.SIGINT)
-        os.kill(self.cam_proxy_process.pid, signal.SIGINT)
-        os.kill(self.pipeline_proxy_process.pid, signal.SIGINT)
+        for p in self.cam_process.pid,self.pipeline_process.pid,self.cam_proxy_process.pid,self.pipeline_proxy_process.pid:
+            try:
+                os.kill(p, signal.SIGINT)
+            except:
+                pass
+        for p in self.cam_process,self.pipeline_process,self.cam_proxy_process,self.pipeline_proxy_process:
+            try:
+                p.join()
+            except:
+                pass
+        for f in "testing_config.json",:
+            try:
+                os.remove(os.path.join(self.pipeline_config_folder, f))
+            except:
+                pass
 
-        self.cam_process.join()
-        self.pipeline_process.join()
-        self.cam_proxy_process.join()
-        self.pipeline_proxy_process.join()
-        """
-
-        try:
-            os.remove(os.path.join(self.pipeline_config_folder, "testing_config.json"))
-        except:
-            pass
         # Wait for the server to die.
-        #sleep(1)
+        sleep(1)
 
     def test_client(self):
         expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3",
@@ -340,8 +341,7 @@ class PipelineClientTest(unittest.TestCase):
 
         self.pipeline_client.stop_all_instances()
 
-
-    def test_transparent_pipeline(self):
+        #Transparent pipeline
         instance_id, instance_stream = self.pipeline_client.create_instance_from_name("simulation")
         cfg = self.pipeline_client.get_instance_config(instance_id)
         cfg["function"] = "transparent"
@@ -352,6 +352,10 @@ class PipelineClientTest(unittest.TestCase):
         # Cam_server fields + processing_parameters
         required_fields = set(["image", "timestamp", "width", "height", "x_axis", "y_axis", "processing_parameters"])
         self.assertSetEqual(required_fields, set(data.data.data.keys()), "Bad transparent pipeline fields.")
+
+        self.pipeline_client.stop_all_instances()
+        time.sleep(1.0)
+
 
     def test_background_file(self):
 

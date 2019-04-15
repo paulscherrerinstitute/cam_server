@@ -32,37 +32,42 @@ class PipelineClientTest(unittest.TestCase):
 
         cam_server_address = "http://%s:%s" % (self.host, self.cam_port)
         pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_port)
-        """
+
         self.cam_process = Process(target=start_camera_server, args=(self.host, self.cam_port,
                                                                      self.cam_config_folder))
         self.cam_process.start()
+        sleep(0.5)
 
         self.pipeline_process = Process(target=start_pipeline_server, args=(self.host, self.pipeline_port,
                                                                             self.pipeline_config_folder,
                                                                             self.background_config_folder,
                                                                             cam_server_address))
         self.pipeline_process.start()
-        """
+
         self.cam_client = CamClient(cam_server_address)
         self.pipeline_client = PipelineClient(pipeline_server_address)
 
         # Give it some time to start.
-        #sleep(1)
+        sleep(0.5)
 
     def tearDown(self):
-        """
-        os.kill(self.cam_process.pid, signal.SIGINT)
-        os.kill(self.pipeline_process.pid, signal.SIGINT)
-
-        self.cam_process.join()
-        self.pipeline_process.join()
-        """
-        try:
-            os.remove(os.path.join(self.pipeline_config_folder, "testing_config.json"))
-        except:
-            pass
+        for p in self.cam_process.pid,self.pipeline_process.pid:
+            try:
+                os.kill(p, signal.SIGINT)
+            except:
+                pass
+        for p in self.cam_process,self.pipeline_process:
+            try:
+                p.join()
+            except:
+                pass
+        for f in "testing_config.json",:
+            try:
+                os.remove(os.path.join(self.pipeline_config_folder, f))
+            except:
+                pass
         # Wait for the server to die.
-        #sleep(1)
+        sleep(1)
 
     def test_client(self):
         expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3",
@@ -314,10 +319,9 @@ class PipelineClientTest(unittest.TestCase):
         self.assertEqual(len(data.data.data), 1, "Only the image should be present in the received data.")
         self.assertTrue("simulation" in data.data.data, "Camera name should be used instead of 'image'.")
 
-        self.pipeline_client.stop_all_instances()
 
 
-    def test_transparent_pipeline(self):
+        #Transparent pipeline
         instance_id, instance_stream = self.pipeline_client.create_instance_from_name("simulation")
         cfg = self.pipeline_client.get_instance_config(instance_id)
         cfg["function"] = "transparent"
@@ -328,6 +332,10 @@ class PipelineClientTest(unittest.TestCase):
         # Cam_server fields + processing_parameters
         required_fields = set(["image", "timestamp", "width", "height", "x_axis", "y_axis", "processing_parameters"])
         self.assertSetEqual(required_fields, set(data.data.data.keys()), "Bad transparent pipeline fields.")
+
+        self.pipeline_client.stop_all_instances()
+        time.sleep(1.0)
+
 
     def test_background_file(self):
 

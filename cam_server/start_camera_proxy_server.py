@@ -59,10 +59,8 @@ def main():
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
     arguments = parser.parse_args()
-    print(arguments.base)
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
-
     start_camera_proxy_server(arguments.interface, arguments.port, arguments.servers, arguments.base, arguments.hostname)
 
 
