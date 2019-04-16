@@ -11,7 +11,7 @@ def read(fname):
 
 
 setup(name="cam_server",
-      version="2.5.1",
+      version="3.0.0",
       maintainer="Paul Scherrer Institute",
       maintainer_email="daq@psi.ch",
       author="Paul Scherrer Institute",
