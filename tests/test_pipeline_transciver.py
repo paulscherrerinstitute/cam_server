@@ -35,7 +35,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         self.client = CamClient(self.rest_api_endpoint)
 
     def tearDown(self):
-        self.client.stop_all_cameras()
+        self.client.stop_all_instances()
         sleep(1)
         try:
             os.kill(self.process.pid, signal.SIGINT)
@@ -200,7 +200,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
 
-        self.client.stop_all_cameras()
+        self.client.stop_all_instances()
 
         pipeline_config = PipelineConfig("test_pipeline")
 

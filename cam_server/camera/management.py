@@ -20,7 +20,7 @@ class CameraInstanceManager(InstanceManager):
     def get_camera_list(self):
         return self.config_manager.get_camera_list()
 
-    def get_camera_stream(self, camera_name):
+    def get_instance_stream(self, camera_name):
         """
         Get the camera stream address.
         :param camera_name: Name of the camera to get the stream for.
@@ -58,9 +58,6 @@ class CameraInstanceManager(InstanceManager):
 
         camera_instance = self.get_instance(camera_name)
         camera_instance.set_parameter(new_config)
-
-    def delete_camera_config(self, camera_name):
-        self.config_manager.delete_camera_config(camera_name)
 
 
 class CameraInstance(InstanceWrapper):

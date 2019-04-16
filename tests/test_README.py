@@ -42,7 +42,7 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_client = PipelineClient(pipeline_server_address)
 
     def tearDown(self):
-        self.cam_client.stop_all_cameras()
+        self.cam_client.stop_all_instances()
         self.pipeline_client.stop_all_instances()
 
         try:
@@ -121,7 +121,7 @@ class PipelineClientTest(unittest.TestCase):
         camera_client = CamClient(server_address)
 
         # Get stream address of simulation camera. Stream address in format tcp://hostname:port.
-        camera_stream_address = camera_client.get_camera_stream("simulation")
+        camera_stream_address = camera_client.get_instance_stream("simulation")
 
         # Extract the stream hostname and port from the stream address.
         camera_host, camera_port = get_host_port_from_stream_address(camera_stream_address)

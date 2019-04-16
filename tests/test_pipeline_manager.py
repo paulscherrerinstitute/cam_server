@@ -35,7 +35,7 @@ class PipelineManagerTest(unittest.TestCase):
         self.client = CamClient(server_address)
 
     def tearDown(self):
-        self.client.stop_all_cameras()
+        self.client.stop_all_instances()
         try:
             os.kill(self.process.pid, signal.SIGINT)
         except:
@@ -152,7 +152,7 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertTrue(background_id.startswith("simulation"), "Background id not as expected.")
 
         host, port = get_host_port_from_stream_address(instance_manager.
-                                                       cam_server_client.get_camera_stream("simulation"))
+                                                       cam_server_client.get_instance_stream("simulation"))
 
         # Collect from the camera.
         with source(host=host, port=port, mode=SUB) as stream:

@@ -84,7 +84,7 @@ class MockCamServerClient:
     def get_camera_geometry(self, camera_name):
         return 100, 101
 
-    def get_camera_stream(self, camera_name):
+    def get_instance_stream(self, camera_name):
         return "tcp://127.0.0.1:10000"
 
     def is_camera_online(self, camera_name):

@@ -40,7 +40,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "cameras": instance_manager.get_camera_list()}
 
     @app.get(api_root_address + "/<camera_name>")
-    def get_camera_stream(camera_name):
+    def get_instance_stream(camera_name):
         """
         Get the camera stream address.
         :param camera_name: Name of the camera.
@@ -48,7 +48,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         """
         return {"state": "ok",
                 "status": "Stream address for camera %s." % camera_name,
-                "stream": instance_manager.get_camera_stream(camera_name)}
+                "stream": instance_manager.get_instance_stream(camera_name)}
 
     @app.get(api_root_address + "/<camera_name>/is_online")
     def is_camera_online(camera_name):
@@ -100,8 +100,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         Delete camera settings.
         :param camera_name: Name of the camera to delete the config for.
         """
-
-        instance_manager.delete_camera_config(camera_name)
+        instance_manager.config_manager.delete_camera_config(camera_name)
 
         return {"state": "ok",
                 "status": "Camera %s configuration deleted." % camera_name}

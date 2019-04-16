@@ -69,7 +69,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
     try:
         pipeline_parameters, image_background_array = process_pipeline_parameters()
 
-        camera_stream_address = cam_client.get_camera_stream(pipeline_config.get_camera_name())
+        camera_stream_address = cam_client.get_instance_stream(pipeline_config.get_camera_name())
         _logger.warning("Connecting to camera stream address %s. %s", camera_stream_address, log_tag)
 
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
@@ -156,7 +156,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
     try:
         camera_name = pipeline_config.get_camera_name()
         log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
-        camera_stream_address = cam_client.get_camera_stream(camera_name)
+        camera_stream_address = cam_client.get_instance_stream(camera_name)
 
         _logger.debug("Connecting to camera stream address %s. %s", camera_stream_address, log_tag)
 

@@ -34,7 +34,7 @@ class CameraClientTest(unittest.TestCase):
 
     def tearDown(self):
         try:
-            self.client.stop_all_cameras()
+            self.client.stop_all_instances()
         except:
             pass
         try:
@@ -60,7 +60,7 @@ class CameraClientTest(unittest.TestCase):
 
         self.assertSetEqual(set(self.client.get_cameras()), expected_cameras, "Not getting all expected cameras")
 
-        camera_stream_address = self.client.get_camera_stream("simulation")
+        camera_stream_address = self.client.get_instance_stream("simulation")
 
         self.assertTrue(bool(camera_stream_address), "Camera stream address cannot be empty.")
 
@@ -85,17 +85,17 @@ class CameraClientTest(unittest.TestCase):
             self.assertEqual(data.data.data["height"].value, y_size, "Height not correct.")
 
         # Stop the simulation instance.
-        self.client.stop_camera("simulation")
+        self.client.stop_instance("simulation")
 
         self.assertTrue("simulation" not in self.client.get_server_info()["active_instances"],
                         "Camera simulation did not stop.")
 
-        self.client.get_camera_stream("simulation")
+        self.client.get_instance_stream("simulation")
 
         self.assertTrue("simulation" in self.client.get_server_info()["active_instances"],
                         "Camera simulation did not start.")
 
-        self.client.stop_all_cameras()
+        self.client.stop_all_instances()
 
         self.assertTrue("simulation" not in self.client.get_server_info()["active_instances"],
                         "Camera simulation did not stop.")
@@ -127,7 +127,7 @@ class CameraClientTest(unittest.TestCase):
 
         # Test if it fails quickly enough.
         with self.assertRaisesRegex(ValueError, "Camera with prefix EPICS_example_1 not online - Status None"):
-            self.client.get_camera_stream("camera_example_1")
+            self.client.get_instance_stream("camera_example_1")
 
         self.assertTrue(self.client.is_camera_online("simulation"), "Simulation should be always online")
 
@@ -135,7 +135,7 @@ class CameraClientTest(unittest.TestCase):
 
         self.client.set_camera_config("simulation_temp", self.client.get_camera_config("simulation"))
 
-        stream_address = self.client.get_camera_stream("simulation_temp")
+        stream_address = self.client.get_instance_stream("simulation_temp")
         camera_host, camera_port = get_host_port_from_stream_address(stream_address)
         sim_x, sim_y = CameraSimulation(CameraConfig("simulation")).get_geometry()
 
@@ -197,7 +197,7 @@ class CameraClientTest(unittest.TestCase):
         image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
         self.assertIsNotNone(image_array)
 
-        self.client.stop_all_cameras()
+        self.client.stop_all_instances()
 
 
 if __name__ == '__main__':

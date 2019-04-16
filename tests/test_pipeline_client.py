@@ -302,7 +302,7 @@ class PipelineClientTest(unittest.TestCase):
                          "Requesting the same config should give you the same instance.")
 
         self.pipeline_client.stop_all_instances()
-        self.cam_client.stop_all_cameras()
+        self.cam_client.stop_all_instances()
 
         instance_id, stream_address = self.pipeline_client.create_instance_from_config(
             {"camera_name": "simulation", "pipeline_type": "store", 'stream_port':10000})

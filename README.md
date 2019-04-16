@@ -389,7 +389,7 @@ class CamClient()
       :param camera_name: Camera name.
       :return: JSON with bytes and metadata.
 
-  get_camera_stream(self, camera_name)
+  get_instance_stream(self, camera_name)
       Get the camera stream address.
       :param camera_name: Name of the camera to get the address for.
       :return: Stream address.
@@ -409,11 +409,11 @@ class CamClient()
       :param configuration: Config to set, in dictionary format.
       :return: Actual applied config.
 
-  stop_all_cameras(self)
+  stop_all_instances(self)
       Stop all the cameras on the server.
       :return: Response.
 
-  stop_camera(self, camera_name)
+  stop_instance(self, camera_name)
       Stop the camera.
       :param camera_name: Name of the camera to stop.
       :return: Response.
@@ -740,7 +740,7 @@ from bsread import source, SUB
 camera_client = CamClient()
 
 # Get stream address of simulation camera. Stream address in format tcp://hostname:port.
-camera_stream_address = camera_client.get_camera_stream("simulation")
+camera_stream_address = camera_client.get_instance_stream("simulation")
 
 # Extract the stream hostname and port from the stream address.
 camera_host, camera_port = get_host_port_from_stream_address(camera_stream_address)

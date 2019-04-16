@@ -124,7 +124,7 @@ class CamClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["image"]
 
-    def get_camera_stream(self, camera_name):
+    def get_instance_stream(self, camera_name):
         """
         Get the camera stream address.
         :param camera_name: Name of the camera to get the address for.
@@ -135,7 +135,7 @@ class CamClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["stream"]
 
-    def stop_camera(self, camera_name):
+    def stop_instance(self, camera_name):
         """
         Stop the camera.
         :param camera_name: Name of the camera to stop.
@@ -146,7 +146,7 @@ class CamClient(object):
         server_response = requests.delete(self.api_address_format % rest_endpoint).json()
         validate_response(server_response)
 
-    def stop_all_cameras(self):
+    def stop_all_instances(self):
         """
         Stop all the cameras on the server.
         :return: Response.

@@ -38,8 +38,8 @@ class CameraTest(unittest.TestCase):
         old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
         config.MFLOW_NO_CLIENTS_TIMEOUT = 1
 
-        stream_address = self.instance_manager.get_camera_stream("simulation")
-        stream_address_copy = self.instance_manager.get_camera_stream("simulation")
+        stream_address = self.instance_manager.get_instance_stream("simulation")
+        stream_address_copy = self.instance_manager.get_instance_stream("simulation")
 
         # We should get the same stream both times.
         self.assertEqual(stream_address, stream_address_copy,
@@ -64,15 +64,15 @@ class CameraTest(unittest.TestCase):
         old_timeout = config.MFLOW_NO_CLIENTS_TIMEOUT
         config.MFLOW_NO_CLIENTS_TIMEOUT = 0.5
 
-        stream_address = self.instance_manager.get_camera_stream(self.simulation_camera)
+        stream_address = self.instance_manager.get_instance_stream(self.simulation_camera)
 
         for _ in range(5):
             # The camera stream address should always be the same.
-            self.assertEqual(stream_address, self.instance_manager.get_camera_stream(self.simulation_camera))
+            self.assertEqual(stream_address, self.instance_manager.get_instance_stream(self.simulation_camera))
 
         for _ in range(5):
             # The camera stream address should be the same even after restarting the camera instance.
-            self.assertEqual(stream_address, self.instance_manager.get_camera_stream(self.simulation_camera))
+            self.assertEqual(stream_address, self.instance_manager.get_instance_stream(self.simulation_camera))
 
             sleep(config.MFLOW_NO_CLIENTS_TIMEOUT + 1.5)
 
@@ -88,7 +88,7 @@ class CameraTest(unittest.TestCase):
         # We need a high timeout to be sure the stream does not disconnect by itself.
         config.MFLOW_NO_CLIENTS_TIMEOUT = 30
 
-        self.instance_manager.get_camera_stream(self.simulation_camera)
+        self.instance_manager.get_instance_stream(self.simulation_camera)
         self.assertTrue(self.simulation_camera in self.instance_manager.get_info()["active_instances"],
                         "Simulation camera instance is not running.")
 
@@ -118,7 +118,7 @@ class CameraTest(unittest.TestCase):
         self.assertEqual(camera_size, png_size, "Camera and image size are not the same.")
 
     def test_camera_settings_change(self):
-        stream_address = self.instance_manager.get_camera_stream("simulation")
+        stream_address = self.instance_manager.get_instance_stream("simulation")
         simulated_camera = CameraSimulation(CameraConfig("simulation"))
         sim_x, sim_y = simulated_camera.get_geometry()
 
@@ -198,7 +198,7 @@ class CameraTest(unittest.TestCase):
         camera_instance_manager = CameraInstanceManager(config_manager, hostname="custom_cam_hostname")
         config_manager.save_camera_config("simulation", CameraConfig("simulation").get_configuration())
 
-        stream_address = camera_instance_manager.get_camera_stream("simulation")
+        stream_address = camera_instance_manager.get_instance_stream("simulation")
         self.assertTrue(stream_address.startswith("tcp://custom_cam_hostname"))
 
         camera_instance_manager.stop_all_instances()
@@ -207,14 +207,14 @@ class CameraTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Instance 'simulation' does not exist."):
             self.instance_manager.get_instance("simulation").get_configuration()
 
-        self.instance_manager.get_camera_stream("simulation")
+        self.instance_manager.get_instance_stream("simulation")
         self.assertIsNotNone(self.instance_manager.get_instance("simulation").get_configuration())
 
     def test_last_start_time(self):
-        self.instance_manager.get_camera_stream("simulation")
+        self.instance_manager.get_instance_stream("simulation")
         simulation_start_time_1 = self.instance_manager.get_info()['active_instances']['simulation']['last_start_time']
 
-        self.instance_manager.get_camera_stream("simulation")
+        self.instance_manager.get_instance_stream("simulation")
         simulation_start_time_2 = self.instance_manager.get_info()['active_instances']['simulation']['last_start_time']
         self.assertEqual(simulation_start_time_1, simulation_start_time_2,
                          "Camera was still running, timestamp should be the same.")
@@ -224,13 +224,13 @@ class CameraTest(unittest.TestCase):
         # We do not have seconds in the timestamp - the second value should change.
         sleep(1)
 
-        self.instance_manager.get_camera_stream("simulation")
+        self.instance_manager.get_instance_stream("simulation")
         simulation_start_time_3 = self.instance_manager.get_info()['active_instances']['simulation']['last_start_time']
         self.assertNotEqual(simulation_start_time_1, simulation_start_time_3,
                             "Camera was restarted, last_start_time should be different.")
 
     def test_statistics(self):
-        self.instance_manager.get_camera_stream("simulation")
+        self.instance_manager.get_instance_stream("simulation")
         latest_statistics = self.instance_manager.get_instance("simulation").get_statistics()
 
         self.assertTrue("n_clients" in latest_statistics)
