@@ -46,9 +46,9 @@ def start_pipeline_proxy_server(host, port, servers, config_base, background_bas
 
     app = bottle.Bottle()
 
-    register_pipeline_rest_interface(app=app, instance_manager=PipelineProxy(config_manager, background_manager,
-                                                                             cam_server_client, sever_pool))
-
+    proxy = PipelineProxy(config_manager, background_manager,cam_server_client, sever_pool)
+    register_pipeline_rest_interface(app=app, instance_manager=proxy)
+    proxy.register_rest_interface(app)
     try:
         bottle.run(app=app, host=host, port=port)
     finally:

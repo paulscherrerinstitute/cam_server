@@ -38,7 +38,9 @@ def start_camera_proxy_server(host, port, servers, config_base, hostname=None):
 
     app = bottle.Bottle()
 
-    register_camera_rest_interface(app=app, instance_manager=CameraProxy(config_manager, sever_pool))
+    proxy = CameraProxy(config_manager, sever_pool)
+    register_camera_rest_interface(app=app, instance_manager=proxy)
+    proxy.register_rest_interface(app)
     try:
         bottle.run(app=app, host=host, port=port)
     finally:
