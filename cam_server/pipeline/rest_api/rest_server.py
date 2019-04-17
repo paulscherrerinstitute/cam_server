@@ -139,7 +139,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         # TODO: Remove dependency on config_manager.
 
-        instance_manager.config_manager.save_pipeline_config(pipeline_name, request.json)
+        instance_manager.save_pipeline_config(pipeline_name, request.json)
 
         return {"state": "ok",
                 "status": "Pipeline %s configuration saved." % pipeline_name,

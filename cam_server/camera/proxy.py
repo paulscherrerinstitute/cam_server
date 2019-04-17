@@ -23,9 +23,10 @@ class Proxy(ProxyBase):
             except:
                 pass
 
+    def save_pipeline_config(self, pipeline_name, config):
+        return self.config_manager.save_pipeline_config(pipeline_name, config)
+
     # TODO: get_camera_image and get_camera_image_bytes connect diretly to the camera.
     #      What should do if there is a connected server to that camera?
-
-
 
 

@@ -91,7 +91,7 @@ class ProxyBase:
                 load.append(1000)
         return load
 
-    def get_free_server(self, status=None):
+    def get_free_server(self, instance_name=None, status=None):
         load = self.get_load(status)
         m = min(load)
         if m >= 1000:
@@ -113,7 +113,7 @@ class ProxyBase:
         status = self.get_status()
         server = self.get_server(instance_name, status)
         if server is None:
-            server = self.get_free_server(status)
+            server = self.get_free_server(instance_name, status)
             _logger.info("Creating stream to %s at %s", instance_name, server.get_address())
         else:
             _logger.info("Connecting to stream %s at %s", instance_name, server.get_address())

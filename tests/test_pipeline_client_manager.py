@@ -8,16 +8,17 @@ from multiprocessing import Process
 from time import sleep
 
 import numpy
+
 from bsread import source, SUB, PULL
 
 from cam_server import CamClient, PipelineClient
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server.start_camera_server import start_camera_server
-from cam_server.start_pipeline_server import start_pipeline_server
-from cam_server.start_camera_proxy_server import start_camera_proxy_server
-from cam_server.start_pipeline_proxy_server import start_pipeline_proxy_server
+from cam_server.start_camera_worker import start_camera_worker
+from cam_server.start_pipeline_worker import start_pipeline_worker
+from cam_server.start_camera_manager import start_camera_manager
+from cam_server.start_pipeline_manager import start_pipeline_manager
 from cam_server.utils import get_host_port_from_stream_address
 
 
@@ -39,27 +40,25 @@ class PipelineClientTest(unittest.TestCase):
         cam_server_proxy_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
         pipeline_server_proxy_address = "http://%s:%s" % (self.host, self.pipeline_proxy_port)
 
-        self.cam_process = Process(target=start_camera_server, args=(self.host, self.cam_port,
-                                                                     self.cam_config_folder))
+        self.cam_process = Process(target=start_camera_worker, args=(self.host, self.cam_port))
         self.cam_process.start()
 
-        self.cam_proxy_process =Process(target=start_camera_proxy_server, args=(self.host, self.cam_proxy_port,
-                                             cam_server_address, self.cam_config_folder))
-        self.cam_proxy_process.start()
-
-        self.pipeline_process = Process(target=start_pipeline_server, args=(self.host, self.pipeline_port,
-                                                                            self.pipeline_config_folder,
+        self.pipeline_process = Process(target=start_pipeline_worker, args=(self.host, self.pipeline_port,
                                                                             self.background_config_folder,
                                                                             cam_server_proxy_address))
         self.pipeline_process.start()
 
-        self.pipeline_proxy_process = Process(target=start_pipeline_proxy_server, args=(self.host, self.pipeline_proxy_port,
-                                                                            pipeline_server_address,
-                                                                            self.pipeline_config_folder,
-                                                                            self.background_config_folder,
-                                                                            cam_server_proxy_address))
-        self.pipeline_proxy_process.start()
+        self.cam_proxy_process =Process(target=start_camera_manager, args=(self.host, self.cam_proxy_port,
+                                                cam_server_address, self.cam_config_folder))
+        self.cam_proxy_process.start()
 
+        self.pipeline_proxy_process = Process(target=start_pipeline_manager, args=(self.host, self.pipeline_proxy_port,
+                                                                    pipeline_server_address,
+                                                                    self.pipeline_config_folder,
+                                                                    self.background_config_folder,
+                                                                    cam_server_proxy_address))
+        self.pipeline_proxy_process.start()
+        print (cam_server_proxy_address)
         self.cam_client = CamClient(cam_server_proxy_address)
         self.pipeline_client = PipelineClient(pipeline_server_proxy_address)
 

@@ -92,3 +92,67 @@ class ConfigFileStorage(object):
         """
         target_config_file = self._get_config_filename(config_name)
         os.remove(target_config_file)
+
+
+class TransientConfig(object):
+    def __init__(self, configuration = {}):
+        """
+        Initialize the transient config provider.
+        be used.
+        """
+        self.configuration = configuration
+
+    def get_available_configs(self):
+        """
+        Return all available  configurations .
+        :return: List of available configs.
+        """
+        return self.configuration.keys()
+
+    def get_config(self, config_name):
+        """
+        Return config for a camera.
+        :param config_name: Camera config to retrieve.
+        :return: Dict containing the camera config.
+        """
+
+        if not config_name in self.configuration:
+            raise ValueError("Unable to load config '%s'" % (config_name,))
+        return self.configuration[config_name]
+
+    def save_config(self, config_name, configuration):
+        """
+        Update an existing camera config.
+        :param config_name: Name of the config to save.
+        :param configuration: Configuration to persist.
+        """
+        self.configuration[config_name]=configuration
+
+    def delete_config(self, config_name):
+        """
+        Delete the provided config.
+        :param config_name: Config name to delete.
+        """
+        if config_name in self.configuration:
+            del self.configuration[config_name]
+
+    """
+    def register_rest_interface(self, app):
+        from bottle import request
+        api_root_address = config.API_PREFIX + config.CAMERA_REST_INTERFACE_PREFIX
+
+        @app.post(api_root_address+ "/configuration")
+        def set_configuration():
+            self.configuration = request.json
+
+            return {"state": "ok",
+                    "status": "Camera configuration saved.",
+                    "config": self.configuration}
+
+        @app.get(api_root_address + "is_configured")
+        def is_configured(camera_name):
+            configured = (self.configuration is not None) and (len(self.configuration) > 0)
+            return {"state": "ok",
+                    "status": "Is server configured",
+                    "configured": configured}
+    """

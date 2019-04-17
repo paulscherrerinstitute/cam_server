@@ -32,7 +32,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     @app.get(api_root_address)
     def get_camera_list():
         """
-        Return the list of available cameras.
+        Return the list of available cameras.save_config
         :return:
         """
         return {"state": "ok",

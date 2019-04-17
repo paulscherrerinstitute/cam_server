@@ -4,7 +4,7 @@ from cam_server.instance_management.proxy import ProxyBase
 _logger = logging.getLogger(__name__)
 
 
-class Proxy(ProxyBase):
+class Manager(ProxyBase):
     def __init__(self, config_manager, background_manager, cam_server_client, server_pool):
         ProxyBase.__init__(self, server_pool)
         self.config_manager = config_manager
@@ -12,13 +12,20 @@ class Proxy(ProxyBase):
         self.cam_server_client = cam_server_client
 
     def get_pipeline_list(self):
-        return self.get_server().get_pipelines()
+        return self.config_manager.get_pipeline_list()
 
     def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
+        status = self.get_status()
+        server = self.get_server(instance_id, status)
+        if server is None:
+            server = self.get_free_server(instance_id, status)
         if pipeline_name is not None:
-            instance_id, stream_address = self.get_server().create_instance_from_name(pipeline_name, instance_id)
+            # Update volatile config
+            config = self.config_manager.get_pipeline_config(pipeline_name)
+            server.save_pipeline_config(pipeline_name, config)
+            instance_id, stream_address = server.create_instance_from_name(pipeline_name, instance_id)
         elif configuration is not None:
-            instance_id, stream_address = self.get_server().create_instance_from_config(configuration, instance_id)
+            instance_id, stream_address = server.create_instance_from_config(configuration, instance_id)
         else:
             raise Exception("Invalid parameters")
         return instance_id, stream_address
@@ -50,4 +57,9 @@ class Proxy(ProxyBase):
             server.set_instance_config(instance_name, config_updates)
 
     def save_pipeline_config(self, pipeline_name, config):
-        return self.config_manager.save_pipeline_config(pipeline_name, config)
+        self.config_manager.save_pipeline_config(pipeline_name, config)
+        for server in self.server_pool:
+            try:
+                server.save_pipeline_config(pipeline_name, config)
+            except:
+                pass
