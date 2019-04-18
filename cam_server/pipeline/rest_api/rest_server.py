@@ -7,7 +7,6 @@ from bottle import request, response
 
 from cam_server import config
 from cam_server.instance_management import rest_api
-from cam_server.utils import collect_background
 from cam_server.pipeline.data_processing.functions import get_png_from_image
 
 _logger = logging.getLogger(__name__)
@@ -116,7 +115,6 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         if not config_updates:
             raise ValueError("Config updates cannot be empty.")
-
         instance_manager.update_instance_config(instance_id, config_updates)
 
         # TODO: Remove dependency on instance.
@@ -164,12 +162,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         except ValueError:
             raise ValueError("n_images must be a number.")
 
-        # TODO: Move logic to instance manager.
-
-        stream_address = instance_manager.cam_server_client.get_instance_stream(camera_name)
-
-        background_id = collect_background(camera_name, stream_address, number_of_images,
-                                           instance_manager.background_manager)
+        background_id = instance_manager.collect_background(camera_name, number_of_images)
 
         return {"state": "ok",
                 "status": "Background collected on camera %s." % camera_name,

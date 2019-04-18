@@ -66,6 +66,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             _logger.exception("Could not import function: %s. %s", str(name), log_tag)
             return None
 
+    source, sender = None, None
     try:
         pipeline_parameters, image_background_array = process_pipeline_parameters()
 

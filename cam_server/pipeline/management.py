@@ -166,9 +166,10 @@ class PipelineInstanceManager(InstanceManager):
         current_config = pipeline_instance.get_configuration()
 
         # Check if the background can be loaded.
-        image_background = config_updates.get("image_background")
-        if image_background:
-            self.background_manager.get_background(image_background)
+        if config_updates.get("image_background_enable"):
+            image_background = config_updates.get("image_background")
+            if image_background:
+                self.background_manager.get_background(image_background)
 
         new_config = update_pipeline_config(current_config, config_updates)
         pipeline_instance.set_parameter(new_config)
@@ -193,6 +194,9 @@ class PipelineInstanceManager(InstanceManager):
 
     def save_pipeline_config(self, pipeline_name, config):
         return self.config_manager.save_pipeline_config(pipeline_name, config)
+    
+    def collect_background(self, camera_name, number_of_images):
+        return self.background_manager.collect_background(self.cam_server_client, camera_name, number_of_images)
 
 
 class PipelineInstance(InstanceWrapper):

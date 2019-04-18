@@ -1,16 +1,19 @@
 import glob
+import logging
 from collections import OrderedDict
 
 import copy
 import os
 from datetime import datetime
 from os.path import basename
+from cam_server.utils import sum_images, get_host_port_from_stream_address
+from bsread import source, SUB
 
 import numpy
 
 from cam_server import config
 from cam_server.pipeline.transceiver import get_pipeline_function
-
+_logger = logging.getLogger(__name__)
 
 class PipelineConfigManager(object):
     def __init__(self, config_provider):
@@ -105,6 +108,33 @@ class BackgroundImageManager(object):
         latest_background_id = os.path.splitext(basename(latest_background_filename))[0]
 
         return latest_background_id
+
+    def collect_background(self, cam_server_client, camera_name, n_images):
+        stream_address = cam_server_client.get_instance_stream(camera_name)
+        try:
+
+            host, port = get_host_port_from_stream_address(stream_address)
+            accumulator_image = None
+
+            with source(host=host, port=port, mode=SUB) as stream:
+                for _ in range(n_images):
+                    data = stream.receive()
+                    image = data.data.data["image"].value
+                    accumulator_image = sum_images(image, accumulator_image)
+
+            background_prefix = camera_name
+            background_image = accumulator_image / n_images
+
+            # Convert image to uint16.
+            background_image = background_image.astype(dtype="uint16")
+
+            background_id = self.save_background(background_prefix, background_image)
+
+            return background_id
+
+        except:
+            _logger.exception("Error while collecting background.")
+            raise
 
 
 class PipelineConfig:

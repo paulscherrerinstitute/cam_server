@@ -51,3 +51,6 @@ class Proxy(ProxyBase):
 
     def save_pipeline_config(self, pipeline_name, config):
         return self.config_manager.save_pipeline_config(pipeline_name, config)
+
+    def collect_background(self, camera_name, number_of_images):
+        return self.background_manager.collect_background(self.cam_server_client, camera_name, number_of_images)

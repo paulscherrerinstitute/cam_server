@@ -81,6 +81,13 @@ class ProxyBase:
                 pass
         return None
 
+    def get_server_from_address(self, address):
+        for server in self.server_pool:
+            if address == server.get_address():
+                return server
+        return None
+
+
     def get_load(self, status=None):
         if status is None: status = self.get_status()
         load = []

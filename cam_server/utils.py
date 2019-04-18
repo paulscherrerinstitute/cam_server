@@ -2,7 +2,6 @@ from itertools import cycle
 from logging import getLogger
 
 import numpy
-from bsread import source, SUB
 
 _logger = getLogger(__name__)
 
@@ -64,30 +63,3 @@ def sum_images(image, accumulator_image):
     return accumulator_image
 
 
-def collect_background(camera_name, stream_address, n_images, background_manager):
-
-    try:
-
-        host, port = get_host_port_from_stream_address(stream_address)
-        accumulator_image = None
-
-        with source(host=host, port=port, mode=SUB) as stream:
-            for _ in range(n_images):
-
-                data = stream.receive()
-                image = data.data.data["image"].value
-                accumulator_image = sum_images(image, accumulator_image)
-
-        background_prefix = camera_name
-        background_image = accumulator_image / n_images
-
-        # Convert image to uint16.
-        background_image = background_image.astype(dtype="uint16")
-
-        background_id = background_manager.save_background(background_prefix, background_image)
-
-        return background_id
-
-    except:
-        _logger.exception("Error while collecting background.")
-        raise
