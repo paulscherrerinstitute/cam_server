@@ -25,6 +25,7 @@ def start_pipeline_worker(host, port, background_base, cam_server_api_address, h
 
     cam_server_client = CamClient(cam_server_api_address)
     config_manager = PipelineConfigManager(config_provider=TransientConfig())
+    #background_manager = TransientBackgroundImageManager()
     background_manager = BackgroundImageManager(background_base)
     pipeline_instance_manager = PipelineInstanceManager(config_manager, background_manager, cam_server_client,
                                                         hostname=hostname)
@@ -45,7 +46,7 @@ def main():
     parser.add_argument("-c", '--cam_server', default="http://0.0.0.0:8898", help="Cam server rest api address.")
     parser.add_argument('-p', '--port', default=8889, help="Server port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
-    parser.add_argument('-g', '--background_base', default=config.DEFAULT_BACKGROUND_CONFIG_FOLDER)
+    parser.add_argument('-g', '--background_base', default=config.DEFAULT_TEMP_FOLDER)
     parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
@@ -56,7 +57,8 @@ def main():
     logging.basicConfig(level=arguments.log_level)
 
     start_pipeline_worker(arguments.interface, arguments.port,
-                          arguments.background_base, arguments.cam_server,
+                          arguments.background_base,
+                          arguments.cam_server,
                           arguments.hostname)
 
 

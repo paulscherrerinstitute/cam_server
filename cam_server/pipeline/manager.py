@@ -54,6 +54,11 @@ class Manager(ProxyBase):
     def update_instance_config(self, instance_name, config_updates):
         server = self.get_server(instance_name)
         if server is not None:
+            # Check if the background can be loaded
+            image_background = config_updates.get("image_background")
+            if image_background:
+                image_array = self.background_manager.get_background(image_background)
+                server.set_background_image_bytes(image_background, image_array)
             server.set_instance_config(instance_name, config_updates)
 
     def save_pipeline_config(self, pipeline_name, config):

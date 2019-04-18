@@ -1,4 +1,5 @@
 import requests
+import pickle
 from bsread import source, SUB
 
 from cam_server import config
@@ -281,3 +282,15 @@ class PipelineClient(object):
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["image"]
+
+
+    def set_background_image_bytes(self, background_name, image_bytes):
+        """
+        Return the bytes of a a background file.
+        :param background_name: Background file name.
+        :return: JSON with bytes and metadata.
+        """
+        rest_endpoint = "/background/%s/image_bytes" % background_name
+        data = pickle.dumps(image_bytes, protocol=0)
+        server_response = requests.put(self.api_address_format % rest_endpoint, data=data).json()
+        validate_response(server_response)

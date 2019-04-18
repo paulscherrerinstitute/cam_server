@@ -45,6 +45,8 @@ PIPELINE_STREAM_PORT_RANGE = (11100, 11201)
 DEFAULT_PIPELINE_CONFIG_FOLDER = "configuration/pipeline_config"
 # Where to store the backgrounds by default.
 DEFAULT_BACKGROUND_CONFIG_FOLDER = "configuration/background_config"
+# Temporary storage.
+DEFAULT_TEMP_FOLDER = "temp"
 # Maximum time to wait before aborting the receive.
 PIPELINE_RECEIVE_TIMEOUT = 1000
 # Default number of images to collect when acquiring the background.

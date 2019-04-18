@@ -61,7 +61,6 @@ class PipelineInstanceManager(InstanceManager):
         stream_port = self._get_next_available_port(instance_id)
 
         camera_name = pipeline_config.get_camera_name()
-
         if not self.cam_server_client.is_camera_online(camera_name):
             raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
 
