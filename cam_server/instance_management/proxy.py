@@ -1,6 +1,8 @@
 import logging
+import os
 from concurrent.futures import ThreadPoolExecutor
 from cam_server import config
+from bottle import static_file
 
 
 _logger = logging.getLogger(__name__)
@@ -46,6 +48,14 @@ class ProxyBase:
             return {"state": "ok",
                     "status": "Running instances information.",
                     "info":  self.get_info()}
+
+    def _get_root(self):
+        return os.path.dirname(__file__)
+
+    def register_management_page(self, app):
+        @app.route('/')
+        def home():
+            return static_file("index.html", self._get_root())
 
     def get_status(self):
         def task(server):

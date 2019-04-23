@@ -40,6 +40,8 @@ def start_camera_manager(host, port, servers, config_base, hostname=None):
     proxy = CameraManager(config_manager, sever_pool)
     register_camera_rest_interface(app=app, instance_manager=proxy)
     proxy.register_rest_interface(app)
+    proxy.register_management_page(app)
+
     try:
         bottle.run(app=app, host=host, port=port)
     finally:
