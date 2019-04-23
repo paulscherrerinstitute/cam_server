@@ -15,7 +15,7 @@ _logger = logging.getLogger(__name__)
 
 
 
-def start_camera_proxy_server(host, port, servers, config_base, hostname=None):
+def start_camera_proxy(host, port, servers, config_base, hostname=None):
     if not os.path.isdir(config_base):
         _logger.error("Configuration directory '%s' does not exist." % config_base)
         exit(-1)
@@ -63,7 +63,7 @@ def main():
     arguments = parser.parse_args()
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
-    start_camera_proxy_server(arguments.interface, arguments.port, arguments.servers, arguments.base, arguments.hostname)
+    start_camera_proxy(arguments.interface, arguments.port, arguments.servers, arguments.base, arguments.hostname)
 
 
 if __name__ == "__main__":

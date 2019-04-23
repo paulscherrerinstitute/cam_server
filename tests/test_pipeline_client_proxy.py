@@ -16,8 +16,8 @@ from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
-from cam_server.start_camera_proxy_server import start_camera_proxy_server
-from cam_server.start_pipeline_proxy_server import start_pipeline_proxy_server
+from cam_server.start_camera_proxy import start_camera_proxy
+from cam_server.start_pipeline_proxy import start_pipeline_proxy
 from cam_server.utils import get_host_port_from_stream_address
 
 
@@ -43,7 +43,7 @@ class PipelineClientTest(unittest.TestCase):
                                                                      self.cam_config_folder))
         self.cam_process.start()
 
-        self.cam_proxy_process =Process(target=start_camera_proxy_server, args=(self.host, self.cam_proxy_port,
+        self.cam_proxy_process =Process(target=start_camera_proxy, args=(self.host, self.cam_proxy_port,
                                              cam_server_address, self.cam_config_folder))
         self.cam_proxy_process.start()
 
@@ -53,7 +53,7 @@ class PipelineClientTest(unittest.TestCase):
                                                                             cam_server_proxy_address))
         self.pipeline_process.start()
 
-        self.pipeline_proxy_process = Process(target=start_pipeline_proxy_server, args=(self.host, self.pipeline_proxy_port,
+        self.pipeline_proxy_process = Process(target=start_pipeline_proxy, args=(self.host, self.pipeline_proxy_port,
                                                                             pipeline_server_address,
                                                                             self.pipeline_config_folder,
                                                                             self.background_config_folder,

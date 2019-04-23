@@ -16,7 +16,7 @@ from cam_server.pipeline.proxy import Proxy as PipelineProxy
 _logger = logging.getLogger(__name__)
 
 
-def start_pipeline_proxy_server(host, port, servers, config_base, background_base, cam_server_api_address, hostname=None):
+def start_pipeline_proxy(host, port, servers, config_base, background_base, cam_server_api_address, hostname=None):
 
 
     # Check if config directory exists
@@ -76,7 +76,7 @@ def main():
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
 
-    start_pipeline_proxy_server(arguments.interface, arguments.port, arguments.servers, arguments.base,
+    start_pipeline_proxy(arguments.interface, arguments.port, arguments.servers, arguments.base,
                           arguments.background_base, arguments.cam_server,
                           arguments.hostname)
 

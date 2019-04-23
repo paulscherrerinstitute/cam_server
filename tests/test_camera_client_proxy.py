@@ -12,7 +12,7 @@ from cam_server import CamClient
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.start_camera_server import start_camera_server
-from cam_server.start_camera_proxy_server import start_camera_proxy_server
+from cam_server.start_camera_proxy import start_camera_proxy
 from cam_server.utils import get_host_port_from_stream_address
 
 
@@ -33,7 +33,7 @@ class CameraClientProxyTest(unittest.TestCase):
 
         self.cam_proxy_host = "0.0.0.0"
 
-        self.process_camproxy = Process(target=start_camera_proxy_server,
+        self.process_camproxy = Process(target=start_camera_proxy,
                                         args=(self.host, self.cam_proxy_port, cam_server_address , self.config_folder))
         self.process_camproxy.start()
         sleep(0.25) # Give it some time to start.
