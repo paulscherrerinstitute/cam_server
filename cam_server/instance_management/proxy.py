@@ -16,7 +16,7 @@ class ProxyBase:
 
     def register_rest_interface(self, app):
         api_root_address = config.API_PREFIX + config.PROXY_REST_INTERFACE_PREFIX
-
+        print (api_root_address)
         @app.get(api_root_address + "/servers")
         def get_servers():
             """

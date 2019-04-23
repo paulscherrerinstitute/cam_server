@@ -3,10 +3,226 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 </head>
 <body>
 
-Hello world
+<script type="text/javascript">
 
+    var base = 'api/v1/proxy/';
+
+        function appendTableRow(table, rowData) {
+          var lastRow = $('<tr/>').appendTo(table.find('tbody:last'));
+          $.each(rowData, function(colIndex, c) {
+              lastRow.append($('<td/>').html(c));
+          });
+
+          return lastRow;
+        }
+
+        function getRows(table){
+            //return $('#servers_table tr').length -1;
+            rows = table.find('td').length - 1
+            if (rows<0){
+                rows = 0
+            }
+            return rows
+        }
+
+        function clear(table){
+            //return $('#servers_table tr').length -1;
+            table.find("tbody").empty()
+        }
+
+        function isDict(v) {
+            return typeof v==='object' && v!==null && !(v instanceof Array) && !(v instanceof Date);
+        }
+
+        function dictToStr(dict, indent){
+                var nested = true
+                var ret = ""
+                if (indent == undefined ){
+                    indent = "";
+                    ret = "<pre>"
+                    nested = false
+                }
+
+                for (var key in dict) {
+                    var value = dict[key]
+                    if (isDict (value)){
+                        ret = ret + key + ":" + "\n"
+                        ret = ret + (dictToStr(value, "\t"))
+                    } else {
+                        ret = ret + indent + key + " : " + JSON.stringify(value) + "\n"
+                    }
+                }
+                if (!nested){
+                    ret = ret+"</pre>"
+                }
+                return ret
+        }
+
+        function dateToStr(date){
+                ret = "<pre>"
+                ret = ret + date.split(" ").join("\n")
+                ret = ret+"</pre>"
+                return ret
+        }
+
+
+    function getServers() {
+        $.get(base + 'servers', function (data) {
+            var servers = data["servers"]
+            var load = data["load"]
+            var table = $("#servers_table")
+            //$('#servers_table').empty();
+
+            var arrayLength = servers.length;
+            for (var i = 0; i < arrayLength; i++) {
+                if (load[i] >=1000) {
+                    load[i] = "offline"
+                }
+                if (getRows(table) <= i){
+                    appendTableRow(table, [servers[i], load[i]])
+                } else {
+                    table.rows[i].cells[0] = servers[i]
+                     table.rows[i].cells[1] = load[i]
+                }
+            }
+
+        }).error(function (xhr, textStatus, errorThrown) {
+            $("#scripterror").show()
+            $("#scripterror").text(xhr.responseText)
+        });
+    }
+
+
+    function getInstances() {
+        $.get(base + 'info', function (data) {
+            var table = $("#instances_table")
+            clear(table)
+            var info = data["info"]["active_instances"]
+
+            $.each(info, function(key, value) {
+                //Save 2 columns
+                if (value["camera_geometry"] != undefined) {
+                    value["statistics"]["geometry"] = value["camera_geometry"]
+                }
+                if (value["read_only"] != undefined) {
+                    value["statistics"]["read_only"] = value["read_only"]
+                }
+                value["statistics"]["active"] = value["is_stream_active"]
+
+                var statistics = dictToStr(value["statistics"])
+                var config = dictToStr(value["config"])
+                var date = dateToStr(value["last_start_time"])
+
+                appendTableRow(table, [
+                    key,
+                    value["host"],
+                    value["stream_address"],
+                    //value["is_stream_active"],
+                    value["camera_name"],
+                    //JSON.stringify(value["camera_geometry"]),
+                    date,
+                    statistics,
+                    config,
+                    ]
+                    )
+            });
+
+
+        }).error(function (xhr, textStatus, errorThrown) {
+            $("#scripterror").show()
+            $("#scripterror").text(xhr.responseText)
+        });
+    }
+
+
+    function update() {
+            getServers()
+            getInstances()
+    }
+
+    function timer() {
+        if ($("#servers").is(":visible")) {
+            update();
+        }
+        window.setTimeout(
+                "timer()",
+                1000
+                );
+    }
+
+    $(document).ready(function(){
+
+        $("#scripterror").hide()
+        //update()
+        timer()
+    });
+
+
+
+</script>
+
+
+
+<div id="msgid">
+</div>
+
+<p>
+<section>
+ <h1>
+Servers
+ </h1>
+<div id="servers">
+<table id="servers_table"  border="1" width="100%" >
+  <thead>
+    <tr>
+      <th>Host</th>
+      <th>Active Instances</th>
+    </tr>
+  </thead>
+  <tbody id="servers_table_rows">
+  </tbody>
+</table>
+</div>
+</section>
+
+<p>
+<section>
+ <h1>
+Instances
+</h1>
+<div id="instances">
+<table id="instances_table"  border="1" width="100%" >
+  <thead>
+    <tr>
+        <th>Instance</th>
+        <th>Host</th>
+        <th>Stream Address</th>
+        <!--<th>Active</th>-->
+        <th>Camera</th>
+        <!--<th>Geometry</th>-->
+        <th>Start</th>
+        <th>Statistics</th>
+        <th>Config</th>
+    </tr>
+  </thead>
+  <tbody id="instances_table_rows">
+  </tbody>
+</table>
+</div>
+</section>
+
+
+<p>
+<section>
+<div id="scripterror">
+</div>
+</section>
+
+<p>
 </body>
 </html>
+
