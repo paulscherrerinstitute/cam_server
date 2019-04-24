@@ -58,6 +58,17 @@ class ProxyBase:
                     "status": "Running instances information.",
                     "info":  self.get_info()}
 
+        @app.delete(api_root_address + "/<instance_name>")
+        def stop_instance(instance_name):
+            """
+            Stop a specific camera.
+            :param instance_name: Name of the camera.
+            """
+            self.stop_instance(instance_name)
+
+            return {"state": "ok",
+                    "status": "Instance '%s' stopped." % instance_name}
+
     def _get_root(self):
         return os.path.dirname(__file__)
 

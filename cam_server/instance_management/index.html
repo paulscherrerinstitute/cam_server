@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Server Management</title>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 </head>
 <body>
@@ -131,6 +131,32 @@
         });
     }
 
+    //Adding $.delete and $.put functions
+    jQuery.each( [ "put", "delete" ], function( i, method ) {
+      jQuery[ method ] = function( url, data, callback, type ) {
+        if ( jQuery.isFunction( data ) ) {
+          type = type || callback;
+          callback = data;
+          data = undefined;
+        }
+
+        return jQuery.ajax({
+          url: url,
+          type: method,
+          dataType: type,
+          data: data,
+          success: callback
+        });
+      };
+    });
+
+    function deleteInstance(key){
+            $.delete(base + key).error(function (xhr, textStatus, errorThrown) {
+            $("#scripterror").show()
+            $("#scripterror").html(xhr.responseText)
+        });
+    }
+
 
     function getInstances() {
         $.get(base + 'info', function (data) {
@@ -152,7 +178,7 @@
                 var config = dictToStr(value["config"])
                 var date = dateToStr(value["last_start_time"])
 
-                appendTableRow(table, [
+                var row = appendTableRow(table, [
                     key,
                     value["host"],
                     value["stream_address"],
@@ -164,6 +190,9 @@
                     config,
                     ]
                     )
+                var callback = 'onclick="deleteInstance(\'' + key + '\')"'
+                row.append($('<td align="center"><button ' + callback + '>Stop</button></td>'))
+                //row.append($('<button ' + callback + '/>').html("Stop"));
             });
 
 
@@ -231,7 +260,7 @@ Servers
 Instances
 </h1>
 <div id="instances">
-<table id="instances_table"  border="1" width="100%" >
+<table id="instances_table"  border="1" width="100%">
   <thead>
     <tr>
         <th>Instance</th>
@@ -243,6 +272,7 @@ Instances
         <th>Start</th>
         <th>Statistics</th>
         <th>Config</th>
+        <th>Stop</th>
     </tr>
   </thead>
   <tbody id="instances_table_rows">
