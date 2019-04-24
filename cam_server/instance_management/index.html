@@ -20,12 +20,14 @@
           return lastRow;
         }
 
+        function setTableCell(value, tableName, row, col) {
+            var cell = $('#' + tableName + ' tbody tr:eq(' + row  + ') td:eq(' + col  + ')')[0]
+            cell.innerHTML = value
+        }
+
+
         function getRows(table){
-            //return $('#servers_table tr').length -1;
-            rows = table.find('td').length - 1
-            if (rows<0){
-                rows = 0
-            }
+            var rows = table.find('tbody').find('tr').length
             return rows
         }
 
@@ -36,6 +38,10 @@
 
         function isDict(v) {
             return typeof v==='object' && v!==null && !(v instanceof Array) && !(v instanceof Date);
+        }
+
+        function isArray(v) {
+            return (v instanceof Array)
         }
 
         function dictToStr(dict, indent){
@@ -62,6 +68,32 @@
                 return ret
         }
 
+        function listToStr(lst, multiline, indent) {
+            if (indent == undefined) {
+                indent = "";
+            }
+            var separator = ', '
+            var ret = ""
+            if (multiline) {
+                ret = "<pre>"
+                separator = "\n"
+            }
+            if (isArray(lst)) {
+                for (var i = 0; i < lst.length; i++) {
+                    ret = ret + indent + lst[i]
+                    if (i< lst.length-1) {
+                        ret = ret + separator
+                    }
+                }
+            } else {
+                ret = ret + indent + lst + separator
+            }
+            if (multiline) {
+                ret = ret + "</pre>"
+            }
+            return ret
+        }
+
         function dateToStr(date){
                 ret = "<pre>"
                 ret = ret + date.split(" ").join("\n")
@@ -74,19 +106,23 @@
         $.get(base + 'servers', function (data) {
             var servers = data["servers"]
             var load = data["load"]
+            var instances =  data["instances"]
             var table = $("#servers_table")
-            //$('#servers_table').empty();
 
             var arrayLength = servers.length;
+
             for (var i = 0; i < arrayLength; i++) {
+                instances[i] = listToStr(instances[i], false)
                 if (load[i] >=1000) {
                     load[i] = "offline"
                 }
                 if (getRows(table) <= i){
-                    appendTableRow(table, [servers[i], load[i]])
+                    appendTableRow(table, [servers[ i], load[i], instances[i]])
                 } else {
-                    table.rows[i].cells[0] = servers[i]
-                     table.rows[i].cells[1] = load[i]
+
+                    setTableCell(servers[i], "servers_table", i, 0)
+                    setTableCell(load[i], "servers_table", i, 1)
+                    setTableCell(instances[i], "servers_table", i, 2)
                 }
             }
 
@@ -156,7 +192,7 @@
 
     $(document).ready(function(){
 
-        $("#scripterror").hide()
+        //$("#scripterror").hide()
         //update()
         timer()
     });
@@ -180,6 +216,7 @@ Servers
   <thead>
     <tr>
       <th>Host</th>
+      <th>Load</th>
       <th>Active Instances</th>
     </tr>
   </thead>

@@ -16,17 +16,26 @@ class ProxyBase:
 
     def register_rest_interface(self, app):
         api_root_address = config.API_PREFIX + config.PROXY_REST_INTERFACE_PREFIX
-        print (api_root_address)
+
         @app.get(api_root_address + "/servers")
         def get_servers():
             """
             Return the list of servers and the load for each
             :return:
             """
+            status = self.get_status()
+            servers = [server.get_address() for server in self.server_pool]
+            instances = []
+            for server in self.server_pool:
+                try:
+                    instances.append(list(status[server.get_address()].keys()))
+                except:
+                    instances.append([])
             return {"state": "ok",
                     "status": "List of servers.",
-                    "servers": [server.get_address() for server in self.server_pool],
-                    "load":  self.get_load()}
+                    "servers": servers,
+                    "load":  self.get_load(status),
+                    "instances":  instances}
 
 
         @app.get(api_root_address + "/status")
