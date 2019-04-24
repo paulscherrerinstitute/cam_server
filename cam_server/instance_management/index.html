@@ -125,10 +125,9 @@
                     setTableCell(instances[i], "servers_table", i, 2)
                 }
             }
-
         }).error(function (xhr, textStatus, errorThrown) {
             $("#scripterror").show()
-            $("#scripterror").text(xhr.responseText)
+            $("#scripterror").html(xhr.responseText)
         });
     }
 
@@ -255,7 +254,7 @@ Instances
 
 <p>
 <section>
-<div id="scripterror">
+<div id="scripterror" style="color:red">
 </div>
 </section>
 
