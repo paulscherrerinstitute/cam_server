@@ -141,6 +141,18 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 processed_data["width"] = processed_data["image"].shape[1]
                 processed_data["height"] = processed_data["image"].shape[0]
 
+                # Requesting subset of the data
+                include = pipeline_parameters.get("include")
+                if include:
+                    aux = {}
+                    for key in include:
+                        aux[key] = processed_data.get(key)
+                    processed_data = aux
+                exclude = pipeline_parameters.get("exclude")
+                if exclude:
+                    for field in exclude:
+                        processed_data.pop(field, None)
+
                 pulse_id = data.data.pulse_id
                 timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
 
