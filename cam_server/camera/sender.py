@@ -5,6 +5,7 @@ from zmq import Again
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
+from cam_server.utils import set_statistics, init_statistics
 
 _logger = getLogger(__name__)
 
@@ -22,6 +23,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
     sender = None
 
     try:
+        init_statistics(statistics)
 
         # If there is no client for some time, disconnect.
         def no_client_timeout():
@@ -62,7 +64,6 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
 
         process_parameters()
-        statistics.counter = 0
 
         def collect_and_send(image, timestamp):
             nonlocal x_size, y_size, x_axis, y_axis
@@ -74,6 +75,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
                     "height": y_size,
                     "x_axis": x_axis,
                     "y_axis": y_axis}
+            set_statistics(statistics, sender, statistics.total_bytes + ((image.size * image.itemsize) if (image is not None) else 0))
 
             try:
                 sender.send(data=data, timestamp=timestamp, check_data=False)
@@ -119,6 +121,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
     camera_stream = None
 
     try:
+        init_statistics(statistics)
 
         # If there is no client for some time, disconnect.
         def no_client_timeout():
@@ -152,7 +155,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
         process_parameters()
         # register_image_channel(x_size, y_size, dtype)
 
-        statistics.counter = 0
         camera_stream.connect()
 
         # This signals that the camera has successfully started.
@@ -162,7 +164,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
             try:
 
                 data = camera_stream.receive()
-
+                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes)
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
                     continue

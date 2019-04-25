@@ -5,16 +5,16 @@ from imp import load_source
 from bsread import Source, PUB, SUB, PUSH
 from bsread.sender import Sender
 
+
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
-from cam_server.utils import get_host_port_from_stream_address
+from cam_server.utils import get_host_port_from_stream_address, set_statistics, init_statistics
 
 _logger = getLogger(__name__)
 
 
 def processing_pipeline(stop_event, statistics, parameter_queue,
                         cam_client, pipeline_config, output_stream_port, background_manager):
-    # TODO: Implement statistics: n_clients, input_throughput
     camera_name = pipeline_config.get_camera_name()
     log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
     def no_client_timeout():
@@ -68,6 +68,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
     source, sender = None, None
     try:
+        init_statistics(statistics)
+
         pipeline_parameters, image_background_array = process_pipeline_parameters()
 
         camera_stream_address = cam_client.get_instance_stream(pipeline_config.get_camera_name())
@@ -99,6 +101,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     pipeline_parameters, image_background_array = process_pipeline_parameters()
 
                 data = source.receive()
+                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
@@ -144,7 +147,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
 def store_pipeline(stop_event, statistics, parameter_queue,
                    cam_client, pipeline_config, output_stream_port, background_manager):
-    # TODO: Implement statistics: n_clients, input_throughput
 
     def no_client_timeout():
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
@@ -155,6 +157,8 @@ def store_pipeline(stop_event, statistics, parameter_queue,
     sender = None
 
     try:
+        init_statistics(statistics)
+
         camera_name = pipeline_config.get_camera_name()
         log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
         camera_stream_address = cam_client.get_instance_stream(camera_name)
@@ -174,7 +178,6 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
         sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
         # TODO: Register proper channels.
-
         # Indicate that the startup was successful.
         stop_event.clear()
 
@@ -183,6 +186,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
         while not stop_event.is_set():
             try:
                 data = source.receive()
+                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:

@@ -1,6 +1,8 @@
 from itertools import cycle
 from logging import getLogger
+from mflow.tools import ConnectionCountMonitor
 
+import time
 import numpy
 
 _logger = getLogger(__name__)
@@ -63,3 +65,23 @@ def sum_images(image, accumulator_image):
     return accumulator_image
 
 
+def get_clients(sender):
+    for m in sender.stream._socket_monitors:
+        if type(m) == ConnectionCountMonitor:
+            return m.client_counter
+    return 0
+
+def set_statistics(statistics, sender, total_bytes):
+    received_bytes = total_bytes - statistics.total_bytes
+    now = time.time()
+    timespan = now - statistics.timestamp
+    statistics.clients = get_clients(sender)
+    statistics.total_bytes = total_bytes
+    statistics.throughput = received_bytes
+    statistics.timestamp = (now / timespan) if (timespan > 0) else float('nan')
+
+def init_statistics(statistics):
+    statistics.clients = 0
+    statistics.total_bytes = 0
+    statistics.throughput = 0
+    statistics.timestamp = time.time()
