@@ -49,7 +49,7 @@
                 var ret = ""
                 if (indent == undefined ){
                     indent = "";
-                    ret = "<pre>"
+                    ret = "<font size='2'><pre>"
                     nested = false
                 }
 
@@ -57,13 +57,13 @@
                     var value = dict[key]
                     if (isDict (value)){
                         ret = ret + key + ":" + "\n"
-                        ret = ret + (dictToStr(value, "\t"))
+                        ret = ret + (dictToStr(value, /*"\t"*/ "    "))
                     } else {
                         ret = ret + indent + key + ": " + /*JSON.stringify*/(value) + "\n"
                     }
                 }
                 if (!nested){
-                    ret = ret+"</pre>"
+                    ret = ret+"</pre></font>"
                 }
                 return ret
         }
@@ -95,10 +95,13 @@
         }
 
         function dateToStr(date){
-                ret = "<pre>"
-                ret = ret + date.split(" ").join("\n")
-                ret = ret+"</pre>"
-                return ret
+                //ret = "<pre>"
+                //ret = ret + date.split(" ").join("\n")x
+                //ret = ret+"</pre>"
+
+                //return date.split(" ").join("\n\t")
+
+            return date.split(" ").slice(0,2).join(" ")
         }
 
 
@@ -163,18 +166,17 @@
             var info = data["info"]["active_instances"]
 
             $.each(info, function(key, value) {
-                console.log (value["statistics"])
                 //Compact display
-                for (var key in value["statistics"]) {
-                    var cur = value["statistics"][key]
+                for (var k in value["statistics"]) {
+                    var cur = value["statistics"][k]
                     if (cur>=1e12){
-                        value["statistics"][key] = (cur/1e12).toFixed(2) + "T"
+                        value["statistics"][k] = (cur/1e12).toFixed(2) + "T"
                     }
                     else if (cur>=1e9){
-                        value["statistics"][key] = (cur/1e9).toFixed(2) + "G"
+                        value["statistics"][k] = (cur/1e9).toFixed(2) + "G"
                     }
                     else if (cur>=1e6){
-                        value["statistics"][key] = (cur/1e6).toFixed(2) + "M"
+                        value["statistics"][k] = (cur/1e6).toFixed(2) + "M"
                     }
                 }
                 //Save columns
@@ -185,20 +187,30 @@
                     value["statistics"]["read_only"] = value["read_only"]
                 }
                 value["statistics"]["active"] = value["is_stream_active"]
+                value["statistics"]["camera"] = value["camera_name"]
+                value["statistics"]["start"] = dateToStr(value["last_start_time"])
 
                 var statistics = dictToStr(value["statistics"])
                 var config = dictToStr(value["config"])
-                var date = dateToStr(value["last_start_time"])
+                //var date = dateToStr(value["last_start_time"])
+
+                var instance = {}
+                instance["name"] = key
+                instance["host"] = value["host"]
+                instance["stream"] = value["stream_address"]
+                instance = dictToStr(instance)
 
                 var row = appendTableRow(table, [
-                    key,
-                    value["host"],
-                    value["stream_address"],
+                    //key,
+                    //value["host"],
+                    //value["stream_address"],
+                    instance,
                     //value["is_stream_active"],
-                    value["camera_name"],
+                    //value["camera_name"],
                     //JSON.stringify(value["camera_geometry"]),
-                    date,
+                    //date,
                     statistics,
+
                     config,
                     ]
                     )
@@ -276,13 +288,13 @@ Instances
   <thead>
     <tr>
         <th>Instance</th>
-        <th>Host</th>
-        <th>Stream Address</th>
+        <!--<th>Host</th>-->
+        <!--<th>Stream Address</th>-->
         <!--<th>Active</th>-->
-        <th>Camera</th>
+        <!--<th>Camera</th>-->
         <!--<th>Geometry</th>-->
-        <th>Start</th>
-        <th>Statistics</th>
+        <!--<th>Start</th>-->
+        <th>Info</th>
         <th>Config</th>
         <th>Stop</th>
     </tr>
