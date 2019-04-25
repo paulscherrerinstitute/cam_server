@@ -75,7 +75,7 @@
             var separator = ', '
             var ret = ""
             if (multiline) {
-                ret = "<pre>"
+                ret = "<font size='2'><pre>"
                 separator = "\n"
             }
             if (isArray(lst)) {
@@ -89,7 +89,7 @@
                 ret = ret + indent + lst + separator
             }
             if (multiline) {
-                ret = ret + "</pre>"
+                ret = ret+"</pre></font>"
             }
             return ret
         }
@@ -104,6 +104,20 @@
             return date.split(" ").slice(0,2).join(" ")
         }
 
+    function deleteInstance(key){
+            $.delete(base + key).error(function (xhr, textStatus, errorThrown) {
+            $("#scripterror").show()
+            $("#scripterror").html(xhr.responseText)
+        });
+    }
+
+    function deleteAllInstances(server_index){
+            $.delete(base + "server/" + server_index).error(function (xhr, textStatus, errorThrown) {
+            $("#scripterror").show()
+            $("#scripterror").html(xhr.responseText)
+        });
+    }
+
 
     function getServers() {
         $.get(base + 'servers', function (data) {
@@ -115,10 +129,12 @@
             for (var i = 0; i < servers.length; i++) {
                 instances[i] = listToStr(instances[i], false)
                 if (load[i] >=1000) {
-                    load[i] = "offline"
+                    load[i] = "off"
                 }
                 if (getRows(table) <= i){
-                    appendTableRow(table, [servers[ i], load[i], instances[i]])
+                    var row = appendTableRow(table, [servers[i], load[i], instances[i]])
+                    var callback = 'onclick="deleteAllInstances(\'' + i + '\')"'
+                    row.append($('<td align="center"><button ' + callback + '>Stop</button></td>'))
                 } else {
 
                     setTableCell(servers[i], "servers_table", i, 0)
@@ -151,12 +167,7 @@
       };
     });
 
-    function deleteInstance(key){
-            $.delete(base + key).error(function (xhr, textStatus, errorThrown) {
-            $("#scripterror").show()
-            $("#scripterror").html(xhr.responseText)
-        });
-    }
+
 
 
     function getInstances() {
@@ -267,9 +278,10 @@ Servers
 <table id="servers_table"  border="1" width="100%" >
   <thead>
     <tr>
-      <th>Host</th>
-      <th>Load</th>
-      <th>Active Instances</th>
+      <th width="28%">Host</th>
+      <th width="1%">Load</th>
+      <th width="70%">Active Instances</th>
+      <th width="1%">Stop</th>
     </tr>
   </thead>
   <tbody id="servers_table_rows">
@@ -287,16 +299,16 @@ Instances
 <table id="instances_table"  border="1" width="100%">
   <thead>
     <tr>
-        <th>Instance</th>
+        <th width="33%">Instance</th>
         <!--<th>Host</th>-->
         <!--<th>Stream Address</th>-->
         <!--<th>Active</th>-->
         <!--<th>Camera</th>-->
         <!--<th>Geometry</th>-->
         <!--<th>Start</th>-->
-        <th>Info</th>
-        <th>Config</th>
-        <th>Stop</th>
+        <th width="33%">Info</th>
+        <th width="33%">Config</th>
+        <th width="1%">Stop</th>
     </tr>
   </thead>
   <tbody id="instances_table_rows">

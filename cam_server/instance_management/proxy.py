@@ -69,6 +69,18 @@ class ProxyBase:
             return {"state": "ok",
                     "status": "Instance '%s' stopped." % instance_name}
 
+        @app.delete(api_root_address + "/server/<server_index>")
+        def stop_all_server_instances(server_index):
+            """
+            Stop a specific camera.
+            :param instance_name: Name of the camera.
+            """
+            server = self.server_pool[int(server_index)]
+            self.stop_all_server_instances(server)
+            return {"state": "ok",
+                    "status": "All instances stopped in '%s'." % server.get_address()}
+
+
     def _get_root(self):
         return os.path.dirname(__file__)
 
@@ -163,6 +175,13 @@ class ProxyBase:
                 server.stop_all_instances()
             except:
                 pass
+
+    def stop_all_server_instances(self, server):
+        _logger.info("Stopping all instances at %s", server.get_address())
+        try:
+            server.stop_all_instances()
+        except:
+            pass
 
     def stop_instance(self, instance_name):
         status = self.get_status()
