@@ -71,14 +71,16 @@ def get_clients(sender):
             return m.client_counter
     return 0
 
+
 def set_statistics(statistics, sender, total_bytes):
     received_bytes = total_bytes - statistics.total_bytes
     now = time.time()
     timespan = now - statistics.timestamp
     statistics.clients = get_clients(sender)
     statistics.total_bytes = total_bytes
-    statistics.throughput = received_bytes
-    statistics.timestamp = (now / timespan) if (timespan > 0) else float('nan')
+    statistics.throughput = (received_bytes / timespan) if (timespan > 0) else float('nan')
+    statistics.timestamp = now
+
 
 def init_statistics(statistics):
     statistics.clients = 0

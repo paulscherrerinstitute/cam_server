@@ -59,7 +59,7 @@
                         ret = ret + key + ":" + "\n"
                         ret = ret + (dictToStr(value, "\t"))
                     } else {
-                        ret = ret + indent + key + " : " + JSON.stringify(value) + "\n"
+                        ret = ret + indent + key + ": " + /*JSON.stringify*/(value) + "\n"
                     }
                 }
                 if (!nested){
@@ -109,9 +109,7 @@
             var instances =  data["instances"]
             var table = $("#servers_table")
 
-            var arrayLength = servers.length;
-
-            for (var i = 0; i < arrayLength; i++) {
+            for (var i = 0; i < servers.length; i++) {
                 instances[i] = listToStr(instances[i], false)
                 if (load[i] >=1000) {
                     load[i] = "offline"
@@ -165,7 +163,21 @@
             var info = data["info"]["active_instances"]
 
             $.each(info, function(key, value) {
-                //Save 2 columns
+                console.log (value["statistics"])
+                //Compact display
+                for (var key in value["statistics"]) {
+                    var cur = value["statistics"][key]
+                    if (cur>=1e12){
+                        value["statistics"][key] = (cur/1e12).toFixed(2) + "T"
+                    }
+                    else if (cur>=1e9){
+                        value["statistics"][key] = (cur/1e9).toFixed(2) + "G"
+                    }
+                    else if (cur>=1e6){
+                        value["statistics"][key] = (cur/1e6).toFixed(2) + "M"
+                    }
+                }
+                //Save columns
                 if (value["camera_geometry"] != undefined) {
                     value["statistics"]["geometry"] = value["camera_geometry"]
                 }
