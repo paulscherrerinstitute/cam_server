@@ -1,6 +1,7 @@
 from logging import getLogger
 from importlib import import_module
 from imp import load_source
+import time
 
 from bsread import Source, PUB, SUB, PUSH
 from bsread.sender import Sender
@@ -92,6 +93,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         stop_event.clear()
 
         _logger.debug("Transceiver started. %s", log_tag)
+        downsampling_counter = 1000  # The first is always sent
+        last_sent_timestamp = 0
 
         while not stop_event.is_set():
             try:
@@ -103,9 +106,25 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 data = source.receive()
                 set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes)
 
+                # Check downsampling parameter
+                downsampling = pipeline_parameters.get("downsampling")
+                if downsampling:
+                    downsampling_counter += 1
+                    if downsampling_counter > downsampling:
+                        downsampling_counter = 0
+                    else:
+                        continue
+
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
                     continue
+
+                #Check maximum frame rate parameter
+                max_frame_rate = pipeline_parameters.get("max_frame_rate")
+                if max_frame_rate:
+                    min_interval = 1.0 / max_frame_rate
+                    if (time.time() - last_sent_timestamp) < min_interval:
+                        continue
 
                 image = data.data.data["image"].value
                 x_axis = data.data.data["x_axis"].value
@@ -125,6 +144,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 pulse_id = data.data.pulse_id
                 timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
 
+                last_sent_timestamp = time.time()
                 sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
 
             except:

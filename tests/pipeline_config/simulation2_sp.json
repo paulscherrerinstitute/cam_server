@@ -8,5 +8,7 @@
  "pipeline_type": "processing",
  "camera_name": "simulation",
  "name": "simulation_sp",
- "function":"transparent"
+ "function":"transparent",
+ "downsampling" : null,
+ "max_frame_rate" : 2.1
 }
