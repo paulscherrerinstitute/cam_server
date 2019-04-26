@@ -53,8 +53,8 @@ def main():
     parser.add_argument("-c", '--cam_server', default="http://0.0.0.0:8898", help="Cam server rest api address.")
     parser.add_argument('-p', '--port', default=8899, help="Server port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
-    parser.add_argument('-s', '--servers', default="http://localhost:8889",
-                        help="Comma-separated list of servers")
+    parser.add_argument('-s', '--servers', default="",
+                        help="Comma-separated list of servers (if not provided, configuration read from servers.json)")
     parser.add_argument('-b', '--base', default=config.DEFAULT_PIPELINE_CONFIG_FOLDER,
                         help="(Pipeline) Configuration base directory")
     parser.add_argument('-g', '--background_base', default=config.DEFAULT_BACKGROUND_CONFIG_FOLDER)

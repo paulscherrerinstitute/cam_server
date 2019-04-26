@@ -43,9 +43,8 @@ def main():
     parser = argparse.ArgumentParser(description='Camera proxy server')
     parser.add_argument('-p', '--port', default=8898, help="Camera proxy server port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
-    parser.add_argument('-s', '--servers',
-                        default="servers.json", #"http://localhost:8888",
-                        help="Comma-separated list of servers")
+    parser.add_argument('-s', '--servers', default="",
+                        help="Comma-separated list of servers (if not provided, configuration read from servers.json)")
     parser.add_argument('-b', '--base', default=config.DEFAULT_CAMERA_CONFIG_FOLDER,
                         help="(Camera) Configuration base directory")
     parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")

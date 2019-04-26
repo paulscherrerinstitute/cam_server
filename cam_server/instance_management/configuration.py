@@ -29,7 +29,9 @@ class ConfigFileStorage(object):
         cameras = []
         for camera in glob.glob(self.config_folder + '/*.json'):
             # filter out _parameters.json and _background.json files
-            if not (re.match(r'.*_parameters.json$', camera) or re.match(r'.*_background.json$', camera)):
+            if not (re.match(r'.*_parameters.json$', camera) or
+                    re.match(r'.*_background.json$', camera) or
+                    re.match(r'.*/servers.json$', camera)):
                 camera = re.sub(r'.*/', '', camera)
                 camera = re.sub(r'.json', '', camera)
                 cameras.append(camera)
@@ -160,8 +162,8 @@ class TransientConfig(object):
 
 def get_proxy_config(config_base, config_str):
     # Server config in JSON file
-    if os.path.isfile(config_base + "/" + config_str):
-        with open(config_base + "/" + config_str) as data_file:
+    if not config_str:
+        with open(config_base + "/servers.json") as data_file:
             configuration = json.load(data_file)
     # Server config in command line
     else:

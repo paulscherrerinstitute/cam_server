@@ -1,6 +1,6 @@
 {
  "http://localhost:8888": {
-  "cameras": [
+  "instances": [
    "simulation",
    "simulation2"
   ],

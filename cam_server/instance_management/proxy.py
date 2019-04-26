@@ -9,8 +9,10 @@ _logger = logging.getLogger(__name__)
 
 
 class ProxyBase:
-    def __init__(self, server_pool):
+    def __init__(self, server_pool, configuration, config_manager):
         self.server_pool = server_pool
+        self.configuration = configuration
+        self.config_manager = config_manager
         self.default_server = server_pool[0]
         self.executor = ThreadPoolExecutor(len(self.server_pool))
 

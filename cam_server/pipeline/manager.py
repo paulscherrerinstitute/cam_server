@@ -8,8 +8,7 @@ _logger = logging.getLogger(__name__)
 class Manager(ProxyBase):
     def __init__(self, config_manager, background_manager, cam_server_client, configuration):
         server_pool = [PipelineClient(server) for server in configuration.keys()]
-        ProxyBase.__init__(self, server_pool)
-        self.config_manager = config_manager
+        ProxyBase.__init__(self, server_pool, configuration, config_manager)
         self.background_manager = background_manager
         self.cam_server_client = cam_server_client
 
