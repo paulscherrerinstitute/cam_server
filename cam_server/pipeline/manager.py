@@ -22,25 +22,37 @@ class Manager(ProxyBase):
                     break
         return ret
 
+    def get_server_for_camera(self, camera_name, status=None):
+        servers = self.get_current_servers_for_camera(camera_name, status)
+        if len(servers) > 0:
+            return servers[0]
+        else:
+            return self.get_free_server(None, status)
+
+    def get_server_for_pipeline(self, pipeline_name, configuration, status=None):
+        camera_name = configuration["camera_name"]
+        return self.get_server_for_camera(camera_name, status)
+
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
 
     def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
         status = self.get_status()
+        if pipeline_name is not None:
+            configuration = self.config_manager.get_pipeline_config(pipeline_name)
         server = self.get_server(instance_id, status)
         if server is None:
-            server = self.get_free_server(instance_id, status)
-        if pipeline_name is not None:
-            # Update volatile config
-            config = self.config_manager.get_pipeline_config(pipeline_name)
-            server.save_pipeline_config(pipeline_name, config)
+            server = self.get_server_for_pipeline(pipeline_name, configuration, status)
 
-            self._check_background(server, config)
+        self._check_background(server, configuration)
+        if pipeline_name is not None:
+            server.save_pipeline_config(pipeline_name, configuration)
             instance_id, stream_address = server.create_instance_from_name(pipeline_name, instance_id)
         elif configuration is not None:
             instance_id, stream_address = server.create_instance_from_config(configuration, instance_id)
         else:
             raise Exception("Invalid parameters")
+
         return instance_id, stream_address
 
     def get_instance_configuration(self, instance_name):
@@ -56,15 +68,8 @@ class Manager(ProxyBase):
         raise ValueError("Instance '%s' does not exist." % instance_name)
 
     def get_instance_stream_from_config(self, configuration):
-        #TODO
         status = self.get_status()
-        camera_name = configuration["camera_name"]
-        servers = self.get_current_servers_for_camera(camera_name, status)
-        if len(servers) > 0:
-            server = servers[0]
-        else:
-            server = self.get_free_server(None, status)
-
+        server = self.get_server_for_pipeline(None, configuration, status)
         return server.get_instance_stream_from_config(configuration)
 
     def update_instance_config(self, instance_name, config_updates):
