@@ -24,13 +24,24 @@ class Manager(ProxyBase):
         return ret
 
     def get_server_for_camera(self, camera_name, status=None):
+        if not status:
+            status = self.get_status()
         servers = self.get_current_servers_for_camera(camera_name, status)
         if len(servers) > 0:
             return servers[0]
         else:
+            server = self.get_fixed_server_for_camera(camera_name, status)
+            if server is not None:
+                return server
             return self.get_free_server(None, status)
 
     def get_server_for_pipeline(self, pipeline_name, configuration, status=None):
+        if not status:
+            status = self.get_status()
+        if pipeline_name is not None:
+            server = self.get_fixed_server(pipeline_name, status)
+            if server is not None:
+                return server
         camera_name = configuration["camera_name"]
         return self.get_server_for_camera(camera_name, status)
 
@@ -48,8 +59,10 @@ class Manager(ProxyBase):
         self._check_background(server, configuration)
         if pipeline_name is not None:
             server.save_pipeline_config(pipeline_name, configuration)
+            _logger.info("Creating stream from name %s at %s", pipeline_name, server.get_address())
             instance_id, stream_address = server.create_instance_from_name(pipeline_name, instance_id)
         elif configuration is not None:
+            _logger.info("Creating stream from config to camera %s at %s", configuration["camera_name"], server.get_address())
             instance_id, stream_address = server.create_instance_from_config(configuration, instance_id)
         else:
             raise Exception("Invalid parameters")
@@ -71,6 +84,8 @@ class Manager(ProxyBase):
     def get_instance_stream_from_config(self, configuration):
         status = self.get_status()
         server = self.get_server_for_pipeline(None, configuration, status)
+        _logger.info("Getting stream from config to camera %s at %s", configuration["camera_name"],
+                     server.get_address())
         return server.get_instance_stream_from_config(configuration)
 
     def update_instance_config(self, instance_name, config_updates):
@@ -99,5 +114,14 @@ class Manager(ProxyBase):
         for server in self.server_pool:
             try:
                 server.save_pipeline_config(pipeline_name, config)
+            except:
+                pass
+    def get_fixed_server_for_camera(self, name, status=None):
+        if status is None:
+            status = self.get_status()
+        for server in self.configuration.keys():
+            try:
+                if name in self.configuration[server]["cameras"]:
+                    return self.get_server_from_address(server)
             except:
                 pass

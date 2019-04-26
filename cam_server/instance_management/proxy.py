@@ -108,6 +108,16 @@ class ProxyBase:
             ret[server.get_address()] = instances
         return ret
 
+    def get_fixed_server(self, name, status=None):
+        if status is None:
+            status = self.get_status()
+        for server in self.configuration.keys():
+            try:
+                if name in self.configuration[server]["instances"]:
+                    return self.get_server_from_address(server)
+            except:
+                pass
+
     def get_server(self, instance_name=None, status=None):
         """
         If instance name is None returns the default server
@@ -116,7 +126,7 @@ class ProxyBase:
             return self.default_server
         if status is None:
             status = self.get_status()
-        #Check server already running the instance
+
         for server in self.server_pool:
             try:
                 info = status[server.get_address()]
@@ -124,7 +134,6 @@ class ProxyBase:
                     return server
             except:
                 pass
-        #Check for configuration of fixed server for instances
         return None
 
     def get_server_from_address(self, address):
@@ -166,8 +175,12 @@ class ProxyBase:
         status = self.get_status()
         server = self.get_server(instance_name, status)
         if server is None:
-            server = self.get_free_server(instance_name, status)
-            _logger.info("Creating stream to %s at %s", instance_name, server.get_address())
+            server = self.get_fixed_server(instance_name, status)
+            if server is None:
+                server = self.get_free_server(instance_name, status)
+                _logger.info("Creating stream to %s at %s", instance_name, server.get_address())
+            else:
+                _logger.info("Creating fixed stream to %s at %s", instance_name, server.get_address())
         else:
             _logger.info("Connecting to stream %s at %s", instance_name, server.get_address())
         return server.get_instance_stream(instance_name)

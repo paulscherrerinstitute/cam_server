@@ -19,10 +19,20 @@ class Manager(ProxyBase):
         if server is not None:
             server.set_camera_config(camera_name, new_config)
 
-    def get_free_server(self, instance_name=None, status=None):
-        server = ProxyBase.get_free_server(self,instance_name, status)
+    def _update_server_config(self, server, instance_name):
         if (instance_name is not None) and (server is not None):
             # Update volatile config
             config = self.config_manager.get_camera_config(instance_name).get_configuration()
             server.set_camera_config(instance_name, config)
+
+    def get_free_server(self, instance_name=None, status=None):
+        server = ProxyBase.get_free_server(self,instance_name, status)
+        self._update_server_config(server, instance_name)
         return server
+
+    def get_fixed_server(self, instance_name=None, status=None):
+        server = ProxyBase.get_fixed_server(self, instance_name, status)
+        self._update_server_config(server, instance_name)
+        return server
+
+
