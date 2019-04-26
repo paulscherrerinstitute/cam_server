@@ -1,0 +1,9 @@
+{
+ "http://localhost:8888": {
+  "cameras": [
+   "simulation",
+   "simulation2"
+  ],
+  "expanding": true
+ }
+}

@@ -114,6 +114,7 @@ class ProxyBase:
             return self.default_server
         if status is None:
             status = self.get_status()
+        #Check server already running the instance
         for server in self.server_pool:
             try:
                 info = status[server.get_address()]
@@ -121,6 +122,7 @@ class ProxyBase:
                     return server
             except:
                 pass
+        #Check for configuration of fixed server for instances
         return None
 
     def get_server_from_address(self, address):

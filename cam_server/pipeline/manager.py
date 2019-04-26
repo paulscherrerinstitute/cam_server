@@ -1,11 +1,13 @@
 import logging
 from cam_server.instance_management.proxy import ProxyBase
+from cam_server import PipelineClient
 
 _logger = logging.getLogger(__name__)
 
 
 class Manager(ProxyBase):
-    def __init__(self, config_manager, background_manager, cam_server_client, server_pool):
+    def __init__(self, config_manager, background_manager, cam_server_client, configuration):
+        server_pool = [PipelineClient(server) for server in configuration.keys()]
         ProxyBase.__init__(self, server_pool)
         self.config_manager = config_manager
         self.background_manager = background_manager

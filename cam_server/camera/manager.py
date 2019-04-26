@@ -1,11 +1,13 @@
 import logging
 from cam_server.instance_management.proxy import ProxyBase
+from cam_server import CamClient
 
 _logger = logging.getLogger(__name__)
 
 
 class Manager(ProxyBase):
-    def __init__(self, config_manager, server_pool):
+    def __init__(self, config_manager, configuration):
+        server_pool = [CamClient(server) for server in configuration.keys()]
         ProxyBase.__init__(self, server_pool)
         self.config_manager = config_manager
 

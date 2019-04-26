@@ -156,3 +156,16 @@ class TransientConfig(object):
                     "status": "Is server configured",
                     "configured": configured}
     """
+
+
+def get_proxy_config(config_base, config_str):
+    # Server config in JSON file
+    if os.path.isfile(config_base + "/" + config_str):
+        with open(config_base + "/" + config_str) as data_file:
+            configuration = json.load(data_file)
+    # Server config in command line
+    else:
+        configuration = {}
+        for server in [s.strip() for s in config_str.split(",")]:
+            configuration[server] = {"expanding": True}
+    return configuration
