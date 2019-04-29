@@ -184,14 +184,17 @@
                 //Compact display
                 for (var k in value["statistics"]) {
                     var cur = value["statistics"][k]
-                    if (cur>=1e12){
-                        value["statistics"][k] = (cur/1e12).toFixed(2) + "T"
-                    } else if (cur>=1e9){
-                        value["statistics"][k] = (cur/1e9).toFixed(2) + "G"
-                    } else if (cur>=1e6){
-                        value["statistics"][k] = (cur/1e6).toFixed(2) + "M"
-                    } else if (!isInt(cur)){
-                        value["statistics"][k] = (cur).toFixed(2)
+
+                    if (cur) {
+                        if (cur >= 1e12) {
+                            value["statistics"][k] = (cur / 1e12).toFixed(2) + "T"
+                        } else if (cur >= 1e9) {
+                            value["statistics"][k] = (cur / 1e9).toFixed(2) + "G"
+                        } else if (cur >= 1e6) {
+                            value["statistics"][k] = (cur / 1e6).toFixed(2) + "M"
+                        } else if (!isInt(cur)) {
+                            value["statistics"][k] = (cur).toFixed(2)
+                        }
                     }
                 }
                 //Save columns

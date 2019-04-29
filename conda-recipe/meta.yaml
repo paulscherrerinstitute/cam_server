@@ -26,8 +26,13 @@ requirements:
 build:
   entry_points:
     - camera_server = cam_server.start_camera_server:main
+    - camera_proxy = cam_server.start_camera_proxy:main
+    - camera_worker = cam_server.start_camera_worker:main
+    - camera_manager = cam_server.start_camera_manager:main
     - pipeline_server = cam_server.start_pipeline_server:main
-    - proxy_pipeline_server = cam_server.start_proxy_pipeline_server:main
+    - pipeline_proxy = cam_server.start_pipeline_proxy:main
+    - pipeline_worker = cam_server.start_pipeline_worker:main
+    - pipeline_manager = cam_server.start_pipeline_manager:main
     - validate_configs = cam_server.validate_configs:main
 
 about:
