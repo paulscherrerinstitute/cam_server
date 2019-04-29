@@ -79,6 +79,7 @@ def set_statistics(statistics, sender, total_bytes):
     statistics.clients = get_clients(sender)
     statistics.total_bytes = total_bytes
     statistics.throughput = (received_bytes / timespan) if (timespan > 0) else float('nan')
+    statistics.frame_rate = (1.0 / timespan) if (timespan > 0) else float('nan')
     statistics.timestamp = now
 
 
@@ -86,4 +87,5 @@ def init_statistics(statistics):
     statistics.clients = 0
     statistics.total_bytes = 0
     statistics.throughput = 0
+    statistics.frame_rate = 0
     statistics.timestamp = time.time()

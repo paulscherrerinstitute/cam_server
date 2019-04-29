@@ -106,6 +106,7 @@ class InstanceWrapper:
         self.statistics.total_bytes = 0
         self.statistics.clients = 0
         self.statistics.throughput = 0
+        self.statistics.frame_rate = 0
         self.statistics.timestamp = 0
 
         self.parameter_queue = multiprocessing.Queue()
@@ -174,4 +175,5 @@ class InstanceWrapper:
     def get_statistics(self):
         return {"total_bytes": self.statistics.total_bytes,
                 "clients": self.statistics.clients,
-                "throughput": self.statistics.throughput}
+                "throughput": self.statistics.throughput,
+                "frame_rate": self.statistics.frame_rate}
