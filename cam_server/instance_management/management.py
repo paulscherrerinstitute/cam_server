@@ -6,12 +6,20 @@ from epics.multiproc import CAProcess as Process
 
 from cam_server import config
 
+try:
+    import psutil
+except:
+    psutil = None
+
 _logger = getLogger(__name__)
 
 
 class InstanceManager(object):
     def __init__(self):
         self.instances = {}
+        self._info_timestamp = None
+        self._tx = None
+        self._rx = None
 
     def get_info(self):
         """
@@ -21,6 +29,29 @@ class InstanceManager(object):
         info = {"active_instances": dict((instance.get_instance_id(), instance.get_info())
                                          for instance in self.instances.values() if instance.is_running())}
 
+        if psutil:
+            info["cpu"] = psutil.cpu_percent()
+            info["memory"] = psutil.virtual_memory().used
+            net = psutil.net_io_counters()
+            tx = net.bytes_sent
+            rx = net.bytes_recv
+            now = time.time()
+            info["tx"] = None
+            info["rx"] = None
+            if self._info_timestamp:
+                timespan = now - self._info_timestamp
+                if (timespan > 0):
+                    info["tx"] = (tx - self._tx) / timespan
+                    info["rx"] = (rx - self._rx) / timespan
+            self._info_timestamp = now
+            self._tx = tx
+            self._rx = rx
+
+        else:
+            info["cpu"] = None
+            info["memory"] = None
+            info["tx"] = None
+            info["rx"] = None
         return info
 
     def add_instance(self, instance_name, instance_wrapper):
@@ -111,7 +142,6 @@ class InstanceWrapper:
         self.statistics.pid = 0
         self.statistics.cpu = 0
         self.statistics.memory = 0
-        self.statistics.cpu_sampling_time = 0
         self.statistics._process = None
 
 

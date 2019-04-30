@@ -88,10 +88,8 @@ def set_statistics(statistics, sender, total_bytes):
     statistics.frame_rate = (1.0 / timespan) if (timespan > 0) else None
     statistics.timestamp = now
     if psutil and statistics._process:
-        if now - statistics.cpu_sampling_time > 1.0:
-            statistics.cpu = statistics._process.cpu_percent()
-            statistics.memory = statistics._process.memory_info().rss #Physical, Virtual = .vms
-            statistics.cpu_sampling_time = now
+        statistics.cpu = statistics._process.cpu_percent()
+        statistics.memory = statistics._process.memory_info().rss
     else:
         statistics.cpu = None
         statistics.memory = None
@@ -107,5 +105,4 @@ def init_statistics(statistics):
     statistics.cpu = 0
     statistics.memory = 0
     statistics.timestamp = time.time()
-    statistics.cpu_sampling_time = statistics.timestamp
     statistics._process = psutil.Process(os.getpid())

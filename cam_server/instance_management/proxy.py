@@ -25,19 +25,25 @@ class ProxyBase:
             Return the list of servers and the load for each
             :return:
             """
-            status = self.get_status()
+            info = self.get_servers_info()
+            status = {server: (info[server]['active_instances'] if info[server] else None) for server in info}
             servers = [server.get_address() for server in self.server_pool]
-            instances = []
+            instances, cpu, memory, tx, rx = [], [], [], [], []
             for server in self.server_pool:
                 try:
                     instances.append(list(status[server.get_address()].keys()))
                 except:
                     instances.append([])
-            return {"state": "ok",
+            ret =  {"state": "ok",
                     "status": "List of servers.",
                     "servers": servers,
                     "load":  self.get_load(status),
+                    "cpu": [ info[server]["cpu"] for server in info],
+                    "memory":  [ info[server]["memory"] for server in info],
+                    "tx":  [ info[server]["tx"] for server in info],
+                    "rx":  [ info[server]["rx"] for server in info],
                     "instances":  instances}
+            return ret
 
 
         @app.get(api_root_address + "/status")
@@ -107,6 +113,24 @@ class ProxyBase:
             (server,instances) = future.result()
             ret[server.get_address()] = instances
         return ret
+
+    def get_servers_info(self):
+            def task(server):
+                try:
+                    info = server.get_server_info()
+                except:
+                    info = None
+                return (server, info)
+
+            futures = []
+            for server in self.server_pool:
+                futures.append(self.executor.submit(task, server))
+
+            ret = {}
+            for future in futures:
+                (server, info) = future.result()
+                ret[server.get_address()] = info
+            return ret
 
     def get_fixed_server(self, name, status=None):
         if status is None:
