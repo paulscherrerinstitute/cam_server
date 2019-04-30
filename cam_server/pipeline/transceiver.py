@@ -2,6 +2,7 @@ from logging import getLogger
 from importlib import import_module
 from imp import load_source
 import time
+import sys
 
 from bsread import Source, PUB, SUB, PUSH
 from bsread.sender import Sender
@@ -18,10 +19,25 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         cam_client, pipeline_config, output_stream_port, background_manager):
     camera_name = pipeline_config.get_camera_name()
     log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
+    source = None
+
     def no_client_timeout():
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
                         config.MFLOW_NO_CLIENTS_TIMEOUT, log_tag)
         stop_event.set()
+
+    def connect_to_camera():
+        nonlocal source
+        camera_stream_address = cam_client.get_instance_stream(pipeline_config.get_camera_name())
+        _logger.warning("Connecting to camera stream address %s. %s", camera_stream_address, log_tag)
+        source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
+
+        source = Source(host=source_host, port=source_port,
+                        receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
+        source.connect()
+
+
+
 
     def process_pipeline_parameters():
         parameters = pipeline_config.get_configuration()
@@ -42,6 +58,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             _, size_x, _, size_y = image_region_of_interest
 
         _logger.debug("Image width %d and height %d. %s", size_x, size_y, log_tag)
+
+        if not parameters.get("camera_timeout"):
+            parameters["camera_timeout"] = 10.0
 
         return parameters, background_array
 
@@ -73,13 +92,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         pipeline_parameters, image_background_array = process_pipeline_parameters()
 
-        camera_stream_address = cam_client.get_instance_stream(pipeline_config.get_camera_name())
-        _logger.warning("Connecting to camera stream address %s. %s", camera_stream_address, log_tag)
-
-        source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
-
-        source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
-        source.connect()
+        connect_to_camera()
 
         _logger.debug("Opening output stream on port %d. %s", output_stream_port, log_tag)
 
@@ -93,8 +106,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         stop_event.clear()
 
         _logger.debug("Transceiver started. %s", log_tag)
-        downsampling_counter = 1000  # The first is always sent
+        downsampling_counter = sys.maxsize  # The first is always sent
         last_sent_timestamp = 0
+        last_rcvd_timestamp = time.time()
 
         while not stop_event.is_set():
             try:
@@ -105,6 +119,16 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
                 data = source.receive()
                 set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes)
+                if data:
+                    last_rcvd_timestamp = time.time()
+                else:
+                    timeout = pipeline_parameters.get("camera_timeout")
+                    if timeout:
+                        if (timeout > 0) and (time.time() - last_rcvd_timestamp) > timeout:
+                            _logger.warning("Camera timeout. %s", log_tag)
+                            #Try reconnecting to the camera. If fails raise exception and stops pipeline.
+                            connect_to_camera()
+                    continue
 
                 # Check downsampling parameter
                 downsampling = pipeline_parameters.get("downsampling")
@@ -114,10 +138,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         downsampling_counter = 0
                     else:
                         continue
-
-                # In case of receiving error or timeout, the returned data is None.
-                if data is None:
-                    continue
 
                 #Check maximum frame rate parameter
                 max_frame_rate = pipeline_parameters.get("max_frame_rate")

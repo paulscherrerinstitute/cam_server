@@ -299,7 +299,10 @@ pipeline is added to the output bsread stream in the
     - If defined, provides list of names of fields requested in the pipeline output stream (any other not listed is removed). 
 - **exclude** (Default _None_):
     - If defined, provides list of names of fields to be removed from the pipeline output stream. 
-
+- **camera_timeout** (Default _10.0_):
+    - If no message received in camera_timeout seconds, pipeline attempts to reconnect to the camera
+      stream. If reconnection is not possible, the pipeline will stop. 
+      If null or non positive then the timeout handling is disabled.
     
 #### Example
 ```json

@@ -6,9 +6,11 @@
  "image_good_region": null,
  "image_slices": null,
  "pipeline_type": "processing",
- "camera_name": "simulation",
+ "camera_name": "simulation2",
  "name": "simulation_sp",
  "function":"transparent",
  "downsampling" : null,
- "max_frame_rate" : 2.1
+ "max_frame_rate" : 2.1,
+ "exclude": ["x_axis", "y_axis"],
+ "include": ["image", "width", "height"]
 }

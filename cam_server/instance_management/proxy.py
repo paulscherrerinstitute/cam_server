@@ -34,14 +34,15 @@ class ProxyBase:
                     instances.append(list(status[server.get_address()].keys()))
                 except:
                     instances.append([])
+
             ret =  {"state": "ok",
                     "status": "List of servers.",
                     "servers": servers,
                     "load":  self.get_load(status),
-                    "cpu": [ info[server]["cpu"] for server in info],
-                    "memory":  [ info[server]["memory"] for server in info],
-                    "tx":  [ info[server]["tx"] for server in info],
-                    "rx":  [ info[server]["rx"] for server in info],
+                    "cpu":   [(info[server].get("cpu")    if info[server] else None) for server in info] if info else [],
+                    "memory":[(info[server].get("memory") if info[server] else None) for server in info] if info else [],
+                    "tx":    [(info[server].get("tx")     if info[server] else None) for server in info] if info else [],
+                    "rx":    [(info[server].get("rx")     if info[server] else None) for server in info] if info else [],
                     "instances":  instances}
             return ret
 

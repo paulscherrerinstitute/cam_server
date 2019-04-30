@@ -40,7 +40,7 @@ class InstanceManager(object):
             info["rx"] = None
             if self._info_timestamp:
                 timespan = now - self._info_timestamp
-                if (timespan > 0):
+                if timespan > 0:
                     info["tx"] = (tx - self._tx) / timespan
                     info["rx"] = (rx - self._rx) / timespan
             self._info_timestamp = now
