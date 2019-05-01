@@ -39,11 +39,10 @@ class ProxyBase:
                     "status": "List of servers.",
                     "servers": servers,
                     "load":  self.get_load(status),
-                    "cpu":   [(info[server].get("cpu")    if info[server] else None) for server in info] if info else [],
-                    "memory":[(info[server].get("memory") if info[server] else None) for server in info] if info else [],
-                    "tx":    [(info[server].get("tx")     if info[server] else None) for server in info] if info else [],
-                    "rx":    [(info[server].get("rx")     if info[server] else None) for server in info] if info else [],
-                    "instances":  instances}
+                    "instances": instances
+                    }
+            for key in ["cpu", "memory", "tx", "rx"]:
+                ret[key] = [(info[server].get(key) if info[server] else None) for server in info] if info else []
             return ret
 
 
@@ -88,7 +87,6 @@ class ProxyBase:
             self.stop_all_server_instances(server)
             return {"state": "ok",
                     "status": "All instances stopped in '%s'." % server.get_address()}
-
 
     def _get_root(self):
         return os.path.dirname(__file__)
@@ -166,7 +164,6 @@ class ProxyBase:
             if address == server.get_address():
                 return server
         return None
-
 
     def get_load(self, status=None):
         if status is None: status = self.get_status()

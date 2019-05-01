@@ -27,11 +27,13 @@ class Manager(ProxyBase):
 
     def get_free_server(self, instance_name=None, status=None):
         server = ProxyBase.get_free_server(self,instance_name, status)
+        #Every time an instance is to be created, the configration is updated
         self._update_server_config(server, instance_name)
         return server
 
     def get_fixed_server(self, instance_name=None, status=None):
         server = ProxyBase.get_fixed_server(self, instance_name, status)
+        # Every time an instance is to be created, the configration is updated
         self._update_server_config(server, instance_name)
         return server
 

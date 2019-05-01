@@ -116,6 +116,7 @@ class Manager(ProxyBase):
                 server.save_pipeline_config(pipeline_name, config)
             except:
                 pass
+
     def get_fixed_server_for_camera(self, name, status=None):
         if status is None:
             status = self.get_status()
