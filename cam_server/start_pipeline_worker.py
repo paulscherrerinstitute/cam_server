@@ -1,15 +1,14 @@
 import argparse
 import logging
 import os
-
 import bottle
-from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager
 
+from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager
 from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
-
 from cam_server import config, CamClient
 from cam_server.instance_management.configuration import TransientConfig
+from cam_server.utils import initialize_api_logger
 
 _logger = logging.getLogger(__name__)
 
@@ -55,7 +54,7 @@ def main():
 
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
-
+    initialize_api_logger(arguments.log_level)
     start_pipeline_worker(arguments.interface, arguments.port,
                           arguments.background_base,
                           arguments.cam_server,

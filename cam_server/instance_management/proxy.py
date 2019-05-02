@@ -2,7 +2,7 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from cam_server import config
-from bottle import static_file
+from bottle import static_file, response
 
 
 _logger = logging.getLogger(__name__)

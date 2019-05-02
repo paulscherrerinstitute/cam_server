@@ -1,6 +1,5 @@
 import argparse
 import logging
-
 import os
 import bottle
 
@@ -9,6 +8,7 @@ from cam_server.camera.configuration import CameraConfigManager
 from cam_server.instance_management.configuration import ConfigFileStorage, get_proxy_config
 from cam_server.camera.rest_api.rest_server import register_rest_interface as register_camera_rest_interface
 from cam_server.camera.manager import Manager as CameraManager
+from cam_server.utils import initialize_api_logger
 
 _logger = logging.getLogger(__name__)
 
@@ -54,6 +54,7 @@ def main():
     arguments = parser.parse_args()
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
+    initialize_api_logger(arguments.log_level)
     start_camera_manager(arguments.interface, arguments.port, arguments.servers, arguments.base, arguments.hostname)
 
 

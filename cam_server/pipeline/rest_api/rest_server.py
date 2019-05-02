@@ -8,6 +8,7 @@ from bottle import request, response
 from cam_server import config
 from cam_server.instance_management import rest_api
 from cam_server.pipeline.data_processing.functions import get_png_from_image
+from cam_server.utils import register_logs_rest_interface
 
 _logger = logging.getLogger(__name__)
 
@@ -27,6 +28,9 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     # Register instance management API.
     rest_api.register_rest_interface(app, instance_manager, api_root_address)
+
+    # Register logs  API.
+    register_logs_rest_interface(app,config.API_PREFIX + config.LOGS_INTERFACE_PREFIX)
 
     @app.get(api_root_address)
     def get_pipeline_list():
@@ -115,6 +119,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         if not config_updates:
             raise ValueError("Config updates cannot be empty.")
+        _logger.info("Setting instance '%s' config: %s", instance_id, str(config))
         instance_manager.update_instance_config(instance_id, config_updates)
 
         # TODO: Remove dependency on instance.
@@ -136,7 +141,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     def set_pipeline_config(pipeline_name):
 
         # TODO: Remove dependency on config_manager.
-
+        _logger.info("Setting pipeline '%s' config: %s", pipeline_name, str(request.json))
         instance_manager.save_pipeline_config(pipeline_name, request.json)
 
         return {"state": "ok",

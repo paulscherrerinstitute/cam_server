@@ -1,7 +1,10 @@
 from itertools import cycle
+import logging
 from logging import getLogger
 from mflow.tools import ConnectionCountMonitor
 import os
+import collections
+from bottle import response
 
 try:
     import psutil
@@ -79,20 +82,21 @@ def get_clients(sender):
 
 
 def set_statistics(statistics, sender, total_bytes):
-    received_bytes = total_bytes - statistics.total_bytes
     now = time.time()
     timespan = now - statistics.timestamp
-    statistics.clients = get_clients(sender)
-    statistics.total_bytes = total_bytes
-    statistics.throughput = (received_bytes / timespan) if (timespan > 0) else None
-    statistics.frame_rate = (1.0 / timespan) if (timespan > 0) else None
-    statistics.timestamp = now
-    if psutil and statistics._process:
-        statistics.cpu = statistics._process.cpu_percent()
-        statistics.memory = statistics._process.memory_info().rss
-    else:
-        statistics.cpu = None
-        statistics.memory = None
+    if timespan > 1.0:
+        received_bytes = total_bytes - statistics.total_bytes
+        statistics.clients = get_clients(sender)
+        statistics.total_bytes = total_bytes
+        statistics.throughput = (received_bytes / timespan) if (timespan > 0) else None
+        statistics.frame_rate = (1.0 / timespan) if (timespan > 0) else None
+        statistics.timestamp = now
+        if psutil and statistics._process:
+            statistics.cpu = statistics._process.cpu_percent()
+            statistics.memory = statistics._process.memory_info().rss
+        else:
+            statistics.cpu = None
+            statistics.memory = None
 
 
 
@@ -106,3 +110,63 @@ def init_statistics(statistics):
     statistics.memory = 0
     statistics.timestamp = time.time()
     statistics._process = psutil.Process(os.getpid())
+
+
+_api_logger = None
+#_api_log_capture_string = None
+_api_log_buffer = None
+
+
+class MyHandler(logging.StreamHandler):
+    def __init__(self):
+        logging.StreamHandler.__init__(self)
+
+    def emit(self, record):
+        #_api_log_buffer.append(self.formatter.format(record))
+        asctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
+        _api_log_buffer.append([asctime, record.name, record.levelname, record.getMessage()])
+
+
+def initialize_api_logger(level = None, maxlen = 1000):
+    global _api_logger, _api_log_buffer
+    _api_logger = logging.getLogger("cam_server")
+    _api_logger.setLevel(level if level else "INFO")
+    _api_log_capture_string = None
+    _api_log_buffer = collections.deque(maxlen=maxlen)
+    handler = MyHandler()
+    handler.setLevel(level if level else "INFO")
+    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    _api_logger.addHandler(handler)
+
+
+def get_api_logs():
+    return _api_log_buffer
+
+
+def register_logs_rest_interface(app, api_root_address):
+
+    @app.get(api_root_address)
+    def get_logs():
+        """
+        Return the list of logs
+        :return:
+        """
+        logs = get_api_logs()
+        response.content_type = 'application/json'
+        logs = list(logs)
+        return {"state": "ok",
+                "status": "Status of available servers.",
+                "logs": list(get_api_logs())
+                }
+
+    @app.get(api_root_address + "/txt")
+    def get_logs_txt():
+        """
+        Return the list of logs
+        :return:
+        """
+        response.content_type = 'text/plain'
+        logs = "\n".join([" - ".join(log) for log in get_api_logs()])
+        return logs
+
+
