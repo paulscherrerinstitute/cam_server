@@ -13,7 +13,7 @@ from cam_server.utils import initialize_api_logger
 _logger = logging.getLogger(__name__)
 
 
-def start_pipeline_server(host, port, config_base, background_base, cam_server_api_address, hostname=None):
+def start_pipeline_server(host, port, config_base, background_base, cam_server_api_address, hostname=None, port_range=None):
 
     # Check if config directory exists
     if not os.path.isdir(config_base):
@@ -31,7 +31,7 @@ def start_pipeline_server(host, port, config_base, background_base, cam_server_a
     config_manager = PipelineConfigManager(config_provider=ConfigFileStorage(config_base))
     background_manager = BackgroundImageManager(background_base)
     pipeline_instance_manager = PipelineInstanceManager(config_manager, background_manager, cam_server_client,
-                                                        hostname=hostname)
+                                                        hostname=hostname, port_range=port_range)
 
     app = bottle.Bottle()
 

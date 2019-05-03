@@ -2,8 +2,8 @@ import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
 from cam_server import config
+import requests
 from bottle import static_file, response
-
 
 _logger = logging.getLogger(__name__)
 
@@ -228,3 +228,66 @@ class ProxyBase:
         if server is not None:
             _logger.info("Stopping %s at %s", instance_name, server.get_address())
             server.stop_instance(instance_name)
+
+
+class ProxyClient(object):
+    def __init__(self, address):
+        """
+        :param address: Address of the cam API, e.g. http://localhost:10000
+        """
+        self.api_address_format = address.rstrip("/") + config.API_PREFIX + config.PROXY_REST_INTERFACE_PREFIX + "%s"
+        self.address = address
+
+    def get_address(self):
+        """
+        Return the REST api endpoint address.
+        """
+        return self.address
+
+    def validate_response(self, server_response):
+        if server_response["state"] != "ok":
+            raise ValueError(server_response.get("status", "Unknown error occurred."))
+        return server_response
+
+    def get_servers_info(self):
+        """
+        Return the info of the server pool of the proxy server.
+        For administrative purposes only.
+        :return: Dictionary  server -> load, instances
+        """
+        rest_endpoint = "/servers"
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+
+        self.validate_response(server_response)
+        ret = {}
+        servers, load, instances = server_response["servers"], server_response["load"], server_response["instances"]
+        for i in range (len(servers)):
+            ret[servers[i]] = {}
+            for k in "load", "instances", "cpu", "memory", "tx", "rx":
+                ret[servers[i]][k] = server_response[k][i]
+        return ret
+
+    def get_status_info(self):
+        """
+        Return instances foer each server in the server pool .
+        For administrative purposes only.
+        :return: Dictionary server -> instances
+        """
+        rest_endpoint = "/status"
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+
+        return self.validate_response(server_response)["servers"]
+
+
+    def get_instances_info(self):
+        """
+        Return the info of all instances in the server pool .
+        For administrative purposes only.
+        :return: Dictionary
+        """
+        rest_endpoint = "/info"
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return self.validate_response(server_response)["info"]["active_instances"]
+
+
+

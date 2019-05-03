@@ -12,13 +12,13 @@ from cam_server.utils import initialize_api_logger
 _logger = logging.getLogger(__name__)
 
 
-def start_camera_worker(host, port, hostname=None):
+def start_camera_worker(host, port, hostname=None, port_range=None):
 
     if hostname:
         _logger.warning("Using custom hostname '%s'." % hostname)
 
     config_manager = CameraConfigManager(config_provider=TransientConfig())
-    camera_instance_manager = CameraInstanceManager(config_manager, hostname=hostname)
+    camera_instance_manager = CameraInstanceManager(config_manager, hostname=hostname, port_range=port_range)
 
     app = bottle.Bottle()
 

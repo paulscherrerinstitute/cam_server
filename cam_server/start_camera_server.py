@@ -13,7 +13,7 @@ from cam_server.utils import initialize_api_logger
 _logger = logging.getLogger(__name__)
 
 
-def start_camera_server(host, port, config_base, hostname=None):
+def start_camera_server(host, port, config_base, hostname=None, port_range=None):
 
     # Check if config directory exists
     if not os.path.isdir(config_base):
@@ -24,7 +24,7 @@ def start_camera_server(host, port, config_base, hostname=None):
         _logger.warning("Using custom hostname '%s'." % hostname)
 
     config_manager = CameraConfigManager(config_provider=ConfigFileStorage(config_base))
-    camera_instance_manager = CameraInstanceManager(config_manager, hostname=hostname)
+    camera_instance_manager = CameraInstanceManager(config_manager, hostname=hostname, port_range=port_range)
 
     app = bottle.Bottle()
 

@@ -153,10 +153,11 @@ def register_logs_rest_interface(app, api_root_address):
         """
         logs = get_api_logs()
         response.content_type = 'application/json'
-        logs = list(logs)
+        log_list = get_api_logs()
+        logs = list(logs) if logs else []
         return {"state": "ok",
-                "status": "Status of available servers.",
-                "logs": list(get_api_logs())
+                "status": "Server logs.",
+                "logs": logs
                 }
 
     @app.get(api_root_address + "/txt")
@@ -166,7 +167,8 @@ def register_logs_rest_interface(app, api_root_address):
         :return:
         """
         response.content_type = 'text/plain'
-        logs = "\n".join([" - ".join(log) for log in get_api_logs()])
+        logs = get_api_logs()
+        logs = ("\n".join([" - ".join(log) for log in get_api_logs()]) ) if logs else ""
         return logs
 
 

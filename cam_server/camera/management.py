@@ -10,11 +10,12 @@ _logger = getLogger(__name__)
 
 
 class CameraInstanceManager(InstanceManager):
-    def __init__(self, config_manager, hostname=None):
+    def __init__(self, config_manager, hostname=None, port_range=None):
         super(CameraInstanceManager, self).__init__()
-
+        if port_range is None:
+            port_range = config.CAMERA_STREAM_PORT_RANGE
         self.config_manager = config_manager
-        self.port_generator = get_port_generator(config.CAMERA_STREAM_PORT_RANGE)
+        self.port_generator = get_port_generator(port_range)
         self.hostname = hostname
 
     def get_camera_list(self):

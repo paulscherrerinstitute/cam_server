@@ -241,7 +241,7 @@ class PipelineTransceiverTest(unittest.TestCase):
                                 "Missing required keys in pipeline output bsread message.")
 
         stop_event.set()
-        thread.join()
+        thread.join(5.0)
 
 
 if __name__ == '__main__':
