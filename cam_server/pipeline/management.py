@@ -165,8 +165,12 @@ class PipelineInstanceManager(InstanceManager):
 
         current_config = pipeline_instance.get_configuration()
 
+        image_background_enable = config_updates.get("image_background_enable")
+        if not image_background_enable:
+            image_background_enable = current_config.get("image_background_enable")
+
         # Check if the background can be loaded.
-        if config_updates.get("image_background_enable"):
+        if image_background_enable:
             image_background = config_updates.get("image_background")
             if image_background:
                 self.background_manager.get_background(image_background)

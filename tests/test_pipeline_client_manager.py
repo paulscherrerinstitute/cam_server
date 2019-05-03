@@ -20,6 +20,7 @@ from cam_server.start_pipeline_worker import start_pipeline_worker
 from cam_server.start_camera_manager import start_camera_manager
 from cam_server.start_pipeline_manager import start_pipeline_manager
 from cam_server.utils import get_host_port_from_stream_address
+from tests import test_cleanup, is_port_available
 
 
 class PipelineClientTest(unittest.TestCase):
@@ -29,6 +30,9 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_port = 8889
         self.cam_proxy_port = 8898
         self.pipeline_proxy_port = 8899
+
+        for port in self.cam_port, self.pipeline_port, self.cam_proxy_port, self.pipeline_proxy_port:
+            print("Port ", port, "avilable: ", is_port_available(port))
 
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         self.cam_config_folder = os.path.join(test_base_dir, "camera_config/")
@@ -63,27 +67,15 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_client = PipelineClient(pipeline_server_proxy_address)
 
         # Give it some time to start.
-        sleep(1)
+        sleep(1.0)  # Give it some time to start.
 
     def tearDown(self):
-        for p in self.cam_process.pid,self.pipeline_process.pid,self.cam_proxy_process.pid,self.pipeline_proxy_process.pid:
-            try:
-                os.kill(p, signal.SIGINT)
-            except:
-                pass
-        for p in self.cam_process,self.pipeline_process,self.cam_proxy_process,self.pipeline_proxy_process:
-            try:
-                p.join()
-            except:
-                pass
-        for f in "testing_config.json",:
-            try:
-                os.remove(os.path.join(self.pipeline_config_folder, f))
-            except:
-                pass
-
-        # Wait for the server to die.
-        sleep(1)
+        test_cleanup(
+            [self.pipeline_client, self.cam_client],
+             [self.pipeline_proxy_process, self.cam_proxy_process, self.pipeline_process, self.cam_process],
+             [
+                 os.path.join(self.pipeline_config_folder, "testing_config.json"),
+             ])
 
     def test_client(self):
         expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3",

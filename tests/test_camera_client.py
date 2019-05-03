@@ -1,6 +1,5 @@
 import base64
 import os
-import signal
 import unittest
 from multiprocessing import Process
 from time import sleep
@@ -13,6 +12,7 @@ from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import get_host_port_from_stream_address
+from tests import test_cleanup
 
 
 class CameraClientTest(unittest.TestCase):
@@ -27,31 +27,17 @@ class CameraClientTest(unittest.TestCase):
         self.process.start()
 
         # Give it some time to start.
-        sleep(0.5)
+        sleep(1.0)
 
         server_address = "http://%s:%s" % (self.host, self.port)
         self.client = CamClient(server_address)
 
     def tearDown(self):
-        try:
-            self.client.stop_all_instances()
-        except:
-            pass
-        try:
-            os.kill(self.process.pid, signal.SIGINT)
-        except:
-            pass
-        for f in "testing_config.json","testing_camera.json":
-            try:
-                os.remove(os.path.join(self.pipeline_config_folder, f))
-            except:
-                pass
-        # Wait for the server to die.
-        sleep(1)
+        test_cleanup([self.client], [self.process], [os.path.join(self.config_folder, "simulation_temp.json")])
+
 
     def test_client(self):
         server_info = self.client.get_server_info()
-
         self.assertIsNot(server_info["active_instances"],
                          "There should be no running instances.")
 

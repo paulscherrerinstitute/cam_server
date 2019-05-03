@@ -15,6 +15,8 @@ from cam_server.start_camera_worker import start_camera_worker
 from cam_server.start_camera_manager import start_camera_manager
 from cam_server.utils import get_host_port_from_stream_address
 
+from tests import test_cleanup
+
 
 class CameraClientProxyTest(unittest.TestCase):
     def setUp(self):
@@ -28,37 +30,28 @@ class CameraClientProxyTest(unittest.TestCase):
 
         self.process_camserver = Process(target=start_camera_worker, args=(self.host, self.cam_server_port))
         self.process_camserver.start()
-        sleep(0.25) # Give it some time to start.
 
 
         self.cam_proxy_host = "0.0.0.0"
 
         self.process_camproxy = Process(target=start_camera_manager,
-                                        args=(self.host, self.cam_proxy_port, cam_server_address , self.config_folder))
+                                        args=(self.host, self.cam_proxy_port, cam_server_address, self.config_folder))
         self.process_camproxy.start()
-        sleep(0.25) # Give it some time to start.
+        sleep(1.0) # Give it some time to start.
 
         server_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
         self.client = CamClient(server_address)
 
     def tearDown(self):
-        self.client.stop_all_instances()
-        for p in self.process_camproxy.pid,self.process_camserver.pid:
-            try:
-                os.kill(p, signal.SIGINT)
-            except:
-                pass
-        for f in "testing_config.json","testing_camera.json":
-            try:
-                os.remove(os.path.join(self.pipeline_config_folder, f))
-            except:
-                pass
-        # Wait for the server to die.
-        sleep(1)
+        test_cleanup([self.client], [self.process_camproxy,self.process_camserver ],
+                     [
+                         os.path.join(self.config_folder, "testing_camera.json"),
+                         os.path.join(self.config_folder, "simulation_temp.json") ,
+                      ])
 
     def test_client(self):
-        server_info = self.client.get_server_info()
 
+        server_info = self.client.get_server_info()
         self.assertIsNot(server_info["active_instances"],
                          "There should be no running instances.")
 

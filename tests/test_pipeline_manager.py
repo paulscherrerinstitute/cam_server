@@ -11,9 +11,10 @@ from cam_server import CamClient, config
 from cam_server.pipeline.configuration import PipelineConfig, PipelineConfigManager, BackgroundImageManager
 from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.start_camera_server import start_camera_server
-from cam_server.utils import collect_background, get_host_port_from_stream_address
+from cam_server.utils import get_host_port_from_stream_address
 from tests.helpers.factory import get_test_pipeline_manager, get_test_pipeline_manager_with_real_cam, \
     MockConfigStorage, MockBackgroundManager, MockCamServerClient
+from tests import test_cleanup
 
 
 class PipelineManagerTest(unittest.TestCase):
@@ -35,22 +36,11 @@ class PipelineManagerTest(unittest.TestCase):
         self.client = CamClient(server_address)
 
     def tearDown(self):
-        self.client.stop_all_instances()
-        try:
-            os.kill(self.process.pid, signal.SIGINT)
-        except:
-            pass
-        try:
-            os.remove(os.path.join(self.config_folder, "testing_camera.json"))
-        except:
-            pass
-
-        try:
-            os.remove(os.path.join(self.background_folder, "white_background.npy"))
-        except:
-            pass
-        # Wait for the server to die.
-        sleep(1)
+        test_cleanup([self.client], [self.process],
+                     [
+                         os.path.join(self.config_folder, "testing_camera.json"),
+                         os.path.join(self.background_folder, "white_background.npy"),
+                     ])
 
     def test_get_pipeline_list(self):
         pipeline_manager = get_test_pipeline_manager()
@@ -127,6 +117,7 @@ class PipelineManagerTest(unittest.TestCase):
 
     def test_collect_background(self):
         instance_manager = get_test_pipeline_manager_with_real_cam()
+        instance_manager.background_manager = BackgroundImageManager(self.background_folder)
 
         pipeline_id = "test_pipeline"
         number_of_images = 10
@@ -146,8 +137,7 @@ class PipelineManagerTest(unittest.TestCase):
             self.assertIsNotNone(data, "This should really not happen anymore.")
 
         camera_name = instance_manager.get_instance(pipeline_id).get_info()["camera_name"]
-        background_id = collect_background(camera_name, pipeline_stream_address, number_of_images,
-                                           instance_manager.background_manager)
+        background_id = instance_manager.collect_background(camera_name, number_of_images)
 
         self.assertTrue(background_id.startswith("simulation"), "Background id not as expected.")
 
@@ -233,6 +223,7 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertDictEqual(pipeline_manager.get_instance(instance_id).get_configuration()["image_slices"],
                              config_updates["image_slices"], "Update was not successful.")
 
+        pipeline_manager.update_instance_config(instance_id, {"image_background_enable": True})
         with self.assertRaisesRegex(ValueError, "Requested background 'non_existing' does not exist."):
             pipeline_manager.update_instance_config(instance_id, {"image_background": "non_existing"})
 
@@ -519,8 +510,8 @@ class PipelineManagerTest(unittest.TestCase):
         instance_id_0, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
         latest_statistics = instance_manager.get_instance(instance_id_0).get_statistics()
 
-        self.assertTrue("n_clients" in latest_statistics)
-        self.assertTrue("input_throughput" in latest_statistics)
+        for stat in "total_bytes", "clients", "throughput", "frame_rate", "pid", "cpu", "memory":
+            self.assertTrue(stat in latest_statistics)
 
         instance_manager.stop_all_instances()
 

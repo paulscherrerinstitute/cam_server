@@ -17,6 +17,7 @@ from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
 from cam_server.utils import get_host_port_from_stream_address
+from tests import test_cleanup
 
 
 class PipelineClientTest(unittest.TestCase):
@@ -44,30 +45,19 @@ class PipelineClientTest(unittest.TestCase):
                                                                             cam_server_address))
         self.pipeline_process.start()
 
+        sleep(1.0)  # Give it some time to start.
         self.cam_client = CamClient(cam_server_address)
         self.pipeline_client = PipelineClient(pipeline_server_address)
 
         # Give it some time to start.
-        sleep(0.5)
 
     def tearDown(self):
-        for p in self.cam_process.pid,self.pipeline_process.pid:
-            try:
-                os.kill(p, signal.SIGINT)
-            except:
-                pass
-        for p in self.cam_process,self.pipeline_process:
-            try:
-                p.join()
-            except:
-                pass
-        for f in "testing_config.json",:
-            try:
-                os.remove(os.path.join(self.pipeline_config_folder, f))
-            except:
-                pass
-        # Wait for the server to die.
-        sleep(1)
+        test_cleanup([self.pipeline_client, self.cam_client ],
+                     [self.cam_process,self.pipeline_process ],
+                     [
+                         os.path.join(self.pipeline_config_folder, "testing_config.json"),
+                     ])
+
 
     def test_client(self):
         expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3",

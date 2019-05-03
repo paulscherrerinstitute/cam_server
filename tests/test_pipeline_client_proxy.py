@@ -3,6 +3,7 @@ import os
 import signal
 import unittest
 import time
+from tests import is_port_available
 
 from multiprocessing import Process
 from time import sleep
@@ -19,6 +20,7 @@ from cam_server.start_pipeline_server import start_pipeline_server
 from cam_server.start_camera_proxy import start_camera_proxy
 from cam_server.start_pipeline_proxy import start_pipeline_proxy
 from cam_server.utils import get_host_port_from_stream_address
+from tests import test_cleanup
 
 
 class PipelineClientTest(unittest.TestCase):
@@ -28,6 +30,9 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_port = 8889
         self.cam_proxy_port = 8898
         self.pipeline_proxy_port = 8899
+
+        for port in self.cam_port, self.pipeline_port, self.cam_proxy_port, self.pipeline_proxy_port:
+            print("Port ", port, "avilable: ", is_port_available(port))
 
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         self.cam_config_folder = os.path.join(test_base_dir, "camera_config/")
@@ -64,27 +69,16 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_client = PipelineClient(pipeline_server_proxy_address)
 
         # Give it some time to start.
-        sleep(1)
+        sleep(1.0)  # Give it some time to start.
 
     def tearDown(self):
-        for p in self.cam_process.pid,self.pipeline_process.pid,self.cam_proxy_process.pid,self.pipeline_proxy_process.pid:
-            try:
-                os.kill(p, signal.SIGINT)
-            except:
-                pass
-        for p in self.cam_process,self.pipeline_process,self.cam_proxy_process,self.pipeline_proxy_process:
-            try:
-                p.join()
-            except:
-                pass
-        for f in "testing_config.json",:
-            try:
-                os.remove(os.path.join(self.pipeline_config_folder, f))
-            except:
-                pass
+        test_cleanup(
+            [self.pipeline_client, self.cam_client],
+             [self.cam_process, self.cam_proxy_process, self.pipeline_process, self.pipeline_proxy_process ],
+             [
+                 os.path.join(self.pipeline_config_folder, "testing_config.json"),
+             ])
 
-        # Wait for the server to die.
-        sleep(1)
 
     def test_client(self):
         expected_pipelines = ["pipeline_example_1", "pipeline_example_2", "pipeline_example_3",

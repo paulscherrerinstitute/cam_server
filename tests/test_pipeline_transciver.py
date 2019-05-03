@@ -15,6 +15,7 @@ from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import processing_pipeline, store_pipeline
 from cam_server.start_camera_server import start_camera_server
 from tests.helpers.factory import MockBackgroundManager
+from tests import test_cleanup
 
 
 class PipelineTransceiverTest(unittest.TestCase):
@@ -35,19 +36,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         self.client = CamClient(self.rest_api_endpoint)
 
     def tearDown(self):
-        self.client.stop_all_instances()
-        sleep(1)
-        try:
-            os.kill(self.process.pid, signal.SIGINT)
-        except:
-            pass
-        try:
-            os.remove(os.path.join(self.config_folder, "testing_camera.json"))
-        except:
-            pass
-
-        # Wait for the server to die.
-        sleep(2)
+        test_cleanup([self.client], [self.process], [os.path.join(self.config_folder, "simulation_temp.json")])
 
     def test_pipeline_with_simulation_camera(self):
         manager = multiprocessing.Manager()

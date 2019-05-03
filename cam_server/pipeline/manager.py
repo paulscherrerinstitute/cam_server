@@ -1,5 +1,6 @@
 import logging
 from cam_server.instance_management.proxy import ProxyBase
+from cam_server.pipeline.configuration import PipelineConfig
 from cam_server import PipelineClient
 
 _logger = logging.getLogger(__name__)
@@ -50,8 +51,16 @@ class Manager(ProxyBase):
 
     def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
         status = self.get_status()
+        # You cannot specify both or none.
+        if bool(pipeline_name) == bool(configuration):
+            raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
+
         if pipeline_name is not None:
             configuration = self.config_manager.get_pipeline_config(pipeline_name)
+        elif configuration is not None:
+            configuration = PipelineConfig.expand_config(configuration)
+            PipelineConfig.validate_pipeline_config(configuration)
+
         server = self.get_server(instance_id, status)
         if server is None:
             server = self.get_server_for_pipeline(pipeline_name, configuration, status)

@@ -9,6 +9,7 @@ from time import sleep
 from cam_server import CamClient, PipelineClient
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
+from tests import test_cleanup
 
 
 class PipelineClientTest(unittest.TestCase):
@@ -42,34 +43,16 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_client = PipelineClient(pipeline_server_address)
 
     def tearDown(self):
-        self.cam_client.stop_all_instances()
-        self.pipeline_client.stop_all_instances()
+        test_cleanup(
+            [self.pipeline_client, self.cam_client],
+             [self.pipeline_process, self.cam_process],
+             [
+                 os.path.join(self.pipeline_config_folder, "testing_config.json"),
+                 os.path.join(self.pipeline_config_folder, "test_pipeline.json"),
+                 os.path.join(self.cam_config_folder, "test_camera.json"),
+                 "testing_dump.h5"
+             ])
 
-        try:
-            os.remove(os.path.join(self.pipeline_config_folder, "testing_config.json"))
-        except:
-            pass
-
-        try:
-            self.cam_client.delete_camera_config("test_camera")
-        except:
-            pass
-
-        try:
-            os.remove("testing_dump.h5")
-        except:
-            pass
-
-        try:
-            self.pipeline_client.delete_pipeline_config("test_pipeline")
-        except:
-            pass
-
-        os.kill(self.cam_process.pid, signal.SIGINT)
-        os.kill(self.pipeline_process.pid, signal.SIGINT)
-
-        # Wait for the server to die.
-        sleep(1)
 
     def test_a_quick_start(self):
         from cam_server import PipelineClient

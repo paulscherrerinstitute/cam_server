@@ -14,6 +14,7 @@ from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_camera_proxy import start_camera_proxy
 from cam_server.utils import get_host_port_from_stream_address
+from tests import test_cleanup
 
 
 class CameraClientProxyTest(unittest.TestCase):
@@ -28,7 +29,6 @@ class CameraClientProxyTest(unittest.TestCase):
 
         self.process_camserver = Process(target=start_camera_server, args=(self.host, self.cam_server_port, self.config_folder))
         self.process_camserver.start()
-        sleep(0.25) # Give it some time to start.
 
 
         self.cam_proxy_host = "0.0.0.0"
@@ -36,25 +36,19 @@ class CameraClientProxyTest(unittest.TestCase):
         self.process_camproxy = Process(target=start_camera_proxy,
                                         args=(self.host, self.cam_proxy_port, cam_server_address , self.config_folder))
         self.process_camproxy.start()
-        sleep(0.25) # Give it some time to start.
 
+        sleep(1.0)  # Give it some time to start.
         server_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
         self.client = CamClient(server_address)
 
+
     def tearDown(self):
         self.client.stop_all_instances()
-        for p in self.process_camproxy.pid,self.process_camserver.pid:
-            try:
-                os.kill(p, signal.SIGINT)
-            except:
-                pass
-        for f in "testing_config.json","testing_camera.json":
-            try:
-                os.remove(os.path.join(self.pipeline_config_folder, f))
-            except:
-                pass
-        # Wait for the server to die.
-        sleep(1)
+        test_cleanup([self.client], [self.process_camserver,self.process_camproxy ],
+                     [
+                         os.path.join(self.config_folder, "testing_camera.json"),
+                         os.path.join(self.config_folder, "simulation_temp.json") ,
+                      ])
 
     def test_client(self):
         server_info = self.client.get_server_info()
@@ -148,6 +142,11 @@ class CameraClientProxyTest(unittest.TestCase):
         instance_info = self.client.get_server_info()["active_instances"]["simulation_temp"]
         self.assertTrue("last_start_time" in instance_info)
         self.assertTrue("statistics" in instance_info)
+
+        camera_config = self.client.get_camera_config("simulation_temp")
+        camera_config["rotate"] = 0
+        self.client.set_camera_config("simulation_temp", camera_config)
+        sleep(0.5)
         # Collect from the pipeline.
         with source(host=camera_host, port=camera_port, mode=SUB) as stream:
             data = stream.receive()

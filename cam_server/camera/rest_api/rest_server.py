@@ -41,7 +41,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         """
         return {"state": "ok",
                 "status": "List of available cameras.",
-                "cameras": instance_manager.get_camera_list()}
+                "cameras": list(instance_manager.get_camera_list())}
 
     @app.get(api_root_address + "/<camera_name>")
     def get_instance_stream(camera_name):

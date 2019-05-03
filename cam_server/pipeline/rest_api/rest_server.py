@@ -40,7 +40,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         """
         return {"state": "ok",
                 "status": "List of available cameras.",
-                "pipelines": instance_manager.get_pipeline_list()}
+                "pipelines": list(instance_manager.get_pipeline_list())}
 
     @app.post(api_root_address)
     def create_pipeline_from_config():

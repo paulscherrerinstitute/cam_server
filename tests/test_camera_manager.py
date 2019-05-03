@@ -232,9 +232,8 @@ class CameraTest(unittest.TestCase):
     def test_statistics(self):
         self.instance_manager.get_instance_stream("simulation")
         latest_statistics = self.instance_manager.get_instance("simulation").get_statistics()
-
-        self.assertTrue("n_clients" in latest_statistics)
-        self.assertTrue("input_throughput" in latest_statistics)
+        for stat in "total_bytes", "clients", "throughput", "frame_rate", "pid", "cpu", "memory":
+            self.assertTrue(stat in latest_statistics)
 
 
 if __name__ == '__main__':

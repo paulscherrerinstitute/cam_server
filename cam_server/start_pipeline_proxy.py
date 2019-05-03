@@ -7,14 +7,14 @@ from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundI
 from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
 from cam_server import config, CamClient, PipelineClient
-from cam_server.instance_management.configuration import ConfigFileStorage
+from cam_server.instance_management.configuration import ConfigFileStorage, get_proxy_config
 from cam_server.pipeline.proxy import Proxy as PipelineProxy
 from cam_server.utils import initialize_api_logger
 
 _logger = logging.getLogger(__name__)
 
 
-def start_pipeline_proxy(host, port, servers, config_base, background_base, cam_server_api_address, hostname=None):
+def start_pipeline_proxy(host, port, server_config, config_base, background_base, cam_server_api_address, hostname=None):
 
 
     # Check if config directory exists
@@ -26,14 +26,7 @@ def start_pipeline_proxy(host, port, servers, config_base, background_base, cam_
         _logger.error("Background image directory '%s' does not exist." % background_base)
         exit(-1)
 
-    sever_pool = []
-    try:
-        servers = [s.strip() for s in servers.split(",")]
-    except:
-        servers = ["http://localhost:8888"]
-
-    for server in servers:
-        sever_pool.append(PipelineClient(server))
+    configuration = get_proxy_config(config_base, server_config)
 
     if hostname:
         _logger.warning("Using custom hostname '%s'." % hostname)
@@ -44,9 +37,11 @@ def start_pipeline_proxy(host, port, servers, config_base, background_base, cam_
 
     app = bottle.Bottle()
 
-    proxy = PipelineProxy(config_manager, background_manager,cam_server_client, sever_pool)
+    proxy = PipelineProxy(config_manager, background_manager,cam_server_client, configuration)
     register_pipeline_rest_interface(app=app, instance_manager=proxy)
     proxy.register_rest_interface(app)
+    proxy.register_management_page(app)
+
     try:
         bottle.run(app=app, host=host, port=port)
     finally:
@@ -59,8 +54,8 @@ def main():
     parser.add_argument("-c", '--cam_server', default="http://0.0.0.0:8898", help="Cam server rest api address.")
     parser.add_argument('-p', '--port', default=8899, help="Server port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
-    parser.add_argument('-s', '--servers', default="http://localhost:8889",
-                        help="Comma-separated list of servers")
+    parser.add_argument('-s', '--servers', default="",
+                        help="Comma-separated list of servers (if not provided, configuration read from servers.json)")
     parser.add_argument('-b', '--base', default=config.DEFAULT_PIPELINE_CONFIG_FOLDER,
                         help="(Pipeline) Configuration base directory")
     parser.add_argument('-g', '--background_base', default=config.DEFAULT_BACKGROUND_CONFIG_FOLDER)
