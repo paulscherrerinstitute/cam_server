@@ -6,6 +6,6 @@
   "cameras": [
    "simulation"
   ],
-  "expanding": true
+  "expanding": false
  }
 }

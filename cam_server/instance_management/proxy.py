@@ -177,6 +177,13 @@ class ProxyBase:
 
     def get_free_server(self, instance_name=None, status=None):
         load = self.get_load(status)
+        for i in range(len(self.server_pool)):
+            name = self.server_pool[i].get_address()
+            try:
+                if self.configuration[name]["expanding"] == False:
+                    load[i] = 1000
+            except:
+                pass
         m = min(load)
         if m >= 1000:
             raise Exception("No available server")

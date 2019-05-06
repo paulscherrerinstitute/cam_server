@@ -68,7 +68,17 @@ class CameraClientProxyTest(unittest.TestCase):
             self.process_pipelineserver.append(process)
             process.start()
 
-        cfg = ",".join(self.pipeline_server_address)
+
+        cfg = """{
+      "http://localhost:8890": {
+      "expanding": true
+     }, "http://localhost:8891": {
+      "cameras": [
+       "simulation3"
+      ],
+      "expanding": false
+     }
+    }"""
 
         self.pipeline_proxy_process = Process(target=start_pipeline_manager, args=(self.host, self.pipeline_proxy_port,
                                                                     cfg,
@@ -94,94 +104,18 @@ class CameraClientProxyTest(unittest.TestCase):
                      [])
 
     def test_manager(self):
-        #Creating instances from name
-        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp")
-        instance_id_2, instance_stream_2 = self.pipeline_client.create_instance_from_name("simulation2_sp")
-        print (instance_id_1, instance_stream_1)
-        print(instance_id_2, instance_stream_2)
-        # Check if streams are alive
-        pipeline_host, pipeline_port = get_host_port_from_stream_address(instance_stream_1)
-        with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
-            data = stream.receive()
-            for key in ["image", "width", "height"]:
-                self.assertIn(key, data.data.data.keys())
-
-        pipeline_host, pipeline_port = get_host_port_from_stream_address(instance_stream_2)
-        with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
-            data = stream.receive()
-            for key in ["image", "width", "height"]:
-                self.assertIn(key, data.data.data.keys())
-
-        #check client
-        server_info = self.cam_proxy_client.get_servers_info()
-        status_info = self.cam_proxy_client.get_status_info()
-        instance_info = self.cam_proxy_client.get_instances_info()
-        #Check if camera streams are equally distributed
-        self.assertEqual(server_info[self.cam_server_address[0]]["load"], 1)
-        self.assertEqual(server_info[self.cam_server_address[1]]["load"], 1)
-
-
-        server_info = self.pipeline_proxy_client.get_servers_info()
-        status_info = self.pipeline_proxy_client.get_status_info()
-        instance_info = self.pipeline_proxy_client.get_instances_info()
-        print(server_info)
-        print(instance_info)
-        #Check if pipeline are equally distributed
-        self.assertEqual(server_info[self.pipeline_server_address[0]]["load"], 1)
-        self.assertEqual(server_info[self.pipeline_server_address[1]]["load"], 1)
-
-        # Check if instance information is available  for each server instance
-        for instance in server_info[self.pipeline_server_address[0]]["instances"]:
-            self.assertIn(instance, instance_info)
-        for instance in server_info[self.pipeline_server_address[1]]["instances"]:
-            self.assertIn(instance, instance_info)
-
-        #Test stopping instances
-        self.pipeline_client.stop_instance(instance_id_1)
-        self.pipeline_client.stop_instance(instance_id_2)
-        server_info = self.pipeline_proxy_client.get_servers_info()
-        self.assertEqual(server_info[self.pipeline_server_address[0]]["load"], 0)
-        self.assertEqual(server_info[self.pipeline_server_address[1]]["load"], 0)
-
-
         #Creating instances from config
         instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_config({"camera_name": "simulation"})
         instance_id_2, instance_stream_2 = self.pipeline_client.create_instance_from_config({"camera_name": "simulation2"})
         print (instance_id_1, instance_stream_1)
         print(instance_id_2, instance_stream_2)
         # Check if streams are alive
-        pipeline_host, pipeline_port = get_host_port_from_stream_address(instance_stream_1)
-        with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
-            data = stream.receive()
-            for key in ["image", "width", "height"]:
-                self.assertIn(key, data.data.data.keys())
 
-        pipeline_host, pipeline_port = get_host_port_from_stream_address(instance_stream_2)
-        with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
-            data = stream.receive()
-            for key in ["image", "width", "height"]:
-                self.assertIn(key, data.data.data.keys())
-        server_info = self.pipeline_proxy_client.get_servers_info()
-        status_info = self.pipeline_proxy_client.get_status_info()
-        instance_info = self.pipeline_proxy_client.get_instances_info()
-        print(server_info)
-        print(instance_info)
+        server_info = self.cam_proxy_client.get_servers_info()
         #Check if pipeline are equally distributed
-        self.assertEqual(server_info[self.pipeline_server_address[0]]["load"], 1)
-        self.assertEqual(server_info[self.pipeline_server_address[1]]["load"], 1)
-
-        # Check if instance information is available  for each server instance
-        for instance in server_info[self.pipeline_server_address[0]]["instances"]:
-            self.assertIn(instance, instance_info)
-        for instance in server_info[self.pipeline_server_address[1]]["instances"]:
-            self.assertIn(instance, instance_info)
-
-        #Test stopping instances
-        self.pipeline_client.stop_instance(instance_id_1)
-        self.pipeline_client.stop_instance(instance_id_2)
-        server_info = self.pipeline_proxy_client.get_servers_info()
-        self.assertEqual(server_info[self.pipeline_server_address[0]]["load"], 0)
+        self.assertEqual(server_info[self.pipeline_server_address[0]]["load"], 2)
         self.assertEqual(server_info[self.pipeline_server_address[1]]["load"], 0)
+
 
 if __name__ == '__main__':
     unittest.main()
