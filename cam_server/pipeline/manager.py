@@ -61,7 +61,9 @@ class Manager(ProxyBase):
             configuration = PipelineConfig.expand_config(configuration)
             PipelineConfig.validate_pipeline_config(configuration)
 
-        server = self.get_server(instance_id, status)
+        server = None
+        if instance_id is not None:
+            server = self.get_server(instance_id, status)
         if server is None:
             server = self.get_server_for_pipeline(pipeline_name, configuration, status)
 

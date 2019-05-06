@@ -31,6 +31,10 @@ class CameraClientProxyTest(unittest.TestCase):
         self.cam_server_address = []
         self.process_camserver = []
         port_range = config.CAMERA_STREAM_PORT_RANGE
+
+        for port in self.cam_server_ports:
+            print(port, is_port_available(port))
+
         for p in self.cam_server_ports:
             port_range = [port_range[0]+10000, port_range[1]+10000]
             self.cam_server_address.append("http://%s:%s" % (self.host, p))
@@ -43,8 +47,6 @@ class CameraClientProxyTest(unittest.TestCase):
                                         args=(self.host, self.cam_proxy_port, ",".join(self.cam_server_address), self.config_folder))
         self.process_camproxy.start()
         sleep(1.0) # Give it some time to start.
-        for port in self.cam_server_ports:
-            print(port, is_port_available(port))
         server_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
         self.client = CamClient(server_address)
 
