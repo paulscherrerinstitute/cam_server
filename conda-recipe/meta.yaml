@@ -22,6 +22,7 @@ requirements:
         - pyepics
         - matplotlib
         - pillow
+        - psutil
 
 build:
   entry_points:
