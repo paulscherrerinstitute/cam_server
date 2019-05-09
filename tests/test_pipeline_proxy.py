@@ -203,5 +203,36 @@ class CameraClientProxyTest(unittest.TestCase):
         self.assertEqual(self.pipeline_proxy_client.get_version(), __VERSION__)
         self.assertEqual(self.pipeline_proxy_client.get_version(), __VERSION__)
 
+    """
+    def test_persisted_config(self):
+        cfg = self.pipeline_proxy_client.get_config()
+        #Server Config
+        self.assertEqual(cfg, {
+             "http://localhost:8889": {
+              "instances": [
+               "simulation_sp"
+              ],
+              "cameras": [
+               "simulation"
+              ],
+              "expanding": True
+             }
+            })
+        cfg["http://localhost:8889"]["expanding"] = False
+
+        self.pipeline_proxy_client.set_config(cfg)
+        self.assertEqual(self.pipeline_proxy_client.get_config(), {
+            "http://localhost:8889": {
+                "instances": [
+                    "simulation_sp"
+                ],
+                "cameras": [
+                    "simulation"
+                ],
+                "expanding": False
+            }
+        })
+    """
+
 if __name__ == '__main__':
     unittest.main()

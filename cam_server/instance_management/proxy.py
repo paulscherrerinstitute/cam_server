@@ -114,12 +114,13 @@ class ProxyBase:
             """
             new_config = request.json
             _logger.info("Setting proxy config: %s", new_config)
+            config_str = json.dumps(new_config, sort_keys=True, indent=4,) #Check if can serialize first
 
             self.configuration = new_config
 
             if self.config_file:
                 with open(self.config_file, "w") as text_file:
-                    text_file.write(new_config)
+                    text_file.write(config_str)
             return {"state": "ok",
                     "status": "Proxy configuration  saved.",
                     "config": self.configuration}

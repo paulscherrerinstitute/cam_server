@@ -1,11 +1,11 @@
 {
- "http://localhost:8889": {
-  "instances": [
-   "simulation_sp"
-  ],
-  "cameras": [
-   "simulation"
-  ],
-  "expanding": true
- }
+    "http://localhost:8889": {
+        "cameras": [
+            "simulation"
+        ],
+        "expanding": true,
+        "instances": [
+            "simulation_sp"
+        ]
+    }
 }

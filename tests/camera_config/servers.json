@@ -1,8 +1,8 @@
 {
- "http://localhost:8888": {
-  "instances": [
-   "simulation"
-  ],
-  "expanding": true
- }
+    "http://localhost:8888": {
+        "expanding": true,
+        "instances": [
+            "simulation"
+        ]
+    }
 }

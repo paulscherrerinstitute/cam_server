@@ -103,5 +103,31 @@ class CameraClientProxyTest(unittest.TestCase):
         self.assertEqual(server_info[self.cam_server_address[0]]["load"], 2)
         self.assertEqual(server_info[self.cam_server_address[1]]["load"], 0)
 
+    """
+    def test_persisted_config(self):
+        stream_address_1 = self.client.get_instance_stream("simulation")
+        cfg = self.proxy_client.get_config()
+        #Server Config
+        self.assertEqual(self.proxy_client.get_config(), {
+             "http://localhost:8888": {
+              "instances": [
+               "simulation"
+              ],
+              "expanding": True
+             }
+            })
+        cfg["http://localhost:8888"]["expanding"] = False
+
+        self.proxy_client.set_config(cfg)
+        self.assertEqual(self.proxy_client.get_config(), {
+             "http://localhost:8888": {
+              "instances": [
+               "simulation"
+              ],
+              "expanding": False
+             }
+            })
+    """
+
 if __name__ == '__main__':
     unittest.main()
