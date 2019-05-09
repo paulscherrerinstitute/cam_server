@@ -48,7 +48,7 @@ class ProxyBase:
                     "load":  self.get_load(status),
                     "instances": instances
                     }
-            for key in ["cpu", "memory", "tx", "rx"]:
+            for key in ["version", "cpu", "memory", "tx", "rx"]:
                 ret[key] = [(info[server].get(key) if info[server] else None) for server in info] if info else []
             return ret
 
@@ -343,10 +343,10 @@ class ProxyClient(object):
 
         validate_response(server_response)
         ret = {}
-        servers, load, instances = server_response["servers"], server_response["load"], server_response["instances"]
+        servers = server_response["servers"]
         for i in range (len(servers)):
             ret[servers[i]] = {}
-            for k in "load", "instances", "cpu", "memory", "tx", "rx":
+            for k in "version", "load", "instances", "cpu", "memory", "tx", "rx":
                 ret[servers[i]][k] = server_response[k][i]
         return ret
 

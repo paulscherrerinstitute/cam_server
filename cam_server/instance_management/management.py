@@ -1,6 +1,7 @@
 import multiprocessing
 import time
 from logging import getLogger
+from cam_server import __VERSION__
 
 from epics.multiproc import CAProcess as Process
 
@@ -26,7 +27,8 @@ class InstanceManager(object):
         Return the instance manager info.
         :return: Dictionary with the info.
         """
-        info = {"active_instances": dict((instance.get_instance_id(), instance.get_info())
+        info = { "version": __VERSION__,
+                 "active_instances": dict((instance.get_instance_id(), instance.get_info())
                                          for instance in self.instances.values() if instance.is_running())}
 
         if psutil:

@@ -146,6 +146,7 @@
 
     function getServers() {
         $.get(base + 'servers', function (data) {
+            var version = data["version"]
             var servers = data["servers"]
             var load = data["load"]
             var cpu = data["cpu"]
@@ -161,7 +162,7 @@
                     load[i] = "off"
                 }
                 if (getRows(table) <= i){
-                    var row = appendTableRow(table, [servers[i], load[i],
+                    var row = appendTableRow(table, [servers[i], version[i], load[i],
                         formatNum(cpu[i]), formatNum(memory[i]), formatNum(tx[i]), formatNum(rx[i]), instances[i]])
                     var callback = 'onclick="showLogs(\'' + servers[i]+ '\')"'
                     row.append($('<td align="center"><button ' + callback + '>Logs</button></td>'))
@@ -169,13 +170,14 @@
                     row.append($('<td align="center"><button ' + callback + '>Stop</button></td>'))
                 } else {
 
-                    setTableCell(servers[i], "servers_table", i, 0)
-                    setTableCell(load[i], "servers_table", i, 1)
-                    setTableCell(formatNum(cpu[i]), "servers_table", i, 2)
-                    setTableCell(formatNum(memory[i]), "servers_table", i, 3)
-                    setTableCell(formatNum(tx[i]), "servers_table", i, 4)
-                    setTableCell(formatNum(rx[i]), "servers_table", i, 5)
-                    setTableCell(instances[i], "servers_table", i, 6)
+                    setTableCell(servers[i] , "servers_table", i, 0)
+                    setTableCell(version[i] , "servers_table", i, 1)
+                    setTableCell(load[i], "servers_table", i, 2)
+                    setTableCell(formatNum(cpu[i]), "servers_table", i, 3)
+                    setTableCell(formatNum(memory[i]), "servers_table", i, 4)
+                    setTableCell(formatNum(tx[i]), "servers_table", i, 5)
+                    setTableCell(formatNum(rx[i]), "servers_table", i, 6)
+                    setTableCell(instances[i], "servers_table", i, 7)
                 }
             }
         }).error(function (xhr, textStatus, errorThrown) {
@@ -307,7 +309,8 @@ Servers <input type="button" value="Manager Logs" style="float: right;" onclick=
 <table id="servers_table"  border="1" width="100%" >
   <thead>
     <tr>
-      <th width="23%">Host</th>
+      <th width="20%">Host</th>
+      <th width="3%">Ver</th>
       <th width="1%">Load</th>
       <th width="1%">CPU</th>
       <th width="1%">Mem</th>
