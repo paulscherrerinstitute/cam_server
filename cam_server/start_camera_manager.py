@@ -5,7 +5,7 @@ import bottle
 
 from cam_server import config
 from cam_server.camera.configuration import CameraConfigManager
-from cam_server.instance_management.configuration import ConfigFileStorage, get_proxy_config
+from cam_server.instance_management.configuration import ConfigFileStorage
 from cam_server.camera.rest_api.rest_server import register_rest_interface as register_camera_rest_interface
 from cam_server.camera.manager import Manager as CameraManager
 from cam_server.utils import initialize_api_logger
@@ -18,7 +18,6 @@ def start_camera_manager(host, port, server_config, config_base, hostname=None):
         _logger.error("Configuration directory '%s' does not exist." % config_base)
         exit(-1)
 
-    configuration = get_proxy_config(config_base, server_config)
 
     if hostname:
         _logger.warning("Using custom hostname '%s'." % hostname)
@@ -27,7 +26,7 @@ def start_camera_manager(host, port, server_config, config_base, hostname=None):
 
     app = bottle.Bottle()
 
-    proxy = CameraManager(config_manager, configuration)
+    proxy = CameraManager(config_manager, server_config)
     register_camera_rest_interface(app=app, instance_manager=proxy)
     proxy.register_rest_interface(app)
     proxy.register_management_page(app)

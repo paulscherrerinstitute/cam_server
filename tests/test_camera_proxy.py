@@ -86,5 +86,22 @@ class CameraClientProxyTest(unittest.TestCase):
             self.assertIn(instance, instance_info)
         for instance in server_info[self.cam_server_address[1]]["instances"]:
             self.assertIn(instance, instance_info)
+        self.client.stop_all_instances()
+
+        #Server Config
+        self.assertEqual(self.proxy_client.get_config(), {'http://0.0.0.0:8880': {'expanding': True}, 'http://0.0.0.0:8881': {'expanding': True}})
+        self.proxy_client.set_config({'http://0.0.0.0:8880': {'expanding': True}, 'http://0.0.0.0:8881': {"instances":["DUMMY"], 'expanding': False}})
+
+        stream_address_1 = self.client.get_instance_stream("simulation")
+        stream_address_2 = self.client.get_instance_stream("simulation2")
+        #Check if streams are alive
+        camera_host, camera_port = get_host_port_from_stream_address(stream_address_1)
+        camera_host, camera_port = get_host_port_from_stream_address(stream_address_2)
+        server_info = self.proxy_client.get_servers_info()
+        status_info = self.proxy_client.get_status_info()
+        instance_info = self.proxy_client.get_instances_info()
+        self.assertEqual(server_info[self.cam_server_address[0]]["load"], 2)
+        self.assertEqual(server_info[self.cam_server_address[1]]["load"], 0)
+
 if __name__ == '__main__':
     unittest.main()

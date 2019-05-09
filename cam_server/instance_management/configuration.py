@@ -159,19 +159,3 @@ class TransientConfig(object):
                     "configured": configured}
     """
 
-
-def get_proxy_config(config_base, config_str):
-    # Server config in JSON file
-    if not config_str:
-        with open(config_base + "/servers.json") as data_file:
-            configuration = json.load(data_file)
-    else:
-        config_str = config_str.strip()
-        # json
-        if config_str.startswith("{"):
-            configuration = json.loads(config_str)
-        else:
-            configuration = {}
-            for server in [s.strip() for s in config_str.split(",")]:
-                configuration[server] = {"expanding": True}
-    return configuration

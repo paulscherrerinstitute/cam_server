@@ -183,5 +183,18 @@ class CameraClientProxyTest(unittest.TestCase):
         self.assertEqual(server_info[self.pipeline_server_address[0]]["load"], 0)
         self.assertEqual(server_info[self.pipeline_server_address[1]]["load"], 0)
 
+        #Server Config
+        self.assertEqual(self.pipeline_proxy_client.get_config(), {'http://0.0.0.0:8890': {'expanding': True}, 'http://0.0.0.0:8891': {'expanding': True}})
+        self.pipeline_proxy_client.set_config({'http://0.0.0.0:8890': {'expanding': True}, 'http://0.0.0.0:8891': {"instances":["DUMMY"], 'expanding': False}})
+
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_config({"camera_name": "simulation"})
+        instance_id_2, instance_stream_2 = self.pipeline_client.create_instance_from_config({"camera_name": "simulation2"})
+        #Check if streams are alive
+        pipeline_host, pipeline_port = get_host_port_from_stream_address(instance_stream_1)
+        pipeline_host, pipeline_port = get_host_port_from_stream_address(instance_stream_2)
+        server_info = self.pipeline_proxy_client.get_servers_info()
+        self.assertEqual(server_info[self.pipeline_server_address[0]]["load"], 2)
+        self.assertEqual(server_info[self.pipeline_server_address[1]]["load"], 0)
+
 if __name__ == '__main__':
     unittest.main()

@@ -6,7 +6,7 @@ import bottle
 from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
 from cam_server import config, CamClient
-from cam_server.instance_management.configuration import ConfigFileStorage, get_proxy_config
+from cam_server.instance_management.configuration import ConfigFileStorage
 from cam_server.pipeline.manager import Manager as PipelineManager
 from cam_server.utils import initialize_api_logger
 
@@ -25,8 +25,6 @@ def start_pipeline_manager(host, port, server_config, config_base, background_ba
         _logger.error("Background image directory '%s' does not exist." % background_base)
         exit(-1)
 
-    configuration = get_proxy_config(config_base, server_config)
-
     if hostname:
         _logger.warning("Using custom hostname '%s'." % hostname)
     cam_server_client = CamClient(cam_server_api_address)
@@ -35,7 +33,7 @@ def start_pipeline_manager(host, port, server_config, config_base, background_ba
 
     app = bottle.Bottle()
 
-    proxy = PipelineManager(config_manager, background_manager,cam_server_client, configuration)
+    proxy = PipelineManager(config_manager, background_manager,cam_server_client, server_config)
     register_pipeline_rest_interface(app=app, instance_manager=proxy)
     proxy.register_rest_interface(app)
     proxy.register_management_page(app)
