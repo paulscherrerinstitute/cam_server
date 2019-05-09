@@ -2,7 +2,8 @@ import logging
 import os
 import json
 from concurrent.futures import ThreadPoolExecutor
-from cam_server import config
+from cam_server import config, __VERSION__
+from cam_server.instance_management.rest_api import validate_response
 import requests
 from bottle import static_file, request, response
 
@@ -122,6 +123,17 @@ class ProxyBase:
             return {"state": "ok",
                     "status": "Proxy configuration  saved.",
                     "config": self.configuration}
+
+        @app.get(api_root_address + '/version')
+        def get_version():
+            """
+            Get proxy config.
+            :return: Configuration.
+            """
+
+            return {"state": "ok",
+                    "status": "Version",
+                    "version":  __VERSION__}
 
     def _get_root(self):
         return os.path.dirname(__file__)
@@ -320,11 +332,6 @@ class ProxyClient(object):
         """
         return self.address
 
-    def validate_response(self, server_response):
-        if server_response["state"] != "ok":
-            raise ValueError(server_response.get("status", "Unknown error occurred."))
-        return server_response
-
     def get_servers_info(self):
         """
         Return the info of the server pool of the proxy server.
@@ -334,7 +341,7 @@ class ProxyClient(object):
         rest_endpoint = "/servers"
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
 
-        self.validate_response(server_response)
+        validate_response(server_response)
         ret = {}
         servers, load, instances = server_response["servers"], server_response["load"], server_response["instances"]
         for i in range (len(servers)):
@@ -352,7 +359,7 @@ class ProxyClient(object):
         rest_endpoint = "/status"
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
 
-        return self.validate_response(server_response)["servers"]
+        return validate_response(server_response)["servers"]
 
 
     def get_instances_info(self):
@@ -363,7 +370,7 @@ class ProxyClient(object):
         """
         rest_endpoint = "/info"
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return self.validate_response(server_response)["info"]["active_instances"]
+        return validate_response(server_response)["info"]["active_instances"]
 
     def get_config(self):
         """
@@ -373,7 +380,7 @@ class ProxyClient(object):
         rest_endpoint = "/config"
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return self.validate_response(server_response)["config"]
+        return validate_response(server_response)["config"]
 
     def set_config(self, configuration):
         """
@@ -384,4 +391,14 @@ class ProxyClient(object):
         rest_endpoint = "/config"
 
         server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
-        return self.validate_response(server_response)["config"]
+        return validate_response(server_response)["config"]
+
+    def get_version(self):
+        """
+        Return the software version.
+        :return: Version.
+        """
+        rest_endpoint = "/version"
+
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["version"]

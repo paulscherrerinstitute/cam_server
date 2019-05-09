@@ -4,13 +4,8 @@ from bsread import source, SUB
 
 from cam_server import config
 from cam_server.utils import get_host_port_from_stream_address
+from cam_server.instance_management.rest_api import validate_response
 
-
-def validate_response(server_response):
-    if server_response["state"] != "ok":
-        raise ValueError(server_response.get("status", "Unknown error occurred."))
-
-    return server_response
 
 
 class PipelineClient(object):
@@ -294,3 +289,13 @@ class PipelineClient(object):
         data = pickle.dumps(image_bytes, protocol=0)
         server_response = requests.put(self.api_address_format % rest_endpoint, data=data).json()
         validate_response(server_response)
+
+    def get_version(self):
+        """
+        Return the software version.
+        :return: Version.
+        """
+        rest_endpoint = "/version"
+
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["version"]

@@ -1,4 +1,4 @@
-
+from cam_server import __VERSION__
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -41,3 +41,21 @@ def register_rest_interface(app, instance_manager, api_root_address):
 
         return {"state": "ok",
                 "status": "Instance '%s' stopped." % instance_name}
+
+    @app.get(api_root_address + '/version')
+    def get_version():
+        """
+        Get proxy config.
+        :return: Configuration.
+        """
+
+        return {"state": "ok",
+                "status": "Version",
+                "version":  __VERSION__}
+
+
+def validate_response(server_response):
+    if server_response["state"] != "ok":
+        raise ValueError(server_response.get("status", "Unknown error occurred."))
+
+    return server_response

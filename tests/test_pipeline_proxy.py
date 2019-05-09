@@ -8,7 +8,7 @@ from time import sleep
 import numpy
 from bsread import source, SUB
 
-from cam_server import config
+from cam_server import config, __VERSION__
 from cam_server import CamClient, PipelineClient
 from cam_server.instance_management.proxy import ProxyClient
 from cam_server.camera.configuration import CameraConfig
@@ -195,6 +195,13 @@ class CameraClientProxyTest(unittest.TestCase):
         server_info = self.pipeline_proxy_client.get_servers_info()
         self.assertEqual(server_info[self.pipeline_server_address[0]]["load"], 2)
         self.assertEqual(server_info[self.pipeline_server_address[1]]["load"], 0)
+
+
+        #Version
+        self.assertEqual(self.cam_client.get_version(), __VERSION__)
+        self.assertEqual(self.pipeline_client.get_version(), __VERSION__)
+        self.assertEqual(self.pipeline_proxy_client.get_version(), __VERSION__)
+        self.assertEqual(self.pipeline_proxy_client.get_version(), __VERSION__)
 
 if __name__ == '__main__':
     unittest.main()

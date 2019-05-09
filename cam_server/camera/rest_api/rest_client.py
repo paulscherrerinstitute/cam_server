@@ -1,13 +1,7 @@
 import requests
 
+from cam_server.instance_management.rest_api import validate_response
 from cam_server import config
-
-
-def validate_response(server_response):
-    if server_response["state"] != "ok":
-        raise ValueError(server_response.get("status", "Unknown error occurred."))
-
-    return server_response
 
 
 class CamClient(object):
@@ -155,3 +149,13 @@ class CamClient(object):
 
         server_response = requests.delete(self.api_address_format % rest_endpoint).json()
         validate_response(server_response)
+
+    def get_version(self):
+        """
+        Return the software version.
+        :return: Version.
+        """
+        rest_endpoint = "/version"
+
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["version"]
