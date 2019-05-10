@@ -9,8 +9,7 @@ import numpy
 from bsread import source, SUB
 
 from cam_server import config
-from cam_server import CamClient, PipelineClient
-from cam_server.instance_management.proxy import ProxyClient
+from cam_server import CamClient, PipelineClient, ProxyClient
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.start_camera_worker import start_camera_worker
