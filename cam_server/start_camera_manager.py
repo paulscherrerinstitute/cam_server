@@ -13,14 +13,10 @@ from cam_server.utils import initialize_api_logger
 _logger = logging.getLogger(__name__)
 
 
-def start_camera_manager(host, port, server_config, config_base, hostname=None):
+def start_camera_manager(host, port, server_config, config_base):
     if not os.path.isdir(config_base):
         _logger.error("Configuration directory '%s' does not exist." % config_base)
         exit(-1)
-
-
-    if hostname:
-        _logger.warning("Using custom hostname '%s'." % hostname)
 
     config_manager = CameraConfigManager(config_provider=ConfigFileStorage(config_base))
 
@@ -46,7 +42,6 @@ def main():
                         help="Comma-separated list of servers (if not provided, configuration read from servers.json)")
     parser.add_argument('-b', '--base', default=config.DEFAULT_CAMERA_CONFIG_FOLDER,
                         help="(Camera) Configuration base directory")
-    parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
@@ -54,7 +49,7 @@ def main():
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
     initialize_api_logger(arguments.log_level)
-    start_camera_manager(arguments.interface, arguments.port, arguments.servers, arguments.base, arguments.hostname)
+    start_camera_manager(arguments.interface, arguments.port, arguments.servers, arguments.base)
 
 
 if __name__ == "__main__":

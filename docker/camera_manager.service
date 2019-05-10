@@ -1,0 +1,16 @@
+[Unit]
+Description=camera_manager service
+After=docker.service
+Requires=docker.service
+
+[Install]
+WantedBy=default.target
+
+[Service]
+TimeoutStartSec=0
+ExecStartPre=-/usr/bin/docker kill camera_manager
+ExecStartPre=-/usr/bin/docker rm camera_manager
+ExecStartPre=/usr/bin/docker pull paulscherrerinstitute/cam_server
+ExecStart=/usr/bin/docker run --name camera_manager --env-file /cam_server_configuration/camera_environment -v /cam_server_configuration/configuration:/configuration --net=host paulscherrerinstitute/cam_server camera_manager -b /configuration/camera_config --log_level=INFO
+ExecStop=/usr/bin/docker stop camera_manager
+Restart=always
