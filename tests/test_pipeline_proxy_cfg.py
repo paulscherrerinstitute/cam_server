@@ -30,7 +30,7 @@ class CameraClientProxyTest(unittest.TestCase):
         self.background_config_folder = os.path.join(test_base_dir, "background_config/")
         self.temp_folder = os.path.join(test_base_dir, "temp/")
 
-        self.host = "0.0.0.0"
+        self.host = "localhost"
         self.cam_server_ports = [8880, 8881]
         self.cam_proxy_port = 8898
         self.pipeline_server_ports = [8890, 8891]
@@ -87,7 +87,7 @@ class CameraClientProxyTest(unittest.TestCase):
                                                                     cam_server_proxy_address))
         self.pipeline_proxy_process.start()
 
-        sleep(1.0) # Give it some time to start.
+        sleep(1.0)  # Give it some time to start.
 
         cam_server_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
         self.cam_client = CamClient(cam_server_address)
@@ -107,11 +107,9 @@ class CameraClientProxyTest(unittest.TestCase):
         #Creating instances from config
         instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_config({"camera_name": "simulation"})
         instance_id_2, instance_stream_2 = self.pipeline_client.create_instance_from_config({"camera_name": "simulation2"})
-        print (instance_id_1, instance_stream_1)
-        print(instance_id_2, instance_stream_2)
         # Check if streams are alive
 
-        server_info = self.cam_proxy_client.get_servers_info()
+        server_info = self.pipeline_proxy_client.get_servers_info()
         #Check if pipeline are equally distributed
         self.assertEqual(server_info[self.pipeline_server_address[0]]["load"], 2)
         self.assertEqual(server_info[self.pipeline_server_address[1]]["load"], 0)
