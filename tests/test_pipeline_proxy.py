@@ -31,9 +31,9 @@ class CameraClientProxyTest(unittest.TestCase):
 
         self.host = "0.0.0.0"
         self.cam_server_ports = [8880, 8881]
-        self.cam_proxy_port = 8898
+        self.cam_manager_port = 8888
         self.pipeline_server_ports = [8890, 8891]
-        self.pipeline_proxy_port = 8899
+        self.pipeline_manager_port = 8889
 
         self.cam_server_address = []
         self.process_camserver = []
@@ -47,11 +47,11 @@ class CameraClientProxyTest(unittest.TestCase):
         self.cam_proxy_host = "0.0.0.0"
 
         self.process_camproxy = Process(target=start_camera_manager,
-                                        args=(self.host, self.cam_proxy_port, ",".join(self.cam_server_address),
+                                        args=(self.host, self.cam_manager_port, ",".join(self.cam_server_address),
                                               self.cam_config_folder))
         self.process_camproxy.start()
-        cam_server_proxy_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
-        pipeline_server_proxy_address = "http://%s:%s" % (self.host, self.pipeline_proxy_port)
+        cam_server_proxy_address = "http://%s:%s" % (self.host, self.cam_manager_port)
+        pipeline_server_proxy_address = "http://%s:%s" % (self.host, self.pipeline_manager_port)
 
         self.pipeline_server_address = []
         self.process_pipelineserver = []
@@ -69,7 +69,7 @@ class CameraClientProxyTest(unittest.TestCase):
 
         cfg = ",".join(self.pipeline_server_address)
 
-        self.pipeline_proxy_process = Process(target=start_pipeline_manager, args=(self.host, self.pipeline_proxy_port,
+        self.pipeline_proxy_process = Process(target=start_pipeline_manager, args=(self.host, self.pipeline_manager_port,
                                                                     cfg,
                                                                     self.pipeline_config_folder,
                                                                     self.background_config_folder,
@@ -78,9 +78,9 @@ class CameraClientProxyTest(unittest.TestCase):
 
         sleep(1.0) # Give it some time to start.
 
-        cam_server_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
+        cam_server_address = "http://%s:%s" % (self.host, self.cam_manager_port)
         self.cam_client = CamClient(cam_server_address)
-        pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_proxy_port)
+        pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_manager_port)
         self.pipeline_client = PipelineClient(pipeline_server_address)
 
         self.cam_proxy_client = ProxyClient(cam_server_address)

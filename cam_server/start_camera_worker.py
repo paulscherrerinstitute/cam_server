@@ -32,7 +32,7 @@ def start_camera_worker(host, port, hostname=None, port_range=None):
 
 def main():
     parser = argparse.ArgumentParser(description='Camera acquisition server')
-    parser.add_argument('-p', '--port', default=8888, help="Server cam_port")
+    parser.add_argument('-p', '--port', default=8880, help="Server cam_port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
     parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,

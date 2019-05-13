@@ -44,8 +44,8 @@ def start_pipeline_manager(host, port, server_config, config_base, background_ba
 
 def main():
     parser = argparse.ArgumentParser(description='Pipeline processing server')
-    parser.add_argument("-c", '--cam_server', default="http://0.0.0.0:8898", help="Cam server rest api address.")
-    parser.add_argument('-p', '--port', default=8899, help="Server port")
+    parser.add_argument("-c", '--cam_server', default="http://0.0.0.0:8888", help="Cam server rest api address.")
+    parser.add_argument('-p', '--port', default=8889, help="Server port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
     parser.add_argument('-s', '--servers', default="",
                         help="Comma-separated list of servers (if not provided, configuration read from servers.json)")

@@ -26,12 +26,12 @@ from tests import test_cleanup, is_port_available
 class PipelineClientTest(unittest.TestCase):
     def setUp(self):
         self.host = "0.0.0.0"
-        self.cam_port = 8888
-        self.pipeline_port = 8889
-        self.cam_proxy_port = 8898
-        self.pipeline_proxy_port = 8899
+        self.cam_port = 8880
+        self.pipeline_port = 8881
+        self.cam_manager_port = 8888
+        self.pipeline_manager_port = 8889
 
-        for port in self.cam_port, self.pipeline_port, self.cam_proxy_port, self.pipeline_proxy_port:
+        for port in self.cam_port, self.pipeline_port, self.cam_manager_port, self.pipeline_manager_port:
             print("Port ", port, "avilable: ", is_port_available(port))
 
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -42,8 +42,8 @@ class PipelineClientTest(unittest.TestCase):
 
         cam_server_address = "http://%s:%s" % (self.host, self.cam_port)
         pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_port)
-        cam_server_proxy_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
-        pipeline_server_proxy_address = "http://%s:%s" % (self.host, self.pipeline_proxy_port)
+        cam_server_proxy_address = "http://%s:%s" % (self.host, self.cam_manager_port)
+        pipeline_server_proxy_address = "http://%s:%s" % (self.host, self.pipeline_manager_port)
 
         self.cam_process = Process(target=start_camera_worker, args=(self.host, self.cam_port))
         self.cam_process.start()
@@ -53,11 +53,11 @@ class PipelineClientTest(unittest.TestCase):
                                                                             cam_server_proxy_address))
         self.pipeline_process.start()
 
-        self.cam_proxy_process =Process(target=start_camera_manager, args=(self.host, self.cam_proxy_port,
+        self.cam_proxy_process =Process(target=start_camera_manager, args=(self.host, self.cam_manager_port,
                                                 cam_server_address, self.cam_config_folder))
         self.cam_proxy_process.start()
 
-        self.pipeline_proxy_process = Process(target=start_pipeline_manager, args=(self.host, self.pipeline_proxy_port,
+        self.pipeline_proxy_process = Process(target=start_pipeline_manager, args=(self.host, self.pipeline_manager_port,
                                                                     pipeline_server_address,
                                                                     self.pipeline_config_folder,
                                                                     self.background_config_folder,

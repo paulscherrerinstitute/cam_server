@@ -26,7 +26,7 @@ class CameraClientProxyTest(unittest.TestCase):
 
         self.host = "0.0.0.0"
         self.cam_server_ports = [8880, 8881]
-        self.cam_proxy_port = 8898
+        self.cam_manager_port = 8888
         self.cam_server_address = []
         self.process_camserver = []
         port_range = config.CAMERA_STREAM_PORT_RANGE
@@ -43,10 +43,10 @@ class CameraClientProxyTest(unittest.TestCase):
 
         self.cam_proxy_host = "0.0.0.0"
         self.process_camproxy = Process(target=start_camera_manager,
-                                        args=(self.host, self.cam_proxy_port, ",".join(self.cam_server_address), self.config_folder))
+                                        args=(self.host, self.cam_manager_port, ",".join(self.cam_server_address), self.config_folder))
         self.process_camproxy.start()
         sleep(1.0) # Give it some time to start.
-        server_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
+        server_address = "http://%s:%s" % (self.host, self.cam_manager_port)
         self.client = CamClient(server_address)
 
         self.proxy_client = ProxyClient(server_address)

@@ -36,7 +36,7 @@ def start_camera_manager(host, port, server_config, config_base):
 
 def main():
     parser = argparse.ArgumentParser(description='Camera proxy server')
-    parser.add_argument('-p', '--port', default=8898, help="Camera proxy server port")
+    parser.add_argument('-p', '--port', default=8888, help="Camera proxy server port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
     parser.add_argument('-s', '--servers', default="",
                         help="Comma-separated list of servers (if not provided, configuration read from servers.json)")

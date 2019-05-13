@@ -17,10 +17,11 @@ class Manager(ProxyBase):
             status = self.get_status()
         ret = []
         for server in status:
-            for instance in status[server]:
-                if camera == status[server][instance]['camera_name']:
-                    ret.append(self.get_server_from_address(server))
-                    break
+            if status[server]:
+                for instance in status[server]:
+                    if camera == status[server][instance]['camera_name']:
+                        ret.append(self.get_server_from_address(server))
+                        break
         return ret
 
     def get_server_for_camera(self, camera_name, status=None):

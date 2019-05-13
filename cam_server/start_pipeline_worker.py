@@ -42,8 +42,8 @@ def start_pipeline_worker(host, port, background_base, cam_server_api_address, h
 
 def main():
     parser = argparse.ArgumentParser(description='Pipeline processing server')
-    parser.add_argument("-c", '--cam_server', default="http://0.0.0.0:8898", help="Cam server rest api address.")
-    parser.add_argument('-p', '--port', default=8889, help="Server port")
+    parser.add_argument("-c", '--cam_server', default="http://0.0.0.0:8888", help="Cam server rest api address.")
+    parser.add_argument('-p', '--port', default=8881, help="Server port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
     parser.add_argument('-g', '--background_base', default=config.DEFAULT_TEMP_FOLDER)
     parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
