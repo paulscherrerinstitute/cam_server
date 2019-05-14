@@ -144,7 +144,6 @@ class ProxyBase:
         folders = [self.get_config_folder()+"/www", os.path.dirname(__file__)]
         for folder in folders:
             if os.path.isfile(folder + "/index.html"):
-                _logger.debug("Located index.html in: " + str(folder))
                 return folder
 
         msg = "Cannot locate index.html in " + str(folders)
