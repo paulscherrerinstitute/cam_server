@@ -1,11 +1,9 @@
 {
     "http://localhost:8881": {
         "cameras": [
-            "simulation"
         ],
         "expanding": true,
         "instances": [
-            "simulation_sp"
         ]
     }
 }

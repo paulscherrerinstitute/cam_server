@@ -13,7 +13,7 @@ PROXY_REST_INTERFACE_PREFIX = "/proxy"
 # Pipeline server prefix
 LOGS_INTERFACE_PREFIX = "/logs"
 # Default logging level.
-DEFAULT_LOGGING_LEVEL = "WARNING"
+DEFAULT_LOGGING_LEVEL = "INFO"
 # How many seconds do we wait before disconnecting a stream without clients.
 MFLOW_NO_CLIENTS_TIMEOUT = 10
 

@@ -136,8 +136,20 @@ class ProxyBase:
                     "status": "Version",
                     "version":  __VERSION__}
 
+
+    def _exists_file(self, folder, file):
+        return os.path.isfile(folder + "/" + file)
+
     def _get_root(self):
-        return os.path.dirname(__file__)
+        folders = [self.get_config_folder()+"/www", os.path.dirname(__file__)]
+        for folder in folders:
+            if os.path.isfile(folder + "/index.html"):
+                _logger.debug("Located index.html in: " + str(folder))
+                return folder
+
+        msg = "Cannot locate index.html in " + str(folders)
+        _logger.warning(msg)
+        raise Exception(msg)
 
     def register_management_page(self, app):
         @app.route('/')
