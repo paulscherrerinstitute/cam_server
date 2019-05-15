@@ -218,7 +218,9 @@
                 //Compact display
                 for (var k in value["statistics"]) {
                     var cur = value["statistics"][k]
-                    value["statistics"][k] = formatNum(value["statistics"][k], false)
+                    if(typeof cur == 'number'){
+                        value["statistics"][k] = formatNum(cur, false)
+                    }
                 }
                 //Save columns
                 if (value["camera_geometry"] != undefined) {

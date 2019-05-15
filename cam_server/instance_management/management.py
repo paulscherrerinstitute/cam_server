@@ -141,7 +141,7 @@ class InstanceWrapper:
         self.statistics.throughput = 0
         self.statistics.frame_rate = 0
         self.statistics.timestamp = 0
-        self.statistics.pid = 0
+        self.statistics.pid = ""
         self.statistics.cpu = 0
         self.statistics.memory = 0
         self.statistics._process = None
@@ -215,7 +215,7 @@ class InstanceWrapper:
                 "clients": self.statistics.clients,
                 "throughput": self.statistics.throughput,
                 "frame_rate": self.statistics.frame_rate,
-                "pid": self.statistics.pid,
+                "pid": str(self.statistics.pid),
                 "cpu": self.statistics.cpu,
                 "memory": self.statistics.memory,
                 }
