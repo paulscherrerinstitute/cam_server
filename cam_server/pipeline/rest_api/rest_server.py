@@ -119,7 +119,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         if not config_updates:
             raise ValueError("Config updates cannot be empty.")
-        _logger.info("Setting instance '%s' config: %s", instance_id, str(config))
+        _logger.info("Setting instance '%s' config: %s", instance_id, str(config_updates))
         instance_manager.update_instance_config(instance_id, config_updates)
 
         # TODO: Remove dependency on instance.
