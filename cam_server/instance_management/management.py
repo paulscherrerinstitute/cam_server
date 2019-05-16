@@ -145,6 +145,7 @@ class InstanceWrapper:
         self.statistics.cpu = 0
         self.statistics.memory = 0
         self.statistics._process = None
+        self.statistics._frame_count = 0
 
 
         self.parameter_queue = multiprocessing.Queue()
