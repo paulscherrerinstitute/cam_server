@@ -27,7 +27,13 @@ setup(name="cam_server",
                 "cam_server.instance_management",
                 "cam_server.pipeline",
                 "cam_server.pipeline.data_processing",
-                "cam_server.pipeline.rest_api"],
+                "cam_server.pipeline.rest_api"
+            ],
+
+      package_data={
+                # If any package contains *.html, include them:
+                '': ['*.html', ],
+            },
 
       # long_description=read('Readme.md'),
       )
