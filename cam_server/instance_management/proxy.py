@@ -88,12 +88,38 @@ class ProxyBase:
         def stop_all_server_instances(server_index):
             """
             Stop a specific camera.
-            :param instance_name: Name of the camera.
+            :param server_index
             """
             server = self.server_pool[int(server_index)]
             self.stop_all_server_instances(server)
             return {"state": "ok",
                     "status": "All instances stopped in '%s'." % server.get_address()}
+
+        @app.get(api_root_address + "/server/logs/<server_index>")
+        def get_server_logs(server_index):
+            """
+            Return the list of logs
+            :param server_index
+            """
+            response.content_type = 'application/json'
+            server = self.server_pool[int(server_index)]
+            logs = server.get_logs(txt=False)
+            logs = list(logs) if logs else []
+            return {"state": "ok",
+                    "status": "Server logs.",
+                    "logs": logs
+                    }
+
+        @app.get(api_root_address + "/server/logs/<server_index>/txt")
+        def get_server_logs_txt(server_index):
+            """
+            Return the list of logs
+            :param server_index
+            """
+            response.content_type = 'text/plain'
+            server = self.server_pool[int(server_index)]
+            logs = server.get_logs(txt=True)
+            return logs
 
         @app.get(api_root_address + '/config')
         def get_config():

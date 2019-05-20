@@ -147,6 +147,7 @@ def get_api_logs():
 
 
 def register_logs_rest_interface(app, api_root_address):
+    _logger.warning("Start logging")
 
     @app.get(api_root_address)
     def get_logs():
@@ -154,9 +155,8 @@ def register_logs_rest_interface(app, api_root_address):
         Return the list of logs
         :return:
         """
-        logs = get_api_logs()
         response.content_type = 'application/json'
-        log_list = get_api_logs()
+        logs = get_api_logs()
         logs = list(logs) if logs else []
         return {"state": "ok",
                 "status": "Server logs.",
