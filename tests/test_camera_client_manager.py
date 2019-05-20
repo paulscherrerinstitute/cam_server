@@ -195,6 +195,10 @@ class CameraClientProxyTest(unittest.TestCase):
         image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
         self.assertIsNotNone(image_array)
 
+        #Check logs
+        self.assertIsInstance(self.client.get_logs(False), list)
+        self.assertIsInstance(self.client.get_logs(True), str)
+
         self.client.stop_all_instances()
 
 

@@ -159,3 +159,15 @@ class CamClient(object):
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["version"]
+
+    def get_logs(self, txt=False):
+        """
+        Return the logs.
+        :param txt: If True return as text, otherwise as a list
+        :return: Version.
+        """
+        if txt:
+            return requests.get(self.address.rstrip("/") + config.API_PREFIX + config.LOGS_INTERFACE_PREFIX + "/txt").text
+        else:
+            return validate_response(requests.get(self.address.rstrip("/") + config.API_PREFIX + config.LOGS_INTERFACE_PREFIX).json())["logs"]
+
