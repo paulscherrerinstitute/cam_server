@@ -1,9 +1,11 @@
 import logging
 import os
 import json
+import socket
 from concurrent.futures import ThreadPoolExecutor
 from cam_server import config, __VERSION__
 from cam_server.instance_management.rest_api import validate_response
+from cam_server.utils import get_host_port_from_stream_address
 import requests
 from bottle import static_file, request, response
 
@@ -260,6 +262,29 @@ class ProxyBase:
                 load.append(1000)
         return load
 
+    def get_server_load(self, server, status=None):
+        if status is None: status = self.get_status()
+        if server in self.server_pool:
+            try:
+                return len(status[server.get_address()])
+            except:
+                pass
+        return 1000
+
+    def _get_free_server(self, servers, status=None):
+        load = self.get_load(status)
+        for i in range(len(self.server_pool)):
+            name = self.server_pool[i].get_address()
+            try:
+                if self.configuration[name]["expanding"] == False:
+                    load[i] = 1000
+            except:
+                pass
+        m = min(load)
+        if m >= 1000:
+            raise Exception("No available server")
+        return self.server_pool[load.index(m)]
+
     def get_free_server(self, instance_name=None, status=None):
         load = self.get_load(status)
         for i in range(len(self.server_pool)):
@@ -273,6 +298,28 @@ class ProxyBase:
         if m >= 1000:
             raise Exception("No available server")
         return self.server_pool[load.index(m)]
+
+    def get_request_server(self, status=None):
+        servers = []
+        load = self.get_load(status)
+        loads = []
+        remote = request.remote_addr
+        for i in range(len(self.server_pool)):
+            if load[i]<1000:
+                name = self.server_pool[i].get_address()
+                host, port = get_host_port_from_stream_address(name)
+                if remote == host:
+                    servers.append(self.server_pool[i])
+                    loads.append(load[i])
+                if remote == "127.0.0.1":
+                    if host in (socket.gethostname(), "localhost"):
+                        servers.append(self.server_pool[i])
+                        loads.append(load[i])
+        #Balancing between servers in same machine to success manager test
+        if len(servers) > 0:
+            m = min(loads)
+            return servers[loads.index(m)]
+        return None
 
     def get_info(self):
         ret = {'active_instances':{}}
@@ -291,13 +338,21 @@ class ProxyBase:
         if server is None:
             server = self.get_fixed_server(instance_name, status)
             if server is None:
-                server = self.get_free_server(instance_name, status)
-                _logger.info("Creating stream to %s at %s", instance_name, server.get_address())
+                server = self.get_request_server(status)
+                if server is None:
+                    server = self.get_free_server(instance_name, status)
+                    _logger.info("Creating stream to %s at %s", instance_name, server.get_address())
+                else:
+                    _logger.info("Creating stream to %s at request server %s", instance_name, server.get_address())
             else:
                 _logger.info("Creating fixed stream to %s at %s", instance_name, server.get_address())
+            self.on_creating_server_stream(server, instance_name)
         else:
             _logger.info("Connecting to stream %s at %s", instance_name, server.get_address())
         return server.get_instance_stream(instance_name)
+
+    def on_creating_server_stream(self, server, instance_name):
+        pass
 
     def stop_all_instances(self):
         _logger.info("Stopping all")
