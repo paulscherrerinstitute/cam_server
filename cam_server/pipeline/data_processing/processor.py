@@ -8,8 +8,13 @@ _logger = getLogger(__name__)
 
 
 def process_image(image, timestamp, x_axis, y_axis, parameters, image_background_array=None):
+
     # Make a copy if the original image (can be used by multiple pipelines)
-    image = numpy.array(image)
+    #image = numpy.array(image)
+
+    # If image is greater that the huge page size (2MB) then image copy makesCPU consumption increase by orders
+    # of magnitude. Perform a copy in chunks instead, where each chunk is smaller than 2MB
+    image = functions.chunk_copy(image)
 
     # Add return values
     return_value = dict()

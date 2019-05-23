@@ -377,3 +377,21 @@ def get_png_from_image(image_raw_bytes, scale=None, min_value=None, max_value=No
     tmp_file.close()
 
     return content
+
+def chunk_copy(image, max_chunk = 2000000):
+    """
+    Copies an image in slices so that each slice is never bigger than the hugepage size(2MB).
+    This increases enormously performance.
+    :param image: 
+    :return: 
+    """
+    row_size = image.shape[1] * image.itemsize
+    rows = len(image)
+    chunk_rows = max_chunk // row_size if row_size else 0
+    buffer = numpy.empty_like(image)
+    pos = 0
+    while pos < rows:
+        next = min(pos+chunk_rows, rows)
+        buffer[pos:next] = image[pos:next]
+        pos = next
+    return buffer

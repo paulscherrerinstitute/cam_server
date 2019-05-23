@@ -8,8 +8,7 @@ _logger = getLogger(__name__)
 
 
 def process_image(image, timestamp, x_axis, y_axis, parameters, image_background_array=None):
-    # Make a copy if the original image (can be used by multiple pipelines)
-    image = numpy.array(image)
+    image = functions.chunk_copy(image)
 
     # Add return values
     return_value = dict()
