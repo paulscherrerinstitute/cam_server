@@ -304,17 +304,21 @@ class ProxyBase:
         load = self.get_load(status)
         loads = []
         remote = request.remote_addr
+
         for i in range(len(self.server_pool)):
             if load[i]<1000:
                 name = self.server_pool[i].get_address()
                 host, port = get_host_port_from_stream_address(name)
-                if remote == host:
-                    servers.append(self.server_pool[i])
-                    loads.append(load[i])
+                if host:
+                    host = host.split(".")[0]
                 if remote == "127.0.0.1":
-                    if host in (socket.gethostname(), "localhost"):
+                    if host in (socket.gethostname().split(".")[0], "localhost"):
                         servers.append(self.server_pool[i])
                         loads.append(load[i])
+                elif remote.split(".")[0] == host:
+                    servers.append(self.server_pool[i])
+                    loads.append(load[i])
+
         #Balancing between servers in same machine to success manager test
         if len(servers) > 0:
             m = min(loads)
