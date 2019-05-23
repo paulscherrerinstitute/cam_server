@@ -75,7 +75,9 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
                     "height": y_size,
                     "x_axis": x_axis,
                     "y_axis": y_axis}
-            set_statistics(statistics, sender, statistics.total_bytes + ((image.size * image.itemsize) if (image is not None) else 0))
+            frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
+            frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
+            set_statistics(statistics, sender, statistics.total_bytes + frame_size, frame_shape)
 
             try:
                 sender.send(data=data, timestamp=timestamp, check_data=False)

@@ -81,16 +81,19 @@ def get_clients(sender):
     return 0
 
 
-def set_statistics(statistics, sender, total_bytes):
+def set_statistics(statistics, sender, total_bytes, frame_shape = None):
     now = time.time()
     timespan = now - statistics.timestamp
+    statistics.total_bytes = total_bytes
     statistics._frame_count = statistics._frame_count + 1
     if timespan > 1.0:
-        received_bytes = total_bytes - statistics.total_bytes
+        received_bytes = total_bytes - statistics._last_proc_total_bytes
+        statistics._last_proc_total_bytes = total_bytes
         statistics.clients = get_clients(sender)
-        statistics.total_bytes = total_bytes
+
         statistics.throughput = (received_bytes / timespan) if (timespan > 0) else None
         statistics.frame_rate = (statistics._frame_count / timespan) if (timespan > 0) else None
+        statistics.frame_shape = frame_shape
         statistics._frame_count = 0
         statistics.timestamp = now
         if psutil and statistics._process:
@@ -107,12 +110,14 @@ def init_statistics(statistics):
     statistics.total_bytes = 0
     statistics.throughput = 0
     statistics.frame_rate = 0
+    statistics.frame_shape = None
     statistics.pid = os.getpid()
     statistics.cpu = 0
     statistics.memory = 0
     statistics.timestamp = time.time()
     statistics._process = psutil.Process(os.getpid())
     statistics._frame_count = 0
+    statistics._last_proc_total_bytes = 0
 
 
 _api_logger = None
