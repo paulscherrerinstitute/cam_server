@@ -3,7 +3,7 @@ import unittest
 import numpy
 from scipy import signal
 
-from cam_server.pipeline.data_processing.functions import gauss_fit, calculate_slices, linear_fit, find_index
+from cam_server.pipeline.data_processing.functions import gauss_fit, calculate_slices, linear_fit, find_index, chunk_copy
 
 
 class FunctionsTest(unittest.TestCase):
@@ -156,6 +156,12 @@ class FunctionsTest(unittest.TestCase):
         slope, offset = linear_fit(x, y)
         logging.info("xx slope: %f offset: %f" % (slope, offset))
 
+    def test_chunk_copy(self):
+        arr1 = numpy.fromfunction(lambda i, j: 1000*i + j, (200, 100), dtype=int)
+        for chunk in [98, 151, 111,574, 1122, 4545, 7904, 15433, 20000, 23131]:
+            arr2 = chunk_copy(arr1,chunk)
+            print (chunk)
+            self.assertTrue(numpy.array_equal(arr1, arr2))
 
 if __name__ == '__main__':
     unittest.main()

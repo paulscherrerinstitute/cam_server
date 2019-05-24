@@ -382,6 +382,18 @@ def chunk_copy(image, max_chunk = 2000000):
     """
     Copies an image in slices so that each slice is never bigger than the hugepage size(2MB).
     This increases enormously performance.
+    Server CPU consumption on a Mac, processing images at 5Hz, 16bits, with height = 960:
+        width cpu(%)
+        1280   95
+        1100   95
+        1093   95
+        1092    5
+        1050    5
+        1000    5
+    On Linux servers the outcome of frames bigger than the hugepage size is worse.
+    NumPy is spawning the copying on all available cores, making the CPU consumption
+    increase to 2.4K%. Probably a locking between the different threads.
+
     :param image: 
     :return: 
     """
@@ -391,7 +403,7 @@ def chunk_copy(image, max_chunk = 2000000):
     buffer = numpy.empty_like(image)
     pos = 0
     while pos < rows:
-        next = min(pos+chunk_rows, rows)
+        next = max(min(pos+chunk_rows, rows), pos+1)
         buffer[pos:next] = image[pos:next]
         pos = next
     return buffer
