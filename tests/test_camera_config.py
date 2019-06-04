@@ -173,26 +173,26 @@ class CameraConfigTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Invalid source_type "):
             configuration = CameraConfig("simulation", configuration)
 
-    def test_save_simulation_camera_interval(self):
+    def test_save_simulation_new_frame_rate(self):
         instance_manager = get_test_instance_manager()
 
         configuration = {
-            "source": "test_with_interval",
+            "source": "test_with_frame_rate",
             "source_type": "simulation",
-            "simulation_interval": 1,
+            "frame_rate": 1,
             'camera_calibration': None,
             'mirror_x': False,
             'rotate': 0,
             'mirror_y': False
         }
 
-        instance_manager.config_manager.save_camera_config("test_with_interval", configuration)
+        instance_manager.config_manager.save_camera_config("test_with_frame_rate", configuration)
 
-        camera = instance_manager.config_manager.load_camera("test_with_interval")
+        camera = instance_manager.config_manager.load_camera("test_with_frame_rate")
 
-        self.assertEqual(camera.simulation_interval, configuration["simulation_interval"])
+        self.assertEqual(camera.frame_rate, configuration["frame_rate"])
 
-        instance_manager.config_manager.delete_camera_config("test_with_interval")
+        instance_manager.config_manager.delete_camera_config("test_with_frame_rate")
 
 
 if __name__ == '__main__':

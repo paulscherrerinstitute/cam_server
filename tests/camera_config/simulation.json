@@ -18,7 +18,5 @@
  "name": "simulation",
  "source": "",
 
- "size_x":640,
- "size_y":480,
- "frame_rate":2
+ "frame_rate":10
 }
