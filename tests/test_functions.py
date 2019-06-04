@@ -163,5 +163,33 @@ class FunctionsTest(unittest.TestCase):
             print (chunk)
             self.assertTrue(numpy.array_equal(arr1, arr2))
 
+
+    """
+    def test_console(self):
+        import time
+        import os
+        import signal
+        from subprocess import Popen, PIPE, STDOUT
+
+        def start_screen_panel():
+            return Popen(["bash", "screen_panel", "-console"], stdin=PIPE, preexec_fn=os.setsid)
+
+        def stop_screen_panel(screen_panel):
+            os.killpg(os.getpgid(screen_panel.pid), signal.SIGTERM)
+
+        def set_camera(screen_panel, camera_name):
+            screen_panel.stdin.write(('cam ' + camera_name + "\n").encode())
+            screen_panel.stdin.flush()
+
+        screen_panel = start_screen_panel()
+        time.sleep(10.0)
+        set_camera(screen_panel, "simulation")
+        time.sleep(5.0)
+        stop_screen_panel(screen_panel)
+
+
+        print ("Done")
+    """
+
 if __name__ == '__main__':
     unittest.main()

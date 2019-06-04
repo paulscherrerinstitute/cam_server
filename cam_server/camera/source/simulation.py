@@ -21,7 +21,7 @@ class CameraSimulation(CameraEpics):
 
     # TODO: Make this a config.
     def __init__(self, camera_config, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
-                 beam_size_x=100, beam_size_y=20, frame_rate=10, simulation_interval=None):
+                 beam_size_x=100, beam_size_y=20, frame_rate=10):
         """
         Initialize the camera simulation.
         :param size_x: Image width.
@@ -31,15 +31,15 @@ class CameraSimulation(CameraEpics):
         :param beam_size_x: Beam width.
         :param beam_size_y: Beam height.
         :param frame_rate: How many frames, in mhz, does the simulation outputs.
-        :param simulation_interval: Interval between frames on the simulated camera.
         """
         super(CameraSimulation, self).__init__(camera_config)
 
-        if not simulation_interval or simulation_interval < 0:
-            simulation_interval = config.DEFAULT_CAMERA_SIMULATION_INTERVAL
-
-        if "simulation_interval" in camera_config.get_configuration():
-            simulation_interval = camera_config.get_configuration()["simulation_interval"]
+        if "frame_rate" in camera_config.get_configuration():
+            frame_rate = camera_config.get_configuration()["frame_rate"]
+        if "size_x" in camera_config.get_configuration():
+            size_x = camera_config.get_configuration()["size_x"]
+        if "size_y" in camera_config.get_configuration():
+            size_y = camera_config.get_configuration()["size_y"]
 
         self.frame_rate = frame_rate
         self.width_raw = size_x
@@ -51,7 +51,6 @@ class CameraSimulation(CameraEpics):
 
         # Functions to call in simulation.
         self.callback_functions = []
-        self.simulation_interval = simulation_interval
         self.simulation_thread = None
         self.simulation_stop_event = Event()
 
@@ -114,9 +113,9 @@ class CameraSimulation(CameraEpics):
                     timestamp = time.time()
 
                     for callback in self.callback_functions:
-                        callback(image, timestamp)
+                         callback(image, timestamp)
 
-                    time.sleep(self.simulation_interval)
+                    time.sleep(1.0/self.frame_rate)
 
                 except:
                     _logger.exception("Error occurred in camera simulation.")
