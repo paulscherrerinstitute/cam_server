@@ -299,23 +299,35 @@ class ProxyBase:
             raise Exception("No available server")
         return self.server_pool[load.index(m)]
 
+
     def get_request_server(self, status=None):
         servers = []
         load = self.get_load(status)
         loads = []
-        remote = request.remote_addr
+
+        server_name = request.environ.get('SERVER_NAME')
+        if server_name:
+            server_name = server_name.split(".")[0].lower()
+
+        remote_add = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
 
         for i in range(len(self.server_pool)):
             if load[i]<1000:
                 name = self.server_pool[i].get_address()
                 host, port = get_host_port_from_stream_address(name)
-                if host:
-                    host = host.split(".")[0]
-                if remote == "127.0.0.1":
-                    if host in (socket.gethostname().split(".")[0], "localhost"):
+                host_name = host.split(".")[0].lower() if host else None
+                local_host_name = socket.gethostname()
+                if local_host_name:
+                    local_host_name = local_host_name.split(".")[0].lower()
+
+                if remote_add == "127.0.0.1":
+                    if (host =="127.0.0.1") or (host_name in (local_host_name, "localhost")):
                         servers.append(self.server_pool[i])
                         loads.append(load[i])
-                elif remote.split(".")[0] == host:
+                elif server_name == host_name:
+                    servers.append(self.server_pool[i])
+                    loads.append(load[i])
+                elif remote_add == host:
                     servers.append(self.server_pool[i])
                     loads.append(load[i])
 
