@@ -1,4 +1,4 @@
-- hosts: cam_server
+- hosts: cam_workers
   become: true
   tasks:
     - name: Creates config directory
@@ -33,5 +33,56 @@
         daemon_reload: yes
 
 
+- hosts: cam_manager
+  become: true
+  tasks:
+    - name: Creates config directory
+      file: path=/cam_server_configuration/configuration state=directory
+
+    - name: Creates camera_config directory
+      file: path=/cam_server_configuration/configuration/camera_config state=directory
+
+    - name: Creates pipeline_config directory
+      file: path=/cam_server_configuration/configuration/pipeline_config state=directory
+
+    - name: Creates background_config directory
+      file: path=/cam_server_configuration/configuration/background_config state=directory
+
+    - name: Create camera_manager  systemd config file
+      template: src=../docker/camera_manager.service dest=/etc/systemd/system/camera_manager.service owner=root group=root mode=0644
+
+    - name: Create pipeline_manager systemd config file
+      template: src=../docker/pipeline_manager.service dest=/etc/systemd/system/pipeline_manager.service owner=root group=root mode=0644
+
+    - name: Create epics environment file
+      template: src=./templates/camera_environment dest=/cam_server_configuration/camera_environment owner=root group=root mode=0644
+
+    - name: Create camera_manager server config file
+      template: src=./templates/camera_servers.json dest=/cam_server_configuration/configuration/camera_config/servers.json owner=root group=root mode=0644
+
+    - name: Create pipeline_manager server config file
+      template: src=./templates/pipeline_servers.json dest=/cam_server_configuration/configuration/pipeline_config/servers.json owner=root group=root mode=0644
+
+    - name: Create simulation camera config file
+      template: src=./templates/simulation.json dest=/cam_server_configuration/configuration/camera_config/simulation.json owner=root group=root mode=0644
+
+    - name: Create simulation pipeline config file
+      template: src=./templates/simulation_sp.json dest=/cam_server_configuration/configuration/pipeline_config/simulation_sp.json owner=root group=root mode=0644
+
+    - name: Reload systemd Config
+      shell: |
+        systemctl daemon-reload
+
+    - name: enable camera_manager service
+      systemd:
+        name: camera_manager
+        enabled: yes
+        daemon_reload: yes
+
+    - name: enable pipeline_manager service
+      systemd:
+        name: pipeline_manager
+        enabled: yes
+        daemon_reload: yes
 
     

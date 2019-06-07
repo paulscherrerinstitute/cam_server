@@ -1,0 +1,17 @@
+{
+    "http://sf-daqsync-04.psi.ch:8880": {
+        "expanding": true,
+        "instances": [
+        ]
+    },
+    "http://sf-daqsync-05.psi.ch:8880": {
+        "expanding": true,
+        "instances": [
+        ]
+    },
+    "http://sf-daqsync-06.psi.ch:8880": {
+        "expanding": true,
+        "instances": [
+        ]
+    }
+}
