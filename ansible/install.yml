@@ -1,0 +1,37 @@
+- hosts: cam_server
+  become: true
+  tasks:
+    - name: Creates config directory
+      file: path=/cam_server_configuration/configuration state=directory
+      file: path=/cam_server_configuration/configuration/camera_config state=directory
+      file: path=/cam_server_configuration/configuration/pipeline_config state=directory
+      file: path=/cam_server_configuration/configuration/background_config state=directory
+
+    - name: Create camera_worker  systemd config file
+      template: src=../docker/camera_worker.service dest=/etc/systemd/system/camera_worker.service owner=root group=root mode=0644
+
+    - name: Create pipeline_worker systemd config file
+      template: src=../docker/pipeline_worker.service dest=/etc/systemd/system/pipeline_worker.service owner=root group=root mode=0644
+
+    - name: Create epics environment file
+      template: src=./templates/camera_environment dest=/cam_server_configuration/camera_environment owner=root group=root mode=0644
+
+    - name: Reload systemd Config
+      shell: |
+        systemctl daemon-reload
+
+    - name: enable camera_worker service
+      systemd:
+        name: camera_worker 
+        enabled: yes
+        daemon_reload: yes
+
+    - name: enable pipeline_worker service
+      systemd:
+        name: pipeline_worker 
+        enabled: yes
+        daemon_reload: yes
+
+
+
+    

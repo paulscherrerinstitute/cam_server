@@ -1,0 +1,14 @@
+- hosts: cam_server
+  become: true
+  tasks:
+  - name: start camera_worker service
+    systemd:
+      name: camera_worker 
+      state: started
+      daemon_reload: yes
+
+  - name: start pipeline_worker service
+    systemd:
+      name: pipeline_worker 
+      state: started
+      daemon_reload: yes
