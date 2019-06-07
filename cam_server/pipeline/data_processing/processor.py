@@ -45,6 +45,9 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
     x_fit_gauss_function, x_fit_offset, x_fit_amplitude, x_fit_mean, x_fit_standard_deviation, x_center_of_mass, x_rms = x_fit
     y_fit_gauss_function, y_fit_offset, y_fit_amplitude, y_fit_mean, y_fit_standard_deviation, y_center_of_mass, y_rms = y_fit
 
+    x_fwhm = functions.get_fwhm(x_axis, x_profile)
+    y_fwhm = functions.get_fwhm(y_axis, y_profile)
+
     # Could be also y_profile.sum() -> it should give the same result.
     intensity = x_profile.sum()
 
@@ -58,8 +61,10 @@ def process_image(image, timestamp, x_axis, y_axis, parameters, image_background
     return_value["x_profile"] = x_profile
     return_value["y_profile"] = y_profile
     return_value["intensity"] = intensity
+    return_value["x_fwhm"] = x_fwhm
+    return_value["y_fwhm"] = y_fwhm
 
-    # Needed for config traceability.
+    # Needed for config tr  aceability.
     return_value["processing_parameters"] = json.dumps(parameters)
 
     # TODO Provide - Center of mass of profile

@@ -33,7 +33,7 @@ class PipelineProcessingTest(unittest.TestCase):
                                      'x_fit_gauss_function', 'y_center_of_mass', 'min_value', 'y_fit_mean',
                                      'x_fit_mean', 'x_rms', 'y_fit_amplitude', 'x_fit_amplitude',
                                      'y_fit_gauss_function', 'x_fit_standard_deviation', 'y_fit_offset',
-                                     "processing_parameters", "intensity"]
+                                     "processing_parameters", "intensity", "x_fwhm", "y_fwhm"]
 
         self.assertSetEqual(set(required_fields_in_result), set(result.keys()),
                             "Not all required keys are present in the result")

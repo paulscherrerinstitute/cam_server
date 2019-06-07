@@ -378,6 +378,27 @@ def get_png_from_image(image_raw_bytes, scale=None, min_value=None, max_value=No
 
     return content
 
+
+def get_fwhm(x, y):
+    try:
+        ymax, ymin =  numpy.amax(y),  numpy.amin(y)
+        hm =  (ymax - ymin) /2
+        max_index, l_index, r_index = numpy.argmax(y), 0, len(x)-1
+
+        for i in range(max_index-1, 0, -1):
+            if (y[i] - ymin) <= hm:
+                l_index = i
+                break
+        for i in range(max_index+1, len(x), 1):
+            if (y[i] - ymin) <= hm:
+                r_index = i
+                break
+        fwhm = abs(x[l_index] - x[r_index])
+        return fwhm
+    except:
+        return 0.0
+
+
 def chunk_copy(image, max_chunk = 2000000):
     """
     Copies an image in slices so that each slice is never bigger than the hugepage size(2MB).
