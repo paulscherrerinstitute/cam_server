@@ -303,14 +303,15 @@ class ProxyBase:
         server_name = request.environ.get('SERVER_NAME')
         server_prefix = server_name.split(".")[0].lower() if server_name else None
         server_address = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
-        return server_name, server_prefix, server_address
+        server_port = request.environ.get('REMOTE_PORT')
+        return server_name, server_prefix, server_address, server_port
 
 
     def get_request_server(self, status=None):
         servers = []
         load = self.get_load(status)
         loads = []
-        server_name, server_prefix, server_address = self.get_source()
+        server_name, server_prefix, server_address, server_port = self.get_source()
 
         for i in range(len(self.server_pool)):
             if load[i]<1000:
