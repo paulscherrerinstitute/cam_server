@@ -307,34 +307,37 @@ class ProxyBase:
 
 
     def get_request_server(self, status=None):
-        servers = []
-        load = self.get_load(status)
-        loads = []
-        server_name, server_prefix, server_address = self.get_source()
+        try:
+            servers = []
+            load = self.get_load(status)
+            loads = []
+            server_name, server_prefix, server_address = self.get_source()
 
-        for i in range(len(self.server_pool)):
-            if load[i]<1000:
-                name = self.server_pool[i].get_address()
-                host, port = get_host_port_from_stream_address(name)
-                host_prefix= host.split(".")[0].lower() if host else None
-                local_host_name = socket.gethostname()
-                local_host_prefix= local_host_name.split(".")[0].lower() if local_host_name else None
+            for i in range(len(self.server_pool)):
+                if load[i]<1000:
+                    name = self.server_pool[i].get_address()
+                    host, port = get_host_port_from_stream_address(name)
+                    host_prefix= host.split(".")[0].lower() if host else None
+                    local_host_name = socket.gethostname()
+                    local_host_prefix= local_host_name.split(".")[0].lower() if local_host_name else None
 
-                if server_address == "127.0.0.1":
-                    if (host =="127.0.0.1") or (host_prefix in (local_host_prefix, "localhost")):
+                    if server_address == "127.0.0.1":
+                        if (host =="127.0.0.1") or (host_prefix in (local_host_prefix, "localhost")):
+                            servers.append(self.server_pool[i])
+                            loads.append(load[i])
+                    elif server_prefix == host_prefix:
                         servers.append(self.server_pool[i])
                         loads.append(load[i])
-                elif server_prefix == host_prefix:
-                    servers.append(self.server_pool[i])
-                    loads.append(load[i])
-                elif server_address == host:
-                    servers.append(self.server_pool[i])
-                    loads.append(load[i])
+                    elif server_address == host:
+                        servers.append(self.server_pool[i])
+                        loads.append(load[i])
 
-        #Balancing between servers in same machine to pass manager test
-        if len(servers) > 0:
-            m = min(loads)
-            return servers[loads.index(m)]
+            #Balancing between servers in same machine to pass manager test
+            if len(servers) > 0:
+                m = min(loads)
+                return servers[loads.index(m)]
+        except Exception as e:
+            _logger.warning('Failed to identify request origin: '+ str(e))
         return None
 
     def get_info(self):
