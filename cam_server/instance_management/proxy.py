@@ -300,10 +300,12 @@ class ProxyBase:
         return self.server_pool[load.index(m)]
 
     def get_source(self):
-        server_name = request.environ.get('SERVER_NAME')
+        server_port = None
+        server_name=(request.get_header('host'))
+        if server_name and (":" in server_name):
+            server_name, server_port = server_name.rsplit(":", maxsplit=1)
         server_prefix = server_name.split(".")[0].lower() if server_name else None
         server_address = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
-        server_port = request.environ.get('REMOTE_PORT')
         return server_name, server_prefix, server_address, server_port
 
 
@@ -335,7 +337,6 @@ class ProxyBase:
         #Balancing between servers in same machine to pass manager test
         if len(servers) > 0:
             m = min(loads)
-            _logger.info("Servers: %s  -  Loads: %s ", str(servers), str(loads))
             return servers[loads.index(m)]
         return None
 
