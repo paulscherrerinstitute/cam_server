@@ -300,20 +300,17 @@ class ProxyBase:
         return self.server_pool[load.index(m)]
 
     def get_source(self):
-        server_port = None
-        server_name=(request.get_header('host'))
-        if server_name and (":" in server_name):
-            server_name, server_port = server_name.rsplit(":", maxsplit=1)
-        server_prefix = server_name.split(".")[0].lower() if server_name else None
         server_address = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
-        return server_name, server_prefix, server_address, server_port
+        server_name = socket.gethostbyaddr(server_address)[0]
+        server_prefix = server_name.split(".")[0].lower() if server_name else None
+        return server_name, server_prefix, server_address
 
 
     def get_request_server(self, status=None):
         servers = []
         load = self.get_load(status)
         loads = []
-        server_name, server_prefix, server_address, server_port = self.get_source()
+        server_name, server_prefix, server_address = self.get_source()
 
         for i in range(len(self.server_pool)):
             if load[i]<1000:
