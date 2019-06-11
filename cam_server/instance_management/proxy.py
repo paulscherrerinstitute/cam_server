@@ -299,41 +299,42 @@ class ProxyBase:
             raise Exception("No available server")
         return self.server_pool[load.index(m)]
 
+    def get_source(self):
+        server_name = request.environ.get('SERVER_NAME')
+        server_prefix = server_name.split(".")[0].lower() if server_name else None
+        server_address = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
+        return server_name, server_prefix, server_address
+
 
     def get_request_server(self, status=None):
         servers = []
         load = self.get_load(status)
         loads = []
-
-        server_name = request.environ.get('SERVER_NAME')
-        if server_name:
-            server_name = server_name.split(".")[0].lower()
-
-        remote_add = request.environ.get('HTTP_X_FORWARDED_FOR') or request.environ.get('REMOTE_ADDR')
+        server_name, server_prefix, server_address = self.get_source()
 
         for i in range(len(self.server_pool)):
             if load[i]<1000:
                 name = self.server_pool[i].get_address()
                 host, port = get_host_port_from_stream_address(name)
-                host_name = host.split(".")[0].lower() if host else None
+                host_prefix= host.split(".")[0].lower() if host else None
                 local_host_name = socket.gethostname()
-                if local_host_name:
-                    local_host_name = local_host_name.split(".")[0].lower()
+                local_host_prefix= local_host_name.split(".")[0].lower() if local_host_name else None
 
-                if remote_add == "127.0.0.1":
-                    if (host =="127.0.0.1") or (host_name in (local_host_name, "localhost")):
+                if server_address == "127.0.0.1":
+                    if (host =="127.0.0.1") or (host_prefix in (local_host_prefix, "localhost")):
                         servers.append(self.server_pool[i])
                         loads.append(load[i])
-                elif server_name == host_name:
+                elif server_prefix == host_prefix:
                     servers.append(self.server_pool[i])
                     loads.append(load[i])
-                elif remote_add == host:
+                elif server_address == host:
                     servers.append(self.server_pool[i])
                     loads.append(load[i])
 
-        #Balancing between servers in same machine to success manager test
+        #Balancing between servers in same machine to pass manager test
         if len(servers) > 0:
             m = min(loads)
+            _logger.info("Servers: %s  -  Loads: %s ", str(servers), str(loads))
             return servers[loads.index(m)]
         return None
 
@@ -359,7 +360,7 @@ class ProxyBase:
                     server = self.get_free_server(instance_name, status)
                     _logger.info("Creating stream to %s at %s", instance_name, server.get_address())
                 else:
-                    _logger.info("Creating stream to %s at request server %s", instance_name, server.get_address())
+                    _logger.info("Creating stream to %s at request server %s Request: %s", instance_name, server.get_address(), str(self.get_source()))
             else:
                 _logger.info("Creating fixed stream to %s at %s", instance_name, server.get_address())
             self.on_creating_server_stream(server, instance_name)

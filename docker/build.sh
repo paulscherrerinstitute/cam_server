@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=3.1.1
+VERSION=3.1.2
 docker build --no-cache=true -t paulscherrerinstitute/cam_server .
 docker tag paulscherrerinstitute/cam_server paulscherrerinstitute/cam_server:$VERSION
 docker login
