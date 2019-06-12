@@ -1,7 +1,9 @@
 import logging
+import socket
 from cam_server.instance_management.proxy import ProxyBase
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server import PipelineClient
+from cam_server.utils import get_host_port_from_stream_address
 
 _logger = logging.getLogger(__name__)
 
@@ -24,15 +26,55 @@ class Manager(ProxyBase):
                         break
         return ret
 
+    def get_running_camserver(self, camera, status):
+        servers = []
+        load = self.get_load(status)
+        loads = []
+        try:
+            instances = self.cam_server_client.get_server_info  ()["active_instances"]
+            if not host.count(".") == 3: #If not IP, get only prefix
+                host= host.split(".")[0].lower()
+                local_names = ["127.0.0.1" "localhost"]
+                local_host_name = socket.gethostname()
+                if local_host_name:
+                    local_names.append(local_host_name.split(".")[0].lower())
+
+            for i in range(len(self.server_pool)):
+                if load[i] < 1000:
+                    try:
+                        server_host, server_port = get_host_port_from_stream_address(self.server_pool[i].get_address())
+                        if not host.count(".") == 3:  # If not IP, get only prefix
+                            server_host = server_host.split(".")[0].lower() if server_host else None
+                        if host==server_host:
+                            servers.append(self.server_pool[i])
+                            loads.append(load[i])
+                        if (host in local_names) and (server_host in local_names):
+                            servers.append(self.server_pool[i])
+                            loads.append(load[i])
+                    except:
+                        pass
+        except:
+            pass
+        if len(servers) > 0:
+            m = min(loads)
+            return servers[loads.index(m)]
+
+        return None
+
     def get_server_for_camera(self, camera_name, status=None):
         if not status:
             status = self.get_status()
         servers = self.get_current_servers_for_camera(camera_name, status)
         if len(servers) > 0:
+            _logger.info("Located running server for camera %s in the active pipelines", camera_name)
             return servers[0]
         else:
             server = self.get_fixed_server_for_camera(camera_name, status)
             if server is not None:
+                return server
+            server = self.get_running_camserver(camera_name, status)
+            if server is not None:
+                _logger.info("Located running server for camera %s in the cam_server status", camera_name)
                 return server
             return self.get_free_server(None, status)
 
