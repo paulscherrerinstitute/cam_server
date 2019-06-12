@@ -32,6 +32,7 @@ class Manager(ProxyBase):
         loads = []
         try:
             instances = self.cam_server_client.get_server_info  ()["active_instances"]
+            host, port = get_host_port_from_stream_address(instances[camera]["host"])
             if not host.count(".") == 3: #If not IP, get only prefix
                 host= host.split(".")[0].lower()
                 local_names = ["127.0.0.1" "localhost"]
