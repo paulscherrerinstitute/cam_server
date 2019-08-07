@@ -61,7 +61,6 @@ def update_camera_config(current_config, config_updates):
 
     return current_config
 
-
 def get_port_generator(port_range):
     return cycle(iter(range(*port_range)))
 

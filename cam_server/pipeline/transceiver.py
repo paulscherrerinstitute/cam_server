@@ -11,6 +11,7 @@ from bsread.sender import Sender
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import get_host_port_from_stream_address, set_statistics, init_statistics
+from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number
 
 _logger = getLogger(__name__)
 
@@ -61,6 +62,19 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         if not parameters.get("camera_timeout"):
             parameters["camera_timeout"] = 10.0
+
+        if parameters.get("rotation"):
+            if not isinstance(parameters.get("rotation"), dict):
+                parameters["rotation"] = {"angle":float(parameters.get("rotation")), "order":1, "mode":"0.0"}
+            if not parameters["rotation"].get("angle"):
+               parameters["rotation"] = None
+            elif not is_number(parameters["rotation"]["angle"]) or (float(parameters["rotation"]["angle"]) == 0):
+                parameters["rotation"] = None
+            else:
+                if not parameters["rotation"].get("order"):
+                    parameters["rotation"]["order"] = 1
+                if not parameters["rotation"].get("mode"):
+                    parameters["rotation"]["mode"] = "0.0"
 
         return parameters, background_array
 
@@ -149,6 +163,19 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 image = data.data.data["image"].value
                 x_axis = data.data.data["x_axis"].value
                 y_axis = data.data.data["y_axis"].value
+
+                #Check for rotation parameter
+                rotation = pipeline_parameters.get("rotation")
+                if rotation:
+                    image = rotate(image, rotation["angle"], rotation["order"], rotation["mode"])
+                else:
+                    # Make a copy if the original image (can be used by multiple pipelines)
+                    # image = numpy.array(image)
+
+                    # If image is greater that the huge page size (2MB) then image copy makesCPU consumption increase by orders
+                    # of magnitude. Perform a copy in chunks instead, where each chunk is smaller than 2MB
+                    image = chunk_copy(image)
+
                 processing_timestamp = data.data.data["timestamp"].value
 
                 function = get_function(pipeline_parameters.get("function"), pipeline_parameters.get("reload"))

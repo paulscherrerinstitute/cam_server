@@ -5,6 +5,7 @@ import numpy
 import scipy
 import scipy.misc
 import scipy.optimize
+import scipy.ndimage
 
 from matplotlib import cm
 
@@ -25,6 +26,21 @@ def subtract_background(image, background_image):
 
     return image
 
+
+def is_number(var):
+    try:
+        float(var)
+        return True
+    except:
+        return False
+
+
+def rotate(image, degrees, order = 1, mode = "0.0"):
+    output = chunk_copy(image)
+    scipy.ndimage.rotate(image, float(degrees), reshape=False, output=output, order=order,
+                         mode="constant" if is_number(mode) else mode,
+                         cval=float(mode) if is_number(mode)  else 0.0, prefilter=True)
+    return output
 
 def get_region_of_interest(image, offset_x, size_x, offset_y, size_y):
     return image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
