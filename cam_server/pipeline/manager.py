@@ -1,18 +1,28 @@
 import logging
 import socket
+from threading import Timer
 from cam_server.instance_management.proxy import ProxyBase
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server import PipelineClient
-from cam_server.utils import get_host_port_from_stream_address
+from cam_server.utils import get_host_port_from_stream_address, cleanup
 
 _logger = logging.getLogger(__name__)
 
 
 class Manager(ProxyBase):
-    def __init__(self, config_manager, background_manager, cam_server_client, config_str):
+    def __init__(self, config_manager, background_manager, cam_server_client, config_str, bg_days_to_live=-1):
         ProxyBase.__init__(self, config_manager, config_str, PipelineClient)
         self.background_manager = background_manager
         self.cam_server_client = cam_server_client
+        self.bg_days_to_live = bg_days_to_live
+        # background cleanup every day and upon start
+        if bg_days_to_live>=0:
+            def background_cleanup():
+                self.cleanup_background_folder()
+                self.timer = Timer(24*3600, background_cleanup)
+                self.timer.daemon = True
+                self.timer.start()
+            background_cleanup()
 
     def get_current_servers_for_camera(self, camera, status=None):
         if not status:
@@ -91,6 +101,26 @@ class Manager(ProxyBase):
 
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
+
+    def get_pipeline_last_backgrounds(self):
+        ret = {}
+        for pipeline in self.get_pipeline_list():
+            try:
+                ret[pipeline] = self.background_manager.get_latest_background_id(pipeline)
+            except:
+                ret[pipeline] = None
+        return ret
+
+    def get_last_background_filenames(self):
+        return [(x + ".npy") for x in self.get_pipeline_last_backgrounds().values() if x is not None]
+
+    def cleanup_background_folder(self, age_in_days = None, simulated=False):
+        if age_in_days is None:
+            age_in_days = self.bg_days_to_live
+        if age_in_days>=0:
+            last_backgrounds = self.get_last_background_filenames()
+            path = self.background_manager.background_folder
+            cleanup(age_in_days, path, False, False, last_backgrounds, simulated=simulated)
 
     def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
         status = self.get_status()

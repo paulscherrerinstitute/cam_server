@@ -13,7 +13,8 @@ from cam_server.utils import initialize_api_logger
 _logger = logging.getLogger(__name__)
 
 
-def start_pipeline_manager(host, port, server_config, config_base, background_base, cam_server_api_address):
+def start_pipeline_manager(host, port, server_config, config_base, background_base, background_files_days_to_live,
+                           cam_server_api_address):
 
 
     # Check if config directory exists
@@ -31,14 +32,15 @@ def start_pipeline_manager(host, port, server_config, config_base, background_ba
 
     app = bottle.Bottle()
 
-    proxy = PipelineManager(config_manager, background_manager,cam_server_client, server_config)
+    proxy = PipelineManager(config_manager, background_manager,cam_server_client, server_config,
+                            background_files_days_to_live)
     register_pipeline_rest_interface(app=app, instance_manager=proxy)
     proxy.register_rest_interface(app)
     proxy.register_management_page(app)
     try:
         bottle.run(app=app, host=host, port=port)
     finally:
-        #clenup
+        #cleanup
         pass
 
 
@@ -52,6 +54,7 @@ def main():
     parser.add_argument('-b', '--base', default=config.DEFAULT_PIPELINE_CONFIG_FOLDER,
                         help="(Pipeline) Configuration base directory")
     parser.add_argument('-g', '--background_base', default=config.DEFAULT_BACKGROUND_CONFIG_FOLDER)
+    parser.add_argument('-l', '--background_files_days_to_live', default=config.DEFAULT_BACKGROUND_FILES_DAYS_TO_LIVE)
 
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
@@ -62,7 +65,8 @@ def main():
     logging.basicConfig(level=arguments.log_level)
     initialize_api_logger(arguments.log_level)
     start_pipeline_manager(arguments.interface, arguments.port, arguments.servers, arguments.base,
-                          arguments.background_base, arguments.cam_server)
+                          arguments.background_base, arguments.background_files_days_to_live,
+                          arguments.cam_server)
 
 
 if __name__ == "__main__":

@@ -1,8 +1,9 @@
 [cam_workers]
+sfdaq1
 sfdaq4
 sfdaq5
 sfdaq6
 
 
 [cam_manager]
-sfdaq4
+sfdaq1

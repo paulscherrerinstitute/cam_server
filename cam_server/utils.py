@@ -11,6 +11,8 @@ try:
 except:
     psutil = None
 
+import os
+import shutil
 import time
 import numpy
 
@@ -180,3 +182,46 @@ def register_logs_rest_interface(app, api_root_address):
         return logs
 
 
+def remove(path, simulated=False):
+    """
+    Removes a file or directory.
+    """
+    if os.path.isdir(path):
+        try:
+            _logger.info("Removing folder: %s" % path)
+            if not simulated:
+                shutil.rmtree(path)
+        except OSError:
+            _logger.warning("Unable to remove folder: %s" % path)
+    else:
+        try:
+            if os.path.exists(path):
+                _logger.info("Removing file: %s" % path)
+                if not simulated:
+                    os.remove(path)
+        except OSError:
+            _logger.warning("Unable to remove file: %s" % path)
+
+
+def cleanup(age_days, path, recursive=False, remove_folders=False, exceptions=[], simulated=False):
+    """
+    Removes files older than age_days.
+    """
+    _logger.info("Cleanup: %s - %d days old - recursive=%s remove_folders=%s exceptions=%s" %
+                 (path, age_days, str(recursive), str(remove_folders), str(exceptions)))
+    if not os.path.isdir(path):
+        _logger.warning("Not a folder: %s" % path)
+    else:
+        seconds = time.time() - (age_days * 24 * 60 * 60)
+        for root, dirs, files in os.walk(path, topdown=False):
+            if recursive or (root == path):
+                if not root[len(path)+1:] in exceptions:
+                    for f in files:
+                        p = os.path.join(root, f)
+                        if os.stat(p).st_mtime <= seconds:
+                            if not f in exceptions:
+                                remove(p, simulated)
+                    if remove_folders and (root != path):
+                        if os.stat(root).st_mtime <= seconds:
+                            #if not os.listdir(root):
+                                remove(root, simulated)
