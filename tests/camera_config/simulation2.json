@@ -16,7 +16,5 @@
  "rotate": 0,
  "source_type": "simulation",
  "name": "simulation",
- "source": "",
-  "size_x": 640,
- "size_y": 480
+ "source": ""
 }

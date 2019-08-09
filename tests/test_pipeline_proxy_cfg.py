@@ -83,6 +83,7 @@ class CameraClientProxyTest(unittest.TestCase):
                                                                     cfg,
                                                                     self.pipeline_config_folder,
                                                                     self.background_config_folder,
+                                                                    config.DEFAULT_BACKGROUND_FILES_DAYS_TO_LIVE,
                                                                     cam_server_proxy_address))
         self.pipeline_proxy_process.start()
 

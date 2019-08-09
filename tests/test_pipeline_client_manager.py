@@ -12,6 +12,7 @@ import numpy
 from bsread import source, SUB, PULL
 
 from cam_server import CamClient, PipelineClient
+from cam_server import config
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
@@ -61,6 +62,7 @@ class PipelineClientTest(unittest.TestCase):
                                                                     pipeline_server_address,
                                                                     self.pipeline_config_folder,
                                                                     self.background_config_folder,
+                                                                    config.DEFAULT_BACKGROUND_FILES_DAYS_TO_LIVE,
                                                                     cam_server_proxy_address))
         self.pipeline_proxy_process.start()
         self.cam_client = CamClient(cam_server_proxy_address)

@@ -1,5 +1,6 @@
 import base64
 import os
+import time
 import signal
 import unittest
 from multiprocessing import Process
@@ -73,6 +74,7 @@ class CameraClientProxyTest(unittest.TestCase):
                                                                     cfg,
                                                                     self.pipeline_config_folder,
                                                                     self.background_config_folder,
+                                                                    config.DEFAULT_BACKGROUND_FILES_DAYS_TO_LIVE,
                                                                     cam_server_proxy_address))
         self.pipeline_proxy_process.start()
 
@@ -183,9 +185,10 @@ class CameraClientProxyTest(unittest.TestCase):
         self.assertEqual(server_info[self.pipeline_server_address[1]]["load"], 0)
 
         #Server Config
+        self.cam_client.stop_all_instances()
         self.assertEqual(self.pipeline_proxy_client.get_config(), {'http://0.0.0.0:8890': {'expanding': True}, 'http://0.0.0.0:8891': {'expanding': True}})
-        self.pipeline_proxy_client.set_config({'http://0.0.0.0:8890': {'expanding': True}, 'http://0.0.0.0:8891': {"instances":["DUMMY"], 'expanding': False}})
 
+        self.pipeline_proxy_client.set_config({'http://0.0.0.0:8890': {'expanding': True}, 'http://0.0.0.0:8891': {"instances":["DUMMY"], 'expanding': False}})
         instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_config({"camera_name": "simulation"})
         instance_id_2, instance_stream_2 = self.pipeline_client.create_instance_from_config({"camera_name": "simulation2"})
         #Check if streams are alive
