@@ -33,7 +33,7 @@ def start_pipeline_manager(host, port, server_config, config_base, background_ba
     app = bottle.Bottle()
 
     proxy = PipelineManager(config_manager, background_manager,cam_server_client, server_config,
-                            background_files_days_to_live)
+                            int(background_files_days_to_live))
     register_pipeline_rest_interface(app=app, instance_manager=proxy)
     proxy.register_rest_interface(app)
     proxy.register_management_page(app)
