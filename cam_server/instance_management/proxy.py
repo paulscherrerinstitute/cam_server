@@ -141,7 +141,7 @@ class ProxyBase:
             :return: New config.
             """
             new_config = request.json
-            _logger.info("Setting proxy config: %s", new_config)
+            _logger.info("Setting proxy config: %s" % new_config)
             config_str = json.dumps(new_config, sort_keys=True, indent=4,) #Check if can serialize first
 
             self.configuration = new_config
@@ -360,14 +360,14 @@ class ProxyBase:
                 server = self.get_request_server(status)
                 if server is None:
                     server = self.get_free_server(instance_name, status)
-                    _logger.info("Creating stream to %s at %s", instance_name, server.get_address())
+                    _logger.info("Creating stream to %s at %s" % (instance_name, server.get_address()))
                 else:
-                    _logger.info("Creating stream to %s at request server %s Request: %s", instance_name, server.get_address(), str(self.get_source()))
+                    _logger.info("Creating stream to %s at request server %s Request: %s" % (instance_name, server.get_address(), str(self.get_source())))
             else:
-                _logger.info("Creating fixed stream to %s at %s", instance_name, server.get_address())
+                _logger.info("Creating fixed stream to %s at %s" % (instance_name, server.get_address()))
             self.on_creating_server_stream(server, instance_name)
         else:
-            _logger.info("Connecting to stream %s at %s", instance_name, server.get_address())
+            _logger.info("Connecting to stream %s at %s" % (instance_name, server.get_address()))
         return server.get_instance_stream(instance_name)
 
     def on_creating_server_stream(self, server, instance_name):
@@ -382,7 +382,7 @@ class ProxyBase:
                 pass
 
     def stop_all_server_instances(self, server):
-        _logger.info("Stopping all instances at %s", server.get_address())
+        _logger.info("Stopping all instances at %s" % server.get_address())
         try:
             server.stop_all_instances()
         except:
@@ -392,7 +392,7 @@ class ProxyBase:
         status = self.get_status()
         server = self.get_server(instance_name, status)
         if server is not None:
-            _logger.info("Stopping %s at %s", instance_name, server.get_address())
+            _logger.info("Stopping %s at %s" % (instance_name, server.get_address()))
             server.stop_instance(instance_name)
 
     def get_config_provider(self):

@@ -22,6 +22,7 @@ class PipelineClientTest(unittest.TestCase):
         self.cam_config_folder = os.path.join(test_base_dir, "camera_config/")
         self.pipeline_config_folder = os.path.join(test_base_dir, "pipeline_config/")
         self.background_config_folder = os.path.join(test_base_dir, "background_config/")
+        self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
 
         cam_server_address = "http://%s:%s" % (self.host, self.cam_port)
         pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_port)
@@ -33,6 +34,7 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_process = Process(target=start_pipeline_server, args=(self.host, self.pipeline_port,
                                                                             self.pipeline_config_folder,
                                                                             self.background_config_folder,
+                                                                            self.user_scripts_folder,
                                                                             cam_server_address))
         self.pipeline_process.start()
 

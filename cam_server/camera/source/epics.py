@@ -40,7 +40,7 @@ class CameraEpics:
         camera_width_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_WIDTH
         camera_height_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_HEIGHT
 
-        _logger.debug("Checking camera WIDTH '%s' and HEIGHT '%s' PV.", camera_width_pv, camera_height_pv)
+        _logger.debug("Checking camera WIDTH '%s' and HEIGHT '%s' PV." % (camera_width_pv, camera_height_pv))
 
         channel_width = epics.PV(camera_width_pv)
         channel_height = epics.PV(camera_height_pv)

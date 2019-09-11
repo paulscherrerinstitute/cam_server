@@ -47,6 +47,8 @@ PIPELINE_STREAM_PORT_RANGE = (11100, 11201)
 DEFAULT_PIPELINE_CONFIG_FOLDER = "configuration/pipeline_config"
 # Where to store the backgrounds by default.
 DEFAULT_BACKGROUND_CONFIG_FOLDER = "configuration/background_config"
+# Where to store the user pipelene scripts.
+DEFAULT_USER_SCRIPT_FOLDER = "configuration/user_scripts"
 # How many days background files other than latest are kept (default -1 means forever)
 DEFAULT_BACKGROUND_FILES_DAYS_TO_LIVE = -1
 # Temporary storage.

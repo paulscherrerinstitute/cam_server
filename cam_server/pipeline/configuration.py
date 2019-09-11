@@ -137,6 +137,68 @@ class BackgroundImageManager(object):
             raise
 
 
+
+class UserScriptsManager(object):
+    def __init__(self, scripts_folder):
+        if scripts_folder is not None:
+            if len(scripts_folder) > 1 and scripts_folder[-1] == '/':
+                scripts_folder = scripts_folder[:-1]
+
+        self.scripts_folder = scripts_folder
+
+    def exists(self, script_name):
+        if script_name and self.scripts_folder:
+            if not script_name.endswith(".py"):
+                script_name += ".py"
+            script_filename = os.path.join(self.scripts_folder, script_name)
+            return os.path.isfile(script_filename)
+
+    def get_path(self, script_name):
+        if script_name and self.scripts_folder:
+            if not script_name.endswith(".py"):
+                script_name += ".py"
+            return os.path.join(self.scripts_folder, script_name)
+        return None
+
+    def get_script(self, script_name):
+        if not script_name or not self.scripts_folder:
+            return None
+
+        if not script_name.endswith(".py"):
+            script_name += ".py"
+
+        script_filename = os.path.join(self.scripts_folder, script_name)
+
+        if not os.path.isfile(script_filename):
+            raise ValueError("Requested script '%s' does not exist." % script_name)
+
+        with open(script_filename, "r") as data_file:
+            return data_file.read()
+
+    def save_script(self, script_name, script):
+        if not script_name or not self.scripts_folder:
+            return None
+
+        if not script_name.endswith(".py"):
+            script_name += ".py"
+
+        script_filename = os.path.join(self.scripts_folder, script_name)
+
+        if type(script) != str:
+            #bytes = str.encode(bytes, 'utf-8')
+            script = script.decode("utf-8")
+
+        with open(script_filename, "w") as data_file:
+            data_file.write(script)
+
+    def get_scripts(self):
+        if not self.scripts_folder:
+            return []
+        scripts = glob.glob(self.scripts_folder + '/*.py')
+        for i in range(len(scripts)):
+            scripts[i] = basename(scripts[i])
+        return scripts
+
 class PipelineConfig:
 
     DEFAULT_CONFIGURATION = {

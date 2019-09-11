@@ -7,7 +7,7 @@ import os
 from copy import deepcopy
 
 from cam_server import config
-from cam_server.pipeline.configuration import BackgroundImageManager, PipelineConfig
+from cam_server.pipeline.configuration import BackgroundImageManager, PipelineConfig, UserScriptsManager
 from cam_server.utils import update_pipeline_config
 from tests.helpers.factory import get_test_pipeline_manager
 
@@ -353,6 +353,20 @@ class PipelineConfigTest(unittest.TestCase):
         expanded_configuration = PipelineConfig.expand_config(configuration)
         PipelineConfig.validate_pipeline_config(expanded_configuration)
 
+    def test_scripts_manager(self):
+        scripts_manager = UserScriptsManager("user_scripts/")
+
+        script_name = "Test.py"
+        script_content = "print('Hello world')"
+        scripts_manager.save_script(script_name, script_content )
+        try:
+            scripts = scripts_manager.get_scripts()
+            self.assertIn(script_name, scripts)
+
+            ret  = scripts_manager.get_script(script_name)
+            self.assertEqual(ret, script_content)
+        finally:
+            os.remove(os.path.join(scripts_manager.scripts_folder, "Test.py"),)
 
 
 if __name__ == '__main__':

@@ -161,7 +161,7 @@ class PipelineManagerTest(unittest.TestCase):
 
     def test_custom_hostname(self):
         config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
-        pipeline_instance_manager = PipelineInstanceManager(config_manager, MockBackgroundManager(),
+        pipeline_instance_manager = PipelineInstanceManager(config_manager, MockBackgroundManager(), None,
                                                             CamClient("http://0.0.0.0:8888"),
                                                             hostname="custom_cam_hostname")
 
@@ -425,7 +425,7 @@ class PipelineManagerTest(unittest.TestCase):
 
     def test_out_of_ports(self):
         config_manager = PipelineConfigManager(config_provider=MockConfigStorage())
-        instance_manager = PipelineInstanceManager(config_manager, MockBackgroundManager(),
+        instance_manager = PipelineInstanceManager(config_manager, MockBackgroundManager(), None,
                                                    MockCamServerClient(), port_range=(12000, 12003))
 
         instance_id_0, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})

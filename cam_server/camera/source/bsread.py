@@ -23,13 +23,13 @@ class CameraBsread(CameraEpics):
 
         bsread_source_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_STREAM_ADDRESS
 
-        _logger.debug("Checking camera bsread stream address '%s' PV.", bsread_source_pv)
+        _logger.debug("Checking camera bsread stream address '%s' PV." % bsread_source_pv)
 
         bsread_source = epics.PV(bsread_source_pv)
 
         self.bsread_stream_address = bsread_source.get(timeout=config.EPICS_TIMEOUT_GET)
 
-        _logger.info("Got stream address: %s", self.bsread_stream_address)
+        _logger.info("Got stream address: %s" % self.bsread_stream_address)
 
         if not self.bsread_stream_address:
             raise RuntimeError("Could not fetch bsread stream address for cam_server:{}".format(

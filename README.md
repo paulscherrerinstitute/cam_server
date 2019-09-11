@@ -679,7 +679,7 @@ optional arguments:
 
 ```bash
 usage: start_pipeline_server.py [-h] [-c CAM_SERVER] [-p PORT] [-i INTERFACE]
-                                [-b BASE] [-g BACKGROUND_BASE] [-n HOSTNAME]
+                                [-b BASE] [-g BACKGROUND_BASE] [-u USER_SCRIPTS_BASE]  [-n HOSTNAME]
                                 [--log_level {CRITICAL,ERROR,WARNING,INFO,DEBUG}]
 
 Pipeline processing server

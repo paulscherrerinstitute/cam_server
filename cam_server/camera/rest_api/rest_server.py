@@ -91,7 +91,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         :return: New config.
         """
         new_config = CameraConfig(camera_name, request.json).get_configuration()
-        _logger.info("Setting camera '%s' config: %s", camera_name, str(new_config))
+        _logger.info("Setting camera '%s' config: %s" % (camera_name, str(new_config)))
         instance_manager.set_camera_instance_config(camera_name, new_config)
 
         return {"state": "ok",

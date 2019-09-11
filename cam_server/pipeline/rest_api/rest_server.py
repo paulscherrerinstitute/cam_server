@@ -119,7 +119,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
         if not config_updates:
             raise ValueError("Config updates cannot be empty.")
-        _logger.info("Setting instance '%s' config: %s", instance_id, str(config_updates))
+        _logger.info("Setting instance '%s' config: %s" % (instance_id, str(config_updates)))
         instance_manager.update_instance_config(instance_id, config_updates)
 
         # TODO: Remove dependency on instance.
@@ -141,7 +141,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     def set_pipeline_config(pipeline_name):
 
         # TODO: Remove dependency on config_manager.
-        _logger.info("Setting pipeline '%s' config: %s", pipeline_name, str(request.json))
+        _logger.info("Setting pipeline '%s' config: %s" % (pipeline_name, str(request.json)))
         instance_manager.save_pipeline_config(pipeline_name, request.json)
 
         return {"state": "ok",
@@ -240,13 +240,50 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         """
         Return the bytes of aa a background file.
         :param background_name: Background file name.
-        :return: JSON with details and byte stream.
+        :return:
         """
         data = request.body.raw.readall()
         arr = pickle.loads(data)
         instance_manager.background_manager.save_background(background_name, arr, False)
         return {"state": "ok",
                 "status": "Background image %s stored." % background_name,
+                }
+
+    @app.get(api_root_address + '/script')
+    def get_script_list():
+
+        # TODO: Remove dependency on cam_server_client.
+
+        return {"state": "ok",
+                "status": "List of available cameras.",
+                "scripts": instance_manager.user_scripts_manager.get_scripts()}
+
+    @app.get(api_root_address + '/script/<script_name>/script_bytes')
+    def get_script(script_name):
+        """
+        Return the bytes of aa a script file.
+        :param background_name: script file name.
+        :return: JSON with details and byte stream.
+        """
+        script = instance_manager.user_scripts_manager.get_script(script_name)
+        return {"state": "ok",
+                "status": "Script file '%s'." % script_name,
+                "script": script,
+            }
+
+
+    @app.put(api_root_address + '/script/<script_name>/script_bytes')
+    def set_script(script_name):
+        """
+        Return the bytes of aa a script file.
+        :param background_name: script file name.
+        :return:
+        """
+        data = request.body.read()
+        script = data.decode("utf-8")
+        instance_manager.save_script(script_name, script)
+        return {"state": "ok",
+                "status": "Script file %s stored." % script_name,
                 }
 
     @app.error(405)

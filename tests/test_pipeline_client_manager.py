@@ -39,6 +39,7 @@ class PipelineClientTest(unittest.TestCase):
         self.cam_config_folder = os.path.join(test_base_dir, "camera_config/")
         self.pipeline_config_folder = os.path.join(test_base_dir, "pipeline_config/")
         self.background_config_folder = os.path.join(test_base_dir, "background_config/")
+        self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
         self.temp_folder = os.path.join(test_base_dir, "temp/")
 
         cam_server_address = "http://%s:%s" % (self.host, self.cam_port)
@@ -50,6 +51,7 @@ class PipelineClientTest(unittest.TestCase):
         self.cam_process.start()
 
         self.pipeline_process = Process(target=start_pipeline_worker, args=(self.host, self.pipeline_port,
+                                                                            self.temp_folder,
                                                                             self.temp_folder,
                                                                             cam_server_proxy_address))
         self.pipeline_process.start()
@@ -63,6 +65,7 @@ class PipelineClientTest(unittest.TestCase):
                                                                     self.pipeline_config_folder,
                                                                     self.background_config_folder,
                                                                     config.DEFAULT_BACKGROUND_FILES_DAYS_TO_LIVE,
+                                                                    self.user_scripts_folder,
                                                                     cam_server_proxy_address))
         self.pipeline_proxy_process.start()
         self.cam_client = CamClient(cam_server_proxy_address)
@@ -77,6 +80,10 @@ class PipelineClientTest(unittest.TestCase):
              [self.pipeline_proxy_process, self.cam_proxy_process, self.pipeline_process, self.cam_process],
              [
                  os.path.join(self.pipeline_config_folder, "testing_config.json"),
+                 os.path.join(self.temp_folder, "Test.py"),
+                 os.path.join(self.temp_folder, "Test2.py"),
+                 os.path.join(self.user_scripts_folder, "Test.py"),
+                 os.path.join(self.user_scripts_folder, "Test2.py"),
              ])
 
     def test_client(self):
@@ -363,6 +370,54 @@ class PipelineClientTest(unittest.TestCase):
 
         image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
         self.assertIsNotNone(image_array)
+
+    def test_user_scripts(self):
+        script_name = "Test.py"
+        script_content = "print('Hello world')"
+        self.pipeline_client.set_user_script(script_name, script_content)
+
+        scripts = self.pipeline_client.get_user_scripts()
+        self.assertIn(script_name, scripts)
+
+        ret = self.pipeline_client.get_user_script(script_name)
+        self.assertEqual(ret, script_content)
+        filename="temp/Test2.py"
+        with open(filename, "w") as data_file:
+            data_file.write(script_content)
+
+        self.pipeline_client.upload_user_script(filename)
+        os.remove(filename)
+        self.pipeline_client.download_user_script(filename)
+        with open(filename, "r") as data_file:
+            ret= data_file.read()
+        self.assertEqual(ret, script_content)
+
+        script_content = """
+from cam_server.pipeline.data_processing import functions, processor
+def process_image(image, timestamp, x_axis, y_axis, parameters, image_background_array=None):
+    ret = processor.process_image(image, timestamp, x_axis, y_axis, parameters, image_background_array)
+    ret["average_value"] = float(ret["intensity"]) / len(ret["x_axis"]) / len(ret["y_axis"])
+    return ret
+        """
+        filename="temp/Test.py"
+        with open(filename, "w") as data_file:
+            data_file.write(script_content)
+
+        instance_id, stream_address = self.pipeline_client.create_instance_from_config({"camera_name": "simulation"})
+        host, port = get_host_port_from_stream_address(stream_address)
+
+        with source(host=host, port=port, mode=SUB) as stream:
+            data = stream.receive()
+            self.assertIsNotNone(data, "This should really not happen anymore.")
+            self.assertIsNotNone(data.data.data["width"].value)
+            self.assertIsNotNone(data.data.data["height"].value)
+
+        self.pipeline_client.set_function_script(instance_id, filename)
+        time.sleep(1.0)
+        with source(host=host, port=port, mode=SUB) as stream:
+            data = stream.receive()
+            print (data.data.data.keys())
+            self.assertIsNotNone(data.data.data["average_value"].value)
 
 if __name__ == '__main__':
     unittest.main()

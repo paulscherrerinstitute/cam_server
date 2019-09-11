@@ -30,6 +30,7 @@ class PipelineClientTest(unittest.TestCase):
         self.cam_config_folder = os.path.join(test_base_dir, "camera_config/")
         self.pipeline_config_folder = os.path.join(test_base_dir, "pipeline_config/")
         self.background_config_folder = os.path.join(test_base_dir, "background_config/")
+        self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
 
         cam_server_address = "http://%s:%s" % (self.host, self.cam_port)
         pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_port)
@@ -42,6 +43,7 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_process = Process(target=start_pipeline_server, args=(self.host, self.pipeline_port,
                                                                             self.pipeline_config_folder,
                                                                             self.background_config_folder,
+                                                                            self.user_scripts_folder,
                                                                             cam_server_address))
         self.pipeline_process.start()
 
@@ -56,6 +58,9 @@ class PipelineClientTest(unittest.TestCase):
                      [self.cam_process,self.pipeline_process ],
                      [
                          os.path.join(self.pipeline_config_folder, "testing_config.json"),
+                         "temp/Test2.py",
+                         os.path.join(self.user_scripts_folder, "Test.py"),
+                         os.path.join(self.user_scripts_folder, "Test2.py"),
                      ])
 
 
@@ -350,5 +355,31 @@ class PipelineClientTest(unittest.TestCase):
         new_image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
         self.assertEqual(image_array.shape, new_image_array.shape)
         self.assertEqual(image_array.dtype, new_image_array.dtype)
+
+    def test_user_scripts(self):
+        script_name = "Test.py"
+        script_content = "print('Hello world')"
+        self.pipeline_client.set_user_script(script_name, script_content)
+
+        scripts = self.pipeline_client.get_user_scripts()
+        self.assertIn(script_name, scripts)
+
+        ret = self.pipeline_client.get_user_script(script_name)
+        self.assertEqual(ret, script_content)
+        filename="temp/Test2.py"
+        with open(filename, "w") as data_file:
+            data_file.write(script_content)
+
+        self.pipeline_client.upload_user_script(filename)
+        os.remove(filename)
+        self.pipeline_client.download_user_script(filename)
+        with open(filename, "r") as data_file:
+            ret= data_file.read()
+        self.assertEqual(ret, script_content)
+
+
+
+
+
 if __name__ == '__main__':
     unittest.main()

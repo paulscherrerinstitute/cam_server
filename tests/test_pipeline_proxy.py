@@ -28,6 +28,7 @@ class CameraClientProxyTest(unittest.TestCase):
         self.cam_config_folder = os.path.join(test_base_dir, "camera_config/")
         self.pipeline_config_folder = os.path.join(test_base_dir, "pipeline_config/")
         self.background_config_folder = os.path.join(test_base_dir, "background_config/")
+        self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
         self.temp_folder = os.path.join(test_base_dir, "temp/")
 
         self.host = "0.0.0.0"
@@ -62,6 +63,7 @@ class CameraClientProxyTest(unittest.TestCase):
             self.pipeline_server_address.append("http://%s:%s" % (self.host, p))
             process = Process(target=start_pipeline_worker, args=(self.host, p,
                                                         self.temp_folder,
+                                                        self.temp_folder,
                                                         cam_server_proxy_address,
                                                         None,
                                                         port_range))
@@ -75,6 +77,7 @@ class CameraClientProxyTest(unittest.TestCase):
                                                                     self.pipeline_config_folder,
                                                                     self.background_config_folder,
                                                                     config.DEFAULT_BACKGROUND_FILES_DAYS_TO_LIVE,
+                                                                    self.user_scripts_folder,
                                                                     cam_server_proxy_address))
         self.pipeline_proxy_process.start()
 

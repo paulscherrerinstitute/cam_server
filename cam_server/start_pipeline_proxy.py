@@ -3,7 +3,7 @@ import logging
 import os
 import bottle
 
-from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager
+from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager, UserScriptsManager
 from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
 from cam_server import config, CamClient, PipelineClient
@@ -32,7 +32,7 @@ def start_pipeline_proxy(host, port, server_config, config_base, background_base
 
     app = bottle.Bottle()
 
-    proxy = PipelineProxy(config_manager, background_manager,cam_server_client, server_config)
+    proxy = PipelineProxy(config_manager, background_manager, cam_server_client, server_config)
     register_pipeline_rest_interface(app=app, instance_manager=proxy)
     proxy.register_rest_interface(app)
     proxy.register_management_page(app)
@@ -64,7 +64,7 @@ def main():
     logging.basicConfig(level=arguments.log_level)
     initialize_api_logger(arguments.log_level)
     start_pipeline_proxy(arguments.interface, arguments.port, arguments.servers, arguments.base,
-                          arguments.background_base, arguments.cam_server)
+                          arguments.background_base, arguments.scripts_base, arguments.cam_server)
 
 
 if __name__ == "__main__":

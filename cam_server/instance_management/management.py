@@ -98,7 +98,7 @@ class InstanceManager(object):
         Terminate the instance of the specified name.
         :param instance_name: Name of the instance to stop.
         """
-        _logger.info("Stopping instance '%s'.", instance_name)
+        _logger.info("Stopping instance '%s'." % instance_name)
 
         if instance_name in self.instances:
             self.instances[instance_name].stop()
@@ -155,7 +155,7 @@ class InstanceWrapper:
 
     def start(self):
         if self.process and self.process.is_alive():
-            _logger.info("Instance '%s' already running.", self.instance_name)
+            _logger.info("Instance '%s' already running." % self.instance_name)
             return
 
         self.stop_event.set()
@@ -181,7 +181,7 @@ class InstanceWrapper:
 
     def stop(self):
         if not self.process:
-            _logger.info("Instance '%s' already stopped.", self.instance_name)
+            _logger.info("Instance '%s' already stopped." % self.instance_name)
             return
 
         self.stop_event.set()
@@ -193,7 +193,7 @@ class InstanceWrapper:
             time.sleep(config.PROCESS_POLL_INTERVAL)
             # Check if the timeout has already elapsed.
             if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
-                _logger.warning("Could not stop the '%s' instance in time. Terminated.", self.instance_name)
+                _logger.warning("Could not stop the '%s' instance in time. Terminated." % self.instance_name)
                 break
 
         # Kill process - no-op in case process already terminated

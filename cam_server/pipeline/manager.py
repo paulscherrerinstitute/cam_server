@@ -10,10 +10,12 @@ _logger = logging.getLogger(__name__)
 
 
 class Manager(ProxyBase):
-    def __init__(self, config_manager, background_manager, cam_server_client, config_str, bg_days_to_live=-1):
+    def __init__(self, config_manager, background_manager, user_scripts_manager,
+                 cam_server_client, config_str, bg_days_to_live=-1):
         ProxyBase.__init__(self, config_manager, config_str, PipelineClient)
         self.background_manager = background_manager
         self.cam_server_client = cam_server_client
+        self.user_scripts_manager = user_scripts_manager
         self.bg_days_to_live = bg_days_to_live
         # background cleanup every day and upon start
         if bg_days_to_live>=0:
@@ -77,7 +79,7 @@ class Manager(ProxyBase):
             status = self.get_status()
         servers = self.get_current_servers_for_camera(camera_name, status)
         if len(servers) > 0:
-            _logger.info("Located running server for camera %s in the active pipelines", camera_name)
+            _logger.info("Located running server for camera %s in the active pipelines" % camera_name)
             return servers[0]
         else:
             server = self.get_fixed_server_for_camera(camera_name, status)
@@ -85,7 +87,7 @@ class Manager(ProxyBase):
                 return server
             server = self.get_running_camserver(camera_name, status)
             if server is not None:
-                _logger.info("Located running server for camera %s in the cam_server status", camera_name)
+                _logger.info("Located running server for camera %s in the cam_server status" % camera_name)
                 return server
             return self.get_free_server(None, status)
 
@@ -143,10 +145,10 @@ class Manager(ProxyBase):
         self._check_background(server, configuration)
         if pipeline_name is not None:
             server.save_pipeline_config(pipeline_name, configuration)
-            _logger.info("Creating stream from name %s at %s", pipeline_name, server.get_address())
+            _logger.info("Creating stream from name %s at %s" % (pipeline_name, server.get_address()))
             instance_id, stream_address = server.create_instance_from_name(pipeline_name, instance_id)
         elif configuration is not None:
-            _logger.info("Creating stream from config to camera %s at %s", configuration["camera_name"], server.get_address())
+            _logger.info("Creating stream from config to camera %s at %s" % (configuration["camera_name"], server.get_address()))
             instance_id, stream_address = server.create_instance_from_config(configuration, instance_id)
         else:
             raise Exception("Invalid parameters")
@@ -168,8 +170,8 @@ class Manager(ProxyBase):
     def get_instance_stream_from_config(self, configuration):
         status = self.get_status()
         server = self.get_server_for_pipeline(None, configuration, status)
-        _logger.info("Getting stream from config to camera %s at %s", configuration["camera_name"],
-                     server.get_address())
+        _logger.info("Getting stream from config to camera %s at %s" %
+                     (configuration["camera_name"], server.get_address()))
         return server.get_instance_stream_from_config(configuration)
 
     def update_instance_config(self, instance_name, config_updates):
@@ -184,6 +186,15 @@ class Manager(ProxyBase):
             image_array = self.background_manager.get_background(background_id)
             server.set_background_image_bytes(background_id, image_array)
         return background_id
+
+    def save_script(self, script_name, script):
+            if script_name  and script:
+                self.user_scripts_manager.save_script(script_name, script)
+                for server in self.server_pool:
+                    try:
+                        server.set_user_script( script_name, script)
+                    except:
+                        _logger.error("Error setting user script %s on %s" % (script_name, server.get_address()))
 
     def _check_background(self, server, config):
         if config.get("image_background_enable"):

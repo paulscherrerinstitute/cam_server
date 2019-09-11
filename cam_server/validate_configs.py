@@ -68,6 +68,7 @@ def main():
     parser.add_argument('-p', '--pipeline', default=config.DEFAULT_PIPELINE_CONFIG_FOLDER,
                         help="(Pipeline) Configuration base directory")
     parser.add_argument('-b', '--background', default=config.DEFAULT_BACKGROUND_CONFIG_FOLDER)
+    parser.add_argument('-u', '--scripts', default=config.DEFAULT_USER_SCRIPT_FOLDER)
     arguments = parser.parse_args()
 
     logging.basicConfig(level="DEBUG")

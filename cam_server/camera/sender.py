@@ -152,7 +152,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
         camera_name = camera.get_name()
         camera_stream = camera.get_stream()
 
-        _logger.info("Connecting to camera '%s' over bsread.", camera_name)
+        _logger.info("Connecting to camera '%s' over bsread." % camera_name)
 
         process_parameters()
         # register_image_channel(x_size, y_size, dtype)

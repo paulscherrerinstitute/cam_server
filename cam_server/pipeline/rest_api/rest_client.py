@@ -1,5 +1,6 @@
 import requests
 import pickle
+import os
 from bsread import source, SUB
 
 from cam_server import config
@@ -289,6 +290,78 @@ class PipelineClient(object):
         data = pickle.dumps(image_bytes, protocol=0)
         server_response = requests.put(self.api_address_format % rest_endpoint, data=data).json()
         validate_response(server_response)
+
+
+    def set_user_script(self, script_name, script_bytes):
+        """
+        Set user script file on the server.
+        :param filename: Script file name
+        :param script_bytes: Script contents.
+        :return:
+        """
+        rest_endpoint = "/script/%s/script_bytes" % script_name
+        server_response = requests.put(self.api_address_format % rest_endpoint, data=script_bytes).json()
+        validate_response(server_response)
+
+    def get_user_script(self, script_name):
+        """
+        Read user script file bytes.
+        :param filename: Script name on the server.
+        :return: file bytes
+        """
+        rest_endpoint = "/script/%s/script_bytes" % script_name
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["script"]
+
+    def upload_user_script(self, filename):
+        """
+        Upload user script file.
+        :param filename: Local script file name.
+        :return:
+        """
+        script_name = os.path.basename(filename)
+
+        with open(filename, "r") as data_file:
+            script = data_file.read()
+        return self.set_user_script(script_name, script)
+
+    def download_user_script(self, filename):
+        """
+        Download user script file.
+        :param filename: Local script file name.
+        :return:
+        """
+        script_name = os.path.basename(filename)
+        script = self.get_user_script(script_name)
+
+        with open(filename, "w") as data_file:
+            data_file.write(script)
+        return filename
+
+    def get_user_scripts(self):
+        """
+        List user scripts.
+        :return: List of names of scripts on server
+        """
+        rest_endpoint = "/script"
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["scripts"]
+
+    def set_function_script(self, instance_id, filename):
+        """
+        Upload user script file and set as pipeline function script for a given instance.
+        :param instance_id: Id of the instance.
+        :param filename: Script file name.
+        :return:
+        """
+        self.upload_user_script(filename)
+        script_name = os.path.basename(filename)
+        configuration = {}
+        configuration["function"] = script_name
+        configuration["reload"] = True
+        self.set_instance_config(instance_id, configuration)
+
+        return script_name
 
     def get_version(self):
         """

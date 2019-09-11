@@ -12,11 +12,13 @@ _logger = getLogger(__name__)
 
 
 class PipelineInstanceManager(InstanceManager):
-    def __init__(self, config_manager, background_manager, cam_server_client, hostname=None, port_range=None):
+    def __init__(self, config_manager, background_manager, user_scripts_manager,
+                 cam_server_client, hostname=None, port_range=None):
         super(PipelineInstanceManager, self).__init__()
 
         self.config_manager = config_manager
         self.background_manager = background_manager
+        self.user_scripts_manager = user_scripts_manager
         self.cam_server_client = cam_server_client
         self.hostname = hostname
 
@@ -64,8 +66,8 @@ class PipelineInstanceManager(InstanceManager):
         if not self.cam_server_client.is_camera_online(camera_name):
             raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
 
-        _logger.info("Creating pipeline on port '%s' for camera '%s'. instance_id=%s",
-                     stream_port, camera_name, instance_id)
+        _logger.info("Creating pipeline on port '%s' for camera '%s'. instance_id=%s" %
+                     (stream_port, camera_name, instance_id))
 
         self.add_instance(instance_id, PipelineInstance(
             instance_id=instance_id,
@@ -74,6 +76,7 @@ class PipelineInstanceManager(InstanceManager):
             output_stream_port=stream_port,
             cam_client=self.cam_server_client,
             background_manager=self.background_manager,
+            user_scripts_manager=self.user_scripts_manager,
             hostname=self.hostname,
             read_only_config=read_only_pipeline
         ))
@@ -202,14 +205,17 @@ class PipelineInstanceManager(InstanceManager):
     def collect_background(self, camera_name, number_of_images):
         return self.background_manager.collect_background(self.cam_server_client, camera_name, number_of_images)
 
+    def save_script(self, script_name, script):
+        return self.user_scripts_manager.save_script(script_name, script)
+
 
 class PipelineInstance(InstanceWrapper):
     def __init__(self, instance_id, process_function, pipeline_config, output_stream_port, cam_client,
-                 background_manager, hostname=None, read_only_config=False):
+                 background_manager, user_scripts_manager, hostname=None, read_only_config=False):
 
         super(PipelineInstance, self).__init__(instance_id, process_function,
                                                cam_client, pipeline_config, output_stream_port,
-                                               background_manager)
+                                               background_manager, user_scripts_manager)
 
         self.pipeline_config = pipeline_config
 

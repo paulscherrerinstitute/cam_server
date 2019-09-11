@@ -6,6 +6,7 @@
       file: path=/cam_server_configuration/configuration/camera_config state=directory
       file: path=/cam_server_configuration/configuration/pipeline_config state=directory
       file: path=/cam_server_configuration/configuration/background_config state=directory
+      file: path=/cam_server_configuration/configuration/user_scripts state=directory
 
     - name: Create camera_worker  systemd config file
       template: src=../docker/camera_worker.service dest=/etc/systemd/system/camera_worker.service owner=root group=root mode=0644

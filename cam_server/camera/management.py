@@ -36,7 +36,7 @@ class CameraInstanceManager(InstanceManager):
             camera = self.config_manager.load_camera(camera_name)
             camera.verify_camera_online()
 
-            _logger.info("Creating camera instance '%s' on port %d.", camera_name, stream_port)
+            _logger.info("Creating camera instance '%s' on port %d." % (camera_name, stream_port))
 
             camera_config = self.config_manager.get_camera_config(camera_name)
 
