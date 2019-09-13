@@ -22,9 +22,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
     log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
     source = None
 
-    def no_client_timeout():
+    def no_client_action():
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
-                        config.MFLOW_NO_CLIENTS_TIMEOUT, log_tag)
+                        pipeline_parameters["no_client_timeout"], log_tag)
         stop_event.set()
 
     def connect_to_camera():
@@ -42,7 +42,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
     def process_pipeline_parameters():
         parameters = pipeline_config.get_configuration()
-
         _logger.debug("Processing pipeline parameters %s. %s" % (parameters, log_tag))
 
         background_array = None
@@ -63,6 +62,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         if not parameters.get("camera_timeout"):
             parameters["camera_timeout"] = 10.0
 
+        if parameters.get("no_client_timeout") is None:
+            parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
+
         if parameters.get("rotation"):
             if not isinstance(parameters.get("rotation"), dict):
                 parameters["rotation"] = {"angle":float(parameters.get("rotation")), "order":1, "mode":"0.0"}
@@ -75,7 +77,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     parameters["rotation"]["order"] = 1
                 if not parameters["rotation"].get("mode"):
                     parameters["rotation"]["mode"] = "0.0"
-
         return parameters, background_array
 
     functions = {}
@@ -117,7 +118,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         sender = Sender(port=output_stream_port, mode=PUB,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
 
-        sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
+        sender.open(no_client_action=None if pipeline_parameters["no_client_timeout"]<=0 else no_client_action,
+                    no_client_timeout=pipeline_parameters["no_client_timeout"])
         # TODO: Register proper channels.
 
         # Indicate that the startup was successful.
@@ -231,7 +233,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 def store_pipeline(stop_event, statistics, parameter_queue,
                    cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager=None):
 
-    def no_client_timeout():
+    def no_client_action():
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s" %
                         (config.MFLOW_NO_CLIENTS_TIMEOUT, log_tag))
         stop_event.set()
@@ -259,7 +261,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
         sender = Sender(port=output_stream_port, mode=PUSH,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
 
-        sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
+        sender.open(no_client_action=no_client_action, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
         # TODO: Register proper channels.
         # Indicate that the startup was successful.
         stop_event.clear()

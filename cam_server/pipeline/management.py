@@ -103,14 +103,12 @@ class PipelineInstanceManager(InstanceManager):
                              "Use another instance_id or stop the current instance "
                              "if you want to reuse the same instance_id." % instance_id)
 
-        # You cannot specify both or none.
-        if bool(pipeline_name) == bool(configuration):
-            raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
-
-        if configuration:
-            pipeline_config = PipelineConfig(instance_id, configuration)
-        else:
+        if pipeline_name:
             pipeline_config = self.config_manager.load_pipeline(pipeline_name)
+            if configuration is not None:
+                pipeline_config.update( configuration )
+        else:
+            pipeline_config = PipelineConfig(instance_id, configuration)
 
         self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=False)
 

@@ -239,5 +239,15 @@ class CameraClientProxyTest(unittest.TestCase):
         })
     """
 
+    def test_permanent_pipelines(self):
+        pp =  self.pipeline_proxy_client.get_permanent_instances()
+        pp["cxx"] = "yyy"
+        pp["simulation_sp"] = "pp"
+        self.pipeline_proxy_client.set_permanent_instances(pp)
+        pp =  self.pipeline_proxy_client.get_permanent_instances()
+        self.assertEqual(pp, {"simulation_sp":"pp"})
+        self.pipeline_proxy_client.set_permanent_instances({})
+
+
 if __name__ == '__main__':
     unittest.main()

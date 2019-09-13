@@ -31,6 +31,7 @@ class ConfigFileStorage(object):
             # filter out _parameters.json and _background.json files
             if not (re.match(r'.*_parameters.json$', camera) or
                     re.match(r'.*_background.json$', camera) or
+                    re.match(r'.*/permanent_pipelines.json$', camera) or
                     re.match(r'.*/servers.json$', camera)):
                 camera = re.sub(r'.*/', '', camera)
                 camera = re.sub(r'.json', '', camera)

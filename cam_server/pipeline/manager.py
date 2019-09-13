@@ -124,16 +124,17 @@ class Manager(ProxyBase):
             path = self.background_manager.background_folder
             cleanup(age_in_days, path, False, False, last_backgrounds, simulated=simulated)
 
-    def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
-        status = self.get_status()
-        # You cannot specify both or none.
-        if bool(pipeline_name) == bool(configuration):
-            raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
 
+    def create_pipeline(self, pipeline_name=None, config=None, instance_id=None):
+        """
+        If both pipeline_name and configuration are set, pipeline is create from name and
+        configuration fild added as additional config parameters
+        """
+        status = self.get_status()
         if pipeline_name is not None:
             configuration = self.config_manager.get_pipeline_config(pipeline_name)
-        elif configuration is not None:
-            configuration = PipelineConfig.expand_config(configuration)
+        elif config is not None:
+            configuration = PipelineConfig.expand_config(config)
             PipelineConfig.validate_pipeline_config(configuration)
 
         server = None
@@ -146,7 +147,7 @@ class Manager(ProxyBase):
         if pipeline_name is not None:
             server.save_pipeline_config(pipeline_name, configuration)
             _logger.info("Creating stream from name %s at %s" % (pipeline_name, server.get_address()))
-            instance_id, stream_address = server.create_instance_from_name(pipeline_name, instance_id)
+            instance_id, stream_address = server.create_instance_from_name(pipeline_name, instance_id, config)
         elif configuration is not None:
             _logger.info("Creating stream from config to camera %s at %s" % (configuration["camera_name"], server.get_address()))
             instance_id, stream_address = server.create_instance_from_config(configuration, instance_id)
@@ -221,3 +222,9 @@ class Manager(ProxyBase):
                     return self.get_server_from_address(server)
             except:
                 pass
+
+    def start_permanent_instance(self, pipeline, name):
+        _logger.info("Starting permanent instance of %s: %s" % (pipeline,name))
+
+        self.create_pipeline(pipeline, {"no_client_timeout": 0}, name)
+

@@ -7,6 +7,7 @@ from cam_server import config, __VERSION__
 from cam_server.instance_management.rest_api import validate_response
 from cam_server.utils import get_host_port_from_stream_address
 import requests
+from threading import Timer
 from bottle import static_file, request, response
 
 _logger = logging.getLogger(__name__)
@@ -24,6 +25,15 @@ class ProxyBase:
 
         self.default_server = server_pool[0]
         self.executor = ThreadPoolExecutor(len(self.server_pool))
+
+        self.permanent_instances_file = self.get_config_folder() + "/permanent_instances.json"
+        self.permanent_instances = {}
+        self.permanent_instances_manager_timer = None
+        try:
+            with open(self.permanent_instances_file ) as data_file:
+                self.set_permanent_instances(json.load(data_file))
+        except:
+            pass
 
     def register_rest_interface(self, app):
         api_root_address = config.API_PREFIX + config.PROXY_REST_INTERFACE_PREFIX
@@ -152,6 +162,30 @@ class ProxyBase:
             return {"state": "ok",
                     "status": "Proxy configuration  saved.",
                     "config": self.configuration}
+
+        @app.get(api_root_address + '/permanent')
+        def get_permanent_instances():
+            """
+            Get list of permanent instances.
+            :return: List.
+            """
+            return {"state": "ok",
+                    "status": "Proxy configuration retrieved.",
+                    "permanent_instances": self.permanent_instances}
+
+        @app.post(api_root_address + '/permanent')
+        def set_permanent_instances():
+            """
+            Set list of permanent instances.
+            :return: List.
+            """
+            _logger.info("Setting permanent instances: %s" % request.json)
+
+            self.set_permanent_instances(request.json)
+
+            return {"state": "ok",
+                    "status": "Proxy configuration  saved.",
+                    "permanent_instances": self.permanent_instances}
 
         @app.get(api_root_address + '/version')
         def get_version():
@@ -429,6 +463,66 @@ class ProxyBase:
                     configuration[server] = {"expanding": True}
         return configuration
 
+    def set_permanent_instances(self, permanent_instances):
+        instances = self.config_manager.config_provider.get_available_configs()
+        for instance in list(permanent_instances.keys()):
+            if not instance in instances:
+                del permanent_instances[instance]
+        # Check if can serialize first
+        permanent_instances_str = json.dumps(permanent_instances, sort_keys=True, indent=4, )
+
+        with open(self.permanent_instances_file, "w") as text_file:
+            text_file.write(permanent_instances_str)
+        former = self.permanent_instances
+        self.permanent_instances = permanent_instances
+
+        if permanent_instances and not former:
+            self.start_permanent_instances_manager()
+        for instance,name in former.items():
+            if not (instance,name) in permanent_instances.items():
+                self.stop_permanent_instance(instance,name)
+        for instance,name in permanent_instances.items():
+            if not (instance,name) in former.items():
+                self.start_permanent_instance(instance,name)
+        if former and not permanent_instances:
+            self.stop_permanent_instances_manager()
+
+    def start_permanent_instances_manager(self):
+        _logger.info("Starting permanent instance manager")
+
+        self.schedule_timer()
+
+    def schedule_timer(self):
+        if self.permanent_instances_manager_timer:
+            self.permanent_instances_manager_timer.cancel()
+        self.permanent_instances_manager_timer = Timer(10, self.manage_permanent_instances)
+        self.permanent_instances_manager_timer.daemon = True
+        self.permanent_instances_manager_timer.start()
+
+    def manage_permanent_instances(self):
+        _logger.info("Managing permanent instances")
+        info = self.get_info()
+        instances = info['active_instances']
+        for instance, name in self.permanent_instances.items():
+            if not name in instances.keys():
+                _logger.info("Instance not active: %s name: %s" % (instance, name))
+                self.start_permanent_instance(instance, name)
+        self.schedule_timer()
+
+
+    def stop_permanent_instances_manager(self):
+        _logger.info("Stopping permanent instance manager")
+
+        if self.permanent_instances_manager_timer:
+            self.permanent_instances_manager_timer.cancel()
+
+    def start_permanent_instance(self, pipeline, name):
+        _logger.info("Starting permanent instance: %s name: %s" % (pipeline,name))
+        raise Exception("Not implemented")
+
+    def stop_permanent_instance(self, pipeline, name):
+        _logger.info("Stopping permanent instance of %s: %s" % (pipeline,name))
+        self.stop_instance(name)
 
 class ProxyClient(object):
     def __init__(self, address):
@@ -514,3 +608,25 @@ class ProxyClient(object):
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
         return validate_response(server_response)["version"]
+
+
+    def get_permanent_instances(self):
+        """
+        Return the permanent instances
+        :return: List of string
+        """
+        rest_endpoint = "/permanent"
+
+        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        return validate_response(server_response)["permanent_instances"]
+
+    def set_permanent_instances(self, permanent_instances):
+        """
+        Set proxy configuration.
+        :param configuration: List of string, instance names
+        :return: List of string
+        """
+        rest_endpoint = "/permanent"
+
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=permanent_instances).json()
+        return validate_response(server_response)["permanent_instances"]

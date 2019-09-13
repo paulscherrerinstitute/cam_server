@@ -241,6 +241,9 @@ class PipelineConfig:
         # Check if the config is valid.
         PipelineConfig.validate_pipeline_config(self.parameters)
 
+    def update(self, pars):
+        self.parameters.update(pars)
+
     def get_configuration(self):
         # Validate before passing on, since anyone can change the dictionary content.
         PipelineConfig.validate_pipeline_config(self.parameters)

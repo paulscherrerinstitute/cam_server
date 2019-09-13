@@ -1,6 +1,7 @@
 import requests
 import pickle
 import os
+import json
 from bsread import source, SUB
 
 from cam_server import config
@@ -103,17 +104,22 @@ class PipelineClient(object):
         validate_response(server_response)
         return server_response["instance_id"], server_response["stream"]
 
-    def create_instance_from_name(self, pipeline_name, instance_id=None):
+    def create_instance_from_name(self, pipeline_name, instance_id=None, additional_config = None):
         """
         Create a pipeline from a config file. Pipeline config can be changed.
         :param pipeline_name: Name of the pipeline to create.
         :param instance_id: User specified instance id. GUID used if not specified.
+        :param additional_config: Optional additional configuration elements
         :return: Pipeline instance stream.
         """
         rest_endpoint = "/%s" % pipeline_name
 
-        if instance_id:
-            params = {"instance_id": instance_id}
+        if instance_id or additional_config:
+            params = {}
+            if instance_id:
+                params["instance_id"] = instance_id
+            if additional_config:
+                params["additional_config"] = json.dumps(additional_config)
         else:
             params = None
 

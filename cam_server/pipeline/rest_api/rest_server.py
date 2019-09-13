@@ -60,9 +60,14 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     @app.post(api_root_address + '/<pipeline_name>')
     def create_pipeline_from_name(pipeline_name):
-        user_instance_id = request.query.decode().get("instance_id")
+        params = request.query.decode()
+        user_instance_id = params.get("instance_id")
+        additional_config = params.get("additional_config")
+        if additional_config:
+            additional_config = json.loads(additional_config)
 
         instance_id, stream_address = instance_manager.create_pipeline(pipeline_name=pipeline_name,
+                                                                       configuration = additional_config,
                                                                        instance_id=user_instance_id)
 
         # TODO: Remove dependency on instance.
