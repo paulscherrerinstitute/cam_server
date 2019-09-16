@@ -14,7 +14,7 @@ _logger = logging.getLogger(__name__)
 
 
 def start_pipeline_manager(host, port, server_config, config_base, background_base, background_files_days_to_live,
-                           scripts_base, cam_server_api_address):
+                           scripts_base, cam_server_api_address, client_timeout=None, info_update_timeout=None):
 
 
     # Check if config directory exists
@@ -38,7 +38,9 @@ def start_pipeline_manager(host, port, server_config, config_base, background_ba
     app = bottle.Bottle()
 
     proxy = PipelineManager(config_manager, background_manager,user_scripts_manager,
-                            cam_server_client, server_config, int(background_files_days_to_live))
+                            cam_server_client, server_config, int(background_files_days_to_live),
+                            float(client_timeout) if client_timeout else None,
+                            float(info_update_timeout) if info_update_timeout else None)
     register_pipeline_rest_interface(app=app, instance_manager=proxy)
     proxy.register_rest_interface(app)
     proxy.register_management_page(app)
@@ -56,6 +58,8 @@ def main():
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
     parser.add_argument('-s', '--servers', default="",
                         help="Comma-separated list of servers (if not provided, configuration read from servers.json)")
+    parser.add_argument('-t', '--client_timeout', default=config.DEFAULT_SERVER_CLIENT_TIMEOUT, help="Server client timeout in seconds")
+    parser.add_argument('-m', '--update_timeout', default=config.DEFAULT_SERVER_INFO_TIMEOUT, help="Timeout for server info updates in seconds")
     parser.add_argument('-b', '--base', default=config.DEFAULT_PIPELINE_CONFIG_FOLDER,
                         help="(Pipeline) Configuration base directory")
     parser.add_argument('-g', '--background_base', default=config.DEFAULT_BACKGROUND_CONFIG_FOLDER)
@@ -72,7 +76,7 @@ def main():
     initialize_api_logger(arguments.log_level)
     start_pipeline_manager(arguments.interface, arguments.port, arguments.servers, arguments.base,
                           arguments.background_base, arguments.background_files_days_to_live, arguments.scripts_base,
-                          arguments.cam_server)
+                          arguments.cam_server, arguments.client_timeout, arguments.update_timeout)
 
 
 if __name__ == "__main__":

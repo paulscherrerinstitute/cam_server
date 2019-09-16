@@ -6,8 +6,8 @@ _logger = logging.getLogger(__name__)
 
 
 class Manager(ProxyBase):
-    def __init__(self, config_manager, config_str):
-        ProxyBase.__init__(self, config_manager, config_str, CamClient)
+    def __init__(self, config_manager, config_str, client_timeout=None, update_timeout=None):
+        ProxyBase.__init__(self, config_manager, config_str,CamClient, client_timeout, update_timeout)
 
     def get_camera_list(self):
         return self.config_manager.get_camera_list()

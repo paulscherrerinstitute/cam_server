@@ -3,6 +3,7 @@ import socket
 from threading import Timer
 from cam_server.instance_management.proxy import ProxyBase
 from cam_server.pipeline.configuration import PipelineConfig
+from cam_server import config
 from cam_server import PipelineClient
 from cam_server.utils import get_host_port_from_stream_address, cleanup
 
@@ -11,12 +12,12 @@ _logger = logging.getLogger(__name__)
 
 class Manager(ProxyBase):
     def __init__(self, config_manager, background_manager, user_scripts_manager,
-                 cam_server_client, config_str, bg_days_to_live=-1):
-        ProxyBase.__init__(self, config_manager, config_str, PipelineClient)
+                 cam_server_client, config_str, bg_days_to_live=-1, client_timeout=None, update_timeout=None):
+        ProxyBase.__init__(self, config_manager, config_str, PipelineClient, client_timeout, update_timeout)
         self.background_manager = background_manager
         self.cam_server_client = cam_server_client
         self.user_scripts_manager = user_scripts_manager
-        self.bg_days_to_live = bg_days_to_live
+        self.update_timeout = update_timeout
         # background cleanup every day and upon start
         if bg_days_to_live>=0:
             def background_cleanup():
@@ -43,7 +44,8 @@ class Manager(ProxyBase):
         load = self.get_load(status)
         loads = []
         try:
-            instances = self.cam_server_client.get_server_info  ()["active_instances"]
+            instances = self.cam_server_client.get_server_info(
+                timeout = self.update_timeout if self.update_timeout else config.DEFAULT_SERVER_INFO_TIMEOUT)["active_instances"]
             host, port = get_host_port_from_stream_address(instances[camera]["host"])
             if not host.count(".") == 3: #If not IP, get only prefix
                 host= host.split(".")[0].lower()
@@ -125,32 +127,32 @@ class Manager(ProxyBase):
             cleanup(age_in_days, path, False, False, last_backgrounds, simulated=simulated)
 
 
-    def create_pipeline(self, pipeline_name=None, config=None, instance_id=None):
+    def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
         """
         If both pipeline_name and configuration are set, pipeline is create from name and
-        configuration fild added as additional config parameters
+        configuration field added as additional config parameters
         """
         status = self.get_status()
         if pipeline_name is not None:
-            configuration = self.config_manager.get_pipeline_config(pipeline_name)
-        elif config is not None:
-            configuration = PipelineConfig.expand_config(config)
-            PipelineConfig.validate_pipeline_config(configuration)
+            cfg = self.config_manager.get_pipeline_config(pipeline_name)
+        elif configuration is not None:
+            cfg = PipelineConfig.expand_config(configuration)
+            PipelineConfig.validate_pipeline_config(cfg)
 
         server = None
         if instance_id is not None:
             server = self.get_server(instance_id, status)
         if server is None:
-            server = self.get_server_for_pipeline(pipeline_name, configuration, status)
+            server = self.get_server_for_pipeline(pipeline_name, cfg, status)
 
-        self._check_background(server, configuration)
+        self._check_background(server, cfg)
         if pipeline_name is not None:
-            server.save_pipeline_config(pipeline_name, configuration)
+            server.save_pipeline_config(pipeline_name, cfg)
             _logger.info("Creating stream from name %s at %s" % (pipeline_name, server.get_address()))
-            instance_id, stream_address = server.create_instance_from_name(pipeline_name, instance_id, config)
-        elif configuration is not None:
-            _logger.info("Creating stream from config to camera %s at %s" % (configuration["camera_name"], server.get_address()))
-            instance_id, stream_address = server.create_instance_from_config(configuration, instance_id)
+            instance_id, stream_address = server.create_instance_from_name(pipeline_name, instance_id, configuration)
+        elif cfg is not None:
+            _logger.info("Creating stream from config to camera %s at %s" % (cfg["camera_name"], server.get_address()))
+            instance_id, stream_address = server.create_instance_from_config(cfg, instance_id)
         else:
             raise Exception("Invalid parameters")
 

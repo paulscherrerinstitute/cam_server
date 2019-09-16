@@ -91,3 +91,11 @@ EPICS_PV_SUFFIX_STREAM_ADDRESS = ":BSREADCONFIG"
 ################
 
 ZMQ_RECEIVE_TIMEOUT = 1000
+
+
+#########################
+# Manager rest settings #
+#########################
+
+DEFAULT_SERVER_CLIENT_TIMEOUT = None
+DEFAULT_SERVER_INFO_TIMEOUT = 2000

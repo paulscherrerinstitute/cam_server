@@ -11,12 +11,13 @@ from cam_server.instance_management.rest_api import validate_response
 
 
 class PipelineClient(object):
-    def __init__(self, address="http://sf-daqsync-01:8889/"):
+    def __init__(self, address="http://sf-daqsync-01:8889/", timeout = None):
         """
         :param address: Address of the pipeline API, e.g. http://localhost:10000
         """
         self.address = address
         self.api_address_format = address.rstrip("/") + config.API_PREFIX + config.PIPELINE_REST_INTERFACE_PREFIX + "%s"
+        self.timeout = timeout
 
     def get_address(self):
         """
@@ -24,14 +25,15 @@ class PipelineClient(object):
         """
         return self.address
 
-    def get_server_info(self):
+    def get_server_info(self, timeout = None):
         """
         Return the info of the cam server instance.
         For administrative purposes only.
+        Timeout parameter for managers to update more efficiently.
         :return: Status of the server
         """
         rest_endpoint = "/info"
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=timeout if timeout else self.timeout).json()
 
         return validate_response(server_response)["info"]
 
@@ -41,7 +43,7 @@ class PipelineClient(object):
         :return: Currently existing cameras.
         """
         rest_endpoint = ""
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
         return validate_response(server_response)["pipelines"]
 
@@ -52,7 +54,7 @@ class PipelineClient(object):
         :return: Pipeline configuration.
         """
         rest_endpoint = "/%s/config" % pipeline_name
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
         return validate_response(server_response)["config"]
 
@@ -63,7 +65,7 @@ class PipelineClient(object):
         :return: Pipeline configuration.
         """
         rest_endpoint = "/instance/%s/config" % instance_id
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
         return validate_response(server_response)["config"]
 
@@ -74,7 +76,7 @@ class PipelineClient(object):
         :return: Pipeline instance info.
         """
         rest_endpoint = "/instance/%s/info" % instance_id
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
         return validate_response(server_response)["info"]
 
@@ -86,7 +88,7 @@ class PipelineClient(object):
         :return: Pipeline instance stream.
         """
         rest_endpoint = "/instance/%s" % instance_id
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
         return validate_response(server_response)["stream"]
 
@@ -100,7 +102,7 @@ class PipelineClient(object):
         """
         rest_endpoint = "/instance/"
         server_response = requests.post(self.api_address_format % rest_endpoint,
-                                       json=configuration).json()
+                                       json=configuration, timeout=self.timeout).json()
         validate_response(server_response)
         return server_response["instance_id"], server_response["stream"]
 
@@ -124,7 +126,7 @@ class PipelineClient(object):
             params = None
 
         server_response = requests.post(self.api_address_format % rest_endpoint,
-                                        params=params).json()
+                                        params=params, timeout=self.timeout).json()
 
         validate_response(server_response)
 
@@ -145,7 +147,7 @@ class PipelineClient(object):
 
         server_response = requests.post(self.api_address_format % rest_endpoint,
                                         json=configuration,
-                                        params=params).json()
+                                        params=params, timeout=self.timeout).json()
 
         validate_response(server_response)
 
@@ -159,7 +161,8 @@ class PipelineClient(object):
         :return: Actual applied config.
         """
         rest_endpoint = "/%s/config" % pipeline_name
-        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration,
+                                        timeout=self.timeout).json()
 
         return validate_response(server_response)["config"]
 
@@ -170,7 +173,7 @@ class PipelineClient(object):
         """
         rest_endpoint = "/%s/config" % pipeline_name
 
-        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         validate_response(server_response)
 
     def set_instance_config(self, instance_id, configuration):
@@ -181,7 +184,7 @@ class PipelineClient(object):
         :return: Actual applied config.
         """
         rest_endpoint = "/instance/%s/config" % instance_id
-        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration, timeout=self.timeout).json()
 
         return validate_response(server_response)["config"]
 
@@ -191,7 +194,7 @@ class PipelineClient(object):
         :param instance_id: Name of the pipeline to stop.
         """
         rest_endpoint = "/%s" % instance_id
-        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
         validate_response(server_response)
 
@@ -200,7 +203,7 @@ class PipelineClient(object):
         Stop all the pipelines on the server.
         """
         rest_endpoint = ""
-        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
         validate_response(server_response)
 
@@ -228,7 +231,7 @@ class PipelineClient(object):
         """
 
         rest_endpoint = "/camera/%s/background" % camera_name
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
         return validate_response(server_response)["background_id"]
 
@@ -239,7 +242,7 @@ class PipelineClient(object):
         """
         rest_endpoint = "/camera"
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["cameras"]
 
     def get_instance_message(self, instance_id):
@@ -271,7 +274,7 @@ class PipelineClient(object):
         """
         rest_endpoint = "/background/%s/image" % background_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint)
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout)
         return server_response
 
     def get_background_image_bytes(self, background_name):
@@ -282,7 +285,7 @@ class PipelineClient(object):
         """
         rest_endpoint = "/background/%s/image_bytes" % background_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["image"]
 
 
@@ -294,7 +297,7 @@ class PipelineClient(object):
         """
         rest_endpoint = "/background/%s/image_bytes" % background_name
         data = pickle.dumps(image_bytes, protocol=0)
-        server_response = requests.put(self.api_address_format % rest_endpoint, data=data).json()
+        server_response = requests.put(self.api_address_format % rest_endpoint, data=data, timeout=self.timeout).json()
         validate_response(server_response)
 
 
@@ -306,7 +309,8 @@ class PipelineClient(object):
         :return:
         """
         rest_endpoint = "/script/%s/script_bytes" % script_name
-        server_response = requests.put(self.api_address_format % rest_endpoint, data=script_bytes).json()
+        server_response = requests.put(self.api_address_format % rest_endpoint, data=script_bytes,
+                                       timeout=self.timeout).json()
         validate_response(server_response)
 
     def get_user_script(self, script_name):
@@ -316,7 +320,7 @@ class PipelineClient(object):
         :return: file bytes
         """
         rest_endpoint = "/script/%s/script_bytes" % script_name
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["script"]
 
     def upload_user_script(self, filename):
@@ -350,7 +354,7 @@ class PipelineClient(object):
         :return: List of names of scripts on server
         """
         rest_endpoint = "/script"
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["scripts"]
 
     def set_function_script(self, instance_id, filename):
@@ -376,7 +380,7 @@ class PipelineClient(object):
         """
         rest_endpoint = "/version"
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["version"]
 
     def get_logs(self, txt=False):

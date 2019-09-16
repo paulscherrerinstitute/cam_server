@@ -13,7 +13,7 @@ from cam_server.utils import initialize_api_logger
 _logger = logging.getLogger(__name__)
 
 
-def start_camera_manager(host, port, server_config, config_base):
+def start_camera_manager(host, port, server_config, config_base, client_timeout=None, info_update_timeout=None):
     if not os.path.isdir(config_base):
         _logger.error("Configuration directory '%s' does not exist." % config_base)
         exit(-1)
@@ -22,7 +22,9 @@ def start_camera_manager(host, port, server_config, config_base):
 
     app = bottle.Bottle()
 
-    proxy = CameraManager(config_manager, server_config)
+    proxy = CameraManager(config_manager, server_config,
+                          float(client_timeout) if client_timeout else None,
+                          float(info_update_timeout) if info_update_timeout else None)
     register_camera_rest_interface(app=app, instance_manager=proxy)
     proxy.register_rest_interface(app)
     proxy.register_management_page(app)
@@ -40,6 +42,8 @@ def main():
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
     parser.add_argument('-s', '--servers', default="",
                         help="Comma-separated list of servers (if not provided, configuration read from servers.json)")
+    parser.add_argument('-t', '--client_timeout', default=config.DEFAULT_SERVER_CLIENT_TIMEOUT, help="Server client timeout in seconds")
+    parser.add_argument('-m', '--update_timeout', default=config.DEFAULT_SERVER_INFO_TIMEOUT, help="Timeout for server info updates in seconds")
     parser.add_argument('-b', '--base', default=config.DEFAULT_CAMERA_CONFIG_FOLDER,
                         help="(Camera) Configuration base directory")
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
@@ -49,7 +53,7 @@ def main():
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
     initialize_api_logger(arguments.log_level)
-    start_camera_manager(arguments.interface, arguments.port, arguments.servers, arguments.base)
+    start_camera_manager(arguments.interface, arguments.port, arguments.servers, arguments.base, arguments.client_timeout, arguments.update_timeout)
 
 
 if __name__ == "__main__":

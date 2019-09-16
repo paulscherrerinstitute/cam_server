@@ -14,11 +14,12 @@ _logger = logging.getLogger(__name__)
 
 
 class ProxyBase:
-    def __init__(self, config_manager, config_str, ClientClass):
+    def __init__(self, config_manager, config_str, client_class, server_timeout = None, update_timeout = None):
         self.config_manager = config_manager
         self.config_file = None
+        self.update_timeout = update_timeout
         configuration = self._parse_proxy_config(config_str)
-        server_pool = [ClientClass(server) for server in configuration.keys()]
+        server_pool = [client_class(server, server_timeout) for server in configuration.keys()]
 
         self.server_pool = server_pool
         self.configuration = configuration
@@ -220,7 +221,8 @@ class ProxyBase:
     def get_status(self):
         def task(server):
             try:
-                instances = server.get_server_info()['active_instances']
+                instances = server.get_server_info(
+                    timeout = self.update_timeout if self.update_timeout else config.DEFAULT_SERVER_INFO_TIMEOUT)['active_instances']
             except:
                 instances = None
             return (server,instances)
@@ -237,7 +239,8 @@ class ProxyBase:
     def get_servers_info(self):
             def task(server):
                 try:
-                    info = server.get_server_info()
+                    info = server.get_server_info(
+                        timeout = self.update_timeout if self.update_timeout else config.DEFAULT_SERVER_INFO_TIMEOUT)
                 except:
                     info = None
                 return (server, info)

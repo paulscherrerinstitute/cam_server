@@ -5,13 +5,14 @@ from cam_server import config
 
 
 class CamClient(object):
-    def __init__(self, address="http://sf-daqsync-01:8888/"):
+    def __init__(self, address="http://sf-daqsync-01:8888/", timeout = None):
         """
         :param address: Address of the cam API, e.g. http://localhost:10000
         """
 
         self.api_address_format = address.rstrip("/") + config.API_PREFIX + config.CAMERA_REST_INTERFACE_PREFIX + "%s"
         self.address = address
+        self.timeout = timeout
 
     def get_address(self):
         """
@@ -19,14 +20,15 @@ class CamClient(object):
         """
         return self.address
 
-    def get_server_info(self):
+    def get_server_info(self, timeout = None):
         """
         Return the info of the cam server instance.
         For administrative purposes only.
+        Timeout parameter for managers to update more efficiently
         :return: Status of the server
         """
         rest_endpoint = "/info"
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=timeout if timeout else self.timeout).json()
 
         return validate_response(server_response)["info"]
 
@@ -37,7 +39,7 @@ class CamClient(object):
         """
         rest_endpoint = ""
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["cameras"]
 
     def get_camera_config(self, camera_name):
@@ -48,7 +50,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s/config" % camera_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["config"]
 
     def set_camera_config(self, camera_name, configuration):
@@ -60,7 +62,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s/config" % camera_name
 
-        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration, timeout=self.timeout).json()
         return validate_response(server_response)["config"]
 
     def delete_camera_config(self, camera_name):
@@ -71,7 +73,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s/config" % camera_name
 
-        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         validate_response(server_response)
 
     def get_camera_geometry(self, camera_name):
@@ -82,7 +84,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s/geometry" % camera_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["geometry"]
 
     def is_camera_online(self, camera_name):
@@ -93,7 +95,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s/is_online" % camera_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["online"]
 
     def get_camera_image(self, camera_name):
@@ -104,7 +106,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s/image" % camera_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint)
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout)
         return server_response
 
     def get_camera_image_bytes(self, camera_name):
@@ -115,7 +117,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s/image_bytes" % camera_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["image"]
 
     def get_instance_stream(self, camera_name):
@@ -126,7 +128,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s" % camera_name
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["stream"]
 
     def stop_instance(self, camera_name):
@@ -137,7 +139,7 @@ class CamClient(object):
         """
         rest_endpoint = "/%s" % camera_name
 
-        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         validate_response(server_response)
 
     def stop_all_instances(self):
@@ -147,7 +149,7 @@ class CamClient(object):
         """
         rest_endpoint = ""
 
-        server_response = requests.delete(self.api_address_format % rest_endpoint).json()
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         validate_response(server_response)
 
     def get_version(self):
@@ -157,7 +159,7 @@ class CamClient(object):
         """
         rest_endpoint = "/version"
 
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["version"]
 
     def get_logs(self, txt=False):
