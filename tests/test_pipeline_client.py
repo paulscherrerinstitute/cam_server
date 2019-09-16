@@ -331,6 +331,18 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_client.stop_all_instances()
         time.sleep(1.0)
 
+    def test_buffered_pipeline(self):
+        instance_id, stream_address = self.pipeline_client.create_instance_from_config(
+            {"camera_name": "simulation", "buffer_size":20, "no_client_timeout": 60})
+        host, port = get_host_port_from_stream_address(stream_address)
+        time.sleep(2.0)
+        with source(host=host, port=port, mode=PULL) as stream:
+            for i in range(10):
+                data = stream.receive()
+                self.assertEqual(data.data.pulse_id, i)
+        self.pipeline_client.stop_all_instances()
+
+
     def test_background_file(self):
         bg = self.pipeline_client.get_latest_background("simulation")
         image = self.pipeline_client.get_background_image(bg)
