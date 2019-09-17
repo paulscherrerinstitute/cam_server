@@ -227,18 +227,31 @@ class PipelineInstance(InstanceWrapper):
     def get_info(self):
         return {"stream_address": self.stream_address,
                 "is_stream_active": self.is_running(),
-                "camera_name": self.pipeline_config.get_camera_name(),
-                "config": self.pipeline_config.get_configuration(),
+                "camera_name": self.get_camera_name(),
+                "config": self.get_configuration(),
                 "instance_id": self.get_instance_id(),
                 "read_only": self.read_only_config,
                 "last_start_time": self.last_start_time,
-                "statistics": self.get_statistics()}
+                "statistics": self.get_statistics(),
+                "type": self.get_type()}
 
     def get_configuration(self):
         return self.pipeline_config.get_configuration()
 
     def get_stream_address(self):
         return self.stream_address
+
+    def get_camera_name(self):
+        return self.pipeline_config.get_camera_name()
+
+    def get_type(self):
+        try:
+            cfg = self.get_configuration()
+            if ("store" == cfg.get("pipeline_type")) or  fg.get("buffer_size"):
+                return "pushpull"
+        except:
+            pass
+        return "pubsub"
 
     def set_parameter(self, configuration):
         if self.read_only_config:

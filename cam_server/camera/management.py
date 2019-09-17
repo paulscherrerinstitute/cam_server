@@ -81,7 +81,9 @@ class CameraInstance(InstanceWrapper):
                 "camera_name": self.camera.get_name(),
                 "last_start_time": self.last_start_time,
                 "statistics": self.get_statistics(),
-                "config": self.get_configuration()}
+                "config": self.get_configuration(),
+                "type": self.get_type()
+                }
 
     def get_configuration(self):
         return self.camera.camera_config.get_configuration()
@@ -91,6 +93,9 @@ class CameraInstance(InstanceWrapper):
 
     def get_stream_address(self):
         return self.stream_address
+
+    def get_type(self):
+        return "pubsub"
 
     def set_parameter(self, configuration):
         self.camera.camera_config.set_configuration(configuration)
