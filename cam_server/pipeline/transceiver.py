@@ -78,6 +78,15 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         if parameters.get("no_client_timeout") is None:
             parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
 
+        if parameters.get("queue_size") is None:
+            parameters["queue_size"] = config.PIPELINE_DEFAULT_QUEUE_SIZE
+
+        if parameters.get("mode") is None:
+            parameters["mode"] = config.PIPELINE_DEFAULT_MODE
+
+        if parameters.get("block") is None:
+            parameters["block"] = config.PIPELINE_DEFAULT_BLOCK
+
         if parameters.get("rotation"):
             if not isinstance(parameters.get("rotation"), dict):
                 parameters["rotation"] = {"angle":float(parameters.get("rotation")), "order":1, "mode":"0.0"}
@@ -129,22 +138,22 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         _logger.debug("Opening output stream on port %d. %s" % (output_stream_port, log_tag))
 
-        buffer_size = pipeline_parameters.get("buffer_size")
+        sender = Sender(port=output_stream_port,
+                        mode=PUSH if (pipeline_parameters["mode"] == "PUSH") else PUB,
+                        queue_size=pipeline_parameters["queue_size"],
+                        block=pipeline_parameters["block"],
+                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+        sender.open(no_client_action=None if pipeline_parameters["no_client_timeout"]<=0 else no_client_action,
+                    no_client_timeout=pipeline_parameters["no_client_timeout"])
 
+        buffer_size = pipeline_parameters.get("buffer_size")
         if buffer_size:
-            sender = Sender(port=output_stream_port, mode=PUSH, queue_size=1,
-                            data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
             message_buffer = deque(maxlen=buffer_size)
             message_buffer_enabled = Event()
             message_buffer_enabled.set()
             message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, message_buffer_enabled, sender))
 
-        else:
-            sender = Sender(port=output_stream_port, mode=PUB,
-                            data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
 
-        sender.open(no_client_action=None if pipeline_parameters["no_client_timeout"]<=0 else no_client_action,
-                    no_client_timeout=pipeline_parameters["no_client_timeout"])
         # TODO: Register proper channels.
 
         # Indicate that the startup was successful.

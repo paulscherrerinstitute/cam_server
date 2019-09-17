@@ -58,6 +58,12 @@ PIPELINE_RECEIVE_TIMEOUT = 1000
 # Default number of images to collect when acquiring the background.
 PIPELINE_DEFAULT_N_IMAGES_FOR_BACKGROUND = 10
 
+#Default mFlow=ZMQ parameters
+PIPELINE_DEFAULT_QUEUE_SIZE = 10
+PIPELINE_DEFAULT_MODE = "PUB"
+PIPELINE_DEFAULT_BLOCK =True
+
+
 ################
 # IPC settings #
 ################
