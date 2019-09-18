@@ -722,11 +722,11 @@ camera_server & pipeline_server &
 ## Production configuration
 
 The production configurations are not part of this repository but are available on:
-- https://git.psi.ch/controls_highlevel_applications/cam_server_configuration
+- https://github.com/paulscherrerinstitute/cam_server/cam_server_configuration
 
 You can download it using git:
 ```bash
-git clone https://git.psi.ch/controls_highlevel_applications/cam_server_configuration.git
+git clone https://github.com/paulscherrerinstitute/cam_server/cam_server_configuration.git
 ```
 
 And later, when you start the docker container, map the configuration using the **-v** parameter:
@@ -1079,7 +1079,7 @@ of the target system filesystem.
 
 ```bash
 cd /
-git clone https://git.psi.ch/controls_highlevel_applications/cam_server_configuration.git
+git clone https://github.com/paulscherrerinstitute/cam_server/cam_server_configuration.git
 ```
 
 ### Setup the cam_server as a service

@@ -1,4 +1,11 @@
 {
+    "http://sf-daqsync-01.psi.ch:8881": {
+        "cameras": [
+        ],
+        "expanding": true,
+        "instances": [
+        ]
+    },
     "http://sf-daqsync-04.psi.ch:8881": {
         "cameras": [
         ],
