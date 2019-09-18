@@ -133,6 +133,10 @@ class Manager(ProxyBase):
         configuration field added as additional config parameters
         """
         status = self.get_status()
+
+        if (not pipeline_name) and (not configuration):
+            raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
+
         if pipeline_name is not None:
             cfg = self.config_manager.get_pipeline_config(pipeline_name)
         elif configuration is not None:

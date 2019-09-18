@@ -82,9 +82,10 @@ class PipelineManagerTest(unittest.TestCase):
         self.assertFalse(instance_manager.get_info()["active_instances"][pipeline_id_3]["read_only"],
                          "Instance should not be read only.")
 
-        with self.assertRaisesRegex(ValueError, "You must specify either the pipeline name or the "
-                                                "configuration for the pipeline."):
-            instance_manager.create_pipeline(pipeline_name="test_pipeline", configuration=pipeline_config)
+        #This is not valid test anymore: if both are set, the configuration fields are added to the the named pipeline
+        #with self.assertRaisesRegex(ValueError, "You must specify either the pipeline name or the "
+        #                                        "configuration for the pipeline."):
+        #    instance_manager.create_pipeline(pipeline_name="test_pipeline", configuration=pipeline_config)
 
         instance_manager.stop_all_instances()
 

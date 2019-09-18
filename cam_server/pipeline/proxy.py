@@ -15,7 +15,8 @@ class Proxy(ProxyBase):
 
     def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
         if pipeline_name is not None:
-            instance_id, stream_address = self.get_server().create_instance_from_name(pipeline_name, instance_id)
+            instance_id, stream_address = self.get_server().create_instance_from_name(pipeline_name, instance_id,
+                                                                                      configuration)
         elif configuration is not None:
             instance_id, stream_address = self.get_server().create_instance_from_config(configuration, instance_id)
         else:

@@ -84,6 +84,7 @@ class PipelineInstanceManager(InstanceManager):
         self.start_instance(instance_id)
 
     def create_pipeline(self, pipeline_name=None, configuration=None, instance_id=None):
+
         """
         Create the pipeline stream address. Either pass the pipeline name, or the configuration.
         :param pipeline_name: Name of the pipeline to load from config.
@@ -102,6 +103,9 @@ class PipelineInstanceManager(InstanceManager):
             raise ValueError("Instance with id '%s' is already present and running. "
                              "Use another instance_id or stop the current instance "
                              "if you want to reuse the same instance_id." % instance_id)
+
+        if (not pipeline_name) and (not configuration):
+            raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
 
         if pipeline_name:
             pipeline_config = self.config_manager.load_pipeline(pipeline_name)
