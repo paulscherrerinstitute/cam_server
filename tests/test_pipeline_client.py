@@ -342,6 +342,17 @@ class PipelineClientTest(unittest.TestCase):
                 self.assertEqual(data.data.pulse_id, i)
         self.pipeline_client.stop_all_instances()
 
+    def test_named_buffered_pipeline(self):
+        instance_id, stream_address = self.pipeline_client.create_instance_from_name("simulation",
+            additional_config = {"buffer_size":20, "no_client_timeout": 60, "mode": "PUSH", "queue_size": 1}
+        )
+        host, port = get_host_port_from_stream_address(stream_address)
+        time.sleep(2.0)
+        with source(host=host, port=port, mode=PULL) as stream:
+            for i in range(10):
+                data = stream.receive()
+                self.assertEqual(data.data.pulse_id, i)
+        self.pipeline_client.stop_all_instances()
 
     def test_background_file(self):
         bg = self.pipeline_client.get_latest_background("simulation")
