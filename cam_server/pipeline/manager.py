@@ -94,13 +94,14 @@ class Manager(ProxyBase):
             return self.get_free_server(None, status)
 
     def get_server_for_pipeline(self, pipeline_name, configuration, status=None):
+        if pipeline_name is not None:
+            server, port = self.get_fixed_server(pipeline_name)
+            if server:
+                return (server,port)
+        camera_name = configuration["camera_name"]
         if not status:
             status = self.get_status()
-        if pipeline_name is not None:
-            server,port = self.get_fixed_server(pipeline_name)
-            return (server,port)
-        camera_name = configuration["camera_name"]
-        return (self.get_server_for_camera(camera_name, status),None)
+        return self.get_server_for_camera(camera_name, status), None
 
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()

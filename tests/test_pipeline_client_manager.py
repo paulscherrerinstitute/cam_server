@@ -394,8 +394,8 @@ class PipelineClientTest(unittest.TestCase):
 
         script_content = """
 from cam_server.pipeline.data_processing import functions, processor
-def process_image(image, timestamp, x_axis, y_axis, parameters, image_background_array=None):
-    ret = processor.process_image(image, timestamp, x_axis, y_axis, parameters, image_background_array)
+def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_background_array=None):
+    ret = processor.process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_background_array)
     ret["average_value"] = float(ret["intensity"]) / len(ret["x_axis"]) / len(ret["y_axis"])
     return ret
         """

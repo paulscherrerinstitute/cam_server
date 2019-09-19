@@ -265,7 +265,6 @@ class ProxyBase:
                         instance, port = entry, None
                     if name == instance.strip():
                         return self.get_server_from_address(server), port
-
             except:
                 pass
         return None, None
