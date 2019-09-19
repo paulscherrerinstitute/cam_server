@@ -226,9 +226,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 processed_data = function(image, pulse_id, processing_timestamp, x_axis, y_axis,
                                           pipeline_parameters, image_background_array)
 
-                processed_data["width"] = processed_data["image"].shape[1]
-                processed_data["height"] = processed_data["image"].shape[0]
-
                 # Requesting subset of the data
                 include = pipeline_parameters.get("include")
                 if include:

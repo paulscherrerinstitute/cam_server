@@ -32,6 +32,8 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_
     return_value["x_axis"] = x_axis
     return_value["y_axis"] = y_axis
     return_value["image"] = image
+    return_value["width"] = image.shape[1]
+    return_value["height"] = image.shape[0]
     return_value["timestamp"] = timestamp
 
     # Needed for config traceability.
