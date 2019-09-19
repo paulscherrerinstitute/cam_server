@@ -57,6 +57,7 @@ class PipelinePerformanceTest(unittest.TestCase):
         start_time = time.time()
         for image in images:
             process_image_wrapper(image=image,
+                                  pulse_id=0,
                                   timestamp=time.time(),
                                   x_axis=x_axis,
                                   y_axis=y_axis,

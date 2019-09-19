@@ -42,7 +42,7 @@ with sender(port=output_stream_port, mode=output_stream_mode) as output_stream:
     timestamp = time.time()
 
     # Pass data to processing pipeline.
-    processed_data = process_image(image, timestamp, x_axis, y_axis, pipeline_parameters)
+    processed_data = process_image(image, 0, timestamp, x_axis, y_axis, pipeline_parameters)
 
     # Set height and width.
     processed_data["width"] = processed_data["image"].shape[1]

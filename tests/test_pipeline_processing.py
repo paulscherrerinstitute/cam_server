@@ -23,6 +23,7 @@ class PipelineProcessingTest(unittest.TestCase):
         parameters = pipeline_config.get_configuration()
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
@@ -64,6 +65,7 @@ class PipelineProcessingTest(unittest.TestCase):
         image_background_array = background_provider.get_background(parameters.get("image_background"))
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
@@ -92,6 +94,7 @@ class PipelineProcessingTest(unittest.TestCase):
         expected_image = numpy.zeros(shape=(y_size, x_size))
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
@@ -116,6 +119,7 @@ class PipelineProcessingTest(unittest.TestCase):
         parameters = pipeline_config.get_configuration()
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
@@ -134,6 +138,7 @@ class PipelineProcessingTest(unittest.TestCase):
         parameters = pipeline_config.get_configuration()
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
@@ -163,6 +168,7 @@ class PipelineProcessingTest(unittest.TestCase):
 
         with self.assertRaisesRegex(RuntimeError, "Invalid background_image size "):
             process_image(image=image,
+                          pulse_id=0,
                           timestamp=time.time(),
                           x_axis=x_axis,
                           y_axis=y_axis,
@@ -189,6 +195,7 @@ class PipelineProcessingTest(unittest.TestCase):
                                   "slice_%s_intensity"])
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
@@ -204,6 +211,7 @@ class PipelineProcessingTest(unittest.TestCase):
         }).get_configuration()
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
@@ -225,6 +233,7 @@ class PipelineProcessingTest(unittest.TestCase):
         }).get_configuration()
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
@@ -251,7 +260,7 @@ class PipelineProcessingTest(unittest.TestCase):
 
             x_axis, y_axis = simulated_camera.get_x_y_axis()
 
-            return process_image(image=simulated_image, timestamp=time.time(), x_axis=x_axis, y_axis=y_axis,
+            return process_image(image=simulated_image, pulse_id=0, timestamp=time.time(), x_axis=x_axis, y_axis=y_axis,
                                  parameters=parameters)
 
         pipeline_configuration = {
@@ -349,6 +358,7 @@ class PipelineProcessingTest(unittest.TestCase):
         }).get_configuration()
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
@@ -405,6 +415,7 @@ class PipelineProcessingTest(unittest.TestCase):
         image[square_start:square_end, square_start:square_end] = 10000
 
         result = process_image(image=image,
+                               pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
