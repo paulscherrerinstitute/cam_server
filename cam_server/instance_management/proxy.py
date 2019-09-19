@@ -255,15 +255,20 @@ class ProxyBase:
                 ret[server.get_address()] = info
             return ret
 
-    def get_fixed_server(self, name, status=None):
-        if status is None:
-            status = self.get_status()
+    def get_fixed_server(self, name):
         for server in self.configuration.keys():
             try:
-                if name in self.configuration[server]["instances"]:
-                    return self.get_server_from_address(server)
+                for entry in self.configuration[server]["instances"]:
+                    if ':' in entry:
+                        [instance, port] = entry.split(":")
+                    else:
+                        instance, port = entry, None
+                    if name == instance.strip():
+                        return self.get_server_from_address(server), port
+
             except:
                 pass
+        return None, None
 
     def get_server(self, instance_name=None, status=None):
         """
@@ -392,7 +397,7 @@ class ProxyBase:
         status = self.get_status()
         server = self.get_server(instance_name, status)
         if server is None:
-            server = self.get_fixed_server(instance_name, status)
+            server, port = self.get_fixed_server(instance_name)
             if server is None:
                 server = self.get_request_server(status)
                 if server is None:

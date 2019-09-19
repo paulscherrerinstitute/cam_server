@@ -60,14 +60,19 @@ class PipelineInstanceManager(InstanceManager):
         return self.config_manager.get_pipeline_list()
 
     def _create_and_start_pipeline(self, instance_id, pipeline_config, read_only_pipeline):
-        stream_port = self._get_next_available_port(instance_id)
-
         camera_name = pipeline_config.get_camera_name()
         if not self.cam_server_client.is_camera_online(camera_name):
             raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
 
-        _logger.info("Creating pipeline on port '%s' for camera '%s'. instance_id=%s" %
+        if pipeline_config.get_configuration().get("port"):
+            stream_port =  int(pipeline_config.get_configuration().get("port"))
+            _logger.info("Creating pipeline on fixed port '%s' for camera '%s'. instance_id=%s" %
                      (stream_port, camera_name, instance_id))
+        else:
+            stream_port = self._get_next_available_port(instance_id)
+            _logger.info("Creating pipeline on port '%s' for camera '%s'. instance_id=%s" %
+                     (stream_port, camera_name, instance_id))
+
 
         self.add_instance(instance_id, PipelineInstance(
             instance_id=instance_id,

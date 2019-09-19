@@ -6,6 +6,13 @@
         "instances": [
         ]
     },
+    "http://sf-daqsync-03.psi.ch:8881": {
+        "cameras": [
+        ],
+        "expanding": true,
+        "instances": [
+        ]
+    },
     "http://sf-daqsync-04.psi.ch:8881": {
         "cameras": [
         ],
