@@ -4,7 +4,7 @@ import unittest
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server.pipeline.data_processing.psen import process_psen
+from cam_server.pipeline.data_processing.psen import process_image
 
 
 class PsenProcessingTest(unittest.TestCase):
@@ -17,7 +17,7 @@ class PsenProcessingTest(unittest.TestCase):
         parameters = pipeline_config.get_configuration()
         camera_name = simulated_camera.get_name()
 
-        result = process_psen(image=image,
+        result = process_image(image=image,
                               pulse_id=0,
                               timestamp=time.time(),
                               x_axis=x_axis,
@@ -45,7 +45,7 @@ class PsenProcessingTest(unittest.TestCase):
 
         parameters["roi_background"] = [0, 200, 0, 200]
 
-        result = process_psen(image=image,
+        result = process_image(image=image,
                               pulse_id=0,
                               timestamp=time.time(),
                               x_axis=x_axis,
@@ -73,7 +73,7 @@ class PsenProcessingTest(unittest.TestCase):
 
         parameters["roi_signal"] = [0, 200, 0, 200]
 
-        result = process_psen(image=image,
+        result = process_image(image=image,
                               pulse_id=0,
                               timestamp=time.time(),
                               x_axis=x_axis,
@@ -102,7 +102,7 @@ class PsenProcessingTest(unittest.TestCase):
         parameters["roi_signal"] = [0, 200, 0, 200]
         parameters["roi_background"] = [0, 200, 0, 200]
 
-        result = process_psen(image=image,
+        result = process_image(image=image,
                               pulse_id=0,
                               timestamp=time.time(),
                               x_axis=x_axis,
