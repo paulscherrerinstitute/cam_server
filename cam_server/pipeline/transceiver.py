@@ -222,8 +222,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 if not function:
                     continue
 
-                processed_data = function(image, processing_timestamp, x_axis, y_axis,
-                                               pipeline_parameters, image_background_array)
+                pulse_id = data.data.pulse_id
+                processed_data = function(image, pulse_id, processing_timestamp, x_axis, y_axis,
+                                          pipeline_parameters, image_background_array)
 
                 processed_data["width"] = processed_data["image"].shape[1]
                 processed_data["height"] = processed_data["image"].shape[0]
@@ -240,7 +241,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     for field in exclude:
                         processed_data.pop(field, None)
 
-                pulse_id = data.data.pulse_id
                 timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
 
                 last_sent_timestamp = time.time()

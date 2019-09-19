@@ -1,13 +1,12 @@
 import json
 from logging import getLogger
 
-import numpy
 from cam_server.pipeline.data_processing import functions
 
 _logger = getLogger(__name__)
 
 
-def process_image(image, timestamp, x_axis, y_axis, parameters, image_background_array=None):
+def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_background_array=None):
 
     # Add return values
     return_value = dict()
