@@ -281,6 +281,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
     source = None
     sender = None
+    log_tag = "store_pipeline"
 
     try:
         init_statistics(statistics)
