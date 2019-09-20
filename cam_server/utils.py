@@ -116,7 +116,8 @@ def init_statistics(statistics):
     statistics.cpu = 0
     statistics.memory = 0
     statistics.timestamp = time.time()
-    statistics._process = psutil.Process(os.getpid())
+    if psutil:
+        statistics._process = psutil.Process(os.getpid())
     statistics._frame_count = 0
     statistics._last_proc_total_bytes = 0
 

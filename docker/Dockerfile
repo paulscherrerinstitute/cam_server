@@ -1,2 +1,2 @@
 FROM continuumio/miniconda3:4.6.14
-    RUN conda install -c paulscherrerinstitute cam_server=3.3.6 && conda clean --all
+    RUN conda install -c paulscherrerinstitute cam_server=3.3.7 && conda clean --all

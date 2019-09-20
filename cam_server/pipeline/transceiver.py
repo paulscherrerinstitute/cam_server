@@ -283,6 +283,10 @@ def store_pipeline(stop_event, statistics, parameter_queue,
     sender = None
     log_tag = "store_pipeline"
 
+    parameters = pipeline_config.get_configuration()
+    if parameters.get("no_client_timeout") is None:
+        parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
+
     try:
         init_statistics(statistics)
 
@@ -303,7 +307,8 @@ def store_pipeline(stop_event, statistics, parameter_queue,
         sender = Sender(port=output_stream_port, mode=PUSH,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
 
-        sender.open(no_client_action=no_client_action, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
+        sender.open(no_client_action=None if parameters["no_client_timeout"]<=0 else no_client_action,
+                    no_client_timeout=parameters["no_client_timeout"])
         # TODO: Register proper channels.
         # Indicate that the startup was successful.
         stop_event.clear()
