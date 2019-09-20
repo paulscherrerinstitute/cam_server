@@ -2,6 +2,7 @@ import logging
 import os
 import json
 import socket
+import sys
 from concurrent.futures import ThreadPoolExecutor
 from cam_server import config, __VERSION__
 from cam_server.instance_management.rest_api import validate_response
@@ -34,7 +35,7 @@ class ProxyBase:
             with open(self.permanent_instances_file ) as data_file:
                 self.set_permanent_instances(json.load(data_file))
         except:
-            pass
+            _logger.warning("Error loading permanent instances: " + str(sys.exc_info()[1]))
 
     def register_rest_interface(self, app):
         api_root_address = config.API_PREFIX + config.PROXY_REST_INTERFACE_PREFIX
@@ -471,6 +472,7 @@ class ProxyBase:
         return configuration
 
     def set_permanent_instances(self, permanent_instances):
+        _logger.info("Setting permanent instances: " + str(permanent_instances))
         instances = self.config_manager.config_provider.get_available_configs()
         for instance in list(permanent_instances.keys()):
             if not instance in instances:
@@ -487,10 +489,23 @@ class ProxyBase:
             self.start_permanent_instances_manager()
         for instance,name in former.items():
             if not (instance,name) in permanent_instances.items():
-                self.stop_permanent_instance(instance,name)
+                try:
+                    self.stop_permanent_instance(instance,name)
+                except:
+                    _logger.warning("Error stopping permanent instance " + instance + ": " + str(sys.exc_info()[1]))
+        try:
+            instances = self.get_info()['active_instances']
+        except:
+            instances = {}
         for instance,name in permanent_instances.items():
-            if not (instance,name) in former.items():
-                self.start_permanent_instance(instance,name)
+            if name in instances.keys():
+                _logger.info("Permanent instance " + instance + " is already running")
+            else:
+                if not (instance,name) in former.items():
+                    try:
+                        self.start_permanent_instance(instance,name)
+                    except:
+                        _logger.warning("Error starting permanent instance " + instance + ": " + str(sys.exc_info()[1]))
         if former and not permanent_instances:
             self.stop_permanent_instances_manager()
 
@@ -507,13 +522,16 @@ class ProxyBase:
         self.permanent_instances_manager_timer.start()
 
     def manage_permanent_instances(self):
-        _logger.info("Managing permanent instances")
+        _logger.debug("Managing permanent instances")
         info = self.get_info()
         instances = info['active_instances']
         for instance, name in self.permanent_instances.items():
             if not name in instances.keys():
-                _logger.info("Instance not active: %s name: %s" % (instance, name))
-                self.start_permanent_instance(instance, name)
+                try:
+                    _logger.info("Instance not active: %s name: %s" % (instance, name))
+                    self.start_permanent_instance(instance, name)
+                except:
+                    _logger.warning("Error starting permanent instance " + instance + ": " + str(sys.exc_info()[1]))
         self.schedule_timer()
 
 
