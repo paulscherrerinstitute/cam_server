@@ -3,6 +3,7 @@ from importlib import import_module
 from imp import load_source
 import time
 import sys
+import os
 from collections import deque
 from threading import Thread, Event
 
@@ -25,9 +26,14 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
     source = None
 
     def no_client_action():
+        nonlocal sender, message_buffer, pipeline_parameters
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
                         pipeline_parameters["no_client_timeout"], log_tag)
         stop_event.set()
+        if sender:
+            if pipeline_parameters["mode"] == "PUSH" and pipeline_parameters["block"]:
+                _logger.warning("Killing the process: cannot stop gracefully if sender is blocking")
+                os._exit(0)
 
     def connect_to_camera():
         nonlocal source
@@ -39,10 +45,11 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
         source.connect()
 
-    def message_buffer_send_task(message_buffer, message_buffer_enabled, sender):
+    def message_buffer_send_task(message_buffer, stop_event):
         _logger.info("Start message buffer send thread")
+        create_sender()
         try:
-            while message_buffer_enabled.is_set():
+            while not stop_event.is_set():
                 if len(message_buffer) == 0:
                     time.sleep(0.01)
                 else:
@@ -51,6 +58,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         except Exception as e:
             _logger.error("Error on message buffer send thread", e)
         finally:
+            stop_event.set()
+            if sender:
+                sender.close()
             _logger.info("Exit message buffer send thread")
 
     def process_pipeline_parameters():
@@ -101,6 +111,16 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     parameters["rotation"]["mode"] = "0.0"
         return parameters, background_array
 
+    def create_sender():
+        nonlocal sender
+        sender = Sender(port=output_stream_port,
+                        mode=PUSH if (pipeline_parameters["mode"] == "PUSH") else PUB,
+                        queue_size=pipeline_parameters["queue_size"],
+                        block=pipeline_parameters["block"],
+                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+        sender.open(no_client_action=None if pipeline_parameters["no_client_timeout"]<=0 else no_client_action,
+                    no_client_timeout=pipeline_parameters["no_client_timeout"])
+
     functions = {}
 
     def get_function(name, reload=False):
@@ -128,7 +148,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             return None
 
     source, sender = None, None
-    message_buffer, message_buffer_enabled, message_buffer_send_thread  = None, None, None
+    message_buffer, message_buffer_send_thread  = None, None
     try:
         init_statistics(statistics)
 
@@ -138,23 +158,16 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         _logger.debug("Opening output stream on port %d. %s" % (output_stream_port, log_tag))
 
-        sender = Sender(port=output_stream_port,
-                        mode=PUSH if (pipeline_parameters["mode"] == "PUSH") else PUB,
-                        queue_size=pipeline_parameters["queue_size"],
-                        block=pipeline_parameters["block"],
-                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
-        sender.open(no_client_action=None if pipeline_parameters["no_client_timeout"]<=0 else no_client_action,
-                    no_client_timeout=pipeline_parameters["no_client_timeout"])
-
         buffer_size = pipeline_parameters.get("buffer_size")
         if buffer_size:
             message_buffer = deque(maxlen=buffer_size)
-            message_buffer_enabled = Event()
-            message_buffer_enabled.set()
-            message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, message_buffer_enabled, sender))
+            message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event))
+            message_buffer_send_thread.start()
+        else:
+            create_sender()
 
 
-        # TODO: Register proper channels.
+            # TODO: Register proper channels.
 
         # Indicate that the startup was successful.
         stop_event.clear()
@@ -258,17 +271,16 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         raise
 
     finally:
-        if message_buffer_enabled:
-            message_buffer_enabled.clear()
+        stop_event.set()
 
         if source:
             source.disconnect()
 
-        if sender:
-            sender.close()
-
-        if message_buffer_enabled:
+        if message_buffer_send_thread:
             message_buffer_send_thread.join(0.1)
+        else:
+            if sender:
+                sender.close()
 
 
 def store_pipeline(stop_event, statistics, parameter_queue,

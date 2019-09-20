@@ -323,35 +323,6 @@ class PipelineConfigTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "pipeline_type 'invalid' not present in mapping. Available:"):
             PipelineConfig.validate_pipeline_config(expanded_configuration)
 
-    def test_store_pipeline_port_requirement(self):
-        configuration = {"camera_name": "simulation",
-                         "pipeline_type": "store"}
-        expanded_configuration = PipelineConfig.expand_config(configuration)
-
-        with self.assertRaisesRegex(ValueError, "stream_port"):
-            PipelineConfig.validate_pipeline_config(expanded_configuration)
-
-        configuration = {"camera_name": "simulation",
-                         "pipeline_type": "store",
-                         "stream_port": "test"}
-        expanded_configuration = PipelineConfig.expand_config(configuration)
-
-        with self.assertRaisesRegex(ValueError, "must be an integer"):
-            PipelineConfig.validate_pipeline_config(expanded_configuration)
-
-        configuration = {"camera_name": "simulation",
-                         "pipeline_type": "store",
-                         "stream_port": config.PIPELINE_STREAM_PORT_RANGE[0]}
-        expanded_configuration = PipelineConfig.expand_config(configuration)
-
-        with self.assertRaisesRegex(ValueError, "must be outside of"):
-            PipelineConfig.validate_pipeline_config(expanded_configuration)
-
-        configuration = {"camera_name": "simulation",
-                         "pipeline_type": "store",
-                         "stream_port": config.PIPELINE_STREAM_PORT_RANGE[1]+1}
-        expanded_configuration = PipelineConfig.expand_config(configuration)
-        PipelineConfig.validate_pipeline_config(expanded_configuration)
 
     def test_scripts_manager(self):
         scripts_manager = UserScriptsManager("user_scripts/")
