@@ -303,6 +303,8 @@ def store_pipeline(stop_event, statistics, parameter_queue,
         init_statistics(statistics)
 
         camera_name = pipeline_config.get_camera_name()
+        stream_image_name = camera_name + config.EPICS_PV_SUFFIX_IMAGE
+
         log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
         camera_stream_address = cam_client.get_instance_stream(camera_name)
 
@@ -336,7 +338,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
                 if data is None:
                     continue
 
-                forward_data = {camera_name: data.data.data["image"].value}
+                forward_data = {stream_image_name: data.data.data["image"].value}
 
                 pulse_id = data.data.pulse_id
                 timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
