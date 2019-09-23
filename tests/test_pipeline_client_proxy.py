@@ -40,6 +40,9 @@ class PipelineClientTest(unittest.TestCase):
         self.background_config_folder = os.path.join(test_base_dir, "background_config/")
         self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
 
+        require_folder(self.background_config_folder)
+        require_folder(self.user_scripts_folder)
+
         cam_server_address = "http://%s:%s" % (self.host, self.cam_port)
         pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_port)
         cam_server_proxy_address = "http://%s:%s" % (self.host, self.cam_proxy_port)
@@ -79,6 +82,8 @@ class PipelineClientTest(unittest.TestCase):
              [self.cam_process, self.cam_proxy_process, self.pipeline_process, self.pipeline_proxy_process ],
              [
                  os.path.join(self.pipeline_config_folder, "testing_config.json"),
+                 self.background_config_folder,
+                 self.user_scripts_folder,
              ])
 
 

@@ -118,6 +118,9 @@ class PsenProcessingTest(unittest.TestCase):
         self.assertSetEqual(set(required_fields_in_result), set(result.keys()),
                             "Not all required keys are present in the result")
 
+    def test_roi_configuration(self):
+        pass
+
 
 if __name__ == '__main__':
     unittest.main()

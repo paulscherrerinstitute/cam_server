@@ -18,7 +18,7 @@ from cam_server.start_pipeline_worker import start_pipeline_worker
 from cam_server.start_pipeline_manager import start_pipeline_manager
 from cam_server.utils import get_host_port_from_stream_address
 
-from tests import test_cleanup, is_port_available
+from tests import test_cleanup, is_port_available, require_folder
 
 
 class CameraClientProxyTest(unittest.TestCase):
@@ -29,6 +29,10 @@ class CameraClientProxyTest(unittest.TestCase):
         self.background_config_folder = os.path.join(test_base_dir, "background_config/")
         self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
         self.temp_folder = os.path.join(test_base_dir, "temp/")
+
+        require_folder(self.background_config_folder)
+        require_folder(self.user_scripts_folder)
+        require_folder(self.temp_folder)
 
         self.host = "localhost"
         self.cam_server_ports = [8880, 8881]
@@ -103,8 +107,10 @@ class CameraClientProxyTest(unittest.TestCase):
     def tearDown(self):
         test_cleanup([self.cam_client, self.pipeline_client],
                      [self.pipeline_proxy_process, ] + self.process_pipelineserver +
-                     [self.process_camproxy, ] + self.process_camserver ,
-                     [])
+                     [self.process_camproxy, ] + self.process_camserver,
+                     [self.background_config_folder,
+                      self.user_scripts_folder,
+                      self.temp_folder])
 
     def test_manager(self):
         #Creating instances from config
