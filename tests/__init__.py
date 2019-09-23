@@ -3,6 +3,11 @@ import signal
 from time import sleep
 
 
+def require_folder(path):
+    if not os.path.isdir(path):
+        os.mkdir(path)
+
+
 def test_cleanup(servers=[], processes=[], files=[]):
     for s in servers:
         try:
@@ -31,7 +36,10 @@ def test_cleanup(servers=[], processes=[], files=[]):
 
     for f in files:
         try:
-            os.remove(f)
+            if os.path.isfile(f):
+                os.remove(f)
+            elif os.path.isdir(f):
+                os.rmdir(f)
         except:
             pass
 
