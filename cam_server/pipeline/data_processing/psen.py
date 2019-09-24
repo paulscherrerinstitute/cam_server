@@ -67,27 +67,27 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_
     processed_data[image_property_name + ".processing_parameters"] = json.dumps({"roi_signal": roi_signal,
                                                                                  "roi_background": roi_background})
 
-    output = {}
+    # output = {}
 
     if roi_signal:
         signal_profile = get_roi_x_profile(image, roi_signal)
         processed_data[image_property_name + ".roi_signal_x_profile"] = signal_profile
 
-        if pulse_id % 4 == 0:
-            # fel shot
-            if background:
-                avg_background = sum(background) / len(background)
-                output = find_edge(signal_profile - avg_background)
-            else:
-                output['edge_pos'] = np.nan
-                output['xcorr_ampl'] = np.nan
-        else:
-            background.append(signal_profile)
-            output['edge_pos'] = np.nan
-            output['xcorr_ampl'] = np.nan
-
-        processed_data[image_property_name + ".edge_position"] = output['edge_pos']
-        processed_data[image_property_name + ".cross_correlation_amplitude"] = output['xcorr_ampl']
+        # if pulse_id % 4 == 0:
+        #     # fel shot
+        #     if background:
+        #         avg_background = sum(background) / len(background)
+        #         output = find_edge(signal_profile - avg_background)
+        #     else:
+        #         output['edge_pos'] = np.nan
+        #         output['xcorr_ampl'] = np.nan
+        # else:
+        #     background.append(signal_profile)
+        #     output['edge_pos'] = np.nan
+        #     output['xcorr_ampl'] = np.nan
+        #
+        # processed_data[image_property_name + ".edge_position"] = output['edge_pos']
+        # processed_data[image_property_name + ".cross_correlation_amplitude"] = output['xcorr_ampl']
 
     if roi_background:
         processed_data[image_property_name + ".roi_background_x_profile"] = get_roi_x_profile(image, roi_background)
