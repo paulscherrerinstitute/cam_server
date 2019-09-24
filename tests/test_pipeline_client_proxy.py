@@ -3,7 +3,7 @@ import os
 import signal
 import unittest
 import time
-from tests import is_port_available
+from tests import is_port_available, require_folder
 
 from multiprocessing import Process
 from time import sleep
@@ -11,7 +11,7 @@ from time import sleep
 import numpy
 from bsread import source, SUB, PULL
 
-from cam_server import CamClient, PipelineClient
+from cam_server import CamClient, PipelineClient, config
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
@@ -335,7 +335,8 @@ class PipelineClientTest(unittest.TestCase):
 
         self.assertIsNotNone(data)
         self.assertEqual(len(data.data.data), 1, "Only the image should be present in the received data.")
-        self.assertTrue("simulation" in data.data.data, "Camera name should be used instead of 'image'.")
+        self.assertTrue("simulation" + config.EPICS_PV_SUFFIX_IMAGE in data.data.data,
+                        "Camera name should be used instead of 'image'.")
 
         self.pipeline_client.stop_all_instances()
 

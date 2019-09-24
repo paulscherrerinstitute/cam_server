@@ -341,7 +341,8 @@ class PipelineClientTest(unittest.TestCase):
 
         self.assertIsNotNone(data)
         self.assertEqual(len(data.data.data), 1, "Only the image should be present in the received data.")
-        self.assertTrue("simulation" in data.data.data, "Camera name should be used instead of 'image'.")
+        self.assertTrue("simulation"+config.EPICS_PV_SUFFIX_IMAGE in data.data.data,
+                        "Camera name should be used instead of 'image'.")
 
         self.pipeline_client.stop_all_instances()
 
