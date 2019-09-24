@@ -21,7 +21,7 @@ from cam_server.start_pipeline_worker import start_pipeline_worker
 from cam_server.start_camera_manager import start_camera_manager
 from cam_server.start_pipeline_manager import start_pipeline_manager
 from cam_server.utils import get_host_port_from_stream_address
-from tests import test_cleanup, is_port_available
+from tests import test_cleanup, is_port_available, require_folder
 
 
 class PipelineClientTest(unittest.TestCase):
@@ -41,6 +41,10 @@ class PipelineClientTest(unittest.TestCase):
         self.background_config_folder = os.path.join(test_base_dir, "background_config/")
         self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
         self.temp_folder = os.path.join(test_base_dir, "temp/")
+
+        require_folder(self.background_config_folder)
+        require_folder(self.user_scripts_folder)
+        require_folder(self.temp_folder)
 
         cam_server_address = "http://%s:%s" % (self.host, self.cam_port)
         pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_port)
@@ -84,6 +88,9 @@ class PipelineClientTest(unittest.TestCase):
                  os.path.join(self.temp_folder, "Test2.py"),
                  os.path.join(self.user_scripts_folder, "Test.py"),
                  os.path.join(self.user_scripts_folder, "Test2.py"),
+                 self.background_config_folder,
+                 self.user_scripts_folder,
+                 self.temp_folder,
              ])
 
     def test_client(self):
@@ -334,7 +341,8 @@ class PipelineClientTest(unittest.TestCase):
 
         self.assertIsNotNone(data)
         self.assertEqual(len(data.data.data), 1, "Only the image should be present in the received data.")
-        self.assertTrue("simulation" in data.data.data, "Camera name should be used instead of 'image'.")
+        self.assertTrue("simulation"+config.EPICS_PV_SUFFIX_IMAGE in data.data.data,
+                        "Camera name should be used instead of 'image'.")
 
         self.pipeline_client.stop_all_instances()
 

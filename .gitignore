@@ -145,3 +145,4 @@ ENV/
 # Test backgrounds
 simulation_*_*_*.npy
 test_background_*_*_*.npy
+new_simulation_*.npy

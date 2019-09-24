@@ -14,7 +14,7 @@ from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import get_host_port_from_stream_address
 from tests.helpers.factory import get_test_pipeline_manager, get_test_pipeline_manager_with_real_cam, \
     MockConfigStorage, MockBackgroundManager, MockCamServerClient
-from tests import test_cleanup
+from tests import test_cleanup, require_folder
 
 
 class PipelineManagerTest(unittest.TestCase):
@@ -25,6 +25,8 @@ class PipelineManagerTest(unittest.TestCase):
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         self.config_folder = os.path.join(test_base_dir, "camera_config/")
         self.background_folder = os.path.join(test_base_dir, "background_config/")
+
+        require_folder(self.background_folder)
 
         self.process = Process(target=start_camera_server, args=(self.host, self.port, self.config_folder))
         self.process.start()
@@ -40,6 +42,7 @@ class PipelineManagerTest(unittest.TestCase):
                      [
                          os.path.join(self.config_folder, "testing_camera.json"),
                          os.path.join(self.background_folder, "white_background.npy"),
+                         self.background_folder
                      ])
 
     def test_get_pipeline_list(self):

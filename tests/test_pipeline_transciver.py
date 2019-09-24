@@ -10,7 +10,7 @@ import multiprocessing
 
 import numpy
 from bsread import SUB, source, PULL
-from cam_server import CamClient
+from cam_server import CamClient, config
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import processing_pipeline, store_pipeline
 from cam_server.start_camera_server import start_camera_server
@@ -206,7 +206,7 @@ class PipelineTransceiverTest(unittest.TestCase):
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
 
-            required_keys = set(["simulation"])
+            required_keys = set(["simulation" + config.EPICS_PV_SUFFIX_IMAGE])
 
             self.assertSetEqual(required_keys, set(data.data.data.keys()),
                                 "Missing required keys in pipeline output bsread message.")

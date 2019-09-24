@@ -1,4 +1,6 @@
 import unittest
+from shutil import rmtree
+
 from time import sleep
 
 import numpy
@@ -6,13 +8,18 @@ import os
 
 from copy import deepcopy
 
-from cam_server import config
 from cam_server.pipeline.configuration import BackgroundImageManager, PipelineConfig, UserScriptsManager
 from cam_server.utils import update_pipeline_config
+from tests import require_folder
 from tests.helpers.factory import get_test_pipeline_manager
 
 
 class PipelineConfigTest(unittest.TestCase):
+
+    def tearDown(self):
+        if os.path.isdir("user_scripts/"):
+            rmtree("user_scripts/")
+
     def test_get_set_delete_pipeline_config(self):
         instance_manager = get_test_pipeline_manager()
 
@@ -323,8 +330,9 @@ class PipelineConfigTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "pipeline_type 'invalid' not present in mapping. Available:"):
             PipelineConfig.validate_pipeline_config(expanded_configuration)
 
-
     def test_scripts_manager(self):
+        require_folder("user_scripts/")
+
         scripts_manager = UserScriptsManager("user_scripts/")
 
         script_name = "Test.py"

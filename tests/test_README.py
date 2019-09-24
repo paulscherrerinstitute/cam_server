@@ -9,7 +9,7 @@ from time import sleep
 from cam_server import CamClient, PipelineClient
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
-from tests import test_cleanup
+from tests import test_cleanup, require_folder
 
 
 class PipelineClientTest(unittest.TestCase):
@@ -23,6 +23,9 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_config_folder = os.path.join(test_base_dir, "pipeline_config/")
         self.background_config_folder = os.path.join(test_base_dir, "background_config/")
         self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
+
+        require_folder(self.background_config_folder)
+        require_folder(self.user_scripts_folder)
 
         cam_server_address = "http://%s:%s" % (self.host, self.cam_port)
         pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_port)
@@ -52,9 +55,10 @@ class PipelineClientTest(unittest.TestCase):
                  os.path.join(self.pipeline_config_folder, "testing_config.json"),
                  os.path.join(self.pipeline_config_folder, "test_pipeline.json"),
                  os.path.join(self.cam_config_folder, "test_camera.json"),
-                 "testing_dump.h5"
+                 "testing_dump.h5",
+                 self.background_config_folder,
+                 self.user_scripts_folder,
              ])
-
 
     def test_a_quick_start(self):
         from cam_server import PipelineClient
