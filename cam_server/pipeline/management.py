@@ -47,9 +47,11 @@ class PipelineInstanceManager(InstanceManager):
     def _delete_stopped_instance(self, instance_id):
         # If instance is present but not running, delete it.
         if self.is_instance_present(instance_id) and not self.get_instance(instance_id).is_running():
+            _logger.info("Instance is present but not running: %s" % (instance_id,))
             port = self.get_instance(instance_id).get_stream_port()
             self.delete_instance(instance_id)
             self._used_ports.pop(port, None)
+            _logger.info("Instance deleted: %s" % (instance_id,))
         elif not self.is_instance_present(instance_id):
             for port, id in self._used_ports.items():
                 if id == instance_id:
@@ -184,9 +186,9 @@ class PipelineInstanceManager(InstanceManager):
             image_background = config_updates.get("image_background")
             if image_background:
                 self.background_manager.get_background(image_background)
-
         new_config = update_pipeline_config(current_config, config_updates)
         pipeline_instance.set_parameter(new_config)
+        _logger.info("Instance config updated: %s" % (instance_id,))
 
     def stop_instance(self, instance_name):
         super().stop_instance(instance_name)
