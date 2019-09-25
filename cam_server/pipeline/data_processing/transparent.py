@@ -7,13 +7,10 @@ from cam_server.pipeline.data_processing import functions
 _logger = getLogger(__name__)
 
 
-def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_background_array=None):
+def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters):
 
     # Add return values
     return_value = dict()
-
-    if image_background_array is not None:
-        image = functions.subtract_background(image, image_background_array)
 
     image_threshold = parameters.get("image_threshold")
     if image_threshold is not None and image_threshold > 0:

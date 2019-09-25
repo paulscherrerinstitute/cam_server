@@ -14,7 +14,8 @@ from bsread.sender import Sender
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import get_host_port_from_stream_address, set_statistics, init_statistics
-from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number
+from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number, subtract_background
+
 
 _logger = getLogger(__name__)
 
@@ -73,6 +74,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             _logger.debug("Image background enabled. Using background_id %s. %s" %(background_id, log_tag))
 
             background_array = background_manager.get_background(background_id)
+            if background_array is not None:
+                background_array = background_array.astype("uint16",copy=False)
 
         size_x, size_y = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
 
@@ -217,17 +220,21 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 x_axis = data.data.data["x_axis"].value
                 y_axis = data.data.data["y_axis"].value
 
+                # Make a copy if the original image (can be used by multiple pipelines)
+                # image = numpy.array(image)
+
+                # If image is greater that the huge page size (2MB) then image copy makesCPU consumption increase by orders
+                # of magnitude. Perform a copy in chunks instead, where each chunk is smaller than 2MB
+                image = chunk_copy(image)
+
+                if image_background_array is not None:
+                    image = subtract_background(image, image_background_array)
+
                 #Check for rotation parameter
                 rotation = pipeline_parameters.get("rotation")
                 if rotation:
                     image = rotate(image, rotation["angle"], rotation["order"], rotation["mode"])
-                else:
-                    # Make a copy if the original image (can be used by multiple pipelines)
-                    # image = numpy.array(image)
 
-                    # If image is greater that the huge page size (2MB) then image copy makesCPU consumption increase by orders
-                    # of magnitude. Perform a copy in chunks instead, where each chunk is smaller than 2MB
-                    image = chunk_copy(image)
 
                 processing_timestamp = data.data.data["timestamp"].value
 
@@ -236,8 +243,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     continue
 
                 pulse_id = data.data.pulse_id
-                processed_data = function(image, pulse_id, processing_timestamp, x_axis, y_axis,
-                                          pipeline_parameters, image_background_array)
+                processed_data = function(image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters)
 
                 # Requesting subset of the data
                 include = pipeline_parameters.get("include")

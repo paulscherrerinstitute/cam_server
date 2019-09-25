@@ -16,14 +16,14 @@ _logging = getLogger(__name__)
 
 def subtract_background(image, background_image):
     # We do not want negative numbers int the image.
-    if image.shape != background_image.shape:
-        raise RuntimeError("Invalid background_image size %s compared to image %s" % (background_image.shape,
-                                                                                      image.shape))
+    if background_image is not None:
+        if image.shape != background_image.shape:
+            raise RuntimeError("Invalid background_image size %s compared to image %s" % (background_image.shape,
+                                                                                          image.shape))
 
-    mask_for_zeros = (background_image > image)
-    numpy.subtract(image, background_image.astype("uint16"), image)
-    image[mask_for_zeros] = 0
-
+        mask_for_zeros = (background_image > image)
+        numpy.subtract(image, background_image, image)
+        image[mask_for_zeros] = 0
     return image
 
 
