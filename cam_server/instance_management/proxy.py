@@ -396,6 +396,7 @@ class ProxyBase:
     def get_instance_stream(self, instance_name):
         status = self.get_status()
         server = self.get_server(instance_name, status)
+        port = None
         if server is None:
             server, port = self.get_fixed_server(instance_name)
             if server is None:
@@ -407,12 +408,12 @@ class ProxyBase:
                     _logger.info("Creating stream to %s at request server %s Request: %s" % (instance_name, server.get_address(), str(self.get_source())))
             else:
                 _logger.info("Creating fixed stream to %s at %s" % (instance_name, server.get_address()))
-            self.on_creating_server_stream(server, instance_name)
+            self.on_creating_server_stream(server, instance_name, port)
         else:
             _logger.info("Connecting to stream %s at %s" % (instance_name, server.get_address()))
         return server.get_instance_stream(instance_name)
 
-    def on_creating_server_stream(self, server, instance_name):
+    def on_creating_server_stream(self, server, instance_name, port):
         pass
 
     def stop_all_instances(self):

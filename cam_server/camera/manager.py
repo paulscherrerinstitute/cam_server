@@ -18,9 +18,11 @@ class Manager(ProxyBase):
         if server is not None:
             server.set_camera_config(camera_name, new_config)
 
-    def on_creating_server_stream(self, server, instance_name):
+    def on_creating_server_stream(self, server, instance_name, port):
         if (instance_name is not None) and (server is not None):
             # Update volatile config
             config = self.config_manager.get_camera_config(instance_name).get_configuration()
+            if port:
+                config["port"] = port
             server.set_camera_config(instance_name, config)
 

@@ -30,15 +30,18 @@ class CameraInstanceManager(InstanceManager):
 
         # Check if the requested camera already exists.
         if not self.is_instance_present(camera_name):
-
-            stream_port = next(self.port_generator)
-
             camera = self.config_manager.load_camera(camera_name)
             camera.verify_camera_online()
-
-            _logger.info("Creating camera instance '%s' on port %d." % (camera_name, stream_port))
-
             camera_config = self.config_manager.get_camera_config(camera_name)
+
+            if camera_config.get_configuration().get("port"):
+                stream_port = int(camera_config.get_configuration().get("port"))
+                _logger.info("Creating camera stream on fixed port '%s' for camera '%s" %
+                             (stream_port, camera_name))
+            else:
+                stream_port = next(self.port_generator)
+                _logger.info("Creating camera stream on port '%s' for camera '%s'" %
+                             (stream_port, camera_name))
 
             self.add_instance(camera_name, CameraInstance(
                 process_function=get_sender_function(camera_config.get_source_type()),
