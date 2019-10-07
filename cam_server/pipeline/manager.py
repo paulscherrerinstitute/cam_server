@@ -191,6 +191,15 @@ class Manager(ProxyBase):
             self._check_background(server, config_updates)
             server.set_instance_config(instance_name, config_updates)
 
+            #if permanent instance, save the pipeline config
+            if self.is_permanent_instance(instance_name):
+                pipeline_name = self.get_permanent_instance(instance_name)
+                if pipeline_name:
+                    config = self.config_manager.get_pipeline_config(pipeline_name)
+                    config.update(config_updates)
+                    _logger.info("Updating config of permanent pipeline %s:  %s" % (pipeline_name, str(config)))
+                    self.config_manager.save_pipeline_config(pipeline_name, config)
+
     def collect_background(self, camera_name, number_of_images):
         background_id = self.background_manager.collect_background(self.cam_server_client, camera_name, number_of_images)
         for server in self.get_current_servers_for_camera(camera_name):

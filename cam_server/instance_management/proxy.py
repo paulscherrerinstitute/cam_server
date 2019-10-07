@@ -542,13 +542,22 @@ class ProxyBase:
         if self.permanent_instances_manager_timer:
             self.permanent_instances_manager_timer.cancel()
 
-    def start_permanent_instance(self, pipeline, name):
-        _logger.info("Starting permanent instance: %s name: %s" % (pipeline,name))
+    def start_permanent_instance(self, instance, name):
+        _logger.info("Starting permanent instance: %s name: %s" % (instance,name))
         raise Exception("Not implemented")
 
-    def stop_permanent_instance(self, pipeline, name):
-        _logger.info("Stopping permanent instance of %s: %s" % (pipeline,name))
+    def stop_permanent_instance(self, instance, name):
+        _logger.info("Stopping permanent instance of %s: %s" % (instance,name))
         self.stop_instance(name)
+
+    def is_permanent_instance(self, name):
+        return name in self.permanent_instances.values()
+
+    def get_permanent_instance(self, name):
+        for instance, _name in self.permanent_instances.items():
+            if name == _name:
+                return instance
+        return None
 
 class ProxyClient(object):
     def __init__(self, address):
