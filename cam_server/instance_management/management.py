@@ -138,6 +138,7 @@ class InstanceWrapper:
         self.statistics = self.manager.Namespace()
         self.statistics.total_bytes = 0
         self.statistics.clients = 0
+        self.statistics.update_timestamp = 0
         self.statistics.throughput = 0
         self.statistics.frame_rate = 0
         self.statistics.frame_shape = None
@@ -216,6 +217,7 @@ class InstanceWrapper:
         ret = {"total_bytes": self.statistics.total_bytes,
                 "clients": self.statistics.clients,
                 "throughput": self.statistics.throughput,
+                "age": "" if self.statistics.update_timestamp <= 0 else time.time() - self.statistics.update_timestamp,
                 "frame_rate": self.statistics.frame_rate,
                 "pid": str(self.statistics.pid),
                 "cpu": self.statistics.cpu,

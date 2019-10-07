@@ -85,13 +85,13 @@ def get_clients(sender):
 def set_statistics(statistics, sender, total_bytes, frame_shape = None):
     now = time.time()
     timespan = now - statistics.timestamp
+    statistics.update_timestamp = time.time()
     statistics.total_bytes = total_bytes
     statistics._frame_count = statistics._frame_count + 1
     if timespan > 1.0:
         received_bytes = total_bytes - statistics._last_proc_total_bytes
         statistics._last_proc_total_bytes = total_bytes
         statistics.clients = get_clients(sender)
-
         statistics.throughput = (received_bytes / timespan) if (timespan > 0) else None
         statistics.frame_rate = (statistics._frame_count / timespan) if (timespan > 0) else None
         statistics.frame_shape = frame_shape
@@ -107,6 +107,7 @@ def set_statistics(statistics, sender, total_bytes, frame_shape = None):
 
 
 def init_statistics(statistics):
+    statistics.update_timestamp = 0
     statistics.clients = 0
     statistics.total_bytes = 0
     statistics.throughput = 0
