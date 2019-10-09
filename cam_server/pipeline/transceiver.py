@@ -113,6 +113,15 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     parameters["rotation"]["order"] = 1
                 if not parameters["rotation"].get("mode"):
                     parameters["rotation"]["mode"] = "0.0"
+
+        print (parameters.get("pid_range"), type(parameters.get("pid_range")))
+        if parameters.get("pid_range"):
+            try:
+                parameters["pid_range"] = int(parameters.get("pid_range")[0]), int(parameters.get("pid_range")[1])
+            except:
+                parameters["pid_range"] = None
+        print (parameters.get("pid_range"))
+
         return parameters, background_array
 
     def create_sender():
@@ -206,6 +215,19 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                             connect_to_camera()
                     continue
 
+                pulse_id = data.data.pulse_id
+
+                if pipeline_parameters.get("pause"):
+                    continue
+
+                range = pipeline_parameters.get("pid_range")
+                if range:
+                    if (range[0]<=0) or (pulse_id < range[0]):
+                        continue
+                    elif (range[1]>0) and (pulse_id > range[1]):
+                        _logger.warning("Reached end of pid range: stopping pipeline")
+                        raise Exception("End of pid range")
+
                 # Check downsampling parameter
                 downsampling = pipeline_parameters.get("downsampling")
                 if downsampling:
@@ -248,7 +270,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 if not function:
                     continue
 
-                pulse_id = data.data.pulse_id
                 processed_data = function(image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters)
 
                 # Requesting subset of the data
