@@ -14,6 +14,7 @@ from bsread.sender import Sender
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import get_host_port_from_stream_address, set_statistics, init_statistics
+from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
 from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number, subtract_background
 
 
@@ -116,11 +117,16 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
     def create_sender():
         nonlocal sender
-        sender = Sender(port=output_stream_port,
-                        mode=PUSH if (pipeline_parameters["mode"] == "PUSH") else PUB,
-                        queue_size=pipeline_parameters["queue_size"],
-                        block=pipeline_parameters["block"],
-                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+
+        if pipeline_parameters["mode"] == "FILE":
+            file_name = pipeline_parameters["file"]
+            sender = WriterSender(output_file=file_name, number_of_records=UNDEFINED_NUMBER_OF_RECORDS, attributes={})
+        else:
+            sender = Sender(port=output_stream_port,
+                            mode=PUSH if (pipeline_parameters["mode"] == "PUSH") else PUB,
+                            queue_size=pipeline_parameters["queue_size"],
+                            block=pipeline_parameters["block"],
+                            data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
         sender.open(no_client_action=None if pipeline_parameters["no_client_timeout"]<=0 else no_client_action,
                     no_client_timeout=pipeline_parameters["no_client_timeout"])
 

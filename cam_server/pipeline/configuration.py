@@ -300,6 +300,10 @@ class PipelineConfig:
         # Verify if the pipeline exists.
         get_pipeline_function(configuration["pipeline_type"])
 
+        if configuration.get("mode") == "FILE":
+            if not configuration.get("file"):
+                raise ValueError("File name not defined")
+
 
     @staticmethod
     def expand_config(configuration):

@@ -76,9 +76,10 @@ def sum_images(image, accumulator_image):
 
 
 def get_clients(sender):
-    for m in sender.stream._socket_monitors:
-        if type(m) == ConnectionCountMonitor:
-            return m.client_counter
+    if sender.stream:
+        for m in sender.stream._socket_monitors:
+            if type(m) == ConnectionCountMonitor:
+                return m.client_counter
     return 0
 
 

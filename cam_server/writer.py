@@ -1,8 +1,10 @@
 import argparse
 import logging
 from cam_server.utils import get_host_port_from_stream_address
+from bsread.handlers.compact import Value
+from bsread.data.helpers import get_channel_specs
 
-import h5py as h5py
+import h5py
 import numpy
 import socket
 import datetime
@@ -27,13 +29,13 @@ from bsread import source, SUB, PULL
 
 
 class Writer(object):
-    def __init__(self, output_file="/dev/null",  attributes={}):
+    def __init__(self, output_file="/dev/null",  number_of_records = UNDEFINED_NUMBER_OF_RECORDS, attributes={}):
         self.stream = None
         self.output_file = output_file
         self.attributes = attributes or {}
         if isinstance( self.attributes, str):
             self.attributes = json.loads(self.attributes)
-        self.number_of_records = 0
+        self.number_of_records = number_of_records
 
         self.attributes["created"] = datetime.datetime.now().strftime("%d/%m/%Y %H:%M:%S.%f")
         self.attributes["user"] = getpass.getuser()
@@ -46,6 +48,7 @@ class Writer(object):
         self.file = h5py.File(output_file, 'w')
         self._create_attributes_datasets()
         self.scalar_datasets, self.array_datasets = {}, {}
+        self.serializers = {}
 
     def _create_scalar_dataset(self, name, dtype):
         ret =  self.file.create_dataset(name=name,
@@ -67,12 +70,19 @@ class Writer(object):
         dataset = self.scalar_datasets[name]
         if self.number_of_records < 0:
             dataset.resize(size=self.current_record+1, axis=0)
+        if name in self.serializers.keys():
+            (serializer, dtype) = self.serializers[name]
+        if isinstance(value, str):
+            value = numpy.string_(value)
         dataset[self.current_record] = value
 
     def _append_array_dataset(self, name, value):
         dataset = self.array_datasets[name]
         if self.number_of_records < 0:
             dataset.resize(size=self.current_record+1, axis=0)
+        if self.serializers.get(name):
+            (serializer, dtype) = self.serializers[name]
+            value = serializer(value, dtype)
         dataset[self.current_record] = value
 
     def create_header_datasets(self):
@@ -93,7 +103,15 @@ class Writer(object):
             if isinstance(value, numpy.ndarray):
                 self._create_array_dataset(VALUE_DATASET_NAME_FORMAT % name, value.dtype, value.shape)
             else:
-                self._create_scalar_dataset(VALUE_DATASET_NAME_FORMAT % name, value.dtype)
+                if hasattr(value, 'dtype'):
+                    dtype = value.dtype
+                else:
+                    if isinstance(value, str):
+                        dtype = "S1000"
+                    else:
+                        dtype, _, serializer, _ = get_channel_specs(value, extended=True)
+                        self.serializers[VALUE_DATASET_NAME_FORMAT % name] = (serializer, dtype)
+                self._create_scalar_dataset(VALUE_DATASET_NAME_FORMAT % name, dtype)
             self._create_scalar_dataset(TIMESTAMP_DATASET_NAME_FORMAT % name, "uint64")
             self._create_scalar_dataset(TIMESTAMP_OFFSET_DATASET_NAME_FORMAT % name, "uint64")
 
@@ -125,21 +143,30 @@ class Writer(object):
 
 
     def close(self):
-        #self._flush_metadata()
         if self.number_of_records >=0:
             if self.current_record != self.number_of_records:
                 _logger.debug("Image dataset number of records set to=%s" % self.current_record)
-                print ("Image dataset number of records set to=%s" % self.current_record)
                 for dataset in list(self.scalar_datasets.values()) + list(self.array_datasets.values()):
                     dataset.resize(size=self.current_record, axis=0)
         self.file.close()
         self.scalar_datasets, self.array_datasets = {}, {}
         _logger.info("Writing completed.")
 
-    def start(self, stream, stream_mode=SUB, number_of_records = UNDEFINED_NUMBER_OF_RECORDS):
-        self.stream = stream
-        self.number_of_records = number_of_records
+    def add_record(self, pulse_id, data, format_changed, global_timestamp, global_timestamp_offset):
+        if (self.number_of_records >= 0) and (self.current_record >= self.number_of_records):
+            raise Exception("HDF5 Writer reached the total number of records")
+        if self.current_record == 0:
+            self.create_header_datasets()
+            self.create_channel_datasets(data)
+        else:
+            if format_changed:
+                raise Exception("Data format changed")
+        self.append_header(pulse_id, global_timestamp, global_timestamp_offset)
+        self.append_channel_data(data)
+        self.current_record += 1
 
+    def start(self, stream, stream_mode=SUB):
+        self.stream = stream
         try:
             stream_host, stream_port = get_host_port_from_stream_address(stream)
             with source(host=stream_host, port=stream_port, mode=stream_mode) as stream:
@@ -151,20 +178,27 @@ class Writer(object):
                     pulse_id, data, format_changed, global_timestamp, global_timestamp_offset = \
                         rec.data.pulse_id, rec.data.data, rec.data.format_changed, rec.data.global_timestamp, \
                         rec.data.global_timestamp_offset
+                    self.add_record(pulse_id, data, format_changed, global_timestamp, global_timestamp_offset)
 
-                    if self.current_record ==0:
-                        self.create_header_datasets()
-                        self.create_channel_datasets(data)
-                    else:
-                        if format_changed:
-                            raise Exception("Data format changed")
-
-                    self.append_header(pulse_id, global_timestamp, global_timestamp_offset)
-                    self.append_channel_data(data)
-
-                    self.current_record += 1
         finally:
             self.close()
+
+class WriterSender(object):
+    def __init__(self, output_file="/dev/null", number_of_records=UNDEFINED_NUMBER_OF_RECORDS, attributes={}):
+        self.writer = Writer(output_file, number_of_records, attributes)
+        self.stream=None
+
+    def open(self, no_client_action=None, no_client_timeout=None):
+        pass
+
+    def send(self, data, timestamp, pulse_id):
+        bsdata = {}
+        for key in data.keys():
+            bsdata[key] = Value(data[key],timestamp[0], timestamp[1])
+        self.writer.add_record(pulse_id, bsdata, False, timestamp[0], timestamp[1])
+
+    def close(self):
+        self.writer.close()
 
 def main():
     parser = argparse.ArgumentParser(description='Stream writer')
@@ -178,8 +212,8 @@ def main():
                         help="Log level to use.")
     arguments = parser.parse_args()
     logging.basicConfig(level=arguments.log_level)
-    writer = Writer(arguments.filename, arguments.attributes)
-    writer.start(arguments.stream, PULL if arguments.type == "PULL" else SUB, int(arguments.records))
+    writer = Writer(arguments.filename, int(arguments.records), arguments.attributes)
+    writer.start(arguments.stream, PULL if arguments.type == "PULL" else SUB)
 
 if __name__ == "__main__":
     main()
