@@ -199,15 +199,23 @@ class WriterSender(object):
                        layout = LAYOUT_DEFAULT, save_local_timestamps = LOCALTIME_DEFAULT, attributes={}):
         self.writer = Writer(output_file, number_of_records, layout, save_local_timestamps, attributes)
         self.stream=None
+        self.shapes = {}
 
     def open(self, no_client_action=None, no_client_timeout=None):
         pass
 
     def send(self, data, timestamp, pulse_id):
         bsdata = {}
+        shapes = {}
         for key in data.keys():
-            bsdata[key] = Value(data[key],timestamp[0], timestamp[1])
-        self.writer.add_record(pulse_id, bsdata, False, timestamp[0], timestamp[1])
+            val = data[key]
+            #if hasattr(val, 'shape'):
+            if isinstance(val, numpy.ndarray):
+                shapes[key] = val.shape
+            bsdata[key] = Value(val,timestamp[0], timestamp[1])
+        changed = shapes != self.shapes
+        self.shapes = shapes
+        self.writer.add_record(pulse_id, bsdata, changed, timestamp[0], timestamp[1])
 
     def close(self):
         self.writer.close()
