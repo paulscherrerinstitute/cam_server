@@ -14,7 +14,7 @@ from bsread.sender import Sender
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import get_host_port_from_stream_address, set_statistics, init_statistics
-from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
+from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_DEFAULT, LOCALTIME_DEFAULT
 from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number, subtract_background
 
 
@@ -114,13 +114,17 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 if not parameters["rotation"].get("mode"):
                     parameters["rotation"]["mode"] = "0.0"
 
-        print (parameters.get("pid_range"), type(parameters.get("pid_range")))
         if parameters.get("pid_range"):
             try:
                 parameters["pid_range"] = int(parameters.get("pid_range")[0]), int(parameters.get("pid_range")[1])
             except:
                 parameters["pid_range"] = None
-        print (parameters.get("pid_range"))
+
+        if parameters["mode"] == "FILE":
+            if parameters.get("layout") is None:
+                parameters["layout"] = LAYOUT_DEFAULT
+            if parameters.get("localtime") is None:
+                parameters["localtime"] = LOCALTIME_DEFAULT
 
         return parameters, background_array
 
@@ -129,7 +133,11 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         if pipeline_parameters["mode"] == "FILE":
             file_name = pipeline_parameters["file"]
-            sender = WriterSender(output_file=file_name, number_of_records=UNDEFINED_NUMBER_OF_RECORDS, attributes={})
+            sender = WriterSender(output_file=file_name,
+                                  number_of_records=UNDEFINED_NUMBER_OF_RECORDS,
+                                  layout=pipeline_parameters["layout"],
+                                  save_local_timestamps=pipeline_parameters["localtime"],
+                                  attributes={})
         else:
             sender = Sender(port=output_stream_port,
                             mode=PUSH if (pipeline_parameters["mode"] == "PUSH") else PUB,
