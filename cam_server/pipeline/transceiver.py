@@ -14,7 +14,7 @@ from bsread.sender import Sender
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import get_host_port_from_stream_address, set_statistics, init_statistics
-from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_DEFAULT, LOCALTIME_DEFAULT
+from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
 from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number, subtract_background
 
 
@@ -125,6 +125,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 parameters["layout"] = LAYOUT_DEFAULT
             if parameters.get("localtime") is None:
                 parameters["localtime"] = LOCALTIME_DEFAULT
+            if parameters.get("change") is None:
+                parameters["change"] = CHANGE_DEFAULT
 
         return parameters, background_array
 
@@ -137,6 +139,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                                   number_of_records=UNDEFINED_NUMBER_OF_RECORDS,
                                   layout=pipeline_parameters["layout"],
                                   save_local_timestamps=pipeline_parameters["localtime"],
+                                  change=pipeline_parameters["change"],
                                   attributes={})
         else:
             sender = Sender(port=output_stream_port,
