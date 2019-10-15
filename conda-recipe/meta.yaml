@@ -35,6 +35,7 @@ build:
     - pipeline_worker = cam_server.start_pipeline_worker:main
     - pipeline_manager = cam_server.start_pipeline_manager:main
     - validate_configs = cam_server.validate_configs:main
+    - writer = cam_server.writer:main
 
 about:
     home: https://github.com/paulscherrerinstitute/cam_server

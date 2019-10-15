@@ -254,6 +254,54 @@ class CameraClientProxyTest(unittest.TestCase):
         self.assertEqual(pp, {"simulation_sp":"pp"})
         self.pipeline_proxy_client.set_permanent_instances({})
 
+    def test_file_dump_pipeline(self):
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
+            instance_id = "simulation_file_dump", \
+            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5"})
+        print (instance_id_1, instance_stream_1)
+        time.sleep(1.0)
+        self.pipeline_client.stop_instance(instance_id_1)
+
+    def test_file_dump_pipeline2(self):
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
+            instance_id = "simulation_file_dump", \
+            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5",
+                                 "layout":"FLAT", "localtime":False})
+        print (instance_id_1, instance_stream_1)
+        time.sleep(1.0)
+        self.pipeline_client.stop_instance(instance_id_1)
+
+
+    def test_pipeline_pid_range(self):
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
+            instance_id = "simulation_file_range", \
+            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5", "pid_range":[5, 10]})
+        print(instance_id_1, instance_stream_1)
+        while instance_id_1 in self.pipeline_client.get_server_info()["active_instances"]:
+            time.sleep(0.2)
+
+
+    def test_pipeline_pid_range2(self):
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
+            instance_id = "simulation_file_range", \
+            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5", "pid_range":[0, 0]})
+        print(instance_id_1, instance_stream_1)
+        time.sleep(0.5)
+        self.pipeline_client.set_instance_config(instance_id_1, {"pid_range":[5, 0]})
+        time.sleep(0.5)
+        self.pipeline_client.set_instance_config(instance_id_1, {"pid_range": [5, 6]})
+        while instance_id_1 in self.pipeline_client.get_server_info()["active_instances"]:
+            time.sleep(0.2)
+
+    def test_pause(self):
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
+            instance_id = "simulation_file_range", \
+            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5"})
+        time.sleep(0.5)
+        self.pipeline_client.set_instance_config(instance_id_1, {"pause":True})
+        time.sleep(0.5)
+        self.pipeline_client.set_instance_config(instance_id_1, {"pause":False})
+        time.sleep(0.5)
 
 if __name__ == '__main__':
     unittest.main()
