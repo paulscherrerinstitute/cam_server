@@ -310,6 +310,17 @@ pipeline is added to the output bsread stream in the
     - If no message received in camera_timeout seconds, pipeline attempts to reconnect to the camera
       stream. If reconnection is not possible, the pipeline will stop. 
       If null or non positive then the timeout handling is disabled.
+- **mode** (Default _'PUB'_): Output type ('PUB', 'PUSH' or 'FILE').
+    - For FILE mode, the following parameters are valid:
+        - **file**: File name.
+        - **layout** (Default _'DEFAULT'_): Output file layout ('DEFAULT' or 'FLAT').
+        - **localtime** (Default _True_): Create datasets to store each channel local time (in addition to global timestamp).
+        - **change** (Default _False_): If True accepts change in dimensions of arrays (creating new datasets in the same file).
+- **pid_range** (Default _None_): Pulse ID range to be processed [start_pid, stop_pid]. 
+  The list can be updated dynamically. While start_pid=0 writing is disabled. 
+  If stop_pid is reached then the instance shuts itself down, as no other pulse id wil be processed.  
+- **paused** (Default _False_): While set to True stops processing messages.         
+
     
 #### Example
 ```json
