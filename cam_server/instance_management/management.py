@@ -83,6 +83,12 @@ class InstanceManager(object):
 
         return self.instances[instance_name]
 
+    def get_instance_exit_code(self, instance_name):
+        instance = self.get_instance(instance_name)
+        if not instance.process:
+            raise ValueError("Instance '%s' process not created." % instance_name)
+        return instance.process.exitcode
+
     def start_instance(self, instance_name):
         """
         Start the instance.

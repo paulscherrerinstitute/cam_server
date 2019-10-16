@@ -178,6 +178,21 @@ class Manager(ProxyBase):
             return server.get_instance_info(instance_name)
         raise ValueError("Instance '%s' does not exist." % instance_name)
 
+    def get_instance_exit_code(self, instance_name):
+        status = self.get_status()
+        server = self.get_server(instance_name, status)
+        if server is not None:
+            raise ValueError("Instance '%s' still running." % instance_name)
+        else:
+            for server in self.server_pool:
+                try:
+                    exit_code= server.get_instance_exit_code(instance_name)
+                    if exit_code is not  None:
+                        return exit_code
+                except:
+                    pass
+        return None
+
     def get_instance_stream_from_config(self, configuration):
         status = self.get_status()
         (server,port) = self.get_server_for_pipeline(None, configuration, status)

@@ -32,6 +32,9 @@ class CamClient(object):
 
         return validate_response(server_response)["info"]
 
+    def is_instance_running(self, instance_id):
+        return instance_id in self.get_server_info()["active_instances"]
+
     def get_cameras(self):
         """
         List existing cameras.

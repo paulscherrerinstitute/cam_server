@@ -20,12 +20,15 @@ from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is
 
 _logger = getLogger(__name__)
 
+class ProcessingCompleated(Exception):
+     pass
 
 def processing_pipeline(stop_event, statistics, parameter_queue,
                         cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager = None):
     camera_name = pipeline_config.get_camera_name()
     log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
     source = None
+    exit_code=0
 
     def no_client_action():
         nonlocal sender, message_buffer, pipeline_parameters
@@ -173,7 +176,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 pipeline_parameters["reload"] = False
             return f
         except:
-            _logger.exception("Could not import function: %s. %s", str(name), log_tag)
+            _logger.exception("Could not import function: %s. %s" % (str(name), log_tag))
             return None
 
     source, sender = None, None
@@ -237,7 +240,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         continue
                     elif (range[1]>0) and (pulse_id > range[1]):
                         _logger.warning("Reached end of pid range: stopping pipeline")
-                        raise Exception("End of pid range")
+                        raise ProcessingCompleated("End of pid range")
 
                 # Check downsampling parameter
                 downsampling = pipeline_parameters.get("downsampling")
@@ -303,18 +306,20 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     message_buffer.append((processed_data, timestamp, pulse_id))
                 else:
                     sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
+            except ProcessingCompleated:
+                break
+            except Exception as e:
+                exit_code = 2
+                _logger.exception("Could not process message %s: %s" %(log_tag,str(e)))
+                break
 
-            except:
-                _logger.exception("Could not process message. %s" %  log_tag)
-                stop_event.set()
-
-        _logger.info("Stopping transceiver. %s" % log_tag)
-
-    except:
-        _logger.exception("Exception while trying to start the receive and process thread. %s" % log_tag)
+    except Exception as e:
+        exit_code = 1
+        _logger.exception("Exception while trying to start the receive and process thread %s: %s" % (log_tag, str(e)))
         raise
 
     finally:
+        _logger.info("Stopping transceiver. %s" % log_tag)
         stop_event.set()
 
         if source:
@@ -325,6 +330,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         else:
             if sender:
                 sender.close()
+        if exit_code:
+            sys.exit(exit_code)
 
 
 def store_pipeline(stop_event, statistics, parameter_queue,
@@ -390,7 +397,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
                 sender.send(data=forward_data, pulse_id=pulse_id, timestamp=timestamp)
 
             except:
-                _logger.exception("Could not process message. %s", log_tag)
+                _logger.exception("Could not process message. %s" % log_tag)
                 stop_event.set()
 
         _logger.info("Stopping transceiver. %s" % log_tag)

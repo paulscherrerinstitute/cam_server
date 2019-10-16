@@ -109,6 +109,14 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Pipeline instance %s info retrieved." % instance_id,
                 "info": instance_manager.get_instance_info(instance_id)}
 
+    @app.get(api_root_address + '/instance/<instance_id>/exitcode')
+    def get_instance_exit_code(instance_id):
+        # TODO: Remove dependency on instance.
+
+        return {"state": "ok",
+                "status": "Pipeline instance %s info retrieved." % instance_id,
+                "exitcode": instance_manager.get_instance_exit_code(instance_id)}
+
     @app.get(api_root_address + '/instance/<instance_id>/config')
     def get_instance_config(instance_id):
 

@@ -63,8 +63,7 @@ class CameraClientProxyTest(unittest.TestCase):
 
         self.assertTrue(bool(camera_stream_address), "Camera stream address cannot be empty.")
 
-        self.assertTrue("simulation" in self.client.get_server_info()["active_instances"],
-                        "Simulation camera not present in server info.")
+        self.assertTrue(self.client.is_instance_running("simulation"), "Simulation camera not present in server info.")
 
         # Check if we can connect to the stream and receive data (in less than 2 seconds).
         host, port = get_host_port_from_stream_address(camera_stream_address)
@@ -86,18 +85,15 @@ class CameraClientProxyTest(unittest.TestCase):
         # Stop the simulation instance.
         self.client.stop_instance("simulation")
 
-        self.assertTrue("simulation" not in self.client.get_server_info()["active_instances"],
-                        "Camera simulation did not stop.")
+        self.assertTrue(not self.client.is_instance_running("simulation"), "Camera simulation did not stop.")
 
         self.client.get_instance_stream("simulation")
 
-        self.assertTrue("simulation" in self.client.get_server_info()["active_instances"],
-                        "Camera simulation did not start.")
+        self.assertTrue(self.client.is_instance_running("simulation"), "Camera simulation did not start.")
 
         self.client.stop_all_instances()
 
-        self.assertTrue("simulation" not in self.client.get_server_info()["active_instances"],
-                        "Camera simulation did not stop.")
+        self.assertTrue(not self.client.is_instance_running("simulation"), "Camera simulation did not stop.")
 
         example_1_config = self.client.get_camera_config("camera_example_1")
 

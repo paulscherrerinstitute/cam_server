@@ -277,8 +277,7 @@ class CameraClientProxyTest(unittest.TestCase):
             instance_id = "simulation_file_range", \
             additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5", "pid_range":[5, 10]})
         print(instance_id_1, instance_stream_1)
-        while instance_id_1 in self.pipeline_client.get_server_info()["active_instances"]:
-            time.sleep(0.2)
+        self.pipeline_client.wait_instance_completed(instance_id_1)
 
 
     def test_pipeline_pid_range2(self):
@@ -290,8 +289,7 @@ class CameraClientProxyTest(unittest.TestCase):
         self.pipeline_client.set_instance_config(instance_id_1, {"pid_range":[5, 0]})
         time.sleep(0.5)
         self.pipeline_client.set_instance_config(instance_id_1, {"pid_range": [5, 6]})
-        while instance_id_1 in self.pipeline_client.get_server_info()["active_instances"]:
-            time.sleep(0.2)
+        self.pipeline_client.wait_instance_completed(instance_id_1)
 
     def test_pause(self):
         instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
@@ -302,6 +300,32 @@ class CameraClientProxyTest(unittest.TestCase):
         time.sleep(0.5)
         self.pipeline_client.set_instance_config(instance_id_1, {"pause":False})
         time.sleep(0.5)
+
+    def test_exit_code(self):
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_config(
+            {"camera_name": "simulation", "no_client_timeout": 1000})
+        self.pipeline_client.stop_instance(instance_id_1)
+        #When instance is stopped, it is deleted immediately, and there is no reference to the process
+        self.pipeline_client.get_instance_exit_code(instance_id_1)
+        exit_code = self.pipeline_client.get_instance_exit_code(instance_id_1)
+        self.assertEqual(exit_code, None)
+
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
+            instance_id = "simulation_file_range", \
+            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5", "pid_range":[5, 10]})
+        with self.assertRaisesRegex(ValueError, "Instance 'simulation_file_range' still running."):
+            self.pipeline_client.get_instance_exit_code(instance_id_1)
+        self.pipeline_client.wait_instance_completed(instance_id_1)
+        exit_code = self.pipeline_client.get_instance_exit_code(instance_id_1)
+        self.assertEqual(exit_code, 0)
+
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
+            instance_id = "simulation_file_range", \
+            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5", "rotation":{"angle":True, "order":6}})
+        self.pipeline_client.wait_instance_completed(instance_id_1)
+        exit_code = self.pipeline_client.get_instance_exit_code(instance_id_1)
+        self.assertEqual(exit_code, 2)
+
 
 if __name__ == '__main__':
     unittest.main()

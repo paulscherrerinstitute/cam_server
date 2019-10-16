@@ -2,6 +2,7 @@ import requests
 import pickle
 import os
 import json
+import time
 from bsread import source, SUB
 
 from cam_server import config
@@ -36,6 +37,17 @@ class PipelineClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint, timeout=timeout if timeout else self.timeout).json()
 
         return validate_response(server_response)["info"]
+
+    def is_instance_running(self, instance_id):
+        return instance_id in self.get_server_info()["active_instances"]
+
+    def wait_instance_completed(self, instance_id, timeout=None):
+        start = time.time()
+        while self.is_instance_running(instance_id):
+            if timeout:
+                if time.time()-start > timeout:
+                    raise TimeoutError()
+            time.sleep(0.2)
 
     def get_pipelines(self):
         """
@@ -79,6 +91,17 @@ class PipelineClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
         return validate_response(server_response)["info"]
+
+    def get_instance_exit_code(self, instance_id):
+        """
+        Return the instance exit code.
+        :param instance_id: Id of the instance.
+        :return: Pipeline exit code.
+        """
+        rest_endpoint = "/instance/%s/exitcode" % instance_id
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+
+        return validate_response(server_response)["exitcode"]
 
     def get_instance_stream(self, instance_id):
         """

@@ -35,6 +35,13 @@ class Proxy(ProxyBase):
             return server.get_instance_info(instance_name)
         raise ValueError("Instance '%s' does not exist." % instance_name)
 
+
+    def get_instance_exit_code(self, instance_name):
+        status = self.get_status()
+        server = self.get_server(instance_name, status)
+        if server is not None:
+            return server.get_instance_exit_code(instance_name)
+
     def get_instance_stream_from_config(self, configuration):
         #TODO
         status = self.get_status()

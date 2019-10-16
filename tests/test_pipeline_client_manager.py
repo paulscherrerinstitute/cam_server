@@ -252,7 +252,7 @@ class PipelineClientTest(unittest.TestCase):
 
         self.assertEqual(instance_id, "custom_instance", "Custom instance not set properly.")
 
-        self.assertTrue("custom_instance" in self.pipeline_client.get_server_info()["active_instances"],
+        self.assertTrue(self.pipeline_client.is_instance_running("custom_instance"),
                         "Instance with custom instance id not present.")
 
         self.assertEqual(self.pipeline_client.get_instance_config("custom_instance")["image_threshold"], 10,

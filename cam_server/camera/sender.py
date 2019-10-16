@@ -203,13 +203,13 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
                     process_parameters()
 
             except Exception as e:
-                _logger.exception("Could not process message.", e)
+                _logger.exception("Could not process message: %s" % (str(e),))
                 stop_event.set()
 
         _logger.info("Stopping transceiver.")
 
     except Exception as e:
-        _logger.exception("Error while processing camera stream.", e)
+        _logger.exception("Error while processing camera stream: %s" % (str(e),))
 
     finally:
         # Wait for termination / update configuration / etc.
