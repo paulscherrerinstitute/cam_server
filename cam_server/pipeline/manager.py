@@ -154,6 +154,7 @@ class Manager(ProxyBase):
                 configuration["port"] = port
 
         self._check_background(server, cfg)
+        self._check_script(server, cfg)
         if pipeline_name is not None:
             server.save_pipeline_config(pipeline_name, cfg)
             _logger.info("Creating stream from name %s at %s" % (pipeline_name, server.get_address()))
@@ -204,6 +205,7 @@ class Manager(ProxyBase):
         server = self.get_server(instance_name)
         if server is not None:
             self._check_background(server, config_updates)
+            self._check_script(server, config_updates)
             server.set_instance_config(instance_name, config_updates)
 
             #if permanent instance, save the pipeline config
@@ -238,6 +240,12 @@ class Manager(ProxyBase):
                 # Check if the background can be loaded
                 image_array = self.background_manager.get_background(image_background)
                 server.set_background_image_bytes(image_background, image_array)
+
+    def _check_script(self, server, config):
+        if config.get("function"):
+            if self.user_scripts_manager.exists(config.get("function")):
+                server.set_user_script( config.get("function"), self.user_scripts_manager.get_script(config.get("function")))
+
 
     def save_pipeline_config(self, pipeline_name, config):
         self.config_manager.save_pipeline_config(pipeline_name, config)
