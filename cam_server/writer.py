@@ -18,6 +18,7 @@ GENERAL_GROUP = "/general/"
 
 LAYOUT_DEFAULT = "DEFAULT"
 LAYOUT_FLAT = "FLAT"
+LAYOUT_BSH5 = "BSH5"
 
 UNDEFINED_NUMBER_OF_RECORDS= -1
 
@@ -35,6 +36,7 @@ class Writer(object):
                        save_local_timestamps = LOCALTIME_DEFAULT,
                        change = CHANGE_DEFAULT,
                        attributes={}):
+        print (output_file)
         self.stream = None
         self.output_file = output_file
         self.attributes = attributes or {}
@@ -57,17 +59,39 @@ class Writer(object):
 
         self.file = h5py.File(output_file, 'w')
         self._create_attributes_datasets()
-        self.scalar_datasets, self.array_datasets = {}, {}
+        self._set_number_datasets()
+        self.datasets = []
         self.serializers = {}
 
     def _update_paths(self):
         self.current_record = 0
-        self.data_group = "/data%d/" % (self.dataset_index,)
-        self.header_group = "/header%d/" % (self.dataset_index,)
         self.dataset_index = self.dataset_index + 1
+
+        if self.layout == LAYOUT_BSH5:
+            self.data_group = "/"
+        else:
+            self.data_group = "/data%d/" % (self.dataset_index,)
+        if self.layout == LAYOUT_BSH5:
+            self.header_group = "/"
+        else:
+            self.header_group = "/header%d/" % (self.dataset_index,)
+        print ("---")
+        print (self.data_group)
+        self.pulse_id_dataset = self.header_group + "pulse_id"
+        self.global_timestamp_dataset = self.header_group + "global_timestamp"
+
         if self.layout == LAYOUT_FLAT:
             self.value_dataset_name_format = self.data_group + "%s"
             self.timestamp_dataset_name_format = self.data_group + "%s_timestamp"
+        elif self.layout == LAYOUT_BSH5:
+            if self.dataset_index>1:
+                self.value_dataset_name_format = self.data_group + "%s"+str(self.dataset_index)+"/data"
+                self.timestamp_dataset_name_format = self.data_group + "%s"+str(self.dataset_index)+"/timestamp"
+                self.pulse_id_dataset = self.header_group + "pulse_id" + str(self.dataset_index)
+                self.global_timestamp_dataset = self.header_group + "global_timestamp" + str(self.dataset_index)
+            else:
+                self.value_dataset_name_format = self.data_group + "%s/data"
+                self.timestamp_dataset_name_format = self.data_group + "%s/timestamp"
         else:
             self.value_dataset_name_format = self.data_group + "%s/value"
             self.timestamp_dataset_name_format = self.data_group + "%s/timestamp"
@@ -78,7 +102,7 @@ class Writer(object):
                                  shape=((self.number_of_records,) if (self.number_of_records > 0) else (0,)),
                                  maxshape= ((self.number_of_records,) if (self.number_of_records > 0) else (None,)),
                                  dtype=dtype)
-        self.scalar_datasets[name] = ret
+        self.datasets.append(ret)
         return ret
 
     def _create_array_dataset(self, name, dtype, size):
@@ -86,36 +110,28 @@ class Writer(object):
                                  shape=(tuple([(self.number_of_records if (self.number_of_records > 0) else 0), ] + list(size))),
                                  maxshape=(tuple([(self.number_of_records if (self.number_of_records > 0) else None), ] + list(size))),
                                  dtype=dtype)
-        self.array_datasets[name] = ret
+        self.datasets.append(ret)
         return ret
 
-    def _append_scalar_dataset(self, name, value):
-        dataset = self.scalar_datasets[name]
+    def _append_dataset(self, name, value):
+        dataset = self.file[name]
         if self.number_of_records < 0:
             dataset.resize(size=self.current_record+1, axis=0)
         if name in self.serializers.keys():
             (serializer, dtype) = self.serializers[name]
+            value = serializer(value, dtype)
         if isinstance(value, str):
             value = numpy.string_(value)
         dataset[self.current_record] = value
 
-    def _append_array_dataset(self, name, value):
-        dataset = self.array_datasets[name]
-        if self.number_of_records < 0:
-            dataset.resize(size=self.current_record+1, axis=0)
-        if self.serializers.get(name):
-            (serializer, dtype) = self.serializers[name]
-            value = serializer(value, dtype)
-        dataset[self.current_record] = value
-
     def create_header_datasets(self):
-        self._create_scalar_dataset(self.header_group + "pulse_id", "uint64")
-        self._create_array_dataset(self.header_group + "global_timestamp", "uint64", (2,))
+        self._create_scalar_dataset(self.pulse_id_dataset, "uint64")
+        self._create_array_dataset(self.global_timestamp_dataset, "uint64", (2,))
 
 
     def append_header(self, pulse_id, global_timestamp, global_timestamp_offset):
-        self._append_scalar_dataset(self.header_group + "pulse_id", pulse_id)
-        self._append_array_dataset(self.header_group + "global_timestamp", [global_timestamp, global_timestamp_offset])
+        self._append_dataset(self.pulse_id_dataset, pulse_id)
+        self._append_dataset(self.global_timestamp_dataset, [global_timestamp, global_timestamp_offset])
 
     def create_channel_datasets(self, data):
         for name in data.keys():
@@ -142,38 +158,32 @@ class Writer(object):
             timestamp, timestamp_offset, value = val.timestamp, val.timestamp_offset, val.value
             value_dataset_name = self.value_dataset_name_format % name
             timestamp_dataset_name = self.timestamp_dataset_name_format % name
-            if value_dataset_name in self.scalar_datasets:
-                self._append_scalar_dataset(value_dataset_name, value)
-            else:
-                self._append_array_dataset(value_dataset_name, value)
+            self._append_dataset(value_dataset_name, value)
             if self.save_local_timestamps:
-                self._append_array_dataset(timestamp_dataset_name, [timestamp, timestamp_offset])
+                self._append_dataset(timestamp_dataset_name, [timestamp, timestamp_offset])
 
     def _create_attributes_datasets(self):
         for key in self.attributes.keys():
             self.file.create_dataset(GENERAL_GROUP + key,data=self.attributes.get(key))
 
-    def write_metadata(self, metadata):
-        for name, value in metadata.items():
-
-            if name not in self.cache:
-                self.cache[name] = []
-
-            self.cache[name].append(value)
-
+    def _set_number_datasets(self):
+        if self.dataset_index>1:
+            self.file[GENERAL_GROUP + "datasets"][()] = self.dataset_index
+        else:
+            self.file.create_dataset(GENERAL_GROUP + "datasets", data=self.dataset_index)
 
     def _close_datasets(self):
         if self.number_of_records >=0:
             if self.current_record != self.number_of_records:
                 _logger.debug("Image dataset number of records set to=%s" % self.current_record)
-                for dataset in list(self.scalar_datasets.values()) + list(self.array_datasets.values()):
+                for dataset in self.datasets:
                     dataset.resize(size=self.current_record, axis=0)
                 self.number_of_records = max(self.number_of_records - self.current_record, 0)
 
     def close(self):
         self._close_datasets()
         self.file.close()
-        self.scalar_datasets, self.array_datasets = {}, {}
+        self.datasets = []
         _logger.info("Writing completed.")
 
     def add_record(self, pulse_id, data, format_changed, global_timestamp, global_timestamp_offset):
@@ -187,6 +197,7 @@ class Writer(object):
                 if self.change:
                     self._close_datasets()
                     self._update_paths()
+                    self._set_number_datasets()
                     self.create_header_datasets()
                     self.create_channel_datasets(data)
                 else:
@@ -243,10 +254,10 @@ class WriterSender(object):
 def main():
     parser = argparse.ArgumentParser(description='Stream writer')
     parser.add_argument('-s', '--stream', default="tcp://localhost:5555", help="Stream to connect to")
-    parser.add_argument('-t', '--type', default="SUB", help="Stream type")
+    parser.add_argument('-t', '--type', default="SUB", choices=['SUB', 'PULL'], help="Stream type")
     parser.add_argument('-f', '--filename', default='/dev/null', help="Output file")
     parser.add_argument('-r', '--records', default=UNDEFINED_NUMBER_OF_RECORDS, help="Number of records to write")
-    parser.add_argument('-l', '--layout', default='DEFAULT', choices=[LAYOUT_DEFAULT, LAYOUT_FLAT], help="File layout")
+    parser.add_argument('-l', '--layout', default='DEFAULT', choices=[LAYOUT_DEFAULT, LAYOUT_FLAT, LAYOUT_BSH5 ], help="File layout")
     parser.add_argument('-e', '--localtime', default=str(LOCALTIME_DEFAULT), choices=['True', 'False'], help="Write channels local timestamps")
     parser.add_argument('-c', '--change', default=CHANGE_DEFAULT, choices=['True', 'False'],
                         help="Support data format change (create new datasets)")
@@ -256,9 +267,9 @@ def main():
                         help="Log level to use.")
     arguments = parser.parse_args()
     logging.basicConfig(level=arguments.log_level)
-    writer = Writer(arguments.filename, int(arguments.records), arguments.layout, arguments.localtime.lower() != "false", \
+    writer = Writer(arguments.filename, 10, arguments.layout, arguments.localtime.lower() != "false", \
                     arguments.change.lower() == "true", arguments.attributes)
-    writer.start(arguments.stream, PULL if arguments.type == "PULL" else SUB)
+    writer.start(arguments.stream,SUB)
 
 if __name__ == "__main__":
     main()
