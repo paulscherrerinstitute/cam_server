@@ -311,6 +311,16 @@ pipeline is added to the output bsread stream in the
       stream. If reconnection is not possible, the pipeline will stop. 
       If null or non positive then the timeout handling is disabled.
 - **mode** (Default _'PUB'_): Output type ('PUB', 'PUSH' or 'FILE').
+    - For stream modes (PUB or PUSH), the following parameters are valid:
+        - **queue_size** (Default _10_): stream High Water Mark.
+        - **block** (Default _True_ for PUSH, _False_ for PUB): define if stream sending is blocking.   
+        - **no_client_timeout** (Default _10_): Timeout to close the pipeline if no client is connected.
+          A not positive number disable this monitoring 
+          (the pipeline is kept running even if there is no connected client). 
+        - **buffer_size** (Default _None_): If defined, sets the size of a message buffer. 
+          In this case the messages are not sent immediately but buffered and processed in a different thread.
+          Used to receive also messages generated before the stream was started, together with 
+          _"mode":"PUSH"_ and _"queue_size":1_.  
     - For FILE mode, the following parameters are valid:
         - **file**: File name.
         - **layout** (Default _'DEFAULT'_): Output file layout ('DEFAULT' or 'FLAT').
