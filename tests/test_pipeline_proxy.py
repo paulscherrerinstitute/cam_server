@@ -1,6 +1,7 @@
 import base64
 import os
 import time
+import h5py
 import signal
 import unittest
 from multiprocessing import Process
@@ -273,11 +274,14 @@ class CameraClientProxyTest(unittest.TestCase):
 
 
     def test_pipeline_pid_range(self):
+        pids =  list(range(5, 11))
         instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
             instance_id = "simulation_file_range", \
-            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5", "pid_range":[5, 10]})
+            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5", "pid_range":[pids[0], pids[-1]]})
         print(instance_id_1, instance_stream_1)
         self.pipeline_client.wait_instance_completed(instance_id_1)
+        with h5py.File(self.temp_folder+"data.h5", 'r') as file:
+            self.assertEqual(list(file['header0/pulse_id']), pids)
 
 
     def test_pipeline_pid_range2(self):
@@ -300,6 +304,15 @@ class CameraClientProxyTest(unittest.TestCase):
         time.sleep(0.5)
         self.pipeline_client.set_instance_config(instance_id_1, {"pause":False})
         time.sleep(0.5)
+
+    def test_pipeline_records(self):
+        instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_name("simulation_sp", \
+            instance_id = "simulation_records", \
+            additional_config = {"mode":"FILE", "file":self.temp_folder+"data.h5", "records":12})
+        print(instance_id_1, instance_stream_1)
+        self.pipeline_client.wait_instance_completed(instance_id_1)
+        with h5py.File(self.temp_folder+"data.h5", 'r') as file:
+            self.assertEqual( len(file['header0/pulse_id']), 12)
 
     def test_exit_code(self):
         instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_config(

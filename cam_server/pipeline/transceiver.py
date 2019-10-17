@@ -50,6 +50,14 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
         source.connect()
 
+    def check_records():
+        nonlocal record_count
+        records = pipeline_parameters.get("records")
+        if records:
+            record_count = record_count + 1
+            if record_count >= records:
+                raise ProcessingCompleated("Reached number of records: " + str(records))
+
     def message_buffer_send_task(message_buffer, stop_event):
         _logger.info("Start message buffer send thread")
         create_sender()
@@ -60,6 +68,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 else:
                     (processed_data, timestamp, pulse_id) = message_buffer.popleft()
                     sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
+                    if pipeline_parameters.get("records"):
+                        check_records()
+
         except Exception as e:
             _logger.error("Error on message buffer send thread", e)
         finally:
@@ -138,8 +149,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         if pipeline_parameters["mode"] == "FILE":
             file_name = pipeline_parameters["file"]
+            records = pipeline_parameters.get("records")
             sender = WriterSender(output_file=file_name,
-                                  number_of_records=UNDEFINED_NUMBER_OF_RECORDS,
+                                  number_of_records=records if records else UNDEFINED_NUMBER_OF_RECORDS,
                                   layout=pipeline_parameters["layout"],
                                   save_local_timestamps=pipeline_parameters["localtime"],
                                   change=pipeline_parameters["change"],
@@ -181,6 +193,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
     source, sender = None, None
     message_buffer, message_buffer_send_thread  = None, None
+
     try:
         init_statistics(statistics)
 
@@ -208,6 +221,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         downsampling_counter = sys.maxsize  # The first is always sent
         last_sent_timestamp = 0
         last_rcvd_timestamp = time.time()
+
+        record_count=0
 
         while not stop_event.is_set():
             try:
@@ -306,6 +321,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     message_buffer.append((processed_data, timestamp, pulse_id))
                 else:
                     sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
+                    if pipeline_parameters.get("records"):
+                        check_records()
             except ProcessingCompleated:
                 break
             except Exception as e:
