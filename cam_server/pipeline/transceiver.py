@@ -76,7 +76,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         finally:
             stop_event.set()
             if sender:
-                sender.close()
+                try:
+                    sender.close()
+                except:
+                    pass
             _logger.info("Exit message buffer send thread")
 
     def process_pipeline_parameters():
@@ -340,13 +343,21 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         stop_event.set()
 
         if source:
-            source.disconnect()
-
+            try:
+                source.disconnect()
+            except:
+                pass
         if message_buffer_send_thread:
-            message_buffer_send_thread.join(0.1)
+            try:
+                message_buffer_send_thread.join(0.1)
+            except:
+                pass
         else:
             if sender:
-                sender.close()
+                try:
+                    sender.close()
+                except:
+                    pass
         if exit_code:
             sys.exit(exit_code)
 
