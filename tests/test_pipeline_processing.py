@@ -7,7 +7,7 @@ import numpy
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server.pipeline.data_processing.functions import calculate_slices
+from cam_server.pipeline.data_processing.functions import calculate_slices, subtract_background
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import sum_images
 from tests.helpers.factory import MockBackgroundManager
@@ -62,14 +62,16 @@ class PipelineProcessingTest(unittest.TestCase):
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
         parameters = pipeline_config.get_configuration()
         image_background_array = background_provider.get_background(parameters.get("image_background"))
+        if image_background_array is not None:
+            image_background_array = image_background_array.astype("uint16", copy=False)
+            image = subtract_background(image, image_background_array)
 
         result = process_image(image=image,
                                pulse_id=0,
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters,
-                               image_background_array=image_background_array)
+                               parameters=parameters)
 
         self.assertTrue(numpy.array_equal(result["image"], image),
                         "A zero background should not change the image.")
@@ -89,6 +91,9 @@ class PipelineProcessingTest(unittest.TestCase):
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
         parameters = pipeline_config.get_configuration()
         image_background_array = background_provider.get_background(parameters.get("image_background"))
+        if image_background_array is not None:
+            image_background_array = image_background_array.astype("uint16", copy=False)
+            image = subtract_background(image, image_background_array)
 
         expected_image = numpy.zeros(shape=(y_size, x_size))
 
@@ -98,7 +103,7 @@ class PipelineProcessingTest(unittest.TestCase):
                                x_axis=x_axis,
                                y_axis=y_axis,
                                parameters=parameters,
-                               image_background_array=image_background_array)
+                               )
 
         self.assertTrue(numpy.array_equal(result["image"], expected_image),
                         "The image should be all zeros - negative numbers are not allowed.")
@@ -165,6 +170,8 @@ class PipelineProcessingTest(unittest.TestCase):
         parameters = PipelineConfig("test_pipeline", pipeline_parameters).get_configuration()
         image_background_array = background_provider.get_background("white_background")
 
+        #TODO: this tests makes no sense any more, as the background is subtracted  before calling process_image
+        """
         with self.assertRaisesRegex(RuntimeError, "Invalid background_image size "):
             process_image(image=image,
                           pulse_id=0,
@@ -173,6 +180,7 @@ class PipelineProcessingTest(unittest.TestCase):
                           y_axis=y_axis,
                           parameters=parameters,
                           image_background_array=image_background_array)
+        """
 
     def test_region_of_interest_default_values(self):
 

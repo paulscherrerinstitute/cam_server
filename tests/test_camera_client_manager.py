@@ -57,6 +57,7 @@ class CameraClientProxyTest(unittest.TestCase):
 
         expected_cameras = set(["camera_example_1", "camera_example_2", "camera_example_3", "camera_example_4",
                                 "simulation", "simulation2"])
+        print (self.client.get_cameras())
         self.assertSetEqual(set(self.client.get_cameras()), expected_cameras, "Not getting all expected cameras")
 
         camera_stream_address = self.client.get_instance_stream("simulation")

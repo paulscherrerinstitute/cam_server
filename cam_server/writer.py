@@ -36,7 +36,6 @@ class Writer(object):
                        save_local_timestamps = LOCALTIME_DEFAULT,
                        change = CHANGE_DEFAULT,
                        attributes={}):
-        print (output_file)
         self.stream = None
         self.output_file = output_file
         self.attributes = attributes or {}
@@ -75,8 +74,6 @@ class Writer(object):
             self.header_group = "/"
         else:
             self.header_group = "/header%d/" % (self.dataset_index,)
-        print ("---")
-        print (self.data_group)
         self.pulse_id_dataset = self.header_group + "pulse_id"
         self.global_timestamp_dataset = self.header_group + "global_timestamp"
 

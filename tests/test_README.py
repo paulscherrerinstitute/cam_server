@@ -14,7 +14,7 @@ from tests import test_cleanup, require_folder
 
 class PipelineClientTest(unittest.TestCase):
     def setUp(self):
-        self.host = "0.0.0.0"
+        self.host = "localhost"
         self.cam_port = 8888
         self.pipeline_port = 8889
 

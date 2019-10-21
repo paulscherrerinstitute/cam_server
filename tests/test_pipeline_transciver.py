@@ -85,14 +85,14 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         background_manager = MockBackgroundManager()
 
-        with self.assertRaises(Exception):
+        with self.assertRaises(SystemExit):
             processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
                                 12000, background_manager)
 
         simulated_camera_shape = (960, 1280)
 
         background_array = numpy.zeros(shape=simulated_camera_shape)
-        background_array.fill(99999)
+        background_array.fill(65535)
         background_manager.save_background("full_background", background_array, append_timestamp=False)
 
         def send():

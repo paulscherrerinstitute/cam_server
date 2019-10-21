@@ -7,6 +7,7 @@ from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.data_processing import functions
 from cam_server.pipeline.data_processing.processor import process_image
+from cam_server.pipeline.data_processing.functions import calculate_slices
 
 
 class PipelinePerformanceTest(unittest.TestCase):
@@ -56,13 +57,14 @@ class PipelinePerformanceTest(unittest.TestCase):
 
         start_time = time.time()
         for image in images:
+            if image_background_array is not None:
+                image = functions.subtract_background(image, image_background_array)
             process_image_wrapper(image=image,
                                   pulse_id=0,
                                   timestamp=time.time(),
                                   x_axis=x_axis,
                                   y_axis=y_axis,
-                                  parameters=parameters,
-                                  image_background_array=image_background_array)
+                                  parameters=parameters)
         end_time = time.time()
 
         time_difference = end_time - start_time

@@ -265,7 +265,7 @@ class PipelineManagerTest(unittest.TestCase):
             "camera_name": "simulation"
         }
 
-        black_image = numpy.zeros(shape=(960, 1280))
+        black_image = numpy.zeros(shape=(960, 1280)).astype(dtype="uint16")
 
         pipeline_id, pipeline_stream_address = instance_manager.create_pipeline(configuration=pipeline_config)
         pipeline_host, pipeline_port = get_host_port_from_stream_address(pipeline_stream_address)
@@ -281,7 +281,7 @@ class PipelineManagerTest(unittest.TestCase):
             self.assertEqual(normal_image_data.data.data["height"].value, 960, "Incorrect height.")
 
         white_image = numpy.zeros(shape=(960, 1280))
-        white_image.fill(99999)
+        white_image.fill(65535)
 
         instance_manager.background_manager.save_background("white_background", white_image, append_timestamp=False)
 
@@ -308,8 +308,17 @@ class PipelineManagerTest(unittest.TestCase):
         # Collect from the camera.
         with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:
             black_image_data = stream.receive()
+            print (pipeline_host,pipeline_port)
             self.assertIsNotNone(black_image_data, "This should really not happen anymore.")
 
+        print ("---")
+        print (black_image_data.data.data["image"].value.shape, black_image_data.data.data["image"].value.dtype)
+        print(black_image.shape, black_image.dtype)
+        black_image.astype(dtype="uint16")
+        for i in range(len(black_image)):
+            for j in range(len(black_image[0])):
+                if  black_image_data.data.data["image"].value[i][j] != black_image[i][j]:
+                    print (i, j, black_image_data.data.data["image"].value[i][j], black_image[i][j])
         self.assertTrue(numpy.array_equal(black_image_data.data.data["image"].value, black_image),
                         "Now background should work.")
 

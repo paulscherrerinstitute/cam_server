@@ -281,7 +281,7 @@ class CameraClientProxyTest(unittest.TestCase):
         print(instance_id_1, instance_stream_1)
         self.pipeline_client.wait_instance_completed(instance_id_1)
         with h5py.File(self.temp_folder+"data.h5", 'r') as file:
-            self.assertEqual(list(file['header0/pulse_id']), pids)
+            self.assertEqual(list(file['header1/pulse_id']), pids)
 
 
     def test_pipeline_pid_range2(self):
@@ -312,7 +312,7 @@ class CameraClientProxyTest(unittest.TestCase):
         print(instance_id_1, instance_stream_1)
         self.pipeline_client.wait_instance_completed(instance_id_1)
         with h5py.File(self.temp_folder+"data.h5", 'r') as file:
-            self.assertEqual( len(file['header0/pulse_id']), 12)
+            self.assertEqual( len(file['header1/pulse_id']), 12)
 
     def test_exit_code(self):
         instance_id_1, instance_stream_1 = self.pipeline_client.create_instance_from_config(

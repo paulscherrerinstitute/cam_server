@@ -17,8 +17,7 @@ from tests.helpers.factory import get_test_pipeline_manager
 class PipelineConfigTest(unittest.TestCase):
 
     def tearDown(self):
-        if os.path.isdir("user_scripts/"):
-            rmtree("user_scripts/")
+        pass
 
     def test_get_set_delete_pipeline_config(self):
         instance_manager = get_test_pipeline_manager()
