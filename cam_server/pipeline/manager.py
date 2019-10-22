@@ -13,11 +13,11 @@ _logger = logging.getLogger(__name__)
 class Manager(ProxyBase):
     def __init__(self, config_manager, background_manager, user_scripts_manager,
                  cam_server_client, config_str, bg_days_to_live=-1, client_timeout=None, update_timeout=None):
-        ProxyBase.__init__(self, config_manager, config_str, PipelineClient, client_timeout, update_timeout)
         self.background_manager = background_manager
         self.cam_server_client = cam_server_client
         self.user_scripts_manager = user_scripts_manager
         self.update_timeout = update_timeout
+        ProxyBase.__init__(self, config_manager, config_str, PipelineClient, client_timeout, update_timeout)
         # background cleanup every day and upon start
         if bg_days_to_live>=0:
             def background_cleanup():

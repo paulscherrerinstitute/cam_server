@@ -6,9 +6,9 @@ from cam_server import PipelineClient
 
 class Proxy(ProxyBase):
     def __init__(self, config_manager, background_manager, cam_server_client, config_str, server_timeout=None):
-        ProxyBase.__init__(self, config_manager, config_str, PipelineClient, server_timeout)
         self.background_manager = background_manager
         self.cam_server_client = cam_server_client
+        ProxyBase.__init__(self, config_manager, config_str, PipelineClient, server_timeout)
 
     def get_pipeline_list(self):
         return self.get_server().get_pipelines()
