@@ -4,6 +4,8 @@
         ],
         "expanding": true,
         "instances": [
+            "simulation2_sp:5555",
+            "simulation_sp:5554"
         ]
     }
 }

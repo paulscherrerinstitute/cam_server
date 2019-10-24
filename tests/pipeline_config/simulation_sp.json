@@ -7,5 +7,6 @@
  "image_slices": null,
  "pipeline_type": "processing",
  "camera_name": "simulation",
+ "max_frame_rate": 2.1,
  "name": "simulation_sp"
 }
