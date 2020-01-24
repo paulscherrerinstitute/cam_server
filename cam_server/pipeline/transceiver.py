@@ -6,6 +6,7 @@ import sys
 import os
 from collections import deque
 from threading import Thread, Event
+import numpy
 
 from bsread import Source, PUB, SUB, PUSH
 from bsread.sender import Sender
@@ -137,6 +138,12 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             except:
                 parameters["pid_range"] = None
 
+        if parameters.get("averaging"):
+            try:
+                parameters["averaging"] = int(parameters.get("averaging"))
+            except:
+                parameters["averaging"] = None
+
         if parameters["mode"] == "FILE":
             if parameters.get("layout") is None:
                 parameters["layout"] = LAYOUT_DEFAULT
@@ -226,6 +233,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         last_rcvd_timestamp = time.time()
 
         record_count=0
+        image_buffer = []
 
         while not stop_event.is_set():
             try:
@@ -277,6 +285,23 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         continue
 
                 image = data.data.data["image"].value
+
+                averaging = pipeline_parameters.get("averaging")
+                if averaging:
+                    continuous = averaging < 0
+                    averaging = abs(averaging)
+                    if continuous and (len(image_buffer) >= averaging):
+                        image_buffer.pop(0)
+                    image_buffer.append(image)
+                    if (len(image_buffer) >= averaging) or (continuous):
+                        frames = numpy.array(image_buffer)
+                        image = numpy.average(frames, 0)
+                    else:
+                        continue
+                if (not averaging) or (not continuous):
+                    image_buffer = []
+
+
                 x_axis = data.data.data["x_axis"].value
                 y_axis = data.data.data["y_axis"].value
 
