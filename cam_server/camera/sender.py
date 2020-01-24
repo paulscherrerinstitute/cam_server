@@ -77,7 +77,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
                     "y_axis": y_axis}
             frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
             frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
-            set_statistics(statistics, sender, statistics.total_bytes + frame_size, frame_shape)
+            set_statistics(statistics, sender, statistics.total_bytes + frame_size, 1 if (image is not None) else 0, frame_shape)
 
             try:
                 sender.send(data=data, timestamp=timestamp, check_data=False)
@@ -166,7 +166,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
             try:
 
                 data = camera_stream.receive()
-                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes)
+                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes, 1 if data else 0)
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
                     continue

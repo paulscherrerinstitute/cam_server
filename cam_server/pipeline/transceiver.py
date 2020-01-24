@@ -243,7 +243,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     pipeline_parameters, image_background_array = process_pipeline_parameters()
 
                 data = source.receive()
-                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes)
+                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes,  1 if data else 0)
                 if data:
                     last_rcvd_timestamp = time.time()
                 else:
@@ -436,7 +436,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
         while not stop_event.is_set():
             try:
                 data = source.receive()
-                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes)
+                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes, 1 if data else 0)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:

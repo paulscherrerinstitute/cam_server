@@ -83,12 +83,12 @@ def get_clients(sender):
     return 0
 
 
-def set_statistics(statistics, sender, total_bytes, frame_shape = None):
+def set_statistics(statistics, sender, total_bytes, frame_count, frame_shape = None):
     now = time.time()
     timespan = now - statistics.timestamp
     statistics.update_timestamp = time.localtime()
     statistics.total_bytes = total_bytes
-    statistics._frame_count = statistics._frame_count + 1
+    statistics._frame_count = statistics._frame_count + frame_count
     if timespan > 1.0:
         received_bytes = total_bytes - statistics._last_proc_total_bytes
         statistics._last_proc_total_bytes = total_bytes
