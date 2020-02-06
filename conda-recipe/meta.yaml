@@ -1,6 +1,6 @@
 package:
     name: cam_server
-    version: 3.4.7
+    version: 3.4.8
 
 source:
     path: ..
@@ -13,9 +13,10 @@ requirements:
         - python
 
     run:
-        - python =3.5
+        - python
         - requests
         - bsread >=0.9.9
+        - bitshuffle =0.3.4
         - bottle
         - numpy
         - scipy
