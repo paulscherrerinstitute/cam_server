@@ -1,3 +1,4 @@
+import time
 from logging import getLogger
 
 from bsread.sender import Sender, PUB
@@ -32,14 +33,15 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
             stop_event.set()
 
         def process_parameters():
-            nonlocal x_size, y_size, x_axis, y_axis
+            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
             x_size, y_size = camera.get_geometry()
             x_axis, y_axis = camera.get_x_y_axis()
+            simulate_pulse_id=camera.camera_config.get_configuration().get("simulate_pulse_id")
             sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
                                                   "shape": [x_size, y_size],
                                                   "type": "uint16"})
 
-        x_size = y_size = x_axis = y_axis = None
+        x_size = y_size = x_axis = y_axis = simulate_pulse_id = None
         camera.connect()
 
         sender = Sender(port=port, mode=PUB,
@@ -66,7 +68,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
         process_parameters()
 
         def collect_and_send(image, timestamp):
-            nonlocal x_size, y_size, x_axis, y_axis
+            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
 
             # Data to be sent over the stream.
             data = {"image": image,
@@ -80,7 +82,8 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
             set_statistics(statistics, sender, statistics.total_bytes + frame_size, 1 if (image is not None) else 0, frame_shape)
 
             try:
-                sender.send(data=data, timestamp=timestamp, check_data=False)
+                pulse_id = int(time.time() *100) if simulate_pulse_id else None
+                sender.send(data=data, pulse_id = pulse_id, timestamp=timestamp, check_data=False)
             except Again:
                 _logger.warning("Send timeout. Lost image with timestamp '%s'." % timestamp)
 

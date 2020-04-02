@@ -6,7 +6,7 @@ from cam_server.pipeline.data_processing import functions
 _logger = getLogger(__name__)
 
 
-def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters):
+def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata):
 
     # Add return values
     return_value = dict()

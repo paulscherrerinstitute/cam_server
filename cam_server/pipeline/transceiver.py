@@ -8,9 +8,9 @@ from collections import deque
 from threading import Thread, Event
 import numpy
 
-from bsread import Source, PUB, SUB, PUSH
+from bsread import Source, PUB, SUB, PUSH, PULL
+from bsread import source as bssource
 from bsread.sender import Sender
-
 
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
@@ -73,7 +73,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         check_records()
 
         except Exception as e:
-            _logger.error("Error on message buffer send thread", e)
+            _logger.error("Error on message buffer send thread" + str(e))
         finally:
             stop_event.set()
             if sender:
@@ -82,6 +82,56 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 except:
                     pass
             _logger.info("Exit message buffer send thread")
+
+    def process_bsbuffer(bs_buffer, bs_img_buffer):
+        i = 0
+        while i < len(bs_buffer):
+            bs_pid, bsdata = bs_buffer[i]
+            for j in range(len(bs_img_buffer)):
+                img_pid = bs_img_buffer[0][0]
+                if img_pid < bs_pid:
+                    bs_img_buffer.popleft()
+                elif img_pid == bs_pid:
+                    [pulse_id, [function, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters]] = bs_img_buffer.popleft()
+                    process_data(function, sender, None, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters, bsdata)
+                    for k in range(i):
+                        bs_buffer.popleft()
+                    i = -1
+                    break
+                else:
+                    break
+            i = i + 1
+
+    def bs_send_task(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, stop_event):
+        bsread_host, bsread_port = get_host_port_from_stream_address(bsread_address)
+        bsread_mode = SUB if bsread_channels else PULL
+        bsread_channels = json.loads(bsread_channels) if bsread_channels else None
+
+        _logger.info("Start bs send thread")
+        create_sender()
+
+        try:
+            with bssource(host=bsread_host, port=bsread_port, mode=bsread_mode, channels=bsread_channels, receive_timeout=1000) as stream:
+                while not stop_event.is_set():
+                    message = stream.receive()
+                    if not message:
+                        continue
+                    bs_buffer.append([message.data.pulse_id, message.data.data])
+                    try:
+                        process_bsbuffer(bs_buffer, bs_img_buffer)
+                    except Exception as e:
+                        _logger.error("Error processing bs buffer: " + str(e))
+
+        except Exception as e:
+            _logger.error("Error on bs_send_task: " + str(e))
+        finally:
+            stop_event.set()
+            if sender:
+                try:
+                    sender.close()
+                except:
+                    pass
+            _logger.info("Exit bs send thread")
 
     def process_pipeline_parameters():
         parameters = pipeline_config.get_configuration()
@@ -152,6 +202,17 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             if parameters.get("change") is None:
                 parameters["change"] = CHANGE_DEFAULT
 
+        if parameters.get("bsread_address"):
+            if parameters.get("bsread_image_buf"):
+                parameters["bsread_image_buf"] = min(parameters.get("bsread_image_buf"), config.BSREAD_IMAGE_BUFFER_SIZE_MAX)
+            else:
+                parameters["bsread_image_buf"] =config.BSREAD_IMAGE_BUFFER_SIZE_DEFAULT
+
+            if parameters.get("bsread_data_buf"):
+                parameters["bsread_data_buf"] = min(parameters.get("bsread_data_buf"), config.BSREAD_DATA_BUFFER_SIZE_MAX)
+            else:
+                parameters["bsread_data_buf"] =config.BSREAD_DATA_BUFFER_SIZE_DEFAULT
+
         return parameters, background_array
 
     def create_sender():
@@ -201,8 +262,35 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             _logger.exception("Could not import function: %s. %s" % (str(name), log_tag))
             return None
 
+
+    def process_data(function, sender, message_buffer, image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata=None):
+        processed_data = function(image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters, bsdata)
+
+        # Requesting subset of the data
+        include = pipeline_parameters.get("include")
+        if include:
+            aux = {}
+            for key in include:
+                aux[key] = processed_data.get(key)
+            processed_data = aux
+        exclude = pipeline_parameters.get("exclude")
+        if exclude:
+            for field in exclude:
+                processed_data.pop(field, None)
+
+        timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
+
+        last_sent_timestamp = time.time()
+        if message_buffer:
+            message_buffer.append((processed_data, timestamp, pulse_id))
+        else:
+            sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
+            if pipeline_parameters.get("records"):
+                check_records()
+
     source, sender = None, None
     message_buffer, message_buffer_send_thread  = None, None
+    bs_buffer, bs_img_buffer, bs_send_thread = None, None, None
 
     try:
         init_statistics(statistics)
@@ -213,16 +301,23 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         _logger.debug("Opening output stream on port %d. %s" % (output_stream_port, log_tag))
 
-        buffer_size = pipeline_parameters.get("buffer_size")
-        if buffer_size:
-            message_buffer = deque(maxlen=buffer_size)
-            message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event))
-            message_buffer_send_thread.start()
+
+        bsread_address = pipeline_parameters.get("bsread_address")
+        if (bsread_address):
+            bsread_channels = pipeline_parameters.get("bsread_channels")
+            bs_buffer = deque(maxlen=pipeline_parameters["bsread_data_buf"] )
+            bs_img_buffer = deque(maxlen=pipeline_parameters["bsread_image_buf"] )
+            bs_send_thread = Thread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, stop_event))
+            bs_send_thread.start()
+
         else:
-            create_sender()
-
-
-            # TODO: Register proper channels.
+            buffer_size = pipeline_parameters.get("buffer_size")
+            if buffer_size:
+                message_buffer = deque(maxlen=buffer_size)
+                message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event))
+                message_buffer_send_thread.start()
+            else:
+                create_sender()
 
         # Indicate that the startup was successful.
         stop_event.clear()
@@ -260,11 +355,11 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 if pipeline_parameters.get("pause"):
                     continue
 
-                range = pipeline_parameters.get("pid_range")
-                if range:
-                    if (range[0]<=0) or (pulse_id < range[0]):
+                pid_range = pipeline_parameters.get("pid_range")
+                if pid_range:
+                    if (pid_range[0]<=0) or (pulse_id < pid_range[0]):
                         continue
-                    elif (range[1]>0) and (pulse_id > range[1]):
+                    elif (pid_range[1]>0) and (pulse_id > pid_range[1]):
                         _logger.warning("Reached end of pid range: stopping pipeline")
                         raise ProcessingCompleated("End of pid range")
 
@@ -326,31 +421,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 function = get_function(pipeline_parameters.get("function"), pipeline_parameters.get("reload"))
                 if not function:
                     continue
-
-                processed_data = function(image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters)
-
-                # Requesting subset of the data
-                include = pipeline_parameters.get("include")
-                if include:
-                    aux = {}
-                    for key in include:
-                        aux[key] = processed_data.get(key)
-                    processed_data = aux
-                exclude = pipeline_parameters.get("exclude")
-                if exclude:
-                    for field in exclude:
-                        processed_data.pop(field, None)
-
-                timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
-
-                last_sent_timestamp = time.time()
-
-                if message_buffer:
-                    message_buffer.append((processed_data, timestamp, pulse_id))
+                if bsread_address:
+                    bs_img_buffer.append([pulse_id, [function, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters]])
                 else:
-                    sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
-                    if pipeline_parameters.get("records"):
-                        check_records()
+                    process_data(function, sender, message_buffer, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters)
             except ProcessingCompleated:
                 break
             except Exception as e:
