@@ -24,15 +24,13 @@ _logger = getLogger(__name__)
 class ProcessingCompleated(Exception):
      pass
 
-def processing_pipeline(stop_event, statistics, parameter_queue,
-                        cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager = None):
-    camera_name = pipeline_config.get_camera_name()
-    log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
-    source = None
-    exit_code=0
 
+
+
+def create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag):
+    sender = None
     def no_client_action():
-        nonlocal sender, message_buffer, pipeline_parameters
+        nonlocal sender,pipeline_parameters
         _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
                         pipeline_parameters["no_client_timeout"], log_tag)
         stop_event.set()
@@ -40,6 +38,106 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             if pipeline_parameters["mode"] == "PUSH" and pipeline_parameters["block"]:
                 _logger.warning("Killing the process: cannot stop gracefully if sender is blocking")
                 os._exit(0)
+
+    if pipeline_parameters["mode"] == "FILE":
+        file_name = pipeline_parameters["file"]
+        records = pipeline_parameters.get("records")
+        sender = WriterSender(output_file=file_name,
+                              number_of_records=records if records else UNDEFINED_NUMBER_OF_RECORDS,
+                              layout=pipeline_parameters["layout"],
+                              save_local_timestamps=pipeline_parameters["localtime"],
+                              change=pipeline_parameters["change"],
+                              attributes={})
+    else:
+        sender = Sender(port=output_stream_port,
+                        mode=PUSH if (pipeline_parameters["mode"] == "PUSH") else PUB,
+                        queue_size=pipeline_parameters["queue_size"],
+                        block=pipeline_parameters["block"],
+                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+    sender.open(no_client_action=None if pipeline_parameters["no_client_timeout"] <= 0 else no_client_action,
+                no_client_timeout=pipeline_parameters["no_client_timeout"])
+    sender.record_count = 0
+    return sender
+
+
+def check_records(sender, pipeline_parameters):
+    records = pipeline_parameters.get("records")
+    if records:
+        sender.record_count = sender.record_count + 1
+        if sender.record_count >= records:
+            raise ProcessingCompleated("Reached number of records: " + str(records))
+
+def send(sender, data, timestamp, pulse_id, pipeline_parameters):
+    sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id)
+    if pipeline_parameters.get("records"):
+        check_records(sender, pipeline_parameters)
+
+
+def get_pipeline_parameters(pipeline_config):
+    parameters = pipeline_config.get_configuration()
+    if parameters.get("no_client_timeout") is None:
+        parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
+
+    if parameters.get("queue_size") is None:
+        parameters["queue_size"] = config.PIPELINE_DEFAULT_QUEUE_SIZE
+
+    if parameters.get("mode") is None:
+        parameters["mode"] = config.PIPELINE_DEFAULT_MODE
+
+    if parameters.get("block") is None:
+        parameters["block"] = config.PIPELINE_DEFAULT_BLOCK
+
+    if parameters.get("pid_range"):
+        try:
+            parameters["pid_range"] = int(parameters.get("pid_range")[0]), int(parameters.get("pid_range")[1])
+        except:
+            parameters["pid_range"] = None
+    return parameters
+
+
+functions = {}
+
+def get_function(pipeline_parameters, user_scripts_manager, log_tag):
+    name = pipeline_parameters.get("function")
+    if not name:
+        if pipeline_parameters.get("pipeline_type") == config.PIPELINE_TYPE_STREAM:
+            return None
+        return process_image  # default
+    try:
+        f = functions.get(name)
+        reload = pipeline_parameters.get("reload")
+        if (not f) or reload:
+            if (not f):
+                _logger.info("Importing function: %s. %s" % (name, log_tag))
+            else:
+                _logger.info("Reloading function: %s. %s" % (name, log_tag))
+            if '/' in name:
+                mod = load_source('mod', name)
+            else:
+                if user_scripts_manager and user_scripts_manager.exists(name):
+                    mod = load_source('mod', user_scripts_manager.get_path(name))
+                else:
+                    mod = import_module("cam_server.pipeline.data_processing." + str(name))
+            try:
+                functions[name] = f = mod.process_image
+            except:
+                functions[name] = f = mod.process
+            pipeline_parameters["reload"] = False
+        return f
+    except:
+        _logger.exception("Could not import function: %s. %s" % (str(name), log_tag))
+        return None
+
+
+
+def processing_pipeline(stop_event, statistics, parameter_queue,
+                        cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager = None):
+    camera_name = pipeline_config.get_camera_name()
+    log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
+    source = None
+    sender = None
+    exit_code=0
+
 
     def connect_to_camera():
         nonlocal source
@@ -51,26 +149,17 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
         source.connect()
 
-    def check_records():
-        nonlocal record_count
-        records = pipeline_parameters.get("records")
-        if records:
-            record_count = record_count + 1
-            if record_count >= records:
-                raise ProcessingCompleated("Reached number of records: " + str(records))
-
     def message_buffer_send_task(message_buffer, stop_event):
+        nonlocal sender
         _logger.info("Start message buffer send thread")
-        create_sender()
+        sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
         try:
             while not stop_event.is_set():
                 if len(message_buffer) == 0:
                     time.sleep(0.01)
                 else:
                     (processed_data, timestamp, pulse_id) = message_buffer.popleft()
-                    sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
-                    if pipeline_parameters.get("records"):
-                        check_records()
+                    send(sender, processed_data, timestamp, pulse_id, pipeline_parameters)
 
         except Exception as e:
             _logger.error("Error on message buffer send thread" + str(e))
@@ -83,7 +172,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     pass
             _logger.info("Exit message buffer send thread")
 
-    def process_bsbuffer(bs_buffer, bs_img_buffer):
+    def process_bsbuffer(bs_buffer, bs_img_buffer, sender):
         i = 0
         while i < len(bs_buffer):
             bs_pid, bsdata = bs_buffer[i]
@@ -103,22 +192,24 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             i = i + 1
 
     def bs_send_task(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, stop_event):
+        nonlocal sender
+
         bsread_host, bsread_port = get_host_port_from_stream_address(bsread_address)
         bsread_mode = SUB if bsread_channels else PULL
         bsread_channels = json.loads(bsread_channels) if bsread_channels else None
 
         _logger.info("Start bs send thread")
-        create_sender()
+        sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
 
         try:
-            with bssource(host=bsread_host, port=bsread_port, mode=bsread_mode, channels=bsread_channels, receive_timeout=1000) as stream:
+            with bssource(host=bsread_host, port=bsread_port, mode=bsread_mode, channels=bsread_channels, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT) as stream:
                 while not stop_event.is_set():
                     message = stream.receive()
-                    if not message:
+                    if not message or stop_event.is_set():
                         continue
                     bs_buffer.append([message.data.pulse_id, message.data.data])
                     try:
-                        process_bsbuffer(bs_buffer, bs_img_buffer)
+                        process_bsbuffer(bs_buffer, bs_img_buffer, sender)
                     except Exception as e:
                         _logger.error("Error processing bs buffer: " + str(e))
 
@@ -134,7 +225,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             _logger.info("Exit bs send thread")
 
     def process_pipeline_parameters():
-        parameters = pipeline_config.get_configuration()
+        parameters = get_pipeline_parameters(pipeline_config)
         _logger.debug("Processing pipeline parameters %s. %s" % (parameters, log_tag))
 
         background_array = None
@@ -157,18 +248,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         if not parameters.get("camera_timeout"):
             parameters["camera_timeout"] = 10.0
 
-        if parameters.get("no_client_timeout") is None:
-            parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
-
-        if parameters.get("queue_size") is None:
-            parameters["queue_size"] = config.PIPELINE_DEFAULT_QUEUE_SIZE
-
-        if parameters.get("mode") is None:
-            parameters["mode"] = config.PIPELINE_DEFAULT_MODE
-
-        if parameters.get("block") is None:
-            parameters["block"] = config.PIPELINE_DEFAULT_BLOCK
-
         if parameters.get("rotation"):
             if not isinstance(parameters.get("rotation"), dict):
                 parameters["rotation"] = {"angle":float(parameters.get("rotation")), "order":1, "mode":"0.0"}
@@ -181,12 +260,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     parameters["rotation"]["order"] = 1
                 if not parameters["rotation"].get("mode"):
                     parameters["rotation"]["mode"] = "0.0"
-
-        if parameters.get("pid_range"):
-            try:
-                parameters["pid_range"] = int(parameters.get("pid_range")[0]), int(parameters.get("pid_range")[1])
-            except:
-                parameters["pid_range"] = None
 
         if parameters.get("averaging"):
             try:
@@ -215,54 +288,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         return parameters, background_array
 
-    def create_sender():
-        nonlocal sender
-
-        if pipeline_parameters["mode"] == "FILE":
-            file_name = pipeline_parameters["file"]
-            records = pipeline_parameters.get("records")
-            sender = WriterSender(output_file=file_name,
-                                  number_of_records=records if records else UNDEFINED_NUMBER_OF_RECORDS,
-                                  layout=pipeline_parameters["layout"],
-                                  save_local_timestamps=pipeline_parameters["localtime"],
-                                  change=pipeline_parameters["change"],
-                                  attributes={})
-        else:
-            sender = Sender(port=output_stream_port,
-                            mode=PUSH if (pipeline_parameters["mode"] == "PUSH") else PUB,
-                            queue_size=pipeline_parameters["queue_size"],
-                            block=pipeline_parameters["block"],
-                            data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
-        sender.open(no_client_action=None if pipeline_parameters["no_client_timeout"]<=0 else no_client_action,
-                    no_client_timeout=pipeline_parameters["no_client_timeout"])
-
-    functions = {}
-
-    def get_function(name, reload=False):
-        if not name:
-            return process_image  # default
-        try:
-            f = functions.get(name)
-            if (not f) or reload:
-                if (not f):
-                    _logger.info("Importing function: %s. %s" % (name, log_tag))
-                else:
-                    _logger.info("Reloading function: %s. %s" % (name, log_tag))
-                if '/' in name:
-                    mod = load_source('mod', name)
-                else:
-                    if user_scripts_manager and user_scripts_manager.exists(name):
-                        mod = load_source('mod', user_scripts_manager.get_path(name))
-                    else:
-                        mod = import_module("cam_server.pipeline.data_processing." + str(name))
-                functions[name] = f = mod.process_image
-                pipeline_parameters["reload"] = False
-            return f
-        except:
-            _logger.exception("Could not import function: %s. %s" % (str(name), log_tag))
-            return None
-
-
     def process_data(function, sender, message_buffer, image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata=None):
         processed_data = function(image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters, bsdata)
 
@@ -284,9 +309,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         if message_buffer:
             message_buffer.append((processed_data, timestamp, pulse_id))
         else:
-            sender.send(data=processed_data, timestamp=timestamp, pulse_id=pulse_id)
-            if pipeline_parameters.get("records"):
-                check_records()
+            send(sender, processed_data, timestamp, pulse_id, pipeline_parameters)
 
     source, sender = None, None
     message_buffer, message_buffer_send_thread  = None, None
@@ -317,7 +340,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event))
                 message_buffer_send_thread.start()
             else:
-                create_sender()
+                sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
 
         # Indicate that the startup was successful.
         stop_event.clear()
@@ -327,7 +350,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         last_sent_timestamp = 0
         last_rcvd_timestamp = time.time()
 
-        record_count=0
         image_buffer = []
 
         while not stop_event.is_set():
@@ -417,8 +439,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
 
                 processing_timestamp = data.data.data["timestamp"].value
-
-                function = get_function(pipeline_parameters.get("function"), pipeline_parameters.get("reload"))
+                function = get_function(pipeline_parameters, user_scripts_manager, log_tag)
                 if not function:
                     continue
                 if bsread_address:
@@ -448,7 +469,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 pass
         if message_buffer_send_thread:
             try:
-                message_buffer_send_thread.join(0.1)
+                message_buffer_sendsend_thread.join(0.1)
             except:
                 pass
         else:
@@ -541,9 +562,81 @@ def store_pipeline(stop_event, statistics, parameter_queue,
             sender.close()
 
 
+def stream_pipeline(stop_event, statistics, parameter_queue,
+                   cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager=None):
+
+    source = None
+    sender = None
+    log_tag = "stream_pipeline"
+
+    parameters = get_pipeline_parameters(pipeline_config)
+
+    bsread_address = parameters.get("bsread_address")
+    bsread_channels = parameters.get("bsread_channels")
+
+    try:
+
+        init_statistics(statistics)
+        log_tag = " ["  + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
+
+        _logger.debug("Connecting to stream %s. %s" % (str(bsread_address), str(bsread_channels)))
+
+        bsread_host, bsread_port = get_host_port_from_stream_address(bsread_address)
+        bsread_mode = SUB if bsread_channels else PULL
+        bsread_channels = json.loads(bsread_channels) if bsread_channels else None
+
+        sender = create_sender(parameters, output_stream_port, stop_event, log_tag)
+
+        # Indicate that the startup was successful.
+        stop_event.clear()
+
+        _logger.debug("Transceiver started. %s" % log_tag)
+
+        with bssource(host=bsread_host, port=bsread_port, mode=bsread_mode, channels=bsread_channels, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT) as stream:
+            while not stop_event.is_set():
+                try:
+                    while not parameter_queue.empty():
+                        new_parameters = parameter_queue.get()
+                        pipeline_config.set_configuration(new_parameters)
+                        parameters = get_pipeline_parameters(pipeline_config)
+
+                    data = stream.receive()
+                    set_statistics(statistics, sender,data.statistics.total_bytes_received if data else statistics.total_bytes, 1 if data else 0)
+                    if not data or stop_event.is_set():
+                        continue
+
+                    stream_data = {}
+                    pulse_id = data.data.pulse_id
+                    timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
+                    try:
+                        for key, value in data.data.data.items():
+                            stream_data[key] = value.value
+                        function = get_function(parameters, user_scripts_manager, log_tag)
+                        if function is not None:
+                            stream_data = function(stream_data, pulse_id, timestamp, parameters)
+                    except Exception as e:
+                        _logger.error("Error processing bs buffer: " + str(e) + ". %s" % log_tag)
+                        continue
+                    send(sender, stream_data, timestamp, pulse_id, parameters)
+                except Exception as e:
+                    _logger.exception("Could not process message: " + str(e) + ". %s" % log_tag)
+                    stop_event.set()
+
+        _logger.info("Stopping transceiver. %s" % log_tag)
+
+    except:
+        _logger.exception("Exception while trying to start the receive and process thread. %s" % log_tag)
+        raise
+
+    finally:
+        if sender:
+            sender.close()
+
+
 pipeline_name_to_pipeline_function_mapping = {
-    "processing": processing_pipeline,
-    "store": store_pipeline
+    config.PIPELINE_TYPE_PROCESSING: processing_pipeline,
+    config.PIPELINE_TYPE_STORE: store_pipeline,
+    config.PIPELINE_TYPE_STREAM: stream_pipeline
 }
 
 

@@ -70,6 +70,11 @@ BSREAD_IMAGE_BUFFER_SIZE_MAX = 5000
 BSREAD_DATA_BUFFER_SIZE_MAX = 10000
 
 
+#Pipeline types
+PIPELINE_TYPE_PROCESSING = "processing"
+PIPELINE_TYPE_STORE = "store"
+PIPELINE_TYPE_STREAM = "stream"
+
 ################
 # IPC settings #
 ################

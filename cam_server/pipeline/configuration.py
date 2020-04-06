@@ -199,7 +199,10 @@ class UserScriptsManager(object):
             scripts[i] = basename(scripts[i])
         return scripts
 
+
 class PipelineConfig:
+
+    MANDATORY_ATTRIBUTES = ["pipeline_type"]
 
     DEFAULT_CONFIGURATION = {
         "image_background_enable": False,
@@ -208,7 +211,7 @@ class PipelineConfig:
         "image_region_of_interest": None,
         "image_good_region": None,
         "image_slices": None,
-        "pipeline_type": "processing"
+        "pipeline_type": config.PIPELINE_TYPE_PROCESSING
     }
 
     DEFAULT_IMAGE_GOOD_REGION = {
@@ -269,9 +272,6 @@ class PipelineConfig:
         if not configuration:
             raise ValueError("Config object cannot be empty.\nConfig: %s" % configuration)
 
-        if "camera_name" not in configuration:
-            raise ValueError("Camera name not specified in configuration.")
-
         def verify_attributes(section_name, section, mandatory_attributes):
             missing_attributes = [attr for attr in mandatory_attributes if attr not in section]
 
@@ -279,23 +279,31 @@ class PipelineConfig:
                 raise ValueError("The following mandatory attributes were not found in the %s: %s" %
                                  (section_name, missing_attributes))
 
-        # Verify root attributes.
-        verify_attributes("configuration", configuration, PipelineConfig.DEFAULT_CONFIGURATION.keys())
+        verify_attributes("configuration", configuration,  PipelineConfig.MANDATORY_ATTRIBUTES)
 
-        image_good_region = configuration["image_good_region"]
-        if image_good_region:
-            verify_attributes("image_good_region", image_good_region, PipelineConfig.DEFAULT_IMAGE_GOOD_REGION)
+        if configuration["pipeline_type"] != config.PIPELINE_TYPE_STREAM:
+            if "camera_name" not in configuration:
+                raise ValueError("Camera name not specified in configuration.")
 
-        image_slices = configuration["image_slices"]
-        if image_slices:
-            verify_attributes("image_slices", image_slices, PipelineConfig.DEFAULT_IMAGE_SLICES)
+        if configuration["pipeline_type"] == config.PIPELINE_TYPE_PROCESSING:
 
-            if not isinstance(image_slices["number_of_slices"], int):
-                raise ValueError("number_of_slices must be an integer.")
+            # Verify root attributes.
+            verify_attributes("configuration", configuration, PipelineConfig.DEFAULT_CONFIGURATION.keys())
 
-            if image_slices["orientation"] not in ("vertical", "horizontal"):
-                raise ValueError("Invalid slice orientation '%s'. Slices orientation can be 'vertical' or 'horizontal'."
-                                 % image_slices["orientation"])
+            image_good_region = configuration["image_good_region"]
+            if image_good_region:
+                verify_attributes("image_good_region", image_good_region, PipelineConfig.DEFAULT_IMAGE_GOOD_REGION)
+
+            image_slices = configuration["image_slices"]
+            if image_slices:
+                verify_attributes("image_slices", image_slices, PipelineConfig.DEFAULT_IMAGE_SLICES)
+
+                if not isinstance(image_slices["number_of_slices"], int):
+                    raise ValueError("number_of_slices must be an integer.")
+
+                if image_slices["orientation"] not in ("vertical", "horizontal"):
+                    raise ValueError("Invalid slice orientation '%s'. Slices orientation can be 'vertical' or 'horizontal'."
+                                     % image_slices["orientation"])
 
         # Verify if the pipeline exists.
         get_pipeline_function(configuration["pipeline_type"])
@@ -314,15 +322,17 @@ class PipelineConfig:
             expanded_section.update((k, v) for k, v in provided_value.items() if v is not None)
             return expanded_section
 
-        expanded_config = expand_section(configuration, PipelineConfig.DEFAULT_CONFIGURATION)
+        expanded_config = configuration
+        if configuration["pipeline_type"] == config.PIPELINE_TYPE_PROCESSING:
+            expanded_config = expand_section(configuration, PipelineConfig.DEFAULT_CONFIGURATION)
 
-        if expanded_config["image_good_region"] is not None:
-            expanded_config["image_good_region"] = expand_section(expanded_config["image_good_region"],
-                                                                  PipelineConfig.DEFAULT_IMAGE_GOOD_REGION)
+            if expanded_config["image_good_region"] is not None:
+                expanded_config["image_good_region"] = expand_section(expanded_config["image_good_region"],
+                                                                      PipelineConfig.DEFAULT_IMAGE_GOOD_REGION)
 
-        if expanded_config["image_slices"] is not None:
-            expanded_config["image_slices"] = expand_section(expanded_config["image_slices"],
-                                                             PipelineConfig.DEFAULT_IMAGE_SLICES)
+            if expanded_config["image_slices"] is not None:
+                expanded_config["image_slices"] = expand_section(expanded_config["image_slices"],
+                                                                 PipelineConfig.DEFAULT_IMAGE_SLICES)
 
         return expanded_config
 
@@ -330,7 +340,7 @@ class PipelineConfig:
         return self.pipeline_name
 
     def get_camera_name(self):
-        return self.parameters["camera_name"]
+        return self.parameters.get("camera_name")
 
     def get_pipeline_type(self):
         return self.parameters["pipeline_type"]

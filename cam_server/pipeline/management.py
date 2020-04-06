@@ -62,9 +62,12 @@ class PipelineInstanceManager(InstanceManager):
         return self.config_manager.get_pipeline_list()
 
     def _create_and_start_pipeline(self, instance_id, pipeline_config, read_only_pipeline):
-        camera_name = pipeline_config.get_camera_name()
-        if not self.cam_server_client.is_camera_online(camera_name):
-            raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
+        if pipeline_config.get_pipeline_type() == config.PIPELINE_TYPE_STREAM:
+            camera_name = None
+        else:
+            camera_name = pipeline_config.get_camera_name()
+            if not self.cam_server_client.is_camera_online(camera_name):
+                raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
 
         if pipeline_config.get_configuration().get("port"):
             stream_port =  int(pipeline_config.get_configuration().get("port"))
@@ -259,7 +262,7 @@ class PipelineInstance(InstanceWrapper):
         if self.read_only_config:
             raise ValueError("Cannot set config on a read only instance.")
 
-        if self.is_running() and self.pipeline_config.get_camera_name() != configuration["camera_name"]:
+        if self.is_running() and self.pipeline_config.get_camera_name() != configuration.get("camera_name"):
             raise ValueError("Cannot change the camera name on a running instance. Stop the instance first.")
 
         self.pipeline_config.set_configuration(configuration)

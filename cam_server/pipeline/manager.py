@@ -98,10 +98,14 @@ class Manager(ProxyBase):
             server, port = self.get_fixed_server(pipeline_name)
             if server:
                 return (server,port)
-        camera_name = configuration["camera_name"]
         if not status:
             status = self.get_status()
-        return self.get_server_for_camera(camera_name, status), None
+
+        camera_name = configuration.get("camera_name")
+        if camera_name:
+            return self.get_server_for_camera(camera_name, status), None
+        else:
+            return self.get_free_server(None, status), None
 
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
@@ -160,7 +164,7 @@ class Manager(ProxyBase):
             _logger.info("Creating stream from name %s at %s" % (pipeline_name, server.get_address()))
             instance_id, stream_address = server.create_instance_from_name(pipeline_name, instance_id, configuration)
         elif cfg is not None:
-            _logger.info("Creating stream from config to camera %s at %s" % (cfg["camera_name"], server.get_address()))
+            _logger.info("Creating stream from config to camera %s at %s" % (str(cfg.get("camera_name")), server.get_address()))
             instance_id, stream_address = server.create_instance_from_config(cfg, instance_id)
         else:
             raise Exception("Invalid parameters")
@@ -198,14 +202,14 @@ class Manager(ProxyBase):
         status = self.get_status()
         (server,port) = self.get_server_for_pipeline(None, configuration, status)
         _logger.info("Getting stream from config to camera %s at %s" %
-                     (configuration["camera_name"], server.get_address()))
+                     (str(configuration.get("camera_name")), server.get_address()))
         return server.get_instance_stream_from_config(configuration)
 
     def update_instance_config(self, instance_name, config_updates):
         server = self.get_server(instance_name)
         if server is not None:
             self._check_background(server, config_updates)
-            self._check_script(server, config_updates)
+            self._check_script(server, config_updates, instance_name)
             server.set_instance_config(instance_name, config_updates)
 
             #if permanent instance, save the pipeline config
@@ -241,11 +245,15 @@ class Manager(ProxyBase):
                 image_array = self.background_manager.get_background(image_background)
                 server.set_background_image_bytes(image_background, image_array)
 
-    def _check_script(self, server, config):
-        if config.get("function"):
-            if self.user_scripts_manager.exists(config.get("function")):
-                server.set_user_script( config.get("function"), self.user_scripts_manager.get_script(config.get("function")))
+    def _check_script(self, server, config, instance_name=None):
+        function = config.get("function")
+        if not function:
+            if config.get("reload"):
+                function =server.get_instance_config(instance_name).get("function")
 
+        if function:
+            if self.user_scripts_manager.exists(function):
+                server.set_user_script(function, self.user_scripts_manager.get_script(function))
 
     def save_pipeline_config(self, pipeline_name, config):
         self.config_manager.save_pipeline_config(pipeline_name, config)

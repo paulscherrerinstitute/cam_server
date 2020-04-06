@@ -1,0 +1,8 @@
+{
+ "pipeline_type": "stream",
+ "name": "stream1",
+ "bsread_address": "tcp://127.0.0.1:9999",
+ "bsread_channels": null,
+ "mode": "PUB",
+ "function": "stream_example"
+}
