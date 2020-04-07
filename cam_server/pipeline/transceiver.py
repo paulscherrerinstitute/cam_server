@@ -31,13 +31,14 @@ def create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag):
     sender = None
     def no_client_action():
         nonlocal sender,pipeline_parameters
-        _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
-                        pipeline_parameters["no_client_timeout"], log_tag)
-        stop_event.set()
-        if sender:
-            if pipeline_parameters["mode"] == "PUSH" and pipeline_parameters["block"]:
-                _logger.warning("Killing the process: cannot stop gracefully if sender is blocking")
-                os._exit(0)
+        if pipeline_parameters["no_client_timeout"] > 0:
+            _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
+                            pipeline_parameters["no_client_timeout"], log_tag)
+            stop_event.set()
+            if sender:
+                if pipeline_parameters["mode"] == "PUSH" and pipeline_parameters["block"]:
+                    _logger.warning("Killing the process: cannot stop gracefully if sender is blocking")
+                    os._exit(0)
 
     if pipeline_parameters["mode"] == "FILE":
         file_name = pipeline_parameters["file"]
@@ -54,8 +55,8 @@ def create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag):
                         queue_size=pipeline_parameters["queue_size"],
                         block=pipeline_parameters["block"],
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
-    sender.open(no_client_action=None if pipeline_parameters["no_client_timeout"] <= 0 else no_client_action,
-                no_client_timeout=pipeline_parameters["no_client_timeout"])
+    sender.open(no_client_action=no_client_action, no_client_timeout=pipeline_parameters["no_client_timeout"]
+                if pipeline_parameters["no_client_timeout"] > 0 else sys.maxsize)
     sender.record_count = 0
     return sender
 
@@ -486,9 +487,11 @@ def store_pipeline(stop_event, statistics, parameter_queue,
                    cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager=None):
 
     def no_client_action():
-        _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s" %
+        nonlocal  parameters
+        if parameters["no_client_timeout"] > 0:
+            _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s" %
                         (config.MFLOW_NO_CLIENTS_TIMEOUT, log_tag))
-        stop_event.set()
+            stop_event.set()
 
     source = None
     sender = None
@@ -520,8 +523,8 @@ def store_pipeline(stop_event, statistics, parameter_queue,
         sender = Sender(port=output_stream_port, mode=PUSH,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
 
-        sender.open(no_client_action=None if parameters["no_client_timeout"]<=0 else no_client_action,
-                    no_client_timeout=parameters["no_client_timeout"])
+        sender.open(no_client_action=no_client_action, no_client_timeout=parameters["no_client_timeout"]
+                    if parameters["no_client_timeout"] > 0 else sys.maxsize)
         # TODO: Register proper channels.
         # Indicate that the startup was successful.
         stop_event.clear()
