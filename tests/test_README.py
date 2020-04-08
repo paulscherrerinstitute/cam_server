@@ -9,7 +9,7 @@ from time import sleep
 from cam_server import CamClient, PipelineClient
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
-from tests import test_cleanup, require_folder
+from tests import test_cleanup, require_folder, get_simulated_camera
 
 
 class PipelineClientTest(unittest.TestCase):
@@ -127,9 +127,10 @@ class PipelineClientTest(unittest.TestCase):
         print("Image size: %d x %d" % (image_width, image_height))
         print("Image data: %s" % image_bytes)
 
+        x_size, y_size = get_simulated_camera().get_geometry()
         self.assertIsNotNone(data)
-        self.assertEqual(image_width, 1280)
-        self.assertIsNotNone(image_height, 960)
+        self.assertEqual(image_width, x_size)
+        self.assertIsNotNone(image_height, y_size)
 
     def test_get_basic_pipeline_with_simulated_camera(self):
 
@@ -164,9 +165,10 @@ class PipelineClientTest(unittest.TestCase):
         print("Image size: %d x %d" % (image_width, image_height))
         print("Image data: %s" % image_bytes)
 
+        x_size, y_size = get_simulated_camera().get_geometry()
         self.assertIsNotNone(data)
-        self.assertEqual(image_width, 1280)
-        self.assertIsNotNone(image_height, 960)
+        self.assertEqual(image_width, x_size)
+        self.assertIsNotNone(image_height, y_size)
 
     def test_create_pipeline_with_background(self):
         from cam_server import PipelineClient
@@ -205,9 +207,10 @@ class PipelineClientTest(unittest.TestCase):
         print("Image size: %d x %d" % (image_width, image_height))
         print("Image data: %s" % image_bytes)
 
+        x_size, y_size = get_simulated_camera().get_geometry()
         self.assertIsNotNone(data)
-        self.assertEqual(image_width, 1280)
-        self.assertIsNotNone(image_height, 960)
+        self.assertEqual(image_width, x_size)
+        self.assertIsNotNone(image_height, y_size)
 
     def test_modify_camera_config(self):
         self.cam_client.set_camera_config("test_camera", self.cam_client.get_camera_config("camera_example_2"))

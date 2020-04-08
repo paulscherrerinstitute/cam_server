@@ -1,6 +1,5 @@
 import unittest
 
-from cam_server import config
 from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 

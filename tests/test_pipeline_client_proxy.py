@@ -1,6 +1,5 @@
 import base64
 import os
-import signal
 import unittest
 import time
 from tests import is_port_available, require_folder
@@ -12,15 +11,13 @@ import numpy
 from bsread import source, SUB, PULL
 
 from cam_server import CamClient, PipelineClient, config
-from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.start_camera_server import start_camera_server
 from cam_server.start_pipeline_server import start_pipeline_server
 from cam_server.start_camera_proxy import start_camera_proxy
 from cam_server.start_pipeline_proxy import start_pipeline_proxy
 from cam_server.utils import get_host_port_from_stream_address
-from tests import test_cleanup
+from tests import test_cleanup, get_simulated_camera
 
 
 class PipelineClientTest(unittest.TestCase):
@@ -307,8 +304,10 @@ class PipelineClientTest(unittest.TestCase):
         expected_cameras = ['camera_example_1', 'camera_example_3', 'camera_example_2', 'camera_example_4',
                             'simulation', 'simulation2']
 
-        self.assertEqual(set(self.pipeline_client.get_cameras()), set(expected_cameras),
-                         "Expected cameras not present.")
+        # self.assertEqual(set(self.pipeline_client.get_cameras()), set(expected_cameras),
+        #                 "Expected cameras not present.")
+        for camera in expected_cameras:
+            self.assertIn(camera, set(self.pipeline_client.get_cameras()), "Not getting expected camera: " + camera)
 
         configuration = {"camera_name": "simulation",
                          "threshold": 50}
@@ -367,7 +366,7 @@ class PipelineClientTest(unittest.TestCase):
         shape = image["shape"]
         bytes = base64.b64decode(image["bytes"].encode())
 
-        x_size, y_size = CameraSimulation(CameraConfig("simulation")).get_geometry()
+        x_size, y_size = get_simulated_camera().get_geometry()
         self.assertEqual(shape, [y_size, x_size])
 
         image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)

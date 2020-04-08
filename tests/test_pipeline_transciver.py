@@ -15,7 +15,7 @@ from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import processing_pipeline, store_pipeline
 from cam_server.start_camera_server import start_camera_server
 from tests.helpers.factory import MockBackgroundManager
-from tests import test_cleanup
+from tests import test_cleanup, get_simulated_camera
 
 
 class PipelineTransceiverTest(unittest.TestCase):
@@ -53,7 +53,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         thread = Thread(target=send)
         thread.start()
 
-        with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
+        with source(host="127.0.0.1", port=12000, mode=SUB, receive_timeout = 3000) as stream:
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
 
@@ -89,7 +89,8 @@ class PipelineTransceiverTest(unittest.TestCase):
             processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
                                 12000, background_manager)
 
-        simulated_camera_shape = (960, 1280)
+        x_size, y_size = get_simulated_camera().get_geometry()
+        simulated_camera_shape = (y_size, x_size)
 
         background_array = numpy.zeros(shape=simulated_camera_shape)
         background_array.fill(65535)
@@ -102,9 +103,8 @@ class PipelineTransceiverTest(unittest.TestCase):
         thread = Thread(target=send)
         thread.start()
 
-        with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
+        with source(host="127.0.0.1", port=12000, mode=SUB, receive_timeout = 3000) as stream:
             data = stream.receive()
-
             self.assertIsNotNone(data, "Received None message.")
             self.assertTrue(numpy.array_equal(data.data.data["image"].value, numpy.zeros(shape=simulated_camera_shape)))
 
@@ -125,7 +125,8 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         background_manager = MockBackgroundManager()
 
-        simulated_camera_shape = (960, 1280)
+        x_size, y_size = get_simulated_camera().get_geometry()
+        simulated_camera_shape = (y_size, x_size)
 
         def send():
             processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
@@ -134,7 +135,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         thread = Thread(target=send)
         thread.start()
 
-        with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
+        with source(host="127.0.0.1", port=12000, mode=SUB, receive_timeout = 3000) as stream:
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
 
@@ -202,9 +203,9 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         sleep(0.5)
 
-        with source(host="127.0.0.1", port=12000, mode=PULL) as stream:
+        with source(host="127.0.0.1", port=12000, mode=PULL, receive_timeout = 3000) as stream:
             data = stream.receive()
-            self.assertIsNotNone(data, "Received None message.")
+            self.assertIsNotNone(data, "Receiving timeout.")
 
             required_keys = set(["simulation" + config.EPICS_PV_SUFFIX_IMAGE])
 
@@ -231,7 +232,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         thread = Thread(target=send)
         thread.start()
 
-        with source(host="127.0.0.1", port=12000, mode=SUB) as stream:
+        with source(host="127.0.0.1", port=12000, mode=SUB, receive_timeout = 3000) as stream:
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
 

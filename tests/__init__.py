@@ -1,7 +1,8 @@
 import os
 import signal
 from time import sleep
-
+from cam_server.camera.source.simulation import CameraSimulation
+from cam_server.camera.configuration import CameraConfig
 
 def require_folder(path):
     if not os.path.isdir(path):
@@ -59,3 +60,12 @@ def is_port_available(port):
             s.close()
         except:
             pass
+
+def get_config(path, name):
+    from cam_server.instance_management.configuration import ConfigFileStorage
+    cfg = ConfigFileStorage(path)
+    return cfg.get_config(name)
+
+
+def get_simulated_camera(path="camera_config/",  name = "simulation"):
+    return CameraSimulation(CameraConfig(name,get_config(path, name)))

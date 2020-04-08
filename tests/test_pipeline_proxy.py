@@ -1,19 +1,14 @@
-import base64
 import os
 import time
 import h5py
-import signal
 import unittest
 from multiprocessing import Process
 from time import sleep
 
-import numpy
 from bsread import source, SUB
 
 from cam_server import config, __VERSION__
 from cam_server import CamClient, PipelineClient, ProxyClient
-from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.start_camera_worker import start_camera_worker
 from cam_server.start_camera_manager import start_camera_manager
 from cam_server.start_pipeline_worker import start_pipeline_worker
@@ -252,7 +247,7 @@ class CameraClientProxyTest(unittest.TestCase):
         pp["simulation_sp"] = "pp"
         self.pipeline_proxy_client.set_permanent_instances(pp)
         pp =  self.pipeline_proxy_client.get_permanent_instances()
-        self.assertEqual(pp, {"simulation_sp":"pp"})
+        self.assertIn(("simulation_sp","pp"), pp.items())
         self.pipeline_proxy_client.set_permanent_instances({})
 
     def test_file_dump_pipeline(self):

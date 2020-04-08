@@ -10,8 +10,6 @@ from bsread import source, SUB
 
 from cam_server import config
 from cam_server import CamClient, ProxyClient
-from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.start_camera_worker import start_camera_worker
 from cam_server.start_camera_manager import start_camera_manager
 from cam_server.utils import get_host_port_from_stream_address

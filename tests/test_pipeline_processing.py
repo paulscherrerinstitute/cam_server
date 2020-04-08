@@ -4,20 +4,19 @@ import unittest
 
 import numpy
 
-from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.data_processing.functions import calculate_slices, subtract_background
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import sum_images
 from tests.helpers.factory import MockBackgroundManager
+from tests import get_simulated_camera
 
 
 class PipelineProcessingTest(unittest.TestCase):
     def test_noop_pipeline(self):
         pipeline_config = PipelineConfig("test_pipeline")
 
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        simulated_camera = get_simulated_camera()
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
         parameters = pipeline_config.get_configuration()
@@ -27,7 +26,8 @@ class PipelineProcessingTest(unittest.TestCase):
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters)
+                               parameters=parameters,
+                               bsdata=None)
         required_fields_in_result = ['x_center_of_mass', 'x_axis', 'y_axis', 'x_profile', 'y_fit_standard_deviation',
                                      'y_rms', 'timestamp', 'y_profile', 'image', 'max_value', 'x_fit_offset',
                                      'x_fit_gauss_function', 'y_center_of_mass', 'min_value', 'y_fit_mean',
@@ -50,7 +50,7 @@ class PipelineProcessingTest(unittest.TestCase):
             "image_background": "white_background"
         }
 
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        simulated_camera = get_simulated_camera()
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
 
@@ -71,7 +71,8 @@ class PipelineProcessingTest(unittest.TestCase):
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters)
+                               parameters=parameters,
+                               bsdata=None)
 
         self.assertTrue(numpy.array_equal(result["image"], image),
                         "A zero background should not change the image.")
@@ -103,13 +104,14 @@ class PipelineProcessingTest(unittest.TestCase):
                                x_axis=x_axis,
                                y_axis=y_axis,
                                parameters=parameters,
+                               bsdata=None
                                )
 
         self.assertTrue(numpy.array_equal(result["image"], expected_image),
                         "The image should be all zeros - negative numbers are not allowed.")
 
     def test_image_threshold(self):
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        simulated_camera = get_simulated_camera()
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
         x_size, y_size = simulated_camera.get_geometry()
@@ -127,7 +129,8 @@ class PipelineProcessingTest(unittest.TestCase):
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters)
+                               parameters=parameters,
+                               bsdata=None)
 
         expected_image = numpy.zeros(shape=(y_size, x_size))
         self.assertTrue(numpy.array_equal(result["image"], expected_image),
@@ -146,7 +149,8 @@ class PipelineProcessingTest(unittest.TestCase):
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters)
+                               parameters=parameters,
+                               bsdata=None)
 
         self.assertTrue(numpy.array_equal(result["image"], image),
                         "The image should be the same as the original image.")
@@ -157,7 +161,7 @@ class PipelineProcessingTest(unittest.TestCase):
             "image_background": "white_background"
         }
 
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        simulated_camera = get_simulated_camera()
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
 
@@ -184,7 +188,7 @@ class PipelineProcessingTest(unittest.TestCase):
 
     def test_region_of_interest_default_values(self):
 
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        simulated_camera = get_simulated_camera()
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
 
@@ -206,7 +210,8 @@ class PipelineProcessingTest(unittest.TestCase):
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters)
+                               parameters=parameters,
+                               bsdata=None)
 
         self.assertFalse(any((x in result for x in good_region_keys)), 'There should not be good region keys.')
 
@@ -222,7 +227,8 @@ class PipelineProcessingTest(unittest.TestCase):
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters)
+                               parameters=parameters,
+                               bsdata=None)
 
         self.assertTrue(all((x in result for x in good_region_keys)), 'There should be good region keys.')
         self.assertTrue(all((result[x] is None for x in good_region_keys)), 'All values should be None.')
@@ -244,7 +250,8 @@ class PipelineProcessingTest(unittest.TestCase):
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters)
+                               parameters=parameters,
+                               bsdata=None)
 
         self.assertTrue(all((x in result for x in good_region_keys)), 'There should be good region keys.')
         self.assertTrue(all((x in result for x in (x % counter
@@ -260,7 +267,7 @@ class PipelineProcessingTest(unittest.TestCase):
         def run_the_pipeline(configuration, simulated_image=None):
             parameters = PipelineConfig("test_pipeline", configuration).get_configuration()
 
-            simulated_camera = CameraSimulation(CameraConfig("simulation"))
+            simulated_camera = get_simulated_camera()
 
             if simulated_image is None:
                 simulated_image = simulated_camera.get_image()
@@ -268,7 +275,7 @@ class PipelineProcessingTest(unittest.TestCase):
             x_axis, y_axis = simulated_camera.get_x_y_axis()
 
             return process_image(image=simulated_image, pulse_id=0, timestamp=time.time(), x_axis=x_axis, y_axis=y_axis,
-                                 parameters=parameters)
+                                 parameters=parameters, bsdata=None)
 
         pipeline_configuration = {
             "camera_name": "simulation",
@@ -314,7 +321,7 @@ class PipelineProcessingTest(unittest.TestCase):
 
             run_the_pipeline(pipeline_configuration)
 
-        image = CameraSimulation(CameraConfig("simulation")).get_image()
+        image = get_simulated_camera().get_image()
 
         pipeline_configuration = {
             "camera_name": "simulation",
@@ -356,7 +363,7 @@ class PipelineProcessingTest(unittest.TestCase):
             calculate_slices(None, None, None, None, 2)
 
     def test_intensity(self):
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        simulated_camera = get_simulated_camera()
         image = simulated_camera.get_image()
         x_axis, y_axis = simulated_camera.get_x_y_axis()
 
@@ -369,7 +376,8 @@ class PipelineProcessingTest(unittest.TestCase):
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters)
+                               parameters=parameters,
+                               bsdata=None)
 
         x_sum = result["x_profile"].sum()
         y_sum = result["y_profile"].sum()
@@ -379,7 +387,7 @@ class PipelineProcessingTest(unittest.TestCase):
         self.assertAlmostEqual(y_sum, result["intensity"], delta=10000)
 
     def test_get_image(self):
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        simulated_camera = get_simulated_camera()
         image = simulated_camera.get_image()
         self.assertIsNotNone(image)
 
@@ -387,7 +395,7 @@ class PipelineProcessingTest(unittest.TestCase):
         self.assertIsNotNone(raw_image)
 
     def test_sum_images(self):
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        simulated_camera = get_simulated_camera()
         image = simulated_camera.get_image()
         accumulated_image = None
 
@@ -426,7 +434,8 @@ class PipelineProcessingTest(unittest.TestCase):
                                timestamp=time.time(),
                                x_axis=x_axis,
                                y_axis=y_axis,
-                               parameters=parameters)
+                               parameters=parameters,
+                               bsdata=None)
 
         x_profile = result["x_profile"]
         y_profile = result["y_profile"]

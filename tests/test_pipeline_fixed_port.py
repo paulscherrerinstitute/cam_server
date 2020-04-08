@@ -1,17 +1,11 @@
-import base64
+
 import os
-import signal
 import unittest
 from multiprocessing import Process
 from time import sleep
 
-import numpy
-from bsread import source, SUB
-
 from cam_server import config
 from cam_server import CamClient, PipelineClient, ProxyClient
-from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.start_camera_worker import start_camera_worker
 from cam_server.start_camera_manager import start_camera_manager
 from cam_server.start_pipeline_worker import start_pipeline_worker

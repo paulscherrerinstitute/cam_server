@@ -322,6 +322,9 @@ class PipelineConfig:
             expanded_section.update((k, v) for k, v in provided_value.items() if v is not None)
             return expanded_section
 
+        if not configuration.get("pipeline_type"):
+            configuration["pipeline_type"] = config.PIPELINE_TYPE_PROCESSING
+
         expanded_config = configuration
         if configuration["pipeline_type"] == config.PIPELINE_TYPE_PROCESSING:
             expanded_config = expand_section(configuration, PipelineConfig.DEFAULT_CONFIGURATION)

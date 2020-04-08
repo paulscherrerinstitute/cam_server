@@ -1,6 +1,5 @@
 import base64
 import os
-import signal
 import unittest
 from multiprocessing import Process
 from time import sleep
@@ -9,13 +8,11 @@ import numpy
 from bsread import source, SUB
 
 from cam_server import CamClient
-from cam_server.camera.configuration import CameraConfig
-from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.start_camera_worker import start_camera_worker
 from cam_server.start_camera_manager import start_camera_manager
 from cam_server.utils import get_host_port_from_stream_address
 
-from tests import test_cleanup
+from tests import test_cleanup, get_simulated_camera
 
 
 class CameraClientProxyTest(unittest.TestCase):
@@ -58,7 +55,10 @@ class CameraClientProxyTest(unittest.TestCase):
         expected_cameras = set(["camera_example_1", "camera_example_2", "camera_example_3", "camera_example_4",
                                 "simulation", "simulation2"])
         print (self.client.get_cameras())
-        self.assertSetEqual(set(self.client.get_cameras()), expected_cameras, "Not getting all expected cameras")
+        #self.assertSetEqual(set(self.client.get_cameras()), expected_cameras, "Not getting all expected cameras")
+        for camera in  expected_cameras:
+            self.assertIn(camera, set(self.client.get_cameras()), "Not getting expected camera: " + camera)
+
 
         camera_stream_address = self.client.get_instance_stream("simulation")
 
@@ -76,7 +76,7 @@ class CameraClientProxyTest(unittest.TestCase):
             self.assertSetEqual(required_fields, set(data.data.data.keys()), "Required fields missing.")
 
             image = data.data.data["image"].value
-            x_size, y_size = CameraSimulation(CameraConfig("simulation")).get_geometry()
+            x_size, y_size = get_simulated_camera().get_geometry()
             self.assertListEqual(list(image.shape), [y_size, x_size],
                                  "Original and received image are not the same.")
 
@@ -110,7 +110,7 @@ class CameraClientProxyTest(unittest.TestCase):
         self.assertDictEqual(example_1_config, testing_camera_config, "Saved and loaded configs are not the same.")
 
         geometry = self.client.get_camera_geometry("simulation")
-        simulated_camera = CameraSimulation(CameraConfig("simulation"))
+        simulated_camera = get_simulated_camera()
         size_x, size_y = simulated_camera.get_geometry()
         self.assertListEqual(geometry, [size_x, size_y],
                              'The geometry of the simulated camera is not correct.')
@@ -133,7 +133,7 @@ class CameraClientProxyTest(unittest.TestCase):
 
         stream_address = self.client.get_instance_stream("simulation_temp")
         camera_host, camera_port = get_host_port_from_stream_address(stream_address)
-        sim_x, sim_y = CameraSimulation(CameraConfig("simulation")).get_geometry()
+        sim_x, sim_y = get_simulated_camera().get_geometry()
 
         instance_info = self.client.get_server_info()["active_instances"]["simulation_temp"]
         self.assertTrue("last_start_time" in instance_info)
@@ -186,7 +186,7 @@ class CameraClientProxyTest(unittest.TestCase):
         shape = image["shape"]
         bytes = base64.b64decode(image["bytes"].encode())
 
-        x_size, y_size = CameraSimulation(CameraConfig("simulation")).get_geometry()
+        x_size, y_size = get_simulated_camera().get_geometry()
         self.assertEqual(shape, [y_size, x_size])
 
         image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)

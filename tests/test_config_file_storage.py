@@ -22,8 +22,12 @@ class ConfigFileStorageTest(unittest.TestCase):
         expected_config_files = set(["camera_example_1", "camera_example_2", "camera_example_3", "camera_example_4",
                                      "simulation",  "simulation2"])
         available_configs_1 = self.file_storage.get_available_configs()
-        self.assertSetEqual(set(available_configs_1), expected_config_files,
-                            "Available configs not as expected.")
+        #self.assertSetEqual(set(available_configs_1), expected_config_files,
+        #                    "Available configs not as expected.")
+        for file in  expected_config_files:
+            self.assertIn(file, available_configs_1), "Not getting expected config file: " + file)
+
+
 
     def test_get_config(self):
         config_example_1 = self.file_storage.get_config("camera_example_1")

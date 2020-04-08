@@ -14,7 +14,7 @@ from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import get_host_port_from_stream_address
 from tests.helpers.factory import get_test_pipeline_manager, get_test_pipeline_manager_with_real_cam, \
     MockConfigStorage, MockBackgroundManager, MockCamServerClient
-from tests import test_cleanup, require_folder
+from tests import test_cleanup, require_folder, get_simulated_camera
 
 
 class PipelineManagerTest(unittest.TestCase):
@@ -265,7 +265,8 @@ class PipelineManagerTest(unittest.TestCase):
             "camera_name": "simulation"
         }
 
-        black_image = numpy.zeros(shape=(960, 1280)).astype(dtype="uint16")
+        x_size, y_size = get_simulated_camera().get_geometry()
+        black_image = numpy.zeros(shape=(y_size, x_size)).astype(dtype="uint16")
 
         pipeline_id, pipeline_stream_address = instance_manager.create_pipeline(configuration=pipeline_config)
         pipeline_host, pipeline_port = get_host_port_from_stream_address(pipeline_stream_address)
@@ -277,10 +278,10 @@ class PipelineManagerTest(unittest.TestCase):
             self.assertFalse(numpy.array_equal(normal_image_data.data.data['image'].value, black_image),
                              "There should be a non black image.")
 
-            self.assertEqual(normal_image_data.data.data["width"].value, 1280, "Incorrect width.")
-            self.assertEqual(normal_image_data.data.data["height"].value, 960, "Incorrect height.")
+            self.assertEqual(normal_image_data.data.data["width"].value, x_size, "Incorrect width.")
+            self.assertEqual(normal_image_data.data.data["height"].value, y_size, "Incorrect height.")
 
-        white_image = numpy.zeros(shape=(960, 1280))
+        white_image = numpy.zeros(shape=(y_size, x_size))
         white_image.fill(65535)
 
         instance_manager.background_manager.save_background("white_background", white_image, append_timestamp=False)
@@ -303,7 +304,7 @@ class PipelineManagerTest(unittest.TestCase):
                                                               "image_threshold": 0})
 
         # Give it some time to load the background.
-        sleep(0.5)
+        sleep(1.0)
 
         # Collect from the camera.
         with source(host=pipeline_host, port=pipeline_port, mode=SUB) as stream:

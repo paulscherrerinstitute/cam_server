@@ -1,7 +1,6 @@
 import os
 import unittest
 
-from multiprocessing import Event
 from threading import Thread
 
 import multiprocessing

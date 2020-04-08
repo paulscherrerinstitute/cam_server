@@ -56,7 +56,7 @@ def find_edge(data, step_length=50, edge_type='falling', refinement=1):
     return {'edge_pos': edge_position, 'xcorr_ampl': xcorr_amplitude}
 
 
-def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata):
+def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata=None):
 
     processed_data = dict()
 
