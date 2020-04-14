@@ -7,6 +7,7 @@ import os
 from collections import deque
 from threading import Thread, Event
 import numpy
+import json
 
 from bsread import Source, PUB, SUB, PUSH, PULL
 from bsread import source as bssource

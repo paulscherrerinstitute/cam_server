@@ -20,5 +20,6 @@
 
  "frame_rate":2,
   "size_x": 400,
- "size_y": 200
+ "size_y": 200,
+ "simulate_pulse_id": false
 }

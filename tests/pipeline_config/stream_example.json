@@ -1,8 +1,8 @@
 {
  "pipeline_type": "stream",
- "name": "stream1",
- "bsread_address": "tcp://127.0.0.1:9999",
- "bsread_channels": null,
+ "name": "bs_timing_test",
+ "bsread_address": "https://dispatcher-api.psi.ch/sf",
+ "bsread_channels": ["SIN-CVME-TIFGUN-EVR0:BUNCH-1-OK"],
  "mode": "PUB",
- "function": "stream_example"
+ "function": "bs_timing_test"
 }
