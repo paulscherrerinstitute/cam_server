@@ -577,6 +577,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
 
     bsread_address = parameters.get("bsread_address")
     bsread_channels = parameters.get("bsread_channels")
+    bsread_mode = parameters.get("bsread_mode")
 
     try:
 
@@ -585,8 +586,13 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
 
         _logger.debug("Connecting to stream %s. %s" % (str(bsread_address), str(bsread_channels)))
 
-        bsread_host, bsread_port = get_host_port_from_stream_address(bsread_address)
-        bsread_mode = SUB if bsread_channels else PULL
+        if bsread_address:
+            bsread_host, bsread_port = get_host_port_from_stream_address(bsread_address)
+            bsread_mode = SUB if bsread_mode == "SUB" else PULL
+        else:
+            bsread_host, bsread_port =None, 9999
+            bsread_mode = PULL if bsread_mode == "PULL" else SUB
+
         bsread_channels = json.loads(bsread_channels) if bsread_channels else None
 
         sender = create_sender(parameters, output_stream_port, stop_event, log_tag)
