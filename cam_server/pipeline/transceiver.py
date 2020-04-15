@@ -4,7 +4,7 @@ from imp import load_source
 import time
 import sys
 import os
-from collections import deque
+from collections import deque, OrderedDict
 from threading import Thread, Event
 import numpy
 import json
@@ -184,7 +184,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     bs_img_buffer.popleft()
                 elif img_pid == bs_pid:
                     [pulse_id, [function, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters]] = bs_img_buffer.popleft()
-                    process_data(function, sender, None, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters, bsdata)
+                    stream_data = OrderedDict()
+                    for key, value in bsdata.items():
+                        stream_data[key] = value.value
+                    process_data(function, sender, None, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters, stream_data)
                     for k in range(i):
                         bs_buffer.popleft()
                     i = -1
@@ -193,12 +196,15 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     break
             i = i + 1
 
-    def bs_send_task(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, stop_event):
+    def bs_send_task(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, stop_event):
         nonlocal sender
+        if bsread_address:
+            bsread_host, bsread_port = get_host_port_from_stream_address(bsread_address)
+            bsread_mode = SUB if bsread_mode == "SUB" else PULL
+        else:
+            bsread_host, bsread_port =None, 9999
+            bsread_mode = PULL if bsread_mode == "PULL" else SUB
 
-        bsread_host, bsread_port = get_host_port_from_stream_address(bsread_address)
-        bsread_mode = SUB if bsread_channels else PULL
-        bsread_channels = json.loads(bsread_channels) if bsread_channels else None
 
         _logger.info("Start bs send thread")
         sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
@@ -328,11 +334,19 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
 
         bsread_address = pipeline_parameters.get("bsread_address")
-        if (bsread_address):
-            bsread_channels = pipeline_parameters.get("bsread_channels")
+        bsread_channels = pipeline_parameters.get("bsread_channels")
+        bsread_mode = pipeline_parameters.get("bsread_mode")
+
+        if bsread_channels is not None:
+            if type(bsread_channels) != list:
+                bsread_channels = json.loads(bsread_channels)
+            if len(bsread_channels) == 0:
+                bsread_channels = None
+
+        if bsread_address or (bsread_channels is not None):
             bs_buffer = deque(maxlen=pipeline_parameters["bsread_data_buf"] )
             bs_img_buffer = deque(maxlen=pipeline_parameters["bsread_image_buf"] )
-            bs_send_thread = Thread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, stop_event))
+            bs_send_thread = Thread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, stop_event))
             bs_send_thread.start()
 
         else:
@@ -593,8 +607,11 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
             bsread_host, bsread_port =None, 9999
             bsread_mode = PULL if bsread_mode == "PULL" else SUB
 
-        bsread_channels = json.loads(bsread_channels) if bsread_channels else None
-
+        if bsread_channels is not None:
+            if type(bsread_channels) != list:
+                bsread_channels = json.loads(bsread_channels)
+            if len(bsread_channels)==0:
+                bsread_channels = None
         sender = create_sender(parameters, output_stream_port, stop_event, log_tag)
 
         # Indicate that the startup was successful.
@@ -615,7 +632,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
                     if not data or stop_event.is_set():
                         continue
 
-                    stream_data = {}
+                    stream_data = OrderedDict()
                     pulse_id = data.data.pulse_id
                     timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
                     try:
