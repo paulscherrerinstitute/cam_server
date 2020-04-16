@@ -343,7 +343,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             if len(bsread_channels) == 0:
                 bsread_channels = None
 
-        if bsread_address or (bsread_channels is not None):
+        image_with_stream = bsread_address or (bsread_channels is not None)
+        if image_with_stream:
             bs_buffer = deque(maxlen=pipeline_parameters["bsread_data_buf"] )
             bs_img_buffer = deque(maxlen=pipeline_parameters["bsread_image_buf"] )
             bs_send_thread = Thread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, stop_event))
@@ -458,7 +459,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 function = get_function(pipeline_parameters, user_scripts_manager, log_tag)
                 if not function:
                     continue
-                if bsread_address:
+                if image_with_stream:
                     bs_img_buffer.append([pulse_id, [function, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters]])
                 else:
                     process_data(function, sender, message_buffer, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters)
