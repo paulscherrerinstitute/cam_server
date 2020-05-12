@@ -11,6 +11,12 @@ from cam_server.utils import set_statistics, init_statistics
 _logger = getLogger(__name__)
 
 
+def get_client_timeout(camera):
+    client_timeout = camera.camera_config.get_configuration().get("no_client_timeout")
+    if client_timeout is not None:
+        return client_timeout
+    return config.MFLOW_NO_CLIENTS_TIMEOUT
+
 def process_epics_camera(stop_event, statistics, parameter_queue,
                          camera, port):
     """
@@ -28,9 +34,11 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
 
         # If there is no client for some time, disconnect.
         def no_client_timeout():
-            _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %
-                         (camera.get_name(), config.MFLOW_NO_CLIENTS_TIMEOUT))
-            stop_event.set()
+            client_timeout = get_client_timeout(camera)
+            if client_timeout > 0:
+                _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %
+                             (camera.get_name(), client_timeout))
+                stop_event.set()
 
         def process_parameters():
             nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
@@ -63,7 +71,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
         sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
                                                "type": "float32"})
 
-        sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
+        sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
 
         process_parameters()
 
@@ -109,7 +117,11 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
         camera.disconnect()
 
         if sender:
-            sender.close()
+            try:
+                sender.close()
+            except:
+                pass
+
 
 
 def process_bsread_camera(stop_event, statistics, parameter_queue,
@@ -130,9 +142,11 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
 
         # If there is no client for some time, disconnect.
         def no_client_timeout():
-            _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %
-                         (camera.get_name(), config.MFLOW_NO_CLIENTS_TIMEOUT))
-            stop_event.set()
+            client_timeout = get_client_timeout(camera)
+            if client_timeout > 0:
+                _logger.info("No client connected to the '%s' stream for %d seconds. Closing instance." %
+                             (camera.get_name(), client_timeout))
+                stop_event.set()
 
         def process_parameters():
             nonlocal x_size, y_size, x_axis, y_axis
@@ -150,7 +164,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
         sender = Sender(port=port, mode=PUB,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
 
-        sender.open(no_client_action=no_client_timeout, no_client_timeout=config.MFLOW_NO_CLIENTS_TIMEOUT)
+        sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
 
         camera_name = camera.get_name()
         camera_stream = camera.get_stream()
@@ -167,7 +181,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
 
         while not stop_event.is_set():
             try:
-
                 data = camera_stream.receive()
                 set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes, 1 if data else 0)
                 # In case of receiving error or timeout, the returned data is None.
@@ -222,13 +235,17 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
             camera.disconnect()
 
         if sender:
-            sender.close()
+            try:
+                sender.close()
+            except:
+                pass
 
 
 source_type_to_sender_function_mapping = {
     "epics": process_epics_camera,
     "simulation": process_epics_camera,
-    "bsread": process_bsread_camera
+    "bsread": process_bsread_camera,
+    "bsread_simulation" : process_bsread_camera
 }
 
 

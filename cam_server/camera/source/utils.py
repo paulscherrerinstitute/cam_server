@@ -1,11 +1,12 @@
-from cam_server.camera.source.bsread import CameraBsread
+from cam_server.camera.source.bsread import CameraBsread, CameraBsreadSim
 from cam_server.camera.source.epics import CameraEpics
 from cam_server.camera.source.simulation import CameraSimulation
 
 source_type_to_source_class_mapping = {
     "epics": CameraEpics,
     "simulation": CameraSimulation,
-    "bsread": CameraBsread
+    "bsread": CameraBsread,
+    "bsread_simulation": CameraBsreadSim
 }
 
 

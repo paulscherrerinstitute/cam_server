@@ -48,3 +48,18 @@ class CameraBsread(CameraEpics):
                                     receive_timeout=config.ZMQ_RECEIVE_TIMEOUT)
 
         return self.bsread_source
+
+
+
+class CameraBsreadSim (CameraBsread):
+        def __init__(self, camera_config, width=659, height=494, stream_address="tcp://0.0.0.0:9999"):
+            super(CameraBsreadSim, self).__init__(camera_config)
+            self.width_raw = width
+            self.height_raw = height
+            self.bsread_stream_address = stream_address
+
+        def verify_camera_online(self):
+            pass
+
+        def _collect_camera_settings(self):
+            pass

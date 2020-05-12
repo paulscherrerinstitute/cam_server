@@ -26,3 +26,12 @@ class Manager(ProxyBase):
                 config["port"] = port
             server.set_camera_config(instance_name, config)
 
+    def start_permanent_instance(self, camera, name):
+        _logger.info("Starting permanent instance of %s" % (camera))
+
+        self.get_instance_stream(camera)
+        server = self.get_server(camera)
+        if server is not None:
+            cfg = server.get_camera_config(camera)
+            cfg["no_client_timeout"] = 0
+            server.set_camera_config(camera, cfg)

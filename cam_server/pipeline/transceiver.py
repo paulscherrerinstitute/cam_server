@@ -137,19 +137,31 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
     camera_name = pipeline_config.get_camera_name()
     log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
     source = None
+    camera_host = None
+    camera_port = None
     sender = None
-    exit_code=0
+    exit_code = 0
 
 
     def connect_to_camera():
-        nonlocal source
+        nonlocal source, camera_host, camera_port
         camera_stream_address = cam_client.get_instance_stream(pipeline_config.get_camera_name())
         _logger.warning("Connecting to camera stream address %s. %s" % (camera_stream_address, log_tag))
         source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
 
-        source = Source(host=source_host, port=source_port,
-                        receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
-        source.connect()
+        if source is None or source_host != camera_host or source_port != camera_port:
+
+            if source:
+                try:
+                    source.disconnect()
+                    source = None
+                except:
+                    pass
+
+            source = Source(host=source_host, port=source_port,
+                            receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
+            source.connect()
+            camera_host, camera_port = source_host, source_port
 
     def message_buffer_send_task(message_buffer, stop_event):
         nonlocal sender
@@ -578,7 +590,10 @@ def store_pipeline(stop_event, statistics, parameter_queue,
             source.disconnect()
 
         if sender:
-            sender.close()
+            try:
+                sender.close()
+            except:
+                pass
 
 
 def stream_pipeline(stop_event, statistics, parameter_queue,
@@ -658,7 +673,10 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
 
     finally:
         if sender:
-            sender.close()
+            try:
+                sender.close()
+            except:
+                pass
 
 
 pipeline_name_to_pipeline_function_mapping = {
