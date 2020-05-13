@@ -1,5 +1,5 @@
 #!/bin/bash
-VERSION=3.5.6
+VERSION=3.5.7
 #docker image prune --all --filter "until=4320h"   #delete images older than 6 months
 #docker system prune
 docker build --no-cache=true -t paulscherrerinstitute/cam_server .
