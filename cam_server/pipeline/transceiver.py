@@ -195,11 +195,11 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 if img_pid < bs_pid:
                     bs_img_buffer.popleft()
                 elif img_pid == bs_pid:
-                    [pulse_id, [function, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters]] = bs_img_buffer.popleft()
+                    [pulse_id, [function, global_timestamp, global_timestamp_float, image, pulse_id, x_axis, y_axis, pipeline_parameters]] = bs_img_buffer.popleft()
                     stream_data = OrderedDict()
                     for key, value in bsdata.items():
                         stream_data[key] = value.value
-                    process_data(function, sender, None, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters, stream_data)
+                    process_data(function, global_timestamp, global_timestamp_float, sender, None, image, pulse_id, x_axis, y_axis, pipeline_parameters, stream_data)
                     for k in range(i):
                         bs_buffer.popleft()
                     i = -1
@@ -308,28 +308,27 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         return parameters, background_array
 
-    def process_data(function, sender, message_buffer, image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata=None):
-        processed_data = function(image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters, bsdata)
+    def process_data(function, global_timestamp, global_timestamp_float, sender, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata=None):
+        nonlocal last_sent_timestamp
+        processed_data = function(image, pulse_id, global_timestamp_float, x_axis, y_axis, pipeline_parameters, bsdata)
+        if processed_data is not None:
+            # Requesting subset of the data
+            include = pipeline_parameters.get("include")
+            if include:
+                aux = {}
+                for key in include:
+                    aux[key] = processed_data.get(key)
+                processed_data = aux
+            exclude = pipeline_parameters.get("exclude")
+            if exclude:
+                for field in exclude:
+                    processed_data.pop(field, None)
 
-        # Requesting subset of the data
-        include = pipeline_parameters.get("include")
-        if include:
-            aux = {}
-            for key in include:
-                aux[key] = processed_data.get(key)
-            processed_data = aux
-        exclude = pipeline_parameters.get("exclude")
-        if exclude:
-            for field in exclude:
-                processed_data.pop(field, None)
-
-        timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
-
-        last_sent_timestamp = time.time()
-        if message_buffer:
-            message_buffer.append((processed_data, timestamp, pulse_id))
-        else:
-            send(sender, processed_data, timestamp, pulse_id, pipeline_parameters)
+            last_sent_timestamp = time.time()
+            if message_buffer:
+                message_buffer.append((processed_data, global_timestamp, pulse_id))
+            else:
+                send(sender, processed_data, global_timestamp, pulse_id, pipeline_parameters)
 
     source, sender = None, None
     message_buffer, message_buffer_send_thread  = None, None
@@ -466,15 +465,15 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 if rotation:
                     image = rotate(image, rotation["angle"], rotation["order"], rotation["mode"])
 
-
-                processing_timestamp = data.data.data["timestamp"].value
                 function = get_function(pipeline_parameters, user_scripts_manager, log_tag)
+                global_timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
+                global_timestamp_float = data.data.data["timestamp"].value
                 if not function:
                     continue
                 if image_with_stream:
-                    bs_img_buffer.append([pulse_id, [function, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters]])
+                    bs_img_buffer.append([pulse_id, [function, global_timestamp, global_timestamp_float, image, pulse_id, x_axis, y_axis, pipeline_parameters]])
                 else:
-                    process_data(function, sender, message_buffer, image, pulse_id, processing_timestamp, x_axis, y_axis, pipeline_parameters)
+                    process_data(function, global_timestamp, global_timestamp_float, sender, message_buffer, image, pulse_id, x_axis, y_axis, pipeline_parameters)
             except ProcessingCompleated:
                 break
             except Exception as e:
@@ -498,7 +497,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 pass
         if message_buffer_send_thread:
             try:
-                message_buffer_sendsend_thread.join(0.1)
+                message_buffer_send_thread.join(0.1)
             except:
                 pass
         else:
