@@ -430,6 +430,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         continue
 
                 image = data.data.data["image"].value
+                if image is None:
+                    continue
 
                 averaging = pipeline_parameters.get("averaging")
                 if averaging:
@@ -468,7 +470,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 function = get_function(pipeline_parameters, user_scripts_manager, log_tag)
                 global_timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
                 global_timestamp_float = data.data.data["timestamp"].value
-                if not function:
+                if function is None:
                     continue
                 if image_with_stream:
                     bs_img_buffer.append([pulse_id, [function, global_timestamp, global_timestamp_float, image, pulse_id, x_axis, y_axis, pipeline_parameters]])
