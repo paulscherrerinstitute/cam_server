@@ -1,6 +1,7 @@
 
 import os
 import time
+import json
 from threading import Thread
 
 import multiprocessing
@@ -12,13 +13,13 @@ from mflow import mflow, PUSH, sleep
 from os.path import join, isfile
 
 stop_event = multiprocessing.Event()
-
+simulate_pid = True
 
 
 def tx_task(bind_address, input_folder, stop_event):
     files = sorted(listdir(input_folder))
     stream = mflow.connect(bind_address, conn_type="bind", mode=PUSH)
-
+    pid = 3682521968
     try:
         while not stop_event.is_set():
             for index, raw_file in enumerate(files):
@@ -29,11 +30,19 @@ def tx_task(bind_address, input_folder, stop_event):
 
                     with open(filename, mode='rb') as file_handle:
                         send_more = False
+                        header = False
                         if index + 1 < len(files):  # Ensure that we don't run out of bounds
                             send_more = raw_file.split('_')[0] == files[index + 1].split('_')[0]
-
+                            header = raw_file[7:10] == "000"
+                        data = file_handle.read()
+                        if simulate_pid and header:
+                            h = json.loads(data)
+                            h["pulse_id"] = pid
+                            pid = pid + 1
+                            print(h)
+                            data = bytes(json.dumps(h), 'utf-8')
                         print('Sending %s [%s]' % (raw_file, send_more))
-                        stream.send(file_handle.read(), send_more=send_more)
+                        stream.send(data, send_more=send_more)
                         time.sleep(0.2)
     finally:
         mflow.disconnect()

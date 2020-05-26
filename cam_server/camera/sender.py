@@ -17,8 +17,17 @@ def get_client_timeout(camera):
         return client_timeout
     return config.MFLOW_NO_CLIENTS_TIMEOUT
 
-def process_epics_camera(stop_event, statistics, parameter_queue,
-                         camera, port):
+def get_connections(camera):
+    connections = camera.camera_config.get_configuration().get("connections")
+    try:
+        if connections is not None:
+            return max(int(connections),1)
+    except Again:
+        _logger.warning("Invalid configuration of number of connections")
+    return 1
+
+
+def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     """
     Start the camera stream and listen for image monitors. This function blocks until stop_event is set.
     :param stop_event: Event when to stop the process.
@@ -124,8 +133,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue,
 
 
 
-def process_bsread_camera(stop_event, statistics, parameter_queue,
-                          camera, port):
+def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port):
     """
     Start the camera stream and receive the incoming bsread streams. This function blocks until stop_event is set.
     :param stop_event: Event when to stop the process.
@@ -167,60 +175,107 @@ def process_bsread_camera(stop_event, statistics, parameter_queue,
         sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
 
         camera_name = camera.get_name()
-        camera_stream = camera.get_stream()
 
-        _logger.info("Connecting to camera '%s' over bsread." % camera_name)
+        connections = get_connections(camera)
+
+        if connections > 1:
+            _logger.info("Connecting to camera '%s' over bsread with %d connections" % (camera_name, connections))
+        else:
+            _logger.info("Connecting to camera '%s' over bsread" % camera_name)
 
         process_parameters()
         # register_image_channel(x_size, y_size, dtype)
 
-        camera_stream.connect()
+        camera_streams = []
+        for i in range(connections):
+            stream = camera.get_stream()
+            camera_streams.append(stream)
+            stream.connect()
+
+        # If multiple streams, ensure they are aligned
+        if len(camera_streams) > 1:
+            # First flush streams.
+            for camera_stream in camera_streams:
+                while camera_stream.stream.receive(handler=camera_stream.handler.receive, block=False) is not None:
+                    pass
+            #Get a message from streams
+            pids = []
+            for camera_stream in camera_streams:
+                data = camera_stream.receive()
+                if data is None:
+                    _logger.info("Received no data from stream, retrying: " + str(camera_stream))
+                    data = camera_stream.receive()
+                if data is None:
+                    raise Exception("Received no data from stream: " + str(camera_stream))
+                pids.append(data.data.pulse_id)
+
+            # Arrange the streams according to the PID
+            indexes = sorted(range(len(pids)), key=pids.__getitem__)
+            camera_streams = [x for _,x in sorted(zip(indexes,camera_streams))]
+            pids = [x for _,x in sorted(zip(indexes,pids))]
+
+            #Check if the PID offsets are constant
+            offset = pids[1] - pids[0]
+            _logger.info("Stream offset: " + str(offset))
+            for i in range(1, len(pids)):
+                if (pids[i] - pids[i-1]) != offset:
+                    raise Exception("PID offsets of streams are not constant: " + str(pids[i] - pids[i-1]))
+
+
 
         # This signals that the camera has successfully started.
         stop_event.clear()
-
+        total_byes = [0] * len (camera_streams)
         while not stop_event.is_set():
-            try:
-                data = camera_stream.receive()
-                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes, 1 if data else 0)
-                # In case of receiving error or timeout, the returned data is None.
-                if data is None:
-                    continue
+            for i in range(len(camera_streams)):
+                camera_stream = camera_streams[i]
+                try:
+                    if stop_event.is_set():
+                        break
+                    data = camera_stream.receive()
 
-                image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
+                    if data is not None:
+                        total_byes[i] = data.statistics.total_bytes_received
+                    set_statistics(statistics, sender, sum(total_byes), 1 if data else 0)
 
-                # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
-                image = transform_image(image, camera.camera_config)
+                    # In case of receiving error or timeout, the returned data is None.
+                    if data is None:
+                        continue
 
-                # Numpy is slowest dimension first, but bsread is fastest dimension first.
-                height, width = image.shape
+                    image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
 
-                pulse_id = data.data.pulse_id
+                    # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
+                    image = transform_image(image, camera.camera_config)
 
-                timestamp_s = data.data.global_timestamp
-                timestamp_ns = data.data.global_timestamp_offset
-                timestamp = timestamp_s + (timestamp_ns / 1e9)
+                    # Numpy is slowest dimension first, but bsread is fastest dimension first.
+                    height, width = image.shape
 
-                data = {
-                    "image": image,
-                    "height": height,
-                    "width": width,
-                    "x_axis": x_axis,
-                    "y_axis": y_axis,
-                    "timestamp": timestamp
-                }
+                    pulse_id = data.data.pulse_id
 
-                sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
+                    timestamp_s = data.data.global_timestamp
+                    timestamp_ns = data.data.global_timestamp_offset
+                    timestamp = timestamp_s + (timestamp_ns / 1e9)
 
-                while not parameter_queue.empty():
-                    new_parameters = parameter_queue.get()
-                    camera.camera_config.set_configuration(new_parameters)
+                    data = {
+                        "image": image,
+                        "height": height,
+                        "width": width,
+                        "x_axis": x_axis,
+                        "y_axis": y_axis,
+                        "timestamp": timestamp
+                    }
 
-                    process_parameters()
+                    sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
 
-            except Exception as e:
-                _logger.exception("Could not process message: %s" % (str(e),))
-                stop_event.set()
+                    while not parameter_queue.empty():
+                        new_parameters = parameter_queue.get()
+                        camera.camera_config.set_configuration(new_parameters)
+
+                        process_parameters()
+
+                except Exception as e:
+                    _logger.exception("Could not process message: %s" % (str(e),))
+                    stop_event.set()
 
         _logger.info("Stopping transceiver.")
 
