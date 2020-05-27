@@ -22,6 +22,7 @@ def tx_task(bind_address, input_folder, stop_event):
     pid = 3682521968
     try:
         while not stop_event.is_set():
+
             for index, raw_file in enumerate(files):
                 if not stop_event.is_set():
                     filename = join(input_folder, raw_file)

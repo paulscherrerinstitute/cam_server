@@ -122,7 +122,7 @@ conda install --use-local mflow_node_processors
 The library relies on the following packages:
 
 - requests
-- bsread >=0.9.3
+- bsread >=0.9.9
 - bottle
 - numpy
 - scipy
@@ -130,6 +130,7 @@ The library relies on the following packages:
 - matplotlib
 - pillow
 - psutil
+- h5py
 
 In case you are using conda to install the packages, you might need to add the **paulscherrerinstitute** channel to
 your conda config:
