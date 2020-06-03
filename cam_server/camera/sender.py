@@ -194,38 +194,63 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
 
         # If multiple streams, ensure they are aligned
         if len(camera_streams) > 1:
-            # First flush streams.
-            for camera_stream in camera_streams:
-                while camera_stream.stream.receive(handler=camera_stream.handler.receive, block=False) is not None:
-                    pass
-            #Get a message from streams
-            pids = []
-            for camera_stream in camera_streams:
-                data = camera_stream.receive()
-                if data is None:
-                    _logger.info("Received no data from stream, retrying: " + str(camera_stream))
+            pid_offset = None
+            def flush_streams():
+                for camera_stream in camera_streams:
+                    while camera_stream.stream.receive(handler=camera_stream.handler.receive, block=False) is not None:
+                        pass
+
+            def get_next_pids():
+                pids = []
+                for camera_stream in camera_streams:
                     data = camera_stream.receive()
-                if data is None:
-                    raise Exception("Received no data from stream: " + str(camera_stream))
-                pids.append(data.data.pulse_id)
+                    if data is None:
+                        data = camera_stream.receive()
+                    if data is None:
+                        raise Exception("Received no data from stream: " + str(camera_stream))
+                    pids.append(data.data.pulse_id)
+                return pids
 
-            # Arrange the streams according to the PID
-            indexes = sorted(range(len(pids)), key=pids.__getitem__)
-            camera_streams = [x for _,x in sorted(zip(indexes,camera_streams))]
-            pids = [x for _,x in sorted(zip(indexes,pids))]
+            def check_pids(pids):
+                nonlocal pid_offset
+                pid_offset = pids[1] - pids[0]
+                for i in range(1, len(pids)):
+                    if (pids[i] - pids[i - 1]) != pid_offset:
+                        return False
+                return True
 
-            #Check if the PID offsets are constant
-            offset = pids[1] - pids[0]
-            _logger.info("Stream offset: " + str(offset))
-            for i in range(1, len(pids)):
-                if (pids[i] - pids[i-1]) != offset:
-                    raise Exception("PID offsets of streams are not constant: " + str(pids[i] - pids[i-1]))
+            def align_streams():
+                nonlocal camera_streams
+                retries = 50;
+                for retry in range(retries):
+                    _logger.info("Aligning streams: " + str(retry))
+                    # First flush streams.
+                    flush_streams()
 
+                    # Get a message from streams
+                    pids = get_next_pids()
 
+                    # Arrange the streams according to the PID
+                    indexes = sorted(range(len(pids)), key=pids.__getitem__)
+                    camera_streams = [camera_streams[x] for x in indexes]
+                    pids = [pids[x] for x in indexes]
+
+                    # Check if the PID offsets are constant
+                    if not check_pids(pids):
+                        if retry >= (retries - 1):
+                            raise Exception("PID offsets of streams are not constant: " + str(pids))
+                        else:
+                            _logger.info("PID offsets of streams are not constant - retrying: " + str(pids))
+                    else:
+                        _logger.info("Aligned streams: " + str(pids))
+                        break;
+
+            align_streams()
 
         # This signals that the camera has successfully started.
         stop_event.clear()
         total_byes = [0] * len (camera_streams)
+        last_pid = None
         while not stop_event.is_set():
             for i in range(len(camera_streams)):
                 camera_stream = camera_streams[i]
@@ -251,6 +276,15 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     height, width = image.shape
 
                     pulse_id = data.data.pulse_id
+
+                    if len(camera_streams) > 1:
+                        if last_pid:
+                            if pulse_id != (last_pid + pid_offset):
+                                _logger.warning("Wrong pulse offset: realigning streams - " + str(last_pid) + " / " + str(pulse_id))
+                                align_streams()
+                                last_pid = None
+                                break
+                        last_pid= pulse_id
 
                     timestamp_s = data.data.global_timestamp
                     timestamp_ns = data.data.global_timestamp_offset

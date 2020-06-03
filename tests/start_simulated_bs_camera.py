@@ -44,7 +44,7 @@ def tx_task(bind_address, input_folder, stop_event):
                             data = bytes(json.dumps(h), 'utf-8')
                         print('Sending %s [%s]' % (raw_file, send_more))
                         stream.send(data, send_more=send_more)
-                        time.sleep(0.2)
+                        time.sleep(0.001)
     finally:
         mflow.disconnect()
 
