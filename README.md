@@ -131,6 +131,7 @@ The library relies on the following packages:
 - pillow
 - psutil
 - h5py
+- numba
 
 In case you are using conda to install the packages, you might need to add the **paulscherrerinstitute** channel to
 your conda config:
@@ -323,6 +324,8 @@ pipeline is added to the output bsread stream in the
 ##### Configuration parameters for pipeline\_type = _'processing'_  
 - **image\_background** (Default _None_): Background to subtract from the original image.
 - **image\_background_enable** (Default _False_): Enable or disable the image_background subtraction.
+   If set to _"passive"_ then the background is fetched and, instead of being applied to the image, is sent to the processing
+   function, within the parameters, with the key name "background_data". 
 - **image\_threshold** (Default _None_): Minimum value of each pixel. Pixels below the threshold are converted to 0.
 - **image\_region\_of\_interest** (Default _None_): Crop the image before processing.
 - **image\_good\_region** (Default _None_): Good region to use for fits and slices.

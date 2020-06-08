@@ -244,6 +244,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     pass
             _logger.info("Exit bs send thread")
 
+
     def process_pipeline_parameters():
         parameters = get_pipeline_parameters(pipeline_config)
         _logger.debug("Processing pipeline parameters %s. %s" % (parameters, log_tag))
@@ -460,7 +461,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 image = chunk_copy(image)
 
                 if image_background_array is not None:
-                    image = subtract_background(image, image_background_array)
+                    if pipeline_parameters.get("image_background_enable") == "passive":
+                        pipeline_parameters["background_data"] = image_background_array
+                    else:
+                        image = subtract_background(image, image_background_array)
 
                 #Check for rotation parameter
                 rotation = pipeline_parameters.get("rotation")
