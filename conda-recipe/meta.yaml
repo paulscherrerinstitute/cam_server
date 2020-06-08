@@ -25,6 +25,7 @@ requirements:
         - pillow
         - psutil
         - h5py
+        - numba
 
 build:
   entry_points:

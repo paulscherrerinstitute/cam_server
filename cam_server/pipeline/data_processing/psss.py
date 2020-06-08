@@ -7,6 +7,7 @@ import json
 import numpy
 import scipy.signal
 import scipy.optimize
+import numba
 
 import epics
 
@@ -16,6 +17,27 @@ _logger = getLogger(__name__)
 output_pv, center_pv, fwhm_pv, ymin_pv, ymax_pv, axis_pv  = None, None, None, None, None, None
 roi = [0, 0]
 initialized = False
+
+
+@numba.njit(parallel=True)
+def get_spectrum (image, background):
+    y = image.shape[0]
+    x = image.shape[1]
+
+    profile = numpy.zeros(x, dtype=numpy.uint32)
+
+    for i in numba.prange(y):
+        for j in range(x):
+            v = image[i,j]
+            b = background[i,j]
+            if v > b:
+                v -= b
+            else:
+                v = 0
+
+            profile[j] += v
+
+    return profile
 
 
 def initialize(parameters):
@@ -42,7 +64,7 @@ def initialize(parameters):
     axis_pv.wait_for_connection()
 
 
-def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata=None):
+def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata=None, background=None):
     global roi, initialized
     global ymin_pv, ymax_pv, axis_pv, output_pv, center_pv, fwhm_pv
 
@@ -67,39 +89,35 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
         _logger.warning("Invalid energy axis")
         return None
 
-    #processed_data[epics_pv_name_prefix + ":processing_parameters"] = json.dumps({"roi": roi, "background": parameters['background']})
-    parameters["roi"] = roi
-    processed_data[epics_pv_name_prefix + ":processing_parameters"] = json.dumps(parameters)
-
 
     processing_image = image
     nrows, ncols = processing_image.shape
 
-    """
     # validate background data
-    background_image = parameters.get('background_data')
+    background_image = parameters.pop('background_data', None)
+
     if isinstance(background_image, numpy.ndarray):
         if background_image.shape != processing_image.shape:
             background_image = None
     else:
         background_image = None
-    """
+
+    processed_data[epics_pv_name_prefix + ":processing_parameters"] = json.dumps(
+        {"roi": roi, "background": None if (background_image is None) else parameters.get('image_background')})
 
     # crop the image in y direction
-    ymin, ymax = roi
+    ymin, ymax = int(roi[0]), int(roi[1])
     if nrows >= ymax > ymin >= 0:
         if (nrows != ymax) or (ymin != 0):
-            processing_image = processing_image[int(ymin):int(ymax), :]
-        """
-        if background_image is not None:
-            background_image = background_image[ymin:ymax, :]
+            processing_image = processing_image[ymin, ymax, :]
+            if background_image is not None:
+                background_image = background_image[ymin:ymax, :]
 
     # remove the background and collapse in y direction to get the spectrum
     if background_image is not None:
-        spectrum = functions.get_spectrum(processing_image, background_image)
+        spectrum = get_spectrum(processing_image, background_image)
     else:
-        """
-    spectrum = processing_image.sum(0, 'uint32')
+        spectrum = processing_image.sum(0, 'uint32')
 
     # smooth the spectrum with savgol filter with 51 window size and 3rd order polynomial
     smoothed_spectrum = scipy.signal.savgol_filter(spectrum, 51, 3)
