@@ -74,6 +74,8 @@ class CameraConfig:
         "mirror_x": False,
         "mirror_y": False,
         "rotate": 0,
+        "roi": None,
+        "image_background":None,
         "source_type": "epics"
     }
 

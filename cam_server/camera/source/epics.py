@@ -152,40 +152,60 @@ class CameraEpics:
         if not calibration:
             x_axis = numpy.linspace(0, width - 1, width, dtype='f')
             y_axis = numpy.linspace(0, height - 1, height, dtype='f')
+        else:
+            def _calculate_center():
+                center_x = int(((lower_right_x - upper_left_x) / 2) + upper_left_x)
+                center_y = int(((lower_right_y - upper_left_y) / 2) + upper_left_y)
+                return center_x, center_y
 
-            return x_axis, y_axis
+            def _calculate_pixel_size():
+                size_y = reference_marker_height / (lower_right_y - upper_left_y)
+                size_y *= numpy.cos(vertical_camera_angle * numpy.pi / 180)
 
-        def _calculate_center():
-            center_x = int(((lower_right_x - upper_left_x) / 2) + upper_left_x)
-            center_y = int(((lower_right_y - upper_left_y) / 2) + upper_left_y)
-            return center_x, center_y
+                size_x = reference_marker_width / (lower_right_x - upper_left_x)
+                size_x *= numpy.cos(horizontal_camera_angle * numpy.pi / 180)
 
-        def _calculate_pixel_size():
-            size_y = reference_marker_height / (lower_right_y - upper_left_y)
-            size_y *= numpy.cos(vertical_camera_angle * numpy.pi / 180)
+                return size_x, size_y
 
-            size_x = reference_marker_width / (lower_right_x - upper_left_x)
-            size_x *= numpy.cos(horizontal_camera_angle * numpy.pi / 180)
+            upper_left_x, upper_left_y, lower_right_x, lower_right_y = calibration["reference_marker"]
+            reference_marker_height = calibration["reference_marker_height"]
+            vertical_camera_angle = calibration["angle_vertical"]
 
-            return size_x, size_y
+            reference_marker_width = calibration["reference_marker_width"]
+            horizontal_camera_angle = calibration["angle_horizontal"]
 
-        upper_left_x, upper_left_y, lower_right_x, lower_right_y = calibration["reference_marker"]
-        reference_marker_height = calibration["reference_marker_height"]
-        vertical_camera_angle = calibration["angle_vertical"]
+            # Derived properties
+            origin_x, origin_y = _calculate_center()
+            pixel_size_x, pixel_size_y = _calculate_pixel_size()  # pixel size in nanometer
 
-        reference_marker_width = calibration["reference_marker_width"]
-        horizontal_camera_angle = calibration["angle_horizontal"]
+            x_axis = numpy.linspace(0, width - 1, width, dtype='f')
+            x_axis -= origin_x
+            x_axis *= (-pixel_size_x)  # we need the minus to invert the axis
 
-        # Derived properties
-        origin_x, origin_y = _calculate_center()
-        pixel_size_x, pixel_size_y = _calculate_pixel_size()  # pixel size in nanometer
+            y_axis = numpy.linspace(0, height - 1, height, dtype='f')
+            y_axis -= origin_y
+            y_axis *= (-pixel_size_y)  # we need the minus to invert the axis
 
-        x_axis = numpy.linspace(0, width - 1, width, dtype='f')
-        x_axis -= origin_x
-        x_axis *= (-pixel_size_x)  # we need the minus to invert the axis
+        self.camera_config.parameters["background_data"] = None
+        background_filename = self.camera_config.parameters["image_background"]
+        if background_filename:
+            background_array = numpy.load(background_filename)
+            if background_array is not None:
+                self.camera_config.parameters["background_data"] = background_array.astype("uint16", copy=False)
 
-        y_axis = numpy.linspace(0, height - 1, height, dtype='f')
-        y_axis -= origin_y
-        y_axis *= (-pixel_size_y)  # we need the minus to invert the axis
+        roi = self.camera_config.parameters["roi"]
+        if roi is not None:
+            offset_x, size_x, offset_y, size_y = roi
+
+            x_axis =  x_axis[offset_x : offset_x + size_x]
+            y_axis = y_axis[offset_y: offset_y + size_y]
+
+            background = self.camera_config.parameters.get("background_data")
+            if background is not None:
+                self.camera_config.parameters["background_data"] = \
+                    background [offset_y:offset_y + size_y, offset_x:offset_x + size_x]
+
+
+        self.backgroung_image = None
 
         return x_axis, y_axis
