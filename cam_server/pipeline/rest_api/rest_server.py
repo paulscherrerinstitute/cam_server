@@ -251,11 +251,17 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     @app.put(api_root_address + '/background/<background_name>/image_bytes')
     def set_background_image_bytes(background_name):
         """
-        Return the bytes of aa a background file.
+        Sets the bytes of a background file.
         :param background_name: Background file name.
+        :param image_bytes: Contents of file
         :return:
         """
-        data = request.body.raw.readall()
+        try:
+            #Big arrays: request.body is BufferedRandom
+            data = request.body.raw.readall()
+        except:
+            #request.body is  BytesIO
+            data = request.body.getvalue()
         arr = pickle.loads(data)
         instance_manager.background_manager.save_background(background_name, arr, False)
         return {"state": "ok",

@@ -302,7 +302,7 @@ class PipelineClient(object):
 
     def get_background_image_bytes(self, background_name):
         """
-        Return the bytes of a a background file.
+        Return the bytes of a background file.
         :param background_name: Background file name.
         :return: JSON with bytes and metadata.
         """
@@ -314,9 +314,10 @@ class PipelineClient(object):
 
     def set_background_image_bytes(self, background_name, image_bytes):
         """
-        Return the bytes of a a background file.
+        Sets the bytes of a background file.
         :param background_name: Background file name.
-        :return: JSON with bytes and metadata.
+        :param image_bytes: Contents of file
+        :return:
         """
         rest_endpoint = "/background/%s/image_bytes" % background_name
         data = pickle.dumps(image_bytes, protocol=0)
