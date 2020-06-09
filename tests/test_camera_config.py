@@ -62,6 +62,8 @@ class CameraConfigTest(unittest.TestCase):
             "mirror_x": False,
             "mirror_y": True,
             "rotate": 1,
+            "roi": None,
+            "image_background":None,
             "camera_calibration": None
         }
 

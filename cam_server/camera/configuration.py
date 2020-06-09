@@ -69,6 +69,8 @@ class CameraConfigManager(object):
 
 class CameraConfig:
 
+    MANDATORY_CONFIGURATION = ["source_type"]
+
     DEFAULT_CONFIGURATION = {
         "camera_calibration": None,
         "mirror_x": False,
@@ -143,7 +145,7 @@ class CameraConfig:
                                  (section_name, missing_attributes))
 
         # Verify root attributes.
-        verify_attributes("configuration", configuration, CameraConfig.DEFAULT_CONFIGURATION.keys())
+        verify_attributes("configuration", configuration, CameraConfig.MANDATORY_CONFIGURATION)
 
         camera_calibration = configuration["camera_calibration"]
         if camera_calibration:
