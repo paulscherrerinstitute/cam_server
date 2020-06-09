@@ -53,9 +53,3 @@ def register_rest_interface(app, instance_manager, api_root_address):
                 "status": "Version",
                 "version":  __VERSION__}
 
-
-def validate_response(server_response):
-    if server_response["state"] != "ok":
-        raise ValueError(server_response.get("status", "Unknown error occurred."))
-
-    return server_response

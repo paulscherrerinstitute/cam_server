@@ -6,8 +6,7 @@ import time
 from bsread import source, SUB
 
 from cam_server import config
-from cam_server.utils import get_host_port_from_stream_address
-from cam_server.instance_management.rest_api import validate_response
+from cam_server.instance_management.client import validate_response, get_host_port_from_stream_address
 
 
 
@@ -323,7 +322,6 @@ class PipelineClient(object):
         data = pickle.dumps(image_bytes, protocol=0)
         server_response = requests.put(self.api_address_format % rest_endpoint, data=data, timeout=self.timeout).json()
         validate_response(server_response)
-
 
     def set_user_script(self, script_name, script_bytes):
         """

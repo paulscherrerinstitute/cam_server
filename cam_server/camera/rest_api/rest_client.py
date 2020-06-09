@@ -1,6 +1,6 @@
 import requests
 
-from cam_server.instance_management.rest_api import validate_response
+from cam_server.instance_management.client import validate_response
 from cam_server import config
 
 

@@ -2,6 +2,7 @@ from itertools import cycle
 import logging
 from logging import getLogger
 from mflow.tools import ConnectionCountMonitor
+from cam_server.instance_management.client import get_host_port_from_stream_address
 import os
 import collections
 from bottle import response
@@ -17,13 +18,6 @@ import time
 import numpy
 
 _logger = getLogger(__name__)
-
-
-def get_host_port_from_stream_address(stream_address):
-    source_host, source_port = stream_address.rsplit(":", maxsplit=1)
-    source_host = source_host.split("//")[1]
-
-    return source_host, int(source_port)
 
 
 def update_pipeline_config(current_config, config_updates):
