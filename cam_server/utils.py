@@ -2,7 +2,7 @@ from itertools import cycle
 import logging
 from logging import getLogger
 from mflow.tools import ConnectionCountMonitor
-from cam_server.instance_management.client import get_host_port_from_stream_address
+from cam_server_client.utils import get_host_port_from_stream_address
 import os
 import collections
 from bottle import response

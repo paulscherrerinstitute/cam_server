@@ -5,8 +5,8 @@ import json
 import time
 from bsread import source, SUB
 
-from cam_server import config
-from cam_server.instance_management.client import validate_response, get_host_port_from_stream_address
+from cam_server_client import config
+from cam_server_client.utils import validate_response, get_host_port_from_stream_address
 
 
 

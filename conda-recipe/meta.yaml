@@ -5,55 +5,37 @@ package:
 source:
     path: ..
 
+requirements:
+  build:
+      - python
+  run:
+      - python
+      - requests
+      - bsread >=0.9.9
+      - bitshuffle
+      - bottle
+      - numpy
+      - scipy
+      - pyepics
+      - matplotlib
+      - pillow
+      - psutil
+      - h5py
+      - numba
+
 build:
-    number: 0
-
-outputs:
-  - name: cam_server
-    requirements:
-      build:
-          - python
-      run:
-          - python
-          - requests
-          - bsread >=0.9.9
-          - bitshuffle >=0.3.4
-          - bottle
-          - numpy
-          - scipy
-          - pyepics
-          - matplotlib
-          - pillow
-          - psutil
-          - h5py
-          - numba
-    build:
-      entry_points:
-        - camera_server = cam_server.start_camera_server:main
-        - camera_proxy = cam_server.start_camera_proxy:main
-        - camera_worker = cam_server.start_camera_worker:main
-        - camera_manager = cam_server.start_camera_manager:main
-        - pipeline_server = cam_server.start_pipeline_server:main
-        - pipeline_proxy = cam_server.start_pipeline_proxy:main
-        - pipeline_worker = cam_server.start_pipeline_worker:main
-        - pipeline_manager = cam_server.start_pipeline_manager:main
-        - validate_configs = cam_server.validate_configs:main
-        - writer = cam_server.writer:main
-
-  - name: cam_server_client
-    files:
-      - cam_server/config.py
-      - cam_server/instance_management/clint.py
-      - cam_server/camera/rest_api/rest_clint.py
-      - cam_server/camera/rest_api/rest_clint.py
-    requirements:
-      build:
-          - python
-      run:
-          - python
-          - requests
-          - bsread >=0.9.9
-          - bitshuffle >=0.3.4
+  number: 0
+  entry_points:
+    - camera_server = cam_server.start_camera_server:main
+    - camera_proxy = cam_server.start_camera_proxy:main
+    - camera_worker = cam_server.start_camera_worker:main
+    - camera_manager = cam_server.start_camera_manager:main
+    - pipeline_server = cam_server.start_pipeline_server:main
+    - pipeline_proxy = cam_server.start_pipeline_proxy:main
+    - pipeline_worker = cam_server.start_pipeline_worker:main
+    - pipeline_manager = cam_server.start_pipeline_manager:main
+    - validate_configs = cam_server.validate_configs:main
+    - writer = cam_server.writer:main
 
 about:
     home: https://github.com/paulscherrerinstitute/cam_server

@@ -1,7 +1,7 @@
 import requests
 
-from cam_server.instance_management.client import validate_response
-from cam_server import config
+from cam_server_client.utils import validate_response
+from cam_server_client import config
 
 
 class CamClient(object):

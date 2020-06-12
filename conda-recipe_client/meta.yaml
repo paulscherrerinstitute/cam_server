@@ -1,0 +1,21 @@
+package:
+    name: cam_server_client
+    version: 3.7.0
+
+source:
+    path: ..
+
+requirements:
+  build:
+      - python
+  run:
+      - python
+      - requests
+      - bsread >=0.9.9
+      - bitshuffle
+
+build:
+  number: 0
+
+about:
+    home: https://github.com/paulscherrerinstitute/cam_server

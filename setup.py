@@ -16,7 +16,7 @@ setup(name="cam_server",
       maintainer_email="daq@psi.ch",
       author="Paul Scherrer Institute",
       author_email="daq@psi.ch",
-      description="Camera server to convert epics enabled cameras into bsread cameras.",
+      description="BSREAD image processing pipeline and EPICS cameras converter.",
 
       license="GPL3",
 
@@ -27,7 +27,8 @@ setup(name="cam_server",
                 "cam_server.instance_management",
                 "cam_server.pipeline",
                 "cam_server.pipeline.data_processing",
-                "cam_server.pipeline.rest_api"
+                "cam_server.pipeline.rest_api",
+                "cam_server_client"
             ],
 
       package_data={

@@ -24,6 +24,7 @@ install:
   - conda install conda-build numpy anaconda-client
   # build
   - conda build -c %CONDA_CHANNEL% --skip-existing conda-recipe
+  - conda build -c %CONDA_CHANNEL% --skip-existing conda-recipe_client
 
 deploy:
   - provider: Environment

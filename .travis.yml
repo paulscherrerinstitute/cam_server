@@ -39,6 +39,7 @@ install:
   - conda install conda-build anaconda-client
   # build
   - conda build --no-test conda-recipe
+  - conda build --no-test conda-recipe_client
 
 script:
   - echo "No test scripts to be run!"
