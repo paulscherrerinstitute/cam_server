@@ -340,6 +340,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         pipeline_parameters, image_background_array = process_pipeline_parameters()
 
+        current_pid, former_pid = None, None
         connect_to_camera()
 
         _logger.debug("Opening output stream on port %d. %s" % (output_stream_port, log_tag))
@@ -397,11 +398,20 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     if timeout:
                         if (timeout > 0) and (time.time() - last_rcvd_timestamp) > timeout:
                             _logger.warning("Camera timeout. %s" % log_tag)
+                            current_pid, former_pid = None, None
                             #Try reconnecting to the camera. If fails raise exception and stops pipeline.
                             connect_to_camera()
                     continue
 
                 pulse_id = data.data.pulse_id
+
+                if pipeline_parameters.get("debug"):
+                    if (former_pid is not None) and (current_pid is not None):
+                        if pulse_id != (current_pid + (current_pid - former_pid)):
+                            _logger.warning("Unexpected PID: " + str(pulse_id) + " -  previous: " + str(former_pid) + ", " + str(current_pid) )
+                            current_pid, former_pid = None, None
+                former_pid = current_pid
+                current_pid = pulse_id
 
                 if pipeline_parameters.get("pause"):
                     continue
