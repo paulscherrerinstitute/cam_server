@@ -1,0 +1,29 @@
+- hosts: cam_workers
+  become: true
+  tasks:
+    - name: Update
+      shell: |
+        /usr/bin/docker pull paulscherrerinstitute/cam_server
+
+    - name: Reload systemd Config
+      shell: |
+        systemctl daemon-reload
+
+    - name: Restart services
+      shell: |
+        systemctl restart camera_worker pipeline_worker
+
+- hosts: cam_manager
+  become: true
+  tasks:
+    - name: Update
+      shell: |
+        /usr/bin/docker pull paulscherrerinstitute/cam_server
+
+    - name: Reload systemd Config
+      shell: |
+        systemctl daemon-reload
+
+    - name: Restart services
+      shell: |
+        systemctl restart camera_manager pipeline_manager

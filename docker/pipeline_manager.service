@@ -10,7 +10,7 @@ WantedBy=default.target
 TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill pipeline_manager
 ExecStartPre=-/usr/bin/docker rm pipeline_manager
-ExecStartPre=/usr/bin/docker pull paulscherrerinstitute/cam_server
+#ExecStartPre=/usr/bin/docker pull paulscherrerinstitute/cam_server
 ExecStart=/usr/bin/docker run --name pipeline_manager --env-file /cam_server_configuration/camera_environment -v /cam_server_configuration/configuration:/configuration --net=host paulscherrerinstitute/cam_server pipeline_manager -b /configuration/pipeline_config -g /configuration/background_config --log_level=INFO
 ExecStop=/usr/bin/docker stop pipeline_manager
 Restart=always
