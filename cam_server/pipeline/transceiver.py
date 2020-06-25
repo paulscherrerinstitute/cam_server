@@ -9,7 +9,7 @@ from threading import Thread, Event
 import numpy
 import json
 
-from bsread import Source, PUB, SUB, PUSH, PULL
+from bsread import Source, PUB, SUB, PUSH, PULL, DEFAULT_DISPATCHER_URL
 from bsread import source as bssource
 from bsread.sender import Sender
 
@@ -96,6 +96,17 @@ def get_pipeline_parameters(pipeline_config):
             parameters["pid_range"] = None
     return parameters
 
+def get_dispatcher_parameters(parameters):
+    dispatcher_url = parameters.get("dispatcher_url")
+    if dispatcher_url is None:
+        dispatcher_url = DEFAULT_DISPATCHER_URL
+    dispatcher_verify_request = parameters.get("dispatcher_verify_request")
+    if dispatcher_verify_request is None:
+        dispatcher_verify_request = True
+    dispatcher_disable_compression = parameters.get("dispatcher_disable_compression")
+    if dispatcher_disable_compression is None:
+        dispatcher_disable_compression = False
+    return dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression
 
 functions = {}
 
@@ -208,7 +219,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     break
             i = i + 1
 
-    def bs_send_task(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, stop_event):
+    def bs_send_task(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, dispatcher_parameters, stop_event):
+        dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression = dispatcher_parameters
         nonlocal sender
         if bsread_address:
             bsread_host, bsread_port = get_host_port_from_stream_address(bsread_address)
@@ -222,7 +234,15 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
 
         try:
-            with bssource(host=bsread_host, port=bsread_port, mode=bsread_mode, channels=bsread_channels, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT) as stream:
+            with bssource(host=bsread_host,
+                          port=bsread_port,
+                          mode=bsread_mode,
+                          channels=bsread_channels,
+                          receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT,
+                          dispatcher_url=dispatcher_url,
+                          dispatcher_verify_request=dispatcher_verify_request,
+                          dispatcher_disable_compression=dispatcher_disable_compression
+                          ) as stream:
                 while not stop_event.is_set():
                     message = stream.receive()
                     if not message or stop_event.is_set():
@@ -349,6 +369,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         bsread_address = pipeline_parameters.get("bsread_address")
         bsread_channels = pipeline_parameters.get("bsread_channels")
         bsread_mode = pipeline_parameters.get("bsread_mode")
+        dispatcher_parameters = get_dispatcher_parameters(pipeline_parameters)
 
         if bsread_channels is not None:
             if type(bsread_channels) != list:
@@ -360,7 +381,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         if image_with_stream:
             bs_buffer = deque(maxlen=pipeline_parameters["bsread_data_buf"] )
             bs_img_buffer = deque(maxlen=pipeline_parameters["bsread_image_buf"] )
-            bs_send_thread = Thread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, stop_event))
+            bs_send_thread = Thread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, dispatcher_parameters, stop_event))
             bs_send_thread.start()
 
         else:
@@ -623,6 +644,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
     bsread_address = parameters.get("bsread_address")
     bsread_channels = parameters.get("bsread_channels")
     bsread_mode = parameters.get("bsread_mode")
+    dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression = get_dispatcher_parameters(parameters)
 
     try:
 
@@ -650,7 +672,14 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
 
         _logger.debug("Transceiver started. %s" % log_tag)
 
-        with bssource(host=bsread_host, port=bsread_port, mode=bsread_mode, channels=bsread_channels, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT) as stream:
+        with bssource(host=bsread_host,
+                      port=bsread_port,
+                      mode=bsread_mode,
+                      channels=bsread_channels,
+                      receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT,
+                      dispatcher_url = dispatcher_url,
+                      dispatcher_verify_request = dispatcher_verify_request,
+                      dispatcher_disable_compression = dispatcher_disable_compression) as stream:
             while not stop_event.is_set():
                 try:
                     while not parameter_queue.empty():
