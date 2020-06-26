@@ -8,13 +8,14 @@ from cam_server.pipeline.rest_api.rest_server import register_rest_interface as 
 from cam_server import config, CamClient
 from cam_server.instance_management.configuration import ConfigFileStorage
 from cam_server.pipeline.manager import Manager as PipelineManager
-from cam_server.utils import initialize_api_logger
+from cam_server.utils import initialize_api_logger, string_to_dict
 
 _logger = logging.getLogger(__name__)
 
 
 def start_pipeline_manager(host, port, server_config, config_base, background_base, background_files_days_to_live,
-                           scripts_base, cam_server_api_address, client_timeout=None, info_update_timeout=None):
+                           scripts_base, cam_server_api_address, client_timeout=None, info_update_timeout=None,
+                           web_server=config.DEFAULT_WEB_SERVER, web_server_args={}):
 
 
     # Check if config directory exists
@@ -45,7 +46,7 @@ def start_pipeline_manager(host, port, server_config, config_base, background_ba
     proxy.register_rest_interface(app)
     proxy.register_management_page(app)
     try:
-        bottle.run(app=app, host=host, port=port)
+        bottle.run(app=app, server=web_server, host=host, port=port, **web_server_args)
     finally:
         #cleanup
         pass
@@ -65,7 +66,8 @@ def main():
     parser.add_argument('-g', '--background_base', default=config.DEFAULT_BACKGROUND_CONFIG_FOLDER)
     parser.add_argument('-l', '--background_files_days_to_live', default=config.DEFAULT_BACKGROUND_FILES_DAYS_TO_LIVE)
     parser.add_argument('-u', '--scripts_base', default=config.DEFAULT_USER_SCRIPT_FOLDER)
-
+    parser.add_argument('-w', '--web_server', default=config.DEFAULT_WEB_SERVER)
+    parser.add_argument('-a', '--web_server_args', default="")
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
@@ -76,7 +78,8 @@ def main():
     initialize_api_logger(arguments.log_level)
     start_pipeline_manager(arguments.interface, arguments.port, arguments.servers, arguments.base,
                           arguments.background_base, arguments.background_files_days_to_live, arguments.scripts_base,
-                          arguments.cam_server, arguments.client_timeout, arguments.update_timeout)
+                          arguments.cam_server, arguments.client_timeout, arguments.update_timeout,
+                          arguments.web_server , string_to_dict(arguments.web_server_args))
 
 
 if __name__ == "__main__":

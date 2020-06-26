@@ -16,6 +16,7 @@ import os
 import shutil
 import time
 import numpy
+import ast
 
 _logger = getLogger(__name__)
 
@@ -221,3 +222,8 @@ def cleanup(age_days, path, recursive=False, remove_folders=False, exceptions=[]
                         if os.stat(root).st_mtime <= seconds:
                             #if not os.listdir(root):
                                 remove(root, simulated)
+
+def string_to_dict(str):
+    if str:
+        return ast.literal_eval(str)
+    return{}

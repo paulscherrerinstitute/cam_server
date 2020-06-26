@@ -8,6 +8,8 @@ from cam_server_client.config import *
 DEFAULT_LOGGING_LEVEL = "INFO"
 # How many seconds do we wait before disconnecting a stream without clients.
 MFLOW_NO_CLIENTS_TIMEOUT = 10
+# Default web server used by Bottle
+DEFAULT_WEB_SERVER = "wsgiref"
 
 ###################
 # Camera settings #

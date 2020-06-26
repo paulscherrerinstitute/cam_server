@@ -1,6 +1,6 @@
 package:
     name: cam_server
-    version: 3.7.4
+    version: 3.7.5
 
 source:
     path: ..
@@ -12,7 +12,7 @@ requirements:
       - python
       - requests
       - bsread >1.5.0
-      - bitshuffle
+      - bitshuffle >=0.3.6.1
       - bottle
       - numpy
       - scipy
@@ -22,6 +22,7 @@ requirements:
       - psutil
       - h5py
       - numba
+      - paste
 
 build:
   number: 0
