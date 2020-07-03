@@ -6,6 +6,7 @@ from cam_server import __VERSION__
 from epics.multiproc import CAProcess as Process
 
 from cam_server import config
+from cam_server.utils import get_port_generator
 
 try:
     import psutil
@@ -16,11 +17,64 @@ _logger = getLogger(__name__)
 
 
 class InstanceManager(object):
-    def __init__(self):
+    def __init__(self, port_range=None, auto_delete_stopped=False):
         self.instances = {}
         self._info_timestamp = None
         self._tx = None
         self._rx = None
+        self._port_generator = get_port_generator(port_range) if (port_range is not None) else None
+        self._used_ports = {}
+        self._last_ports = {}
+        self.auto_delete_stopped = auto_delete_stopped
+
+    def get_next_available_port(self, instance_id, prefer_same_port = False):
+        if self.auto_delete_stopped:
+            self.delete_stopped_instances()
+
+        if prefer_same_port:
+            preferred_port = self._last_ports.get(instance_id)
+            if preferred_port and (preferred_port not in self._used_ports):
+                self._used_ports[preferred_port] = instance_id
+                self._last_ports[instance_id] = preferred_port
+                return preferred_port
+
+        # Loop over all ports.
+        for _ in range(*config.PIPELINE_STREAM_PORT_RANGE):
+            candidate_port = next(self._port_generator)
+
+            if candidate_port not in self._used_ports:
+                self._used_ports[candidate_port] = instance_id
+                self._last_ports[instance_id] = candidate_port
+                return candidate_port
+
+        raise Exception("All ports are used. Stop some instances before opening a new stream.")
+
+    def delete_stopped_instance(self, instance_id):
+        # If instance is present but not running, delete it.
+        instance = self.instances.get(instance_id)
+        if instance and not instance.is_running():
+            _logger.info("Instance is present but not running: %s" % (instance_id,))
+            port = instance.get_stream_port()
+            self.delete_instance(instance_id)
+            self._used_ports.pop(port, None)
+            _logger.info("Instance deleted: %s" % (instance_id,))
+        elif not instance:
+            for port, id in self._used_ports.items():
+                if id == instance_id:
+                    self._used_ports.pop(port, None)
+                    break
+
+
+    def delete_stopped_instances(self):
+        # Clean up any stopped instances.
+        instance_ids = list(self._used_ports.values())
+        for instance_id in instance_ids:
+            self.delete_stopped_instance(instance_id)
+
+    def is_stopped_instance(self, instance_id):
+        instance = self.instances.get(instance_id)
+        return instance and not instance.is_running()
+
 
     def get_info(self):
         """
@@ -70,7 +124,18 @@ class InstanceManager(object):
         :param instance_name: Name to check.
         :return: True if instance is already present.
         """
+        if self.auto_delete_stopped:
+            self.delete_stopped_instance(instance_name)
         return instance_name in self.instances
+
+        if instance_name not in self.instances:
+            raise ValueError("Instance '%s' does not exist." % instance_name)
+        return self.instances[instance_name]
+
+    def get_instance_stream_port(self, instance_name):
+        if instance_name in self.instances:
+            self.instances[instance_name].stream_port
+
 
     def get_instance(self, instance_name):
         """
@@ -78,9 +143,10 @@ class InstanceManager(object):
         :param instance_name: Name od the instance to return.
         :return:
         """
+        if self.auto_delete_stopped:
+            self.delete_stopped_instance(instance_name)
         if instance_name not in self.instances:
             raise ValueError("Instance '%s' does not exist." % instance_name)
-
         return self.instances[instance_name]
 
     def get_instance_exit_code(self, instance_name):
@@ -89,15 +155,19 @@ class InstanceManager(object):
             raise ValueError("Instance '%s' process not created." % instance_name)
         return instance.process.exitcode
 
+
     def start_instance(self, instance_name):
         """
         Start the instance.
         :param instance_name: Instance to start.
         """
-        instance = self.get_instance(instance_name)
-
-        if not instance.is_running():
-            instance.start()
+        _logger.info("Starting instance '%s'." % instance_name)
+        if instance_name in self.instances:
+            instance = self.instances[instance_name]
+            if not instance.is_running():
+                instance.start()
+        else:
+            raise ValueError("Instance '%s' does not exist." % instance_name)
 
     def stop_instance(self, instance_name):
         """
@@ -108,6 +178,8 @@ class InstanceManager(object):
 
         if instance_name in self.instances:
             self.instances[instance_name].stop()
+        if self.auto_delete_stopped:
+            self.delete_stopped_instance(instance_name)
 
     def stop_all_instances(self):
         """
@@ -116,8 +188,9 @@ class InstanceManager(object):
         """
         _logger.info("Stopping all instances.")
 
-        for instance_name in self.instances:
-            self.stop_instance(instance_name)
+        for instance_id in list(self.instances.keys()):
+            self.stop_instance(instance_id)
+
 
     def delete_instance(self, instance_name):
         if instance_name not in self.instances:
@@ -127,10 +200,11 @@ class InstanceManager(object):
 
 
 class InstanceWrapper:
-    def __init__(self, instance_name, process_function, *args):
+    def __init__(self, instance_name, process_function, stream_port, *args):
 
         self.instance_name = instance_name
         self.process_function = process_function
+        self.stream_port = stream_port
         # Arguments to pass to the process function.
         self.args = args
 
@@ -232,3 +306,6 @@ class InstanceWrapper:
         if self.statistics.frame_shape:
             ret["frame_shape"] = self.statistics.frame_shape
         return ret
+
+    def get_stream_port(self):
+        return self.stream_port

@@ -6,7 +6,7 @@ from cam_server import config
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.transceiver import get_pipeline_function
-from cam_server.utils import update_pipeline_config, get_port_generator
+from cam_server.utils import update_pipeline_config
 
 _logger = getLogger(__name__)
 
@@ -14,49 +14,15 @@ _logger = getLogger(__name__)
 class PipelineInstanceManager(InstanceManager):
     def __init__(self, config_manager, background_manager, user_scripts_manager,
                  cam_server_client, hostname=None, port_range=None):
-        super(PipelineInstanceManager, self).__init__()
-
+        super(PipelineInstanceManager, self).__init__(
+            port_range=config.PIPELINE_STREAM_PORT_RANGE if (port_range is None) else port_range,
+            auto_delete_stopped=True)
         self.config_manager = config_manager
         self.background_manager = background_manager
         self.user_scripts_manager = user_scripts_manager
         self.cam_server_client = cam_server_client
         self.hostname = hostname
 
-        if port_range is None:
-            port_range = config.PIPELINE_STREAM_PORT_RANGE
-
-        self._port_generator = get_port_generator(port_range)
-        self._used_ports = {}
-
-    def _get_next_available_port(self, instance_id):
-        # Clean up any stopped instances.
-        instance_ids = list(self._used_ports.values())
-        for instance_id in instance_ids:
-            self._delete_stopped_instance(instance_id)
-
-        # Loop over all ports.
-        for _ in range(*config.PIPELINE_STREAM_PORT_RANGE):
-            candidate_port = next(self._port_generator)
-
-            if candidate_port not in self._used_ports:
-                self._used_ports[candidate_port] = instance_id
-                return candidate_port
-
-        raise Exception("All ports are used. Stop some instances before opening a new stream.")
-
-    def _delete_stopped_instance(self, instance_id):
-        # If instance is present but not running, delete it.
-        if self.is_instance_present(instance_id) and not self.get_instance(instance_id).is_running():
-            _logger.info("Instance is present but not running: %s" % (instance_id,))
-            port = self.get_instance(instance_id).get_stream_port()
-            self.delete_instance(instance_id)
-            self._used_ports.pop(port, None)
-            _logger.info("Instance deleted: %s" % (instance_id,))
-        elif not self.is_instance_present(instance_id):
-            for port, id in self._used_ports.items():
-                if id == instance_id:
-                    self._used_ports.pop(port, None)
-                    break
 
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
@@ -74,7 +40,7 @@ class PipelineInstanceManager(InstanceManager):
             _logger.info("Creating pipeline on fixed port '%s' for camera '%s'. instance_id=%s" %
                      (stream_port, camera_name, instance_id))
         else:
-            stream_port = self._get_next_available_port(instance_id)
+            stream_port = self.get_next_available_port(instance_id)
             _logger.info("Creating pipeline on port '%s' for camera '%s'. instance_id=%s" %
                      (stream_port, camera_name, instance_id))
 
@@ -83,7 +49,7 @@ class PipelineInstanceManager(InstanceManager):
             instance_id=instance_id,
             process_function=get_pipeline_function(pipeline_config.get_pipeline_type()),
             pipeline_config=pipeline_config,
-            output_stream_port=stream_port,
+            stream_port=stream_port,
             cam_client=self.cam_server_client,
             background_manager=self.background_manager,
             user_scripts_manager=self.user_scripts_manager,
@@ -107,8 +73,6 @@ class PipelineInstanceManager(InstanceManager):
         if not instance_id:
             instance_id = str(uuid.uuid4())
 
-        self._delete_stopped_instance(instance_id)
-
         if self.is_instance_present(instance_id):
             raise ValueError("Instance with id '%s' is already present and running. "
                              "Use another instance_id or stop the current instance "
@@ -131,8 +95,6 @@ class PipelineInstanceManager(InstanceManager):
         return pipeline_instance.get_instance_id(), pipeline_instance.get_stream_address()
 
     def get_instance_stream(self, instance_id):
-        self._delete_stopped_instance(instance_id)
-
         if self.is_instance_present(instance_id):
             return self.get_instance(instance_id).get_stream_address()
 
@@ -158,8 +120,6 @@ class PipelineInstanceManager(InstanceManager):
         pipeline_config = PipelineConfig(None, parameters=configuration)
 
         instance_id = self._find_instance_id_with_config(pipeline_config)
-        self._delete_stopped_instance(instance_id)
-
         if self.is_instance_present(instance_id):
             return instance_id, self.get_instance(instance_id).get_stream_address()
         else:
@@ -174,8 +134,6 @@ class PipelineInstanceManager(InstanceManager):
         return instance_id, self.get_instance(instance_id).get_stream_address()
 
     def update_instance_config(self, instance_id, config_updates):
-        self._delete_stopped_instance(instance_id)
-
         pipeline_instance = self.get_instance(instance_id)
 
         current_config = pipeline_instance.get_configuration()
@@ -192,18 +150,6 @@ class PipelineInstanceManager(InstanceManager):
         new_config = update_pipeline_config(current_config, config_updates)
         pipeline_instance.set_parameter(new_config)
         _logger.info("Instance config updated: %s" % (instance_id,))
-
-    def stop_instance(self, instance_name):
-        super().stop_instance(instance_name)
-        self._delete_stopped_instance(instance_name)
-
-    def stop_all_instances(self):
-        _logger.info("Stopping all instances.")
-
-        instance_ids = list(self.instances.keys())
-
-        for instance_id in instance_ids:
-            self.stop_instance(instance_id)
 
     def get_instance_configuration(self, instance_id):
         return self.get_instance(instance_id).get_configuration()
@@ -222,21 +168,21 @@ class PipelineInstanceManager(InstanceManager):
 
 
 class PipelineInstance(InstanceWrapper):
-    def __init__(self, instance_id, process_function, pipeline_config, output_stream_port, cam_client,
+    def __init__(self, instance_id, process_function, pipeline_config, stream_port, cam_client,
                  background_manager, user_scripts_manager, hostname=None, read_only_config=False):
 
-        super(PipelineInstance, self).__init__(instance_id, process_function,
-                                               cam_client, pipeline_config, output_stream_port,
-                                               background_manager, user_scripts_manager)
+        super(PipelineInstance, self).__init__(instance_id, process_function, stream_port,
+                                               cam_client, pipeline_config, stream_port,
+                                               background_manager, user_scripts_manager )
 
         self.pipeline_config = pipeline_config
 
         if not hostname:
             hostname = socket.gethostname()
 
-        self.stream_address = "tcp://%s:%d" % (hostname, output_stream_port)
+        self.stream_address = "tcp://%s:%d" % (hostname, stream_port)
         self.read_only_config = read_only_config
-        self.stream_port = output_stream_port
+
 
     def get_info(self):
         return {"stream_address": self.stream_address,
@@ -275,9 +221,6 @@ class PipelineInstance(InstanceWrapper):
 
     def get_name(self):
         return self.pipeline_config.get_name()
-
-    def get_stream_port(self):
-        return self.stream_port
 
     def is_read_only_config(self):
         return self.read_only_config

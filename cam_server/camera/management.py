@@ -3,19 +3,32 @@ from logging import getLogger
 
 from cam_server import config
 from cam_server.camera.sender import get_sender_function
+from cam_server.camera.source.utils import get_source_class
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
-from cam_server.utils import get_port_generator
 
 _logger = getLogger(__name__)
 
 
 class CameraInstanceManager(InstanceManager):
-    def __init__(self, config_manager, hostname=None, port_range=None):
-        super(CameraInstanceManager, self).__init__()
-        if port_range is None:
-            port_range = config.CAMERA_STREAM_PORT_RANGE
+    #Mode: 0 (default): When an instance stops, it is not deleted: the process, camera object and port.
+    #                   are reused if the instance is restarted.
+    #                   Limitation: CameraWorker must be restarted when camera type changes (EPICS->BSREAD)
+    #                               as camera object is not re-instantiated.
+    #Mode: 1: When an instance stops, keeps its process, camera object and port but when restarted checks if  the camera
+    #         type changed and, in this case, stops and delete the instance so a new camera object is created.
+    #Mode: 2: Same as 1 but tries to reuse the same port as the last used by the camera.
+    #Mode: 3: Automatically deletes stopped instances (as pipelines do).
+    #         Every time an instance is restarted it gets a new process, camera object and port.
+    #Mode: 4: Same as 4 but tries to reuse the same port as the last used by the camera.
+
+    # default, allow_reinstantiate, auto_delete, auto_delete_prefer_same_port
+    def __init__(self, config_manager, hostname=None, port_range=None, mode=0):
+        super(CameraInstanceManager, self).__init__(
+            port_range=config.CAMERA_STREAM_PORT_RANGE if (port_range is None) else port_range,
+            auto_delete_stopped=(mode in (3, 4)))
+        self.prefer_same_port = mode not in (1, 3)
+        self.allow_reinstantiate = (mode == 1)
         self.config_manager = config_manager
-        self.port_generator = get_port_generator(port_range)
         self.hostname = hostname
 
     def get_camera_list(self):
@@ -27,8 +40,16 @@ class CameraInstanceManager(InstanceManager):
         :param camera_name: Name of the camera to get the stream for.
         :return: Camera stream address.
         """
-
         # Check if the requested camera already exists.
+        if self.allow_reinstantiate and self.is_instance_present(camera_name):
+            try:
+                if type(self.get_instance(camera_name).camera) != \
+                        get_source_class(self.get_instance(camera_name).get_configuration()["source_type"]):
+                    self.stop_instance(camera_name)
+                    self.delete_stopped_instance(camera_name)
+            except:
+                pass
+
         if not self.is_instance_present(camera_name):
             camera = self.config_manager.load_camera(camera_name)
             camera.verify_camera_online()
@@ -39,7 +60,7 @@ class CameraInstanceManager(InstanceManager):
                 _logger.info("Creating camera stream on fixed port '%s' for camera '%s" %
                              (stream_port, camera_name))
             else:
-                stream_port = next(self.port_generator)
+                stream_port = self.get_next_available_port(camera_name, self.prefer_same_port)
                 _logger.info("Creating camera stream on port '%s' for camera '%s'" %
                              (stream_port, camera_name))
 
@@ -67,7 +88,7 @@ class CameraInstanceManager(InstanceManager):
 class CameraInstance(InstanceWrapper):
     def __init__(self, process_function, camera, stream_port, hostname=None):
 
-        super(CameraInstance, self).__init__(camera.get_name(), process_function,
+        super(CameraInstance, self).__init__(camera.get_name(), process_function, stream_port,
                                              camera, stream_port)
 
         self.camera = camera
