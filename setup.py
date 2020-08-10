@@ -1,9 +1,6 @@
 import os
 from setuptools import setup
 
-VERSION = (1, 5, 1)
-VERSION_STR = ".".join([str(x) for x in VERSION])
-
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -14,7 +11,7 @@ def read(fname):
 
 
 setup(name="cam_server",
-      version="3.8.0",
+      version="3.8.1",
       maintainer="Paul Scherrer Institute",
       maintainer_email="daq@psi.ch",
       author="Paul Scherrer Institute",
