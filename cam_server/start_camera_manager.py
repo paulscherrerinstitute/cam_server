@@ -49,6 +49,7 @@ def main():
                         help="(Camera) Configuration base directory")
     parser.add_argument('-w', '--web_server', default=config.DEFAULT_WEB_SERVER)
     parser.add_argument('-a', '--web_server_args', default="")
+    parser.add_argument('-e', '--epics_timeout', default=None)
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
@@ -56,6 +57,8 @@ def main():
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
     initialize_api_logger(arguments.log_level)
+    if arguments.epics_timeout is not None:
+        config.EPICS_TIMEOUT = float(arguments.epics_timeout)
     start_camera_manager(arguments.interface, arguments.port, arguments.servers, arguments.base,
                          arguments.client_timeout, arguments.update_timeout,
                          arguments.web_server , string_to_dict(arguments.web_server_args))

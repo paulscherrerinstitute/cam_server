@@ -29,7 +29,7 @@ class CameraEpics:
         camera_init_pv = camera_prefix + config.EPICS_PV_SUFFIX_STATUS
 
         channel_init = epics.PV(camera_init_pv)
-        channel_init_value = channel_init.get(as_string=True)
+        channel_init_value = channel_init.get(timeout=config.EPICS_TIMEOUT, as_string=True)
         channel_init.disconnect()
 
         if channel_init_value != 'INIT':
@@ -43,16 +43,15 @@ class CameraEpics:
         _logger.debug("Checking camera WIDTH '%s' and HEIGHT '%s' PV." % (camera_width_pv, camera_height_pv))
 
         channel_width = epics.PV(camera_width_pv)
-        channel_height = epics.PV(camera_height_pv)
-
-        self.width_raw = int(channel_width.get(timeout=config.EPICS_TIMEOUT_GET))
-        self.height_raw = int(channel_height.get(timeout=config.EPICS_TIMEOUT_GET))
-
-        if not self.width_raw or not self.height_raw:
-            raise RuntimeError("Could not fetch width and height for cam_server:{}".format(
-                self.camera_config.get_source()))
-
+        self.width_raw = int(channel_width.get(timeout=config.EPICS_TIMEOUT))
+        if not self.width_raw:
+            raise RuntimeError("Could not fetch width for cam_server:{}".format(self.camera_config.get_source()))
         channel_width.disconnect()
+
+        channel_height = epics.PV(camera_height_pv)
+        self.height_raw = int(channel_height.get(timeout=config.EPICS_TIMEOUT))
+        if not self.height_raw:
+            raise RuntimeError("Could not fetch height for cam_server:{}".format(self.camera_config.get_source()))
         channel_height.disconnect()
 
     def connect(self):
@@ -62,7 +61,7 @@ class CameraEpics:
 
         # Connect image channel
         self.channel_image = epics.PV(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_IMAGE, auto_monitor=True)
-        self.channel_image.wait_for_connection(config.EPICS_TIMEOUT_CONNECTION)  # 1 second default connection timeout
+        self.channel_image.wait_for_connection(config.EPICS_TIMEOUT)
 
         if not self.channel_image.connected:
             raise RuntimeError("Could not connect to: {}".format(self.channel_image.pvname))

@@ -248,13 +248,16 @@ class InstanceWrapper:
 
         # Wait for the processor to clear the flag - indication that the process is ready.
         start_timestamp = time.time()
+        error_message = None
         while self.stop_event.is_set():
             time.sleep(config.PROCESS_POLL_INTERVAL)
+            if not self.process.is_alive():
+                error_message = "'%s' instance  terminated. See logs." % self.instance_name
             # Check if the timeout has already elapsed.
             if time.time() - start_timestamp > config.PROCESS_COMMUNICATION_TIMEOUT:
                 self.process.terminate()
-                error_message = "Could not start the '%s' instance in time. Terminated. See logs." % \
-                                self.instance_name
+                error_message = "Could not start the '%s' instance in time. Terminated. See logs." %  self.instance_name
+            if error_message:
                 _logger.error(error_message)
                 raise Exception(error_message)
 
