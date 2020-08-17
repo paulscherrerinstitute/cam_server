@@ -341,7 +341,7 @@ class PipelineClientTest(unittest.TestCase):
         with source(host=host, port=port, mode=PULL) as stream:
             for i in range(10):
                 data = stream.receive()
-                self.assertEqual(data.data.pulse_id, i)
+                self.assertEqual(data.data.pulse_id, i+1)
         self.pipeline_client.stop_all_instances()
 
     def test_named_buffered_pipeline(self):
@@ -353,7 +353,7 @@ class PipelineClientTest(unittest.TestCase):
         with source(host=host, port=port, mode=PULL) as stream:
             for i in range(10):
                 data = stream.receive()
-                self.assertEqual(data.data.pulse_id, i)
+                self.assertEqual(data.data.pulse_id, i+1)
         self.pipeline_client.stop_all_instances()
 
     def test_background_file(self):

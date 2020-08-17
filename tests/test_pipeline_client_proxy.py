@@ -64,6 +64,7 @@ class PipelineClientTest(unittest.TestCase):
                                                                             pipeline_server_address,
                                                                             self.pipeline_config_folder,
                                                                             self.background_config_folder,
+                                                                            self.user_scripts_folder,
                                                                             cam_server_proxy_address))
         self.pipeline_proxy_process.start()
 
