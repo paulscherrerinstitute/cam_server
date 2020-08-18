@@ -3,6 +3,7 @@ import json
 import logging
 import pickle
 import bottle
+import numpy
 from bottle import request, response
 
 from cam_server import config
@@ -263,6 +264,22 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
             #request.body is  BytesIO
             data = request.body.getvalue()
         arr = pickle.loads(data)
+        instance_manager.background_manager.save_background(background_name, arr, False)
+        return {"state": "ok",
+                "status": "Background image %s stored." % background_name,
+                }
+
+    @app.post(api_root_address + "/background")
+    def set_background():
+        try:
+            req = request.json
+        except:
+            req = json.loads(request.body.raw.readall())
+
+        background_name = req["filename"]
+        data = req['data']
+        arr = numpy.array(data, dtype='uint16')
+
         instance_manager.background_manager.save_background(background_name, arr, False)
         return {"state": "ok",
                 "status": "Background image %s stored." % background_name,

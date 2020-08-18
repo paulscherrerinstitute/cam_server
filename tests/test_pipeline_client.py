@@ -381,6 +381,31 @@ class PipelineClientTest(unittest.TestCase):
         self.assertEqual(image_array.shape, new_image_array.shape)
         self.assertEqual(image_array.dtype, new_image_array.dtype)
 
+    def test_background_file2(self):
+        bg = self.pipeline_client.get_latest_background("simulation")
+        image = self.pipeline_client.get_background_image(bg)
+        self.assertGreater(len(image.content), 0)
+        image = self.pipeline_client.get_background_image_bytes(bg)
+        dtype = image["dtype"]
+        shape = image["shape"]
+        bytes = base64.b64decode(image["bytes"].encode())
+
+        x_size, y_size = get_simulated_camera().get_geometry()
+        self.assertEqual(shape, [y_size, x_size])
+
+        image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
+        self.assertIsNotNone(image_array)
+
+        newbg = "new_"+bg
+        self.pipeline_client.set_background(newbg, image_array)
+        image = self.pipeline_client.get_background_image_bytes(bg)
+        dtype = image["dtype"]
+        shape = image["shape"]
+        bytes = base64.b64decode(image["bytes"].encode())
+        new_image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
+        self.assertEqual(image_array.shape, new_image_array.shape)
+        self.assertEqual(image_array.dtype, new_image_array.dtype)
+
     def test_user_scripts(self):
         script_name = "Test.py"
         script_content = "print('Hello world')"

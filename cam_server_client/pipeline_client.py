@@ -323,6 +323,28 @@ class PipelineClient(object):
         server_response = requests.put(self.api_address_format % rest_endpoint, data=data, timeout=self.timeout).json()
         validate_response(server_response)
 
+
+    def set_background(self, filename='', data=None):
+        """
+        Set the background image. If no arguments are provided, the background image is cleared.
+
+        :param str filename: background image filename. It is used merely to track where
+                             the background image is loaded.
+        :param ndarray data: background image data.
+        """
+        rest_endpoint = "/background"
+
+        if data is not None:
+            data = data.tolist()
+
+        parameters = {
+            "filename": filename,
+            "data": data
+        }
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=parameters).json()
+        return validate_response(server_response)["state"]
+
+
     def set_user_script(self, script_name, script_bytes):
         """
         Set user script file on the server.
