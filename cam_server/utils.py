@@ -17,6 +17,7 @@ import shutil
 import time
 import numpy
 import ast
+from bottle import ServerAdapter
 
 _logger = getLogger(__name__)
 
@@ -227,3 +228,36 @@ def string_to_dict(str):
     if str:
         return ast.literal_eval(str)
     return{}
+
+
+class CherryPyV9Server(ServerAdapter):
+    def run(self, handler): # pragma: no cover
+        from cheroot.wsgi import Server as WSGIServer
+        self.options['bind_addr'] = (self.host, self.port)
+        self.options['wsgi_app'] = handler
+
+        certfile = self.options.get('certfile')
+        if certfile:
+            del self.options['certfile']
+        keyfile = self.options.get('keyfile')
+        if keyfile:
+            del self.options['keyfile']
+
+        server = WSGIServer(**self.options)
+        if certfile:
+            server.ssl_certificate = certfile
+        if keyfile:
+            server.ssl_private_key = keyfile
+
+        try:
+            server.start()
+        finally:
+            server.stop()
+
+#Use this function to replace CherryPy adapter, as bottle has a bug starting CherryPy v>=9
+#https://github.com/bottlepy/bottle/issues/934
+#https://github.com/bottlepy/bottle/issues/975
+def validate_web_server(web_server):
+    if web_server=="cherrypy":
+        return CherryPyV9Server
+    return web_server

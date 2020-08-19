@@ -8,7 +8,7 @@ from cam_server.pipeline.rest_api.rest_server import register_rest_interface as 
 from cam_server import config, CamClient
 from cam_server.instance_management.configuration import ConfigFileStorage
 from cam_server.pipeline.manager import Manager as PipelineManager
-from cam_server.utils import initialize_api_logger, string_to_dict
+from cam_server.utils import initialize_api_logger, string_to_dict,validate_web_server
 
 _logger = logging.getLogger(__name__)
 
@@ -46,7 +46,7 @@ def start_pipeline_manager(host, port, server_config, config_base, background_ba
     proxy.register_rest_interface(app)
     proxy.register_management_page(app)
     try:
-        bottle.run(app=app, server=web_server, host=host, port=port, **web_server_args)
+        bottle.run(app=app, server=validate_web_server(web_server), host=host, port=port, **web_server_args)
     finally:
         #cleanup
         pass

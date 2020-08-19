@@ -8,7 +8,7 @@ from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
 from cam_server import config, CamClient
 from cam_server.instance_management.configuration import ConfigFileStorage
-from cam_server.utils import initialize_api_logger, string_to_dict
+from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server
 
 _logger = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ def start_pipeline_server( host, port, config_base, background_base, scripts_bas
     register_pipeline_rest_interface(app=app, instance_manager=pipeline_instance_manager)
 
     try:
-        bottle.run(app=app, server=web_server, host=host, port=port, **web_server_args)
+        bottle.run(app=app, server=validate_web_server(web_server), host=host, port=port, **web_server_args)
     finally:
         # Close the external processor when terminating the web server.
         pipeline_instance_manager.stop_all_instances()

@@ -7,7 +7,7 @@ from cam_server.camera.management import CameraInstanceManager
 from cam_server.camera.configuration import CameraConfigManager
 from cam_server.instance_management.configuration import TransientConfig
 from cam_server.camera.rest_api.rest_server import register_rest_interface as register_camera_rest_interface
-from cam_server.utils import initialize_api_logger, string_to_dict
+from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server
 
 _logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ def start_camera_worker(host, port, hostname=None, port_range=None, mode=0,
     register_camera_rest_interface(app=app, instance_manager=camera_instance_manager)
 
     try:
-        bottle.run(app=app, server=web_server, host=host, port=port, **web_server_args)
+        bottle.run(app=app, server=validate_web_server(web_server), host=host, port=port, **web_server_args)
     finally:
         # Close the external processor when terminating the web server.
         camera_instance_manager.stop_all_instances()
