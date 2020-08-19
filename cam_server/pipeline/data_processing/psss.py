@@ -9,6 +9,8 @@ import scipy.signal
 import scipy.optimize
 import numba
 
+numba.set_num_threads(2)
+
 import epics
 
 
@@ -85,10 +87,16 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     else:
         axis = None
 
-    if axis is None or len(axis) != image.shape[1]:
-        _logger.warning("Invalid energy axis")
+    if axis is None:
+        _logger.warning("Energy axis not connected");
         return None
 
+    if len(axis) < image.shape[1]:
+        _logger.warning("Energy axis length %d < image width %d", len(axis), image.shape[1])
+        return None
+
+    # match the energy axis to image width
+    axis = axis[:image.shape[1]]
 
     processing_image = image
     nrows, ncols = processing_image.shape
