@@ -37,7 +37,7 @@ class CameraBsread(CameraEpics):
 
         bsread_source.disconnect()
 
-    def get_stream(self):
+    def get_stream(self, timeout=config.ZMQ_RECEIVE_TIMEOUT):
 
         self.verify_camera_online()
         self._collect_camera_settings()
@@ -45,7 +45,7 @@ class CameraBsread(CameraEpics):
         source_host, source_port = get_host_port_from_stream_address(self.bsread_stream_address)
 
         self.bsread_source = Source(host=source_host, port=source_port, mode=PULL,
-                                    receive_timeout=config.ZMQ_RECEIVE_TIMEOUT)
+                                    receive_timeout=timeout)
 
         return self.bsread_source
 

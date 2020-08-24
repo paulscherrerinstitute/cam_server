@@ -39,12 +39,13 @@ def tx_task(bind_address, input_folder, stop_event):
                         if simulate_pid and header:
                             h = json.loads(data)
                             h["pulse_id"] = pid
+                            time.sleep(0.017)
                             pid = pid + 1
-                            print(h)
                             data = bytes(json.dumps(h), 'utf-8')
-                        print('Sending %s [%s]' % (raw_file, send_more))
+                            #print("")
+                        #print('Sending %s [%s]' % (raw_file, send_more))
+                        #print (pid , end=" ")
                         stream.send(data, send_more=send_more)
-                        time.sleep(0.2)
     finally:
         mflow.disconnect()
 

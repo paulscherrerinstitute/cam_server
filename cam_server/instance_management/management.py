@@ -166,6 +166,8 @@ class InstanceManager(object):
             instance = self.instances[instance_name]
             if not instance.is_running():
                 instance.start()
+            else:
+                _logger.info("Instance '%s' is already running." % instance_name)
         else:
             raise ValueError("Instance '%s' does not exist." % instance_name)
 
@@ -300,7 +302,7 @@ class InstanceWrapper:
         ret = {"total_bytes": self.statistics.total_bytes,
                 "clients": self.statistics.clients,
                 "throughput": self.statistics.throughput,
-                "time": "" if self.statistics.update_timestamp is None else time.strftime("%H:%M:%S", self.statistics.update_timestamp),
+                "time": "" if not self.statistics.update_timestamp else time.strftime("%H:%M:%S", self.statistics.update_timestamp),
                 "frame_rate": self.statistics.frame_rate,
                 "pid": str(self.statistics.pid),
                 "cpu": self.statistics.cpu,

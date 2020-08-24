@@ -230,6 +230,23 @@ def string_to_dict(str):
     return{}
 
 
+
+class MaxLenDict(collections.OrderedDict):
+    def __init__(self, *args, **kwds):
+        self.maxlen = kwds.pop("maxlen", None)
+        collections.OrderedDict.__init__(self, *args, **kwds)
+        self._check_maxlen()
+
+    def __setitem__(self, key, value):
+        collections.OrderedDict.__setitem__(self, key, value)
+        self._check_maxlen()
+
+    def _check_maxlen(self):
+        if self.maxlen is not None:
+            while len(self) > self.maxlen:
+                self.popitem(last=False)
+
+
 class CherryPyV9Server(ServerAdapter):
     def run(self, handler): # pragma: no cover
         from cheroot.wsgi import Server as WSGIServer

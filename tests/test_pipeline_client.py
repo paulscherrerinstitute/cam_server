@@ -405,6 +405,11 @@ class PipelineClientTest(unittest.TestCase):
         new_image_array = numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
         self.assertEqual(image_array.shape, new_image_array.shape)
         self.assertEqual(image_array.dtype, new_image_array.dtype)
+    def to_npy(image):
+        dtype = image["dtype"]
+        shape = image["shape"]
+        bytes = base64.b64decode(image["bytes"].encode())
+        return  numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
 
     def test_user_scripts(self):
         script_name = "Test.py"
