@@ -9,6 +9,7 @@ from cam_server.camera.source.common import transform_image
 from cam_server.utils import set_statistics, init_statistics, MaxLenDict
 
 from threading import Thread, RLock
+#from epics.ca import CAThread
 
 _logger = getLogger(__name__)
 
@@ -198,7 +199,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                     sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
                                     if (last_pid):
                                         if pulse_id != (last_pid + interval):
-                                            print("***Failed " + str(last_pid + interval))
+                                            _logger.info("Failed Pulse ID %d [%s]" % ((last_pid + interval), camera.get_name(),))
                                         if interval != (pulse_id - last_pid):
                                             interval = pulse_id - last_pid
                                             _logger.info("Pulse ID interval set to: %d [%s]" % (interval, camera.get_name()))
@@ -389,9 +390,9 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             return True
 
 
-        def receive_task(index, message_buffer, stop_event, message_buffer_lock):
+        def receive_task(index, message_buffer, stop_event, message_buffer_lock, camera_stream):
             _logger.info("Start receive thread %d [%s]" % (index, camera.get_name()))
-            camera_stream = camera.get_stream()
+            #camera_stream = camera.get_stream()
             camera_stream.connect()
             try:
                 while not stop_event.is_set():
@@ -412,7 +413,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         receive_threads = []
         if threaded:
             for i in range(connections):
-                receive_thread = Thread(target=receive_task, args=(i, message_buffer, stop_event, message_buffer_lock))
+                camera_stream = camera.get_stream()
+                receive_thread = Thread(target=receive_task, args=(i, message_buffer, stop_event, message_buffer_lock, camera_stream))
                 receive_thread.start()
                 receive_threads.append(receive_thread)
 
