@@ -23,6 +23,7 @@ requirements:
       - h5py
       - numba
       - paste
+      - cheroot
 
 build:
   number: 0
