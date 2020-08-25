@@ -117,7 +117,7 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     ymin, ymax = int(roi[0]), int(roi[1])
     if nrows >= ymax > ymin >= 0:
         if (nrows != ymax) or (ymin != 0):
-            processing_image = processing_image[ymin, ymax, :]
+            processing_image = processing_image[ymin:ymax, :]
             if background_image is not None:
                 background_image = background_image[ymin:ymax, :]
 
