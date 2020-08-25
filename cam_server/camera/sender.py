@@ -199,15 +199,15 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                     #sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
                                     #Don't send inside the sync block
                                     tx = True
-                                    if (last_pid):
-                                        if pulse_id != (last_pid + interval):
-                                            _logger.info("Failed Pulse ID %d [%s]" % ((last_pid + interval), camera.get_name(),))
-                                        if interval != (pulse_id - last_pid):
-                                            interval = pulse_id - last_pid
-                                            _logger.info("Pulse ID interval set to: %d [%s]" % (interval, camera.get_name()))
-                                    last_pid = pulse_id
                     if tx:
                         sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
+                        if (last_pid):
+                            if pulse_id != (last_pid + interval):
+                                _logger.info("Failed Pulse ID %d [%s]" % ((last_pid + interval), camera.get_name(),))
+                            if interval != (pulse_id - last_pid):
+                                interval = pulse_id - last_pid
+                                _logger.info("Pulse ID interval set to: %d [%s]" % (interval, camera.get_name()))
+                        last_pid = pulse_id
                     else:
                         time.sleep(0.001)
 
