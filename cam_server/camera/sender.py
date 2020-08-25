@@ -38,6 +38,15 @@ def get_buffer_size(camera):
         _logger.warning("Invalid buffer size (using 0) [%s]" % (camera.get_name(),))
     return 0
 
+def get_buffer_threshold(camera):
+    buffer_threshold = camera.camera_config.get_configuration().get("buffer_threshold")
+    try:
+        if buffer_threshold is not None:
+            return min(max(float(buffer_threshold), 0), 1.0)
+    except:
+        _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (camera.get_name(),))
+    return 0.5
+
 def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     """
     Start the camera stream and listen for image monitors. This function blocks until stop_event is set.
@@ -117,8 +126,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
 
             while not parameter_queue.empty():
                 new_parameters = parameter_queue.get()
-                camera.camera_config.set_configuration(new_parameters)
-
+                camera.camera_config.parameter_queue(new_parameters)
                 process_parameters()
 
         camera.add_callback(collect_and_send)
@@ -181,7 +189,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
             last_pid = None
             interval = 1
-            threshold = (message_buffer.maxlen * 0.8)
+            threshold = int(message_buffer.maxlen * get_buffer_threshold(camera))
             try:
                 while not stop_event.is_set():
                     tx = False
@@ -208,8 +216,12 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                 interval = pulse_id - last_pid
                                 _logger.info("Pulse ID interval set to: %d [%s]" % (interval, camera.get_name()))
                         last_pid = pulse_id
-                    else:
+                    if size == 0:
                         time.sleep(0.001)
+                        while not parameter_queue.empty():
+                            new_parameters = parameter_queue.get()
+                            camera.camera_config.set_configuration(new_parameters)
+                            process_parameters()
 
                 _logger.info("stop_event set to send thread [%s]" % (camera.get_name(),))
             except Exception as e:
@@ -248,6 +260,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         # This signals that the camera has successfully started.
         stop_event.clear()
 
+        stats_lock = RLock()
         if threaded:
             message_buffer_lock = RLock()
             message_buffer = MaxLenDict(maxlen=buffer_size)
@@ -333,10 +346,10 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 if stop_event.is_set():
                     return False
                 data = camera_stream.receive()
-
-                if data is not None:
-                    total_bytes[index] = data.statistics.total_bytes_received
-                set_statistics(statistics, sender, sum(total_bytes), 1 if data else 0)
+                with stats_lock:
+                    if data is not None:
+                        total_bytes[index] = data.statistics.total_bytes_received
+                    set_statistics(statistics, sender, sum(total_bytes), 1 if data else 0)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
@@ -381,12 +394,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 else:
                     sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
 
-                while not parameter_queue.empty():
-                    new_parameters = parameter_queue.get()
-                    camera.camera_config.set_configuration(new_parameters)
-
-                    process_parameters()
-
             except Exception as e:
                 _logger.error("Could not process message: %s [%s]" % (str(e), camera.get_name()))
                 stop_event.set()
@@ -428,8 +435,12 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 for i in range(len(camera_streams)):
                     if not process_stream(camera_streams[i], i):
                         break
+                while not parameter_queue.empty():
+                    new_parameters = parameter_queue.get()
+                    camera.camera_config.set_configuration(new_parameters)
+                    process_parameters()
 
-        _logger.info("Stopping transceiver [%s]" % (camera.get_name(),))
+        _logger.info("Stopping transceiver  [%s]" % (camera.get_name(),))
 
     except Exception as e:
         _logger.exception("Error while processing camera stream: %s [%s]" % (str(e), camera.get_name()))
