@@ -47,6 +47,14 @@ def get_buffer_threshold(camera):
         _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (camera.get_name(),))
     return 0.5
 
+def get_buffer_logs(camera):
+    buffer_logs = camera.camera_config.get_configuration().get("buffer_logs")
+    try:
+          return str(buffer_logs).lower() == "true"
+    except:
+        _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (camera.get_name(),))
+    return True
+
 def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     """
     Start the camera stream and listen for image monitors. This function blocks until stop_event is set.
@@ -190,6 +198,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             last_pid = None
             interval = 1
             threshold = int(message_buffer.maxlen * get_buffer_threshold(camera))
+            buffer_logs = get_buffer_logs(camera)
             try:
                 while not stop_event.is_set():
                     tx = False
@@ -210,11 +219,11 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     if tx:
                         sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
                         if (last_pid):
-                            if pulse_id != (last_pid + interval):
-                                _logger.info("Failed Pulse ID %d [%s]" % ((last_pid + interval), camera.get_name(),))
-                            if interval != (pulse_id - last_pid):
+                            expected = (last_pid + interval);
+                            if pulse_id != expected:
                                 interval = pulse_id - last_pid
-                                _logger.info("Pulse ID interval set to: %d [%s]" % (interval, camera.get_name()))
+                                if buffer_logs:
+                                    _logger.info("Failed Pulse ID %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
                         last_pid = pulse_id
                     if size == 0:
                         time.sleep(0.001)
