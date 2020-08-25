@@ -184,7 +184,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             threshold = (message_buffer.maxlen * 0.8)
             try:
                 while not stop_event.is_set():
-                    do_sleep=True
+                    tx = False
                     with message_buffer_lock:
                         size=len(message_buffer)
                         if size > 0:
@@ -196,7 +196,9 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                 if not last_pid or \
                                      (pulse_id <= (last_pid+interval)) or (size > threshold):
                                     (data, timestamp) = message_buffer.pop(pulse_id)
-                                    sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
+                                    #sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
+                                    #Don't send inside the sync block
+                                    tx = True
                                     if (last_pid):
                                         if pulse_id != (last_pid + interval):
                                             _logger.info("Failed Pulse ID %d [%s]" % ((last_pid + interval), camera.get_name(),))
@@ -204,8 +206,9 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                             interval = pulse_id - last_pid
                                             _logger.info("Pulse ID interval set to: %d [%s]" % (interval, camera.get_name()))
                                     last_pid = pulse_id
-                                    do_sleep = False
-                    if do_sleep:
+                    if tx:
+                        sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
+                    else:
                         time.sleep(0.001)
 
                 _logger.info("stop_event set to send thread [%s]" % (camera.get_name(),))
