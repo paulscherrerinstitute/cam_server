@@ -1,5 +1,8 @@
+import sys
 import epics
 import numpy
+import threading
+import os
 
 from logging import getLogger
 
@@ -24,11 +27,28 @@ class CameraEpics:
 
         self.channel_image = None
 
+    #Thread-safe pv creation
+    def create_pv(self, name, **args):
+        if epics.ca.current_context() is None:
+            try:
+                 if epics.ca.initial_context is None:
+                     _logger.info("Creating inital EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
+                     epics.ca.initialize_libca()
+                 else:
+                     # TODO: using epics.ca.use_initial_context() generates a segmentation fault
+                     #_logger.info("Using initial EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
+                     #epics.ca.use_initial_context()
+                     _logger.info("Creating EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
+                     epics.ca.create_context()
+            except:
+                _logger.warning("Error creating PV context: " + str(sys.exc_info()[1]))
+        return epics.PV(name, **args)
+
     def verify_camera_online(self):
         camera_prefix = self.camera_config.get_source()
         camera_init_pv = camera_prefix + config.EPICS_PV_SUFFIX_STATUS
 
-        channel_init = epics.PV(camera_init_pv)
+        channel_init = self.create_pv(camera_init_pv)
         channel_init_value = channel_init.get(timeout=config.EPICS_TIMEOUT, as_string=True)
         channel_init.disconnect()
 
@@ -42,13 +62,13 @@ class CameraEpics:
 
         _logger.debug("Checking camera WIDTH '%s' and HEIGHT '%s' PV." % (camera_width_pv, camera_height_pv))
 
-        channel_width = epics.PV(camera_width_pv)
+        channel_width = self.create_pv(camera_width_pv)
         self.width_raw = int(channel_width.get(timeout=config.EPICS_TIMEOUT))
         if not self.width_raw:
             raise RuntimeError("Could not fetch width for cam_server:{}".format(self.camera_config.get_source()))
         channel_width.disconnect()
 
-        channel_height = epics.PV(camera_height_pv)
+        channel_height = self.create_pv(camera_height_pv)
         self.height_raw = int(channel_height.get(timeout=config.EPICS_TIMEOUT))
         if not self.height_raw:
             raise RuntimeError("Could not fetch height for cam_server:{}".format(self.camera_config.get_source()))
@@ -60,7 +80,7 @@ class CameraEpics:
         self._collect_camera_settings()
 
         # Connect image channel
-        self.channel_image = epics.PV(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_IMAGE, auto_monitor=True)
+        self.channel_image = self.create_pv(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_IMAGE, auto_monitor=True)
         self.channel_image.wait_for_connection(config.EPICS_TIMEOUT)
 
         if not self.channel_image.connected:

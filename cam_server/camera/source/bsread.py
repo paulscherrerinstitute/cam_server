@@ -25,7 +25,7 @@ class CameraBsread(CameraEpics):
 
         _logger.debug("Checking camera bsread stream address '%s' PV." % bsread_source_pv)
 
-        bsread_source = epics.PV(bsread_source_pv)
+        bsread_source = self.create_pv(bsread_source_pv)
 
         self.bsread_stream_address = bsread_source.get(timeout=config.EPICS_TIMEOUT)
 
