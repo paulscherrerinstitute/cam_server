@@ -1,0 +1,12 @@
+[Unit]
+Description=server tunning
+
+[Install]
+WantedBy=default.target
+
+[Service]
+#Type=oneshot
+#ExecStart=/usr/bin/cpupower idle-set -D 0
+ExecStart=/usr/bin/cpupower frequency-set -g performance
+ExecStop=/usr/bin/cpupower frequency-set -g ondemand
+RemainAfterExit=true

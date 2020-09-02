@@ -33,6 +33,12 @@
         enabled: yes
         daemon_reload: yes
 
+    - name: enable server_tuning service
+      systemd:
+        name: server_tuning
+        enabled: yes
+        daemon_reload: yes
+
 
 - hosts: cam_manager
   become: true
