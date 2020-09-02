@@ -420,6 +420,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         if (timeout > 0) and (time.time() - last_rcvd_timestamp) > timeout:
                             _logger.warning("Camera timeout. %s" % log_tag)
                             current_pid, former_pid = None, None
+                            last_rcvd_timestamp = time.time()
                             #Try reconnecting to the camera. If fails raise exception and stops pipeline.
                             connect_to_camera()
                     continue
