@@ -11,6 +11,6 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill camera_server
 ExecStartPre=-/usr/bin/docker rm camera_server
 #ExecStartPre=/usr/bin/docker pull paulscherrerinstitute/cam_server
-ExecStart=/usr/bin/docker run --name camera_server --env-file /cam_server_configuration/camera_environment -v /cam_server_configuration/configuration:/configuration --net=host paulscherrerinstitute/cam_server camera_server -b /configuration/camera_config -n sf-daqsync-01.psi.ch --log_level=DEBUG
+ExecStart=/usr/bin/docker run --name camera_server --env-file /cam_server_configuration/camera_environment -v /cam_server_configuration/configuration:/configuration --net=host paulscherrerinstitute/cam_server camera_server -b /configuration/camera_config -n sf-daqsync-01.psi.ch --log_level=INFO --web_server=cherrypy
 ExecStop=/usr/bin/docker stop camera_server
 Restart=always
