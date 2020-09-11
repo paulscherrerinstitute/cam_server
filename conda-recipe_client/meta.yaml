@@ -11,8 +11,7 @@ requirements:
   run:
       - python
       - requests
-      - bsread >1.5.0
-      - bitshuffle >=0.3.6.1
+      - bsread >1.5.1
 
 build:
   number: 0

@@ -11,7 +11,7 @@ requirements:
   run:
       - python
       - requests
-      - bsread >1.5.0
+      - bsread >1.5.1
       - bitshuffle >=0.3.6.1
       - bottle
       - numpy
