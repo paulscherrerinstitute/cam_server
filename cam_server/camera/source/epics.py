@@ -97,7 +97,15 @@ class CameraEpics:
     def add_callback(self, callback_function):
 
         def _callback(value, timestamp, status, **kwargs):
-            callback_function(self._get_image(value), timestamp)
+            image = self._get_image(value)
+            if image is not None:
+                try:
+                    callback_function(image, timestamp)
+                except:
+                    _logger.info("Error getting image from camera %s: %s" % (self.camera_config.get_source(), sys.exc_info()[1]))
+            else:
+                _logger.debug("Null image read from camera %s" % (self.camera_config.get_source()))
+
 
         self.channel_image.add_callback(_callback)
 
