@@ -43,6 +43,26 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "List of available cameras.",
                 "cameras": list(instance_manager.get_camera_list())}
 
+    @app.get(api_root_address + "/aliases")
+    def get_camera_aliases():
+        """
+        Return the list of available cameras.save_config
+        :return:
+        """
+        return {"state": "ok",
+                "status": "Camera aliases.",
+                "aliases": instance_manager.config_manager.get_camera_aliases()}
+
+    @app.get(api_root_address + "/groups")
+    def get_camera_groups():
+        """
+        Return the list of available cameras.save_config
+        :return:
+        """
+        return {"state": "ok",
+                "status": "Camera groups.",
+                "groups": instance_manager.config_manager.get_camera_groups()}
+
     @app.get(api_root_address + "/<camera_name>")
     def get_instance_stream(camera_name):
         """

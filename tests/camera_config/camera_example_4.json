@@ -5,5 +5,7 @@
   "mirror_x": true,
   "mirror_y": false,
   "rotate": 4,
-  "camera_calibration": null
+  "camera_calibration": null,
+  "group": ["Photonics","Test"],
+  "alias": ["cam4", "camera4"]
 }

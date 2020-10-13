@@ -45,6 +45,26 @@ class CamClient(object):
         server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return validate_response(server_response)["cameras"]
 
+    def get_camera_aliases(self):
+        """
+        Cameras aliases.
+        :return: Dicionary alias->name.
+        """
+        rest_endpoint = "/aliases"
+
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        return validate_response(server_response)["aliases"]
+
+    def get_camera_groups(self):
+        """
+        Cameras aliases.
+        :return: Dicionary alias->name.
+        """
+        rest_endpoint = "/groups"
+
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        return validate_response(server_response)["groups"]
+
     def get_camera_config(self, camera_name):
         """
         Return the cam configuration.

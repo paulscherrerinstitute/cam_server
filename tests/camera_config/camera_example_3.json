@@ -12,5 +12,7 @@
     "reference_marker_height": 100.0,
     "angle_horizontal": 0.0,
     "angle_vertical": 0.0
-  }
+  },
+  "group": "Photonics",
+  "alias": "cam3"
 }

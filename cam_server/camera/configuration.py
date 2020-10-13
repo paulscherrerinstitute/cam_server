@@ -15,6 +15,46 @@ class CameraConfigManager(object):
 
         return configured_cameras
 
+    def get_camera_aliases(self):
+        """
+        Retrieve camera aliases.
+        :return: Dictionary of alias:camera name.
+        """
+        camera_aliases = {}
+        cameras = self.get_camera_list()
+        for name in cameras:
+            cfg = self.config_provider.get_config(name)
+            aliases = cfg.get("alias")
+            if aliases is not None:
+                if not isinstance(aliases, list):
+                    aliases = [aliases,]
+                for alias in aliases:
+                    alias = str(alias)
+                    if not alias in cameras:
+                        camera_aliases[alias] = name
+        return camera_aliases
+
+    def get_camera_groups(self):
+        """
+        Retrieve camera groups.
+        :return: Dictionary of group name: list of camera_names.
+        """
+        camera_groups = {}
+        cameras = self.get_camera_list()
+        for name in cameras:
+            cfg = self.config_provider.get_config(name)
+            groups = cfg.get("group")
+            if groups is not None:
+                if not isinstance(groups, list):
+                    groups = [groups,]
+                for group in groups:
+                    group = str(group)
+                    if not group in camera_groups.keys():
+                        camera_groups[group]=[]
+                    if not name in camera_groups[group]:
+                        camera_groups[group].append(name)
+        return camera_groups
+
     def get_camera_config(self, camera_name):
         """
         Return the camera configuration.

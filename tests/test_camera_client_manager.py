@@ -60,6 +60,9 @@ class CameraClientProxyTest(unittest.TestCase):
             self.assertIn(camera, set(self.client.get_cameras()), "Not getting expected camera: " + camera)
 
 
+        print (self.client.get_camera_aliases())
+        print(self.client.get_camera_groups())
+
         camera_stream_address = self.client.get_instance_stream("simulation")
 
         self.assertTrue(bool(camera_stream_address), "Camera stream address cannot be empty.")

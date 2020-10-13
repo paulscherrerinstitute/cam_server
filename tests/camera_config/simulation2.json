@@ -19,5 +19,9 @@
  "source": "",
  "frame_rate":2,
  "size_x": 400,
- "size_y": 200
+ "size_y": 200,
+  "group": ["Photonics","Test"],
+  "alias": ["c2", "camera2"]
 }
+
+

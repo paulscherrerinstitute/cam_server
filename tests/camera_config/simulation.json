@@ -18,8 +18,12 @@
  "name": "simulation",
  "source": "",
 
- "frame_rate":2,
-  "size_x": 400,
+ "frame_rate": 5,
+ "size_x": 400,
  "size_y": 200,
- "simulate_pulse_id": false
+ "simulate_pulse_id": false,
+ "image_type": "static_raw",
+ "group": ["Electrons","Test"],
+ "alias": ["c1", "camera1"]
 }
+

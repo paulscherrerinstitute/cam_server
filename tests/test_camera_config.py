@@ -4,7 +4,10 @@ from cam_server.camera.configuration import CameraConfig
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.utils import update_camera_config
 from tests.helpers.factory import get_test_instance_manager
+from cam_server.camera.configuration import CameraConfigManager
+from cam_server.instance_management.configuration import ConfigFileStorage
 
+import os
 
 class CameraConfigTest(unittest.TestCase):
     def test_set_get_camera_config(self):
@@ -53,6 +56,19 @@ class CameraConfigTest(unittest.TestCase):
 
         self.assertListEqual(instance_manager.config_manager.get_camera_list(), ["test_camera_1"],
                              "Test camera was not deleted successfully.")
+    def test_aliases(self):
+        aliases = {'cam4': 'camera_example_4', 'camera4': 'camera_example_4', 'cam3': 'camera_example_3'}
+        test_base_dir = os.path.split(os.path.abspath(__file__))[0]
+        config_base = os.path.join(test_base_dir, "camera_config/")
+        config_manager = CameraConfigManager(config_provider=ConfigFileStorage(config_base))
+        self.assertDictEqual(config_manager.get_camera_aliases(), aliases,"Aliases not as expected")
+
+    def test_groups(self):
+        groups = {'Photonics': ['camera_example_4', 'camera_example_3'], 'Test': ['camera_example_4'], 'Electrons': ['camera_example_2']}
+        test_base_dir = os.path.split(os.path.abspath(__file__))[0]
+        config_base = os.path.join(test_base_dir, "camera_config/")
+        config_manager = CameraConfigManager(config_provider=ConfigFileStorage(config_base))
+        self.assertDictEqual(config_manager.get_camera_groups(), groups,"Groups not as expected")
 
     def test_load_camera(self):
         expected_config_example_1 = {
