@@ -8,6 +8,7 @@ from logging import getLogger
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
+from cam_server.pipeline.data_processing.functions import binning
 
 _logger = getLogger(__name__)
 
@@ -140,12 +141,18 @@ class CameraEpics:
         if self.width_raw is None or self.height_raw is None:
             self._collect_camera_settings()
 
+        width, height = self.width_raw, self.height_raw
+        if self.camera_config.parameters.get("binning_y"):
+            height = int(height / self.camera_config.parameters.get("binning_y"))
+        if self.camera_config.parameters.get("binning_x"):
+            width = int(width / self.camera_config.parameters.get("binning_x"))
+
         rotate = self.camera_config.parameters["rotate"]
         if rotate == 1 or rotate == 3:
             # If rotating by 90 degree, height becomes width.
-            return self.height_raw, self.width_raw
+            return height, width
         else:
-            return self.width_raw, self.height_raw
+            return width, height
 
     def get_name(self):
         return self.camera_config.get_name()
@@ -218,7 +225,10 @@ class CameraEpics:
         if background_filename:
             background_array = numpy.load(background_filename)
             if background_array is not None:
-                self.camera_config.parameters["background_data"] = background_array.astype("uint16", copy=False)
+                if ((background_array.shape[1] != x_axis.shape[0]) or (background_array.shape[0] != y_axis.shape[0])):
+                    _logger.info("Invalid background shape for camera %s: %s" % (self.camera_config.get_source(background_array.shape), str()))
+                else:
+                    self.camera_config.parameters["background_data"] = background_array.astype("uint16", copy=False)
 
         roi = self.camera_config.parameters["roi"]
         if roi is not None:

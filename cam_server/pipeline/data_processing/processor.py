@@ -11,19 +11,6 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     # Add return values
     return_value = dict()
 
-    image_threshold = parameters.get("image_threshold")
-    if image_threshold is not None and image_threshold > 0:
-        functions.apply_threshold(image, image_threshold)
-
-    image_region_of_interest = parameters.get("image_region_of_interest")
-    if image_region_of_interest:
-        offset_x, size_x, offset_y, size_y = image_region_of_interest
-        image = functions.get_region_of_interest(image, offset_x, size_x, offset_y, size_y)
-
-        # Apply roi to geometry x_axis and y_axis
-        x_axis = x_axis[offset_x:offset_x + size_x]
-        y_axis = y_axis[offset_y:offset_y + size_y]
-
     (min_value, max_value) = functions.get_min_max(image)
 
     (x_profile, y_profile) = functions.get_x_y_profile(image)

@@ -17,7 +17,8 @@ from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image
 from cam_server.utils import get_host_port_from_stream_address, set_statistics, init_statistics
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
-from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number, subtract_background
+from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number, subtract_background, \
+    get_region_of_interest, apply_threshold, binning
 
 
 _logger = getLogger(__name__)
@@ -274,11 +275,23 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             background_id = pipeline_config.get_background_id()
             _logger.debug("Image background enabled. Using background_id %s. %s" %(background_id, log_tag))
 
-            background_array = background_manager.get_background(background_id)
+            try:
+                background_array = background_manager.get_background(background_id)
+            except:
+                _logger.warning("Invalid background_id: %s. %s" % (background_id, log_tag))
             if background_array is not None:
                 background_array = background_array.astype("uint16",copy=False)
 
         size_x, size_y = cam_client.get_camera_geometry(pipeline_config.get_camera_name())
+
+        by, bx = int(parameters.get("binning_y", 1)), int(parameters.get("binning_x", 1))
+        bm = parameters.get("binning_mean", False)
+        if (by > 1) or (bx > 1):
+            size_x, size_y = int(size_x / bx), int(size_y / by)
+            if background_array is not None:
+                background_array, _, _ = binning(background_array, None, None, bx, by, bm)
+                if background_array.shape != (size_y, size_x):
+                    _logger.warning("Bad background shape: %s instead of %s. %s" % (image_background_array.shape, (size_y, size_x), log_tag))
 
         image_region_of_interest = parameters.get("image_region_of_interest")
         if image_region_of_interest:
@@ -474,8 +487,13 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         image_buffer.pop(0)
                     image_buffer.append(image)
                     if (len(image_buffer) >= averaging) or (continuous):
-                        frames = numpy.array(image_buffer)
-                        image = numpy.average(frames, 0)
+                        try:
+                            frames = numpy.array(image_buffer)
+                            image = numpy.average(frames, 0)
+                        except:
+                            #Different shapes
+                            image_buffer = []
+                            continue
                     else:
                         continue
                 if (not averaging) or (not continuous):
@@ -492,7 +510,15 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 # of magnitude. Perform a copy in chunks instead, where each chunk is smaller than 2MB
                 image = chunk_copy(image)
 
+                by, bx = int(pipeline_parameters.get("binning_y", 1)), int(pipeline_parameters.get("binning_x", 1))
+                bm = pipeline_parameters.get("binning_mean", False)
+                if (by>1) or  (bx > 1):
+                    image, x_axis, y_axis = binning(image, x_axis, y_axis, bx, by, bm)
+
                 if image_background_array is not None:
+                    if image.shape != image_background_array.shape:
+                        _logger.debug("Bad background shape: %s instead of %s. %s" % (image_background_array.shape, image.shape, log_tag))
+                        continue
                     if pipeline_parameters.get("image_background_enable") == "passive":
                         pipeline_parameters["background_data"] = image_background_array
                     else:
@@ -502,6 +528,26 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 rotation = pipeline_parameters.get("rotation")
                 if rotation:
                     image = rotate(image, rotation["angle"], rotation["order"], rotation["mode"])
+
+                # Check for ROI
+                image_region_of_interest = pipeline_parameters.get("image_region_of_interest")
+                if image_region_of_interest:
+                    offset_x, size_x, offset_y, size_y = image_region_of_interest
+                    #Limit ROI to image size
+                    size_x, size_y = min(size_x, image.shape[1]), min(size_y, image.shape[0])
+                    offset_x, offset_y = min(offset_x, (image.shape[1]-size_x)), min(offset_y, (image.shape[0]-size_y))
+                    offset_x, offset_y = max(0, offset_x), max(0, offset_y)
+
+                    image = get_region_of_interest(image, offset_x, size_x, offset_y, size_y)
+
+                    # Apply roi to geometry x_axis and y_axis
+                    x_axis = x_axis[offset_x:offset_x + size_x]
+                    y_axis = y_axis[offset_y:offset_y + size_y]
+
+                #Apply threshold
+                image_threshold = pipeline_parameters.get("image_threshold")
+                if image_threshold is not None and image_threshold > 0:
+                    apply_threshold(image, image_threshold)
 
                 function = get_function(pipeline_parameters, user_scripts_manager, log_tag)
                 global_timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)

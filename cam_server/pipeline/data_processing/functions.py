@@ -453,6 +453,32 @@ def gauss_fit_psss(profile, axis, **kwargs):
 
     return offset, amplitude, center, abs(standard_deviation)
 
+def binning(image, x_axis, y_axis, bx, by, mean = False):
+    sy, sx = (len(y_axis), len(x_axis)) if (image is None) else image.shape
+    _sx, _sy = int(sx/bx) * bx, int(sy/by) * by
+    if (sx != _sx) or (sy != _sy):
+        sy, sx = _sy, _sx
+        if image is not None:
+            image = image[:sy,:sx]
+        if x_axis is not None:
+            x_axis = x_axis[:sx]
+        if y_axis is not None:
+            y_axis = y_axis[:sy]
+    if x_axis is not None:
+        type = x_axis.dtype
+        x_axis = x_axis.reshape(int(sx / bx), int(bx)).mean(axis=(1)).astype(type, copy=False)
+    if y_axis is not None:
+        type = y_axis.dtype
+        y_axis = y_axis.reshape(int(sy / by), int(by)).mean(axis=(1)).astype(type, copy=False)
+    if image is not None:
+        image = image.reshape(int(sy / by), int(by), int(sx / bx), int(bx))
+        if mean:
+            image = image.mean(axis=(1, 3))
+        else:
+            image = image.sum(axis=(1, 3))
+            numpy.clip(image, 0, 0xFFFF, out=image)
+        image = image.astype("uint16", copy=False)
+    return image, x_axis, y_axis
 
 def chunk_copy(image, max_chunk = 2000000):
     """
