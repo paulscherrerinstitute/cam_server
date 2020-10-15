@@ -348,29 +348,32 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
 
         last_pid = None
         total_bytes = [0] * connections
+        frame_shape = None
 
         def process_stream(camera_stream, index):
-            nonlocal total_bytes, last_pid
+            nonlocal total_bytes, last_pid, frame_shape
             try:
                 if stop_event.is_set():
                     return False
                 data = camera_stream.receive()
+
+                if data is not None:
+                    image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
+                    # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
+                    image = transform_image(image, camera.camera_config)
+
+                    # Numpy is slowest dimension first, but bsread is fastest dimension first.
+                    height, width = image.shape
+
+                    frame_shape = str(width) + "x" + str(height) + "x" + str(image.itemsize)
+                    total_bytes[index] = data.statistics.total_bytes_received
+
                 with stats_lock:
-                    if data is not None:
-                        total_bytes[index] = data.statistics.total_bytes_received
-                    set_statistics(statistics, sender, sum(total_bytes), 1 if data else 0)
+                    set_statistics(statistics, sender, sum(total_bytes), 1 if data else 0, frame_shape)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
                     return True
-
-                image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
-
-                # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
-                image = transform_image(image, camera.camera_config)
-
-                # Numpy is slowest dimension first, but bsread is fastest dimension first.
-                height, width = image.shape
 
                 pulse_id = data.data.pulse_id
 

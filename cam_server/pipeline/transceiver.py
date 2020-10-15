@@ -422,12 +422,15 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     new_parameters = parameter_queue.get()
                     pipeline_config.set_configuration(new_parameters)
                     pipeline_parameters, image_background_array = process_pipeline_parameters()
-
+                frame_shape = None
                 data = source.receive()
-                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes,  1 if data else 0)
                 if data:
+                    image = data.data.data["image"].value
+                    frame_shape = str(image.shape[1]) + "x" + str(image.shape[0]) + "x" + str(image.itemsize)
                     last_rcvd_timestamp = time.time()
-                else:
+                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes,  1 if data else 0, frame_shape)
+
+                if not data:
                     timeout = pipeline_parameters.get("camera_timeout")
                     if timeout:
                         if (timeout > 0) and (time.time() - last_rcvd_timestamp) > timeout:
@@ -475,7 +478,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     if (time.time() - last_sent_timestamp) < min_interval:
                         continue
 
-                image = data.data.data["image"].value
                 if image is None:
                     continue
 
