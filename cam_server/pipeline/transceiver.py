@@ -27,8 +27,6 @@ class ProcessingCompleated(Exception):
      pass
 
 
-
-
 def create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag):
     sender = None
     def no_client_action():
@@ -426,7 +424,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 data = source.receive()
                 if data:
                     image = data.data.data["image"].value
-                    frame_shape = str(image.shape[1]) + "x" + str(image.shape[0]) + "x" + str(image.itemsize)
+                    if image is not None:
+                        frame_shape = str(image.shape[1]) + "x" + str(image.shape[0]) + "x" + str(image.itemsize)
                     last_rcvd_timestamp = time.time()
                 set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes,  1 if data else 0, frame_shape)
 
