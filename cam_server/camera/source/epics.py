@@ -27,73 +27,115 @@ class CameraEpics:
         self.height_raw = None
 
         self.channel_image = None
+        self.channel_width = None
+        self.channel_height = None
+        self.shape_changed = False
+        self.channel_creation_lock = threading.Lock()
 
     #Thread-safe pv creation
     def create_pv(self, name, **args):
-        if epics.ca.current_context() is None:
-            try:
-                 if epics.ca.initial_context is None:
-                     _logger.info("Creating inital EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
-                     epics.ca.initialize_libca()
-                 else:
-                     # TODO: using epics.ca.use_initial_context() generates a segmentation fault
-                     #_logger.info("Using initial EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
-                     #epics.ca.use_initial_context()
-                     _logger.info("Creating EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
-                     epics.ca.create_context()
-            except:
-                _logger.warning("Error creating PV context: " + str(sys.exc_info()[1]))
+        with self.channel_creation_lock:
+            if epics.ca.current_context() is None:
+                try:
+                     if epics.ca.initial_context is None:
+                         _logger.info("Creating initial EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
+                         epics.ca.initialize_libca()
+                     else:
+                         # TODO: using epics.ca.use_initial_context() generates a segmentation fault
+                         #_logger.info("Using initial EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
+                         #epics.ca.use_initial_context()
+                         _logger.info("Creating EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
+                         epics.ca.create_context()
+                except:
+                    _logger.warning("Error creating PV context: " + str(sys.exc_info()[1]))
         return epics.PV(name, **args)
+
+    def caget(self, channel_name, timeout=config.EPICS_TIMEOUT, as_string=True):
+        channel = self.create_pv(channel_name)
+        try:
+            ret = channel.get(timeout=timeout, as_string=as_string)
+            if ret is None:
+                _logger.info("Error getting channel %s for camera %s" % (channel_name, self.camera_config.get_source()))
+            return ret
+        finally:
+            channel.disconnect()
+
+    def connect_monitored_channel(self, suffix):
+        ret = self.create_pv(self.camera_config.get_source() + suffix, auto_monitor=True)
+        ret.wait_for_connection(config.EPICS_TIMEOUT)
+        if not ret.connected:
+            raise RuntimeError("Could not connect to: {}".format(ret.pvname))
+        return ret
 
     def verify_camera_online(self):
         camera_prefix = self.camera_config.get_source()
         camera_init_pv = camera_prefix + config.EPICS_PV_SUFFIX_STATUS
 
-        channel_init = self.create_pv(camera_init_pv)
-        channel_init_value = channel_init.get(timeout=config.EPICS_TIMEOUT, as_string=True)
-        channel_init.disconnect()
-
+        channel_init_value = self.caget(camera_init_pv, as_string=True)
         if channel_init_value != 'INIT':
-            raise RuntimeError(("Camera with prefix %s not online - Status %s" % (camera_prefix, channel_init_value)))
+            if channel_init_value is None:
+                raise RuntimeError(("Camera with prefix %s is offline - Status %s" % (camera_prefix, channel_init_value)))
+            else:
+                raise RuntimeError(("Camera with prefix %s is not initialized - Status %s" % (camera_prefix, channel_init_value)))
 
-    def _collect_camera_settings(self):
-        # Retrieve with and height of cam_server image.
-        camera_width_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_WIDTH
-        camera_height_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_HEIGHT
-
-        _logger.debug("Checking camera WIDTH '%s' and HEIGHT '%s' PV." % (camera_width_pv, camera_height_pv))
-
-        channel_width = self.create_pv(camera_width_pv)
-        self.width_raw = int(channel_width.get(timeout=config.EPICS_TIMEOUT))
-        if not self.width_raw:
+    def _update_shape(self):
+        value = self.channel_width.get(timeout=config.EPICS_TIMEOUT)
+        if not value:
             raise RuntimeError("Could not fetch width for cam_server:{}".format(self.camera_config.get_source()))
-        channel_width.disconnect()
+        self.width_raw = int(value)
 
-        channel_height = self.create_pv(camera_height_pv)
-        self.height_raw = int(channel_height.get(timeout=config.EPICS_TIMEOUT))
-        if not self.height_raw:
+        value = self.channel_height.get(timeout=config.EPICS_TIMEOUT)
+        if not value:
             raise RuntimeError("Could not fetch height for cam_server:{}".format(self.camera_config.get_source()))
-        channel_height.disconnect()
+        self.height_raw = int(value)
+
+    def _collect_camera_settings(self   ):
+        def _width_callback(value, timestamp, status, **kwargs):
+            if (self.width_raw is not None) and (self.width_raw!=value):
+                _logger.warning("Camera %s width changed: %d -> %d " % (self.camera_config.get_source(), self.width_raw, value))
+                self.width_raw = int(value)
+                self.shape_changed = True
+
+        def _height_callback(value, timestamp, status, **kwargs):
+            if (self.height_raw is not None) and (self.height_raw!=value):
+                _logger.warning("Camera %s height changed: %d -> %d " % (self.camera_config.get_source(), self.height_raw, value))
+                self.height_raw = int(value)
+                self.shape_changed = True
+
+        # Retrieve with and height of cam_server image.
+        if self.channel_width is None:
+            self.channel_width = self.connect_monitored_channel(config.EPICS_PV_SUFFIX_WIDTH)
+            self.channel_width.add_callback(_width_callback)
+
+        if self.channel_height is None:
+            self.channel_height = self.connect_monitored_channel(config.EPICS_PV_SUFFIX_HEIGHT)
+            self.channel_height.add_callback(_height_callback)
+
+        self._update_shape()
 
     def connect(self):
-
         self.verify_camera_online()
         self._collect_camera_settings()
-
         # Connect image channel
-        self.channel_image = self.create_pv(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_IMAGE, auto_monitor=True)
-        self.channel_image.wait_for_connection(config.EPICS_TIMEOUT)
-
-        if not self.channel_image.connected:
-            raise RuntimeError("Could not connect to: {}".format(self.channel_image.pvname))
+        self.channel_image = self.connect_monitored_channel(config.EPICS_PV_SUFFIX_IMAGE)
 
     def disconnect(self):
         self.clear_callbacks()
-
         if self.channel_image:
-            self.channel_image.disconnect()
-
-        self.channel_image = None
+            try:
+                self.channel_image.disconnect()
+            finally:
+                self.channel_image = None
+        if self.channel_width:
+            try:
+                self.channel_width.disconnect()
+            finally:
+                self.channel_width = None
+        if self.channel_height:
+            try:
+                self.channel_height.disconnect()
+            finally:
+                self.channel_height = None
 
     def add_callback(self, callback_function):
 
@@ -101,12 +143,12 @@ class CameraEpics:
             image = self._get_image(value)
             if image is not None:
                 try:
-                    callback_function(image, timestamp)
+                    callback_function(image, timestamp, self.shape_changed)
                 except:
                     _logger.info("Error getting image from camera %s: %s" % (self.camera_config.get_source(), sys.exc_info()[1]))
+                self.shape_changed = False
             else:
                 _logger.debug("Null image read from camera %s" % (self.camera_config.get_source()))
-
 
         self.channel_image.add_callback(_callback)
 
@@ -115,8 +157,17 @@ class CameraEpics:
         if value is None:
             return None
 
+        size = self.width_raw * self.height_raw
+        if value.size != size:
+            if value.size < size:
+                _logger.warning("Image array too small: %d -  shape: %dx%d [%s]." % (
+                value.size, self.width_raw,  self.height_raw, self.camera_config.get_source()))
+                return None
+            else:
+                value = value[:(size)]
+
         # Shape image
-        value = value[:(self.width_raw * self.height_raw)].reshape((self.height_raw, self.width_raw))
+        value = value.reshape((self.height_raw, self.width_raw))
 
         # Return raw image without any corrections
         if raw:
@@ -160,6 +211,10 @@ class CameraEpics:
     def clear_callbacks(self):
         if self.channel_image:
             self.channel_image.clear_callbacks()
+        if self.channel_width:
+            self.channel_width.clear_callbacks()
+        if self.channel_height:
+            self.channel_height.clear_callbacks()
 
     def get_x_y_axis(self):
 

@@ -31,6 +31,9 @@ CAMERA_BSREAD_SCALAR_COMPRESSION = None
 # Default interval for simulation camera.
 DEFAULT_CAMERA_SIMULATION_INTERVAL = 0.1
 
+# Number of image format error before rising exception
+FORMAT_ERROR_COUNT = 10
+
 #####################
 # Pipeline settings #
 #####################

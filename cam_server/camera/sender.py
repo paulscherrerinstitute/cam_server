@@ -8,8 +8,7 @@ from cam_server import config
 from cam_server.camera.source.common import transform_image
 from cam_server.utils import set_statistics, init_statistics, MaxLenDict
 
-from threading import Thread, RLock
-#from epics.ca import CAThread
+from threading import Thread, RLock, Lock
 
 _logger = getLogger(__name__)
 
@@ -65,7 +64,6 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     :param port: Port to use to bind the output stream.
     """
     sender = None
-
     try:
         init_statistics(statistics)
 
@@ -112,10 +110,12 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
 
         process_parameters()
 
-        def collect_and_send(image, timestamp):
+        def collect_and_send(image, timestamp, shape_changed = False):
             nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
 
-            # Data to be sent over the stream.
+            if shape_changed:
+                process_parameters()
+
             data = {"image": image,
                     "timestamp": timestamp,
                     "width": x_size,
@@ -134,7 +134,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
 
             while not parameter_queue.empty():
                 new_parameters = parameter_queue.get()
-                camera.camera_config.parameter_queue(new_parameters)
+                camera.camera_config.set_configuration(new_parameters)
                 process_parameters()
 
         camera.add_callback(collect_and_send)
@@ -173,6 +173,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
     camera_streams = []
     threaded = False
     message_buffer, message_buffer_send_thread, message_buffer_lock = None, None, None
+    reconfigure_lock = Lock()
 
     try:
         init_statistics(statistics)
@@ -189,6 +190,30 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             nonlocal x_size, y_size, x_axis, y_axis
             x_axis, y_axis = camera.get_x_y_axis()
             x_size, y_size = camera.get_geometry()
+
+        def check_changes():
+            if camera.shape_changed:
+                process_parameters()
+                camera.shape_changed = False
+            while not parameter_queue.empty():
+                new_parameters = parameter_queue.get()
+                camera.camera_config.set_configuration(new_parameters)
+                process_parameters()
+
+        def data_change_callback(channels):
+            nonlocal reconfigure_lock
+            if reconfigure_lock.locked():
+                #If a thread is updating properties already, wait for it to finish and return
+                reconfigure_lock.acquire()
+                reconfigure_lock.release()
+            else:
+                reconfigure_lock.acquire()
+                try:
+                    camera._update_shape()
+                    process_parameters()
+                    _logger.warning("Image shape changed: %dx%d [%s]." % (x_size, y_size, camera.get_name()))
+                finally:
+                    reconfigure_lock.release()
 
         def message_buffer_send_task(message_buffer, stop_event, message_buffer_lock):
             nonlocal sender
@@ -227,10 +252,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         last_pid = pulse_id
                     if size == 0:
                         time.sleep(0.001)
-                        while not parameter_queue.empty():
-                            new_parameters = parameter_queue.get()
-                            camera.camera_config.set_configuration(new_parameters)
-                            process_parameters()
+                        check_changes()
 
                 _logger.info("stop_event set to send thread [%s]" % (camera.get_name(),))
             except Exception as e:
@@ -287,9 +309,9 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
 
 
         if not threaded:
-
             for i in range(connections):
-                stream = camera.get_stream()
+                stream = camera.get_stream(data_change_callback=data_change_callback)
+                stream.format_error_counter = 0
                 camera_streams.append(stream)
                 stream.connect()
 
@@ -357,16 +379,31 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     return False
                 data = camera_stream.receive()
 
+                def on_format_error():
+                    camera_stream.format_error_counter = camera_stream.format_error_counter + 1
+                    _logger.warning(
+                        "Invalid image format: retry %d of %d [%s]" % (
+                        camera_stream.format_error_counter, config.FORMAT_ERROR_COUNT, camera.get_name()))
+                    if camera_stream.format_error_counter >= config.FORMAT_ERROR_COUNT:
+                        raise Exception("Invalid image format")
+
                 if data is not None:
                     image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
-                    # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
-                    image = transform_image(image, camera.camera_config)
+                    if image is None:
+                        on_format_error()
+                        return True
+                    else:
+                        # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
+                        image = transform_image(image, camera.camera_config)
 
-                    # Numpy is slowest dimension first, but bsread is fastest dimension first.
-                    height, width = image.shape
-
-                    frame_shape = str(width) + "x" + str(height) + "x" + str(image.itemsize)
-                    total_bytes[index] = data.statistics.total_bytes_received
+                        # Numpy is slowest dimension first, but bsread is fastest dimension first.
+                        height, width = image.shape
+                        if (len(x_axis)!=width) or (len(y_axis)!=height):
+                            on_format_error()
+                            return True
+                        camera_stream.format_error_counter = 0
+                        frame_shape = str(width) + "x" + str(height) + "x" + str(image.itemsize)
+                        total_bytes[index] = data.statistics.total_bytes_received
 
                 with stats_lock:
                     set_statistics(statistics, sender, sum(total_bytes), 1 if data else 0, frame_shape)
@@ -431,11 +468,11 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         pass
                 _logger.info("Exit receive thread %d [%s]" % (index, camera.get_name()))
 
-
         receive_threads = []
         if threaded:
             for i in range(connections):
-                camera_stream = camera.get_stream()
+                camera_stream = camera.get_stream(data_change_callback=data_change_callback)
+                camera_stream.format_error_counter = 0
                 receive_thread = Thread(target=receive_task, args=(i, message_buffer, stop_event, message_buffer_lock, camera_stream))
                 receive_thread.start()
                 receive_threads.append(receive_thread)
@@ -447,10 +484,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 for i in range(len(camera_streams)):
                     if not process_stream(camera_streams[i], i):
                         break
-                while not parameter_queue.empty():
-                    new_parameters = parameter_queue.get()
-                    camera.camera_config.set_configuration(new_parameters)
-                    process_parameters()
+                check_changes()
 
         _logger.info("Stopping transceiver  [%s]" % (camera.get_name(),))
 
