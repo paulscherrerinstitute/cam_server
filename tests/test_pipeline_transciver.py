@@ -20,7 +20,7 @@ from tests import test_cleanup, get_simulated_camera
 
 class PipelineTransceiverTest(unittest.TestCase):
     def setUp(self):
-        self.host = "0.0.0.0"
+        self.host = "127.0.0.1"
         self.port = 8888
 
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -30,7 +30,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         self.process.start()
 
         # Give it some time to start.
-        sleep(0.5)
+        sleep(1.0)
 
         self.rest_api_endpoint = "http://%s:%s" % (self.host, self.port)
         self.client = CamClient(self.rest_api_endpoint)
@@ -87,7 +87,7 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         with self.assertRaises(SystemExit):
             processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
-                                12000, background_manager)
+                                12001, background_manager)
 
         x_size, y_size = get_simulated_camera().get_geometry()
         simulated_camera_shape = (y_size, x_size)
@@ -98,12 +98,13 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         def send():
             processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
-                                12000, background_manager)
+                                12001, background_manager)
 
         thread = Thread(target=send)
         thread.start()
 
-        with source(host="127.0.0.1", port=12000, mode=SUB, receive_timeout = 3000) as stream:
+        with source(host="127.0.0.1", port=12001, mode=SUB, receive_timeout = 3000) as stream:
+            import time
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
             self.assertTrue(numpy.array_equal(data.data.data["image"].value, numpy.zeros(shape=simulated_camera_shape)))
@@ -130,12 +131,12 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         def send():
             processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
-                                12000, background_manager)
+                                12002, background_manager)
 
         thread = Thread(target=send)
         thread.start()
 
-        with source(host="127.0.0.1", port=12000, mode=SUB, receive_timeout = 3000) as stream:
+        with source(host="127.0.0.1", port=12002, mode=SUB, receive_timeout = 3000) as stream:
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
 
@@ -196,14 +197,14 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         def send():
             store_pipeline(stop_event, statistics, parameter_queue, self.client,
-                           pipeline_config, 12000, MockBackgroundManager())
+                           pipeline_config, 12003, MockBackgroundManager())
 
         thread = Thread(target=send)
         thread.start()
 
         sleep(0.5)
 
-        with source(host="127.0.0.1", port=12000, mode=PULL, receive_timeout = 3000) as stream:
+        with source(host="127.0.0.1", port=12003, mode=PULL, receive_timeout = 3000) as stream:
             data = stream.receive()
             self.assertIsNotNone(data, "Receiving timeout.")
 
@@ -227,12 +228,12 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         def send():
             processing_pipeline(stop_event, statistics, parameter_queue, self.client,
-                                pipeline_config, 12000, MockBackgroundManager())
+                                pipeline_config, 12004, MockBackgroundManager())
 
         thread = Thread(target=send)
         thread.start()
 
-        with source(host="127.0.0.1", port=12000, mode=SUB, receive_timeout = 3000) as stream:
+        with source(host="127.0.0.1", port=12004, mode=SUB, receive_timeout = 3000) as stream:
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
 

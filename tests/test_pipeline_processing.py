@@ -6,13 +6,14 @@ import numpy
 
 from cam_server.pipeline.configuration import PipelineConfig
 from cam_server.pipeline.data_processing.functions import calculate_slices, subtract_background
-from cam_server.pipeline.data_processing.processor import process_image
+from cam_server.pipeline.data_processing.default import process_image
 from cam_server.utils import sum_images
 from tests.helpers.factory import MockBackgroundManager
 from tests import get_simulated_camera
 
 
 class PipelineProcessingTest(unittest.TestCase):
+
     def test_noop_pipeline(self):
         pipeline_config = PipelineConfig("test_pipeline")
 
@@ -21,13 +22,7 @@ class PipelineProcessingTest(unittest.TestCase):
         x_axis, y_axis = simulated_camera.get_x_y_axis()
         parameters = pipeline_config.get_configuration()
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None)
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
         required_fields_in_result = ['x_center_of_mass', 'x_axis', 'y_axis', 'x_profile', 'y_fit_standard_deviation',
                                      'y_rms', 'timestamp', 'y_profile', 'image', 'max_value', 'x_fit_offset',
                                      'x_fit_gauss_function', 'y_center_of_mass', 'min_value', 'y_fit_mean',
@@ -66,13 +61,7 @@ class PipelineProcessingTest(unittest.TestCase):
             image_background_array = image_background_array.astype("uint16", copy=False)
             image = subtract_background(image, image_background_array)
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None)
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
 
         self.assertTrue(numpy.array_equal(result["image"], image),
                         "A zero background should not change the image.")
@@ -98,14 +87,7 @@ class PipelineProcessingTest(unittest.TestCase):
 
         expected_image = numpy.zeros(shape=(y_size, x_size))
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None
-                               )
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
 
         self.assertTrue(numpy.array_equal(result["image"], expected_image),
                         "The image should be all zeros - negative numbers are not allowed.")
@@ -124,15 +106,9 @@ class PipelineProcessingTest(unittest.TestCase):
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
         parameters = pipeline_config.get_configuration()
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None)
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
 
-        expected_image = numpy.zeros(shape=(y_size, x_size))
+        expected_image = numpy.zeros(shape=(y_size, x_size), dtype="uint16" )
         self.assertTrue(numpy.array_equal(result["image"], expected_image),
                         "An image of zeros should have been produced.")
 
@@ -144,13 +120,7 @@ class PipelineProcessingTest(unittest.TestCase):
         pipeline_config = PipelineConfig("test_pipeline", pipeline_parameters)
         parameters = pipeline_config.get_configuration()
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None)
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
 
         self.assertTrue(numpy.array_equal(result["image"], image),
                         "The image should be the same as the original image.")
@@ -174,17 +144,8 @@ class PipelineProcessingTest(unittest.TestCase):
         parameters = PipelineConfig("test_pipeline", pipeline_parameters).get_configuration()
         image_background_array = background_provider.get_background("white_background")
 
-        #TODO: this tests makes no sense any more, as the background is subtracted  before calling process_image
-        """
-        with self.assertRaisesRegex(RuntimeError, "Invalid background_image size "):
-            process_image(image=image,
-                          pulse_id=0,
-                          timestamp=time.time(),
-                          x_axis=x_axis,
-                          y_axis=y_axis,
-                          parameters=parameters,
-                          image_background_array=image_background_array)
-        """
+        with self.assertRaisesRegex(RuntimeError, "Invalid background_image size"):
+            process_image(image, 0, time.time(), x_axis, y_axis, parameters, image_background_array)
 
     def test_region_of_interest_default_values(self):
 
@@ -205,13 +166,7 @@ class PipelineProcessingTest(unittest.TestCase):
         slices_key_formats = set(["slice_%s_center_x", "slice_%s_center_y", "slice_%s_standard_deviation",
                                   "slice_%s_intensity"])
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None)
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
 
         self.assertFalse(any((x in result for x in good_region_keys)), 'There should not be good region keys.')
 
@@ -222,13 +177,7 @@ class PipelineProcessingTest(unittest.TestCase):
             }
         }).get_configuration()
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None)
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
 
         self.assertTrue(all((x in result for x in good_region_keys)), 'There should be good region keys.')
         self.assertTrue(all((result[x] is None for x in good_region_keys)), 'All values should be None.')
@@ -245,13 +194,7 @@ class PipelineProcessingTest(unittest.TestCase):
             }
         }).get_configuration()
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None)
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
 
         self.assertTrue(all((x in result for x in good_region_keys)), 'There should be good region keys.')
         self.assertTrue(all((x in result for x in (x % counter
@@ -274,8 +217,7 @@ class PipelineProcessingTest(unittest.TestCase):
 
             x_axis, y_axis = simulated_camera.get_x_y_axis()
 
-            return process_image(image=simulated_image, pulse_id=0, timestamp=time.time(), x_axis=x_axis, y_axis=y_axis,
-                                 parameters=parameters, bsdata=None)
+            return process_image(simulated_image, 0, time.time(), x_axis=x_axis, y_axis=y_axis, parameters=parameters)
 
         pipeline_configuration = {
             "camera_name": "simulation",
@@ -371,13 +313,7 @@ class PipelineProcessingTest(unittest.TestCase):
             "camera_name": "simulation"
         }).get_configuration()
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None)
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
 
         x_sum = result["x_profile"].sum()
         y_sum = result["y_profile"].sum()
@@ -429,13 +365,7 @@ class PipelineProcessingTest(unittest.TestCase):
         # Add signal in the center
         image[square_start:square_end, square_start:square_end] = 10000
 
-        result = process_image(image=image,
-                               pulse_id=0,
-                               timestamp=time.time(),
-                               x_axis=x_axis,
-                               y_axis=y_axis,
-                               parameters=parameters,
-                               bsdata=None)
+        result = process_image(image, 0, time.time(), x_axis, y_axis, parameters)
 
         x_profile = result["x_profile"]
         y_profile = result["y_profile"]

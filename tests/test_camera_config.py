@@ -57,17 +57,22 @@ class CameraConfigTest(unittest.TestCase):
         self.assertListEqual(instance_manager.config_manager.get_camera_list(), ["test_camera_1"],
                              "Test camera was not deleted successfully.")
     def test_aliases(self):
-        aliases = {'cam4': 'camera_example_4', 'camera4': 'camera_example_4', 'cam3': 'camera_example_3'}
+        aliases = {'cam4': 'camera_example_4', 'camera4': 'simulation4', 'cam3': 'camera_example_3', 'c4': 'simulation4',
+                   'c2': 'simulation2', 'camera2': 'simulation2', 'c1': 'simulation', 'camera1': 'simulation'}
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         config_base = os.path.join(test_base_dir, "camera_config/")
         config_manager = CameraConfigManager(config_provider=ConfigFileStorage(config_base))
+        print (config_manager.get_camera_aliases())
         self.assertDictEqual(config_manager.get_camera_aliases(), aliases,"Aliases not as expected")
 
     def test_groups(self):
-        groups = {'Photonics': ['camera_example_4', 'camera_example_3'], 'Test': ['camera_example_4'], 'Electrons': ['camera_example_2']}
+        groups = {'Photonics': ['camera_example_4', 'camera_example_3', 'simulation4', 'simulation2'],
+                  'Test': ['camera_example_4', 'simulation4', 'simulation2', 'simulation'], 'Electrons': ['camera_example_2', 'simulation']}
+
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         config_base = os.path.join(test_base_dir, "camera_config/")
         config_manager = CameraConfigManager(config_provider=ConfigFileStorage(config_base))
+        print (config_manager.get_camera_groups())
         self.assertDictEqual(config_manager.get_camera_groups(), groups,"Groups not as expected")
 
     def test_load_camera(self):

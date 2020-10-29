@@ -108,7 +108,7 @@ class CameraClientTest(unittest.TestCase):
         self.assertTrue("testing_camera" not in self.client.get_cameras(), "Testing camera should not be present.")
 
         # Test if it fails quickly enough.
-        with self.assertRaisesRegex(ValueError, "Camera with prefix EPICS_example_1 not online - Status None"):
+        with self.assertRaisesRegex(ValueError, "Camera with prefix EPICS_example_1 is offline - Status None"):
             self.client.get_instance_stream("camera_example_1")
 
         self.assertTrue(self.client.is_camera_online("simulation"), "Simulation should be always online")
