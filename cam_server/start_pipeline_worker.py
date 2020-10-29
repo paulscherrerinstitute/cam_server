@@ -55,6 +55,7 @@ def main():
     parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
     parser.add_argument('-w', '--web_server', default=config.DEFAULT_WEB_SERVER)
     parser.add_argument('-a', '--web_server_args', default="")
+    parser.add_argument('-x', '--abort_on_error', default=True)
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
@@ -63,6 +64,8 @@ def main():
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
     initialize_api_logger(arguments.log_level)
+    if arguments.abort_on_error is not None:
+        config.ABORT_ON_ERROR = str(arguments.abort_on_error).lower() == "true"
     start_pipeline_worker(arguments.interface, arguments.port,
                           arguments.background_base,
                           arguments.scripts_base,

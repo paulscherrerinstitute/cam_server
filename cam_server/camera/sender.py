@@ -51,7 +51,7 @@ def get_buffer_logs(camera):
     try:
           return str(buffer_logs).lower() == "true"
     except:
-        _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (camera.get_name(),))
+        pass
     return True
 
 def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
@@ -436,7 +436,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     "y_axis": y_axis,
                     "timestamp": timestamp
                 }
-                #print (pulse_id)
                 if threaded:
                     with message_buffer_lock:
                         message_buffer[pulse_id]= (data, timestamp)

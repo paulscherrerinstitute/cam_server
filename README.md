@@ -362,6 +362,8 @@ pipeline is added to the output bsread stream in the
 - **bsread_mode** (Default _None_): "PULL"(default if bsread_address is defined ) or "SUB" (default if bsread_address is not defined )
 - **bsread_image_buf** (Default _1000_): Size of image buffer to merge with bsread data.
 - **bsread_data_buf** (Default _1000_): Size of data buffer to merge with image data. 
+- **processing_threads** (Default _None_): Number of  processing threads. If greater than 0 then the processing is parallelized.
+- **tolerate_errors** (Default _False_): If false (default) the pipeline stops upon errors during processing. 
 
 ##### Configuration parameters for pipeline\_type = _'stream'_    
 - **bsread_address** (Default _None_): Source of bsread data. 

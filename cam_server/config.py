@@ -72,6 +72,9 @@ PIPELINE_TYPE_PROCESSING = "processing"
 PIPELINE_TYPE_STORE = "store"
 PIPELINE_TYPE_STREAM = "stream"
 
+
+ABORT_ON_ERROR = True
+
 ################
 # IPC settings #
 ################
