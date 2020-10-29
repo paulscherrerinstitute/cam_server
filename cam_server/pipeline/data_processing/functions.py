@@ -1,4 +1,4 @@
-import tempfile
+import io
 from logging import getLogger
 
 import numpy
@@ -6,6 +6,7 @@ import scipy
 import scipy.misc
 import scipy.optimize
 import scipy.ndimage
+from PIL import Image
 
 from matplotlib import cm
 
@@ -377,8 +378,11 @@ def get_png_from_image(image_raw_bytes, scale=None, min_value=None, max_value=No
                          "See http://matplotlib.org/examples/color/colormaps_reference.html for available colormaps." %
                          colormap_name)
 
-    n_image = scipy.misc.toimage(image)
+    n_image = Image.fromarray(image)
 
+    """
+    import tempfile
+    #n_image = scipy.misc.toimage(image)
     tmp_file = tempfile.TemporaryFile()
 
     # https://github.com/python-pillow/Pillow/issues/1211
@@ -390,6 +394,11 @@ def get_png_from_image(image_raw_bytes, scale=None, min_value=None, max_value=No
     tmp_file.seek(0)
     content = tmp_file.read()
     tmp_file.close()
+    """
+
+    with io.BytesIO() as output:
+        n_image.save(output, "png", compress_level=0)
+        content = output.getvalue()
 
     return content
 
