@@ -128,14 +128,14 @@ class InstanceManager(object):
             self.delete_stopped_instance(instance_name)
         return instance_name in self.instances
 
-        if instance_name not in self.instances:
-            raise ValueError("Instance '%s' does not exist." % instance_name)
-        return self.instances[instance_name]
-
     def get_instance_stream_port(self, instance_name):
         if instance_name in self.instances:
             self.instances[instance_name].stream_port
 
+    def _get_instance(self, instance_name):
+        if instance_name not in self.instances:
+            raise ValueError("Instance '%s' does not exist." % instance_name)
+        return self.instances[instance_name]
 
     def get_instance(self, instance_name):
         """
@@ -145,12 +145,10 @@ class InstanceManager(object):
         """
         if self.auto_delete_stopped:
             self.delete_stopped_instance(instance_name)
-        if instance_name not in self.instances:
-            raise ValueError("Instance '%s' does not exist." % instance_name)
-        return self.instances[instance_name]
+        return self._get_instance(instance_name)
 
     def get_instance_exit_code(self, instance_name):
-        instance = self.get_instance(instance_name)
+        instance = self._get_instance(instance_name)
         if not instance.process:
             raise ValueError("Instance '%s' process not created." % instance_name)
         return instance.process.exitcode
@@ -195,9 +193,7 @@ class InstanceManager(object):
 
 
     def delete_instance(self, instance_name):
-        if instance_name not in self.instances:
-            raise ValueError("Instance '%s' does not exist." % instance_name)
-
+        self._get_instance(instance_name)
         del self.instances[instance_name]
 
 
