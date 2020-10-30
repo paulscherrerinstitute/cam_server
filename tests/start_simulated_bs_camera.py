@@ -77,8 +77,8 @@ def tx_task(bind_address, input_folder, stop_event):
                 pid = int(time.time() * 100)
                 width = caget(CAMERA_NAME+ ":WIDTH")
                 height = caget(CAMERA_NAME + ":HEIGHT")
-                if shape is None:
-                    shape = [height, width]
+                #if shape is None:
+                shape = [height, width]
 
                 type = "uint16"
                 def get_array(xsize,ysize, type):

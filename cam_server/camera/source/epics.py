@@ -29,7 +29,6 @@ class CameraEpics:
         self.channel_image = None
         self.channel_width = None
         self.channel_height = None
-        self.shape_changed = False
         self.channel_creation_lock = threading.Lock()
 
     #Thread-safe pv creation
@@ -55,7 +54,7 @@ class CameraEpics:
         try:
             ret = channel.get(timeout=timeout, as_string=as_string)
             if ret is None:
-                _logger.info("Error getting channel %s for camera %s" % (channel_name, self.camera_config.get_source()))
+                raise Exception("Error getting channel %s for camera %s" % (channel_name, self.camera_config.get_source()))
             return ret
         finally:
             channel.disconnect()
@@ -70,54 +69,37 @@ class CameraEpics:
     def verify_camera_online(self):
         camera_prefix = self.camera_config.get_source()
         camera_init_pv = camera_prefix + config.EPICS_PV_SUFFIX_STATUS
-
-        channel_init_value = self.caget(camera_init_pv, as_string=True)
+        try:
+            channel_init_value = self.caget(camera_init_pv, as_string=True)
+        except:
+            raise RuntimeError(("Camera with prefix %s is offline" % (camera_prefix)))
         if channel_init_value != 'INIT':
-            if channel_init_value is None:
-                raise RuntimeError(("Camera with prefix %s is offline - Status %s" % (camera_prefix, channel_init_value)))
-            else:
-                raise RuntimeError(("Camera with prefix %s is not initialized - Status %s" % (camera_prefix, channel_init_value)))
+            raise RuntimeError(("Camera with prefix %s is not initialized - Status %s" % (camera_prefix, channel_init_value)))
 
-    def _update_shape(self):
-        value = self.channel_width.get(timeout=config.EPICS_TIMEOUT)
-        if not value:
-            raise RuntimeError("Could not fetch width for cam_server:{}".format(self.camera_config.get_source()))
-        self.width_raw = int(value)
+    def _collect_camera_settings(self):
+        if self.channel_width is not None:
+            value = self.channel_width.get(timeout=config.EPICS_TIMEOUT)
+            if not value:
+                raise RuntimeError("Could not fetch width for cam_server:{}".format(self.camera_config.get_source()))
+            self.width_raw = int(value)
+        else:
+            self.width_raw = int(self.caget(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_WIDTH))
 
-        value = self.channel_height.get(timeout=config.EPICS_TIMEOUT)
-        if not value:
-            raise RuntimeError("Could not fetch height for cam_server:{}".format(self.camera_config.get_source()))
-        self.height_raw = int(value)
-
-    def _collect_camera_settings(self   ):
-        def _width_callback(value, timestamp, status, **kwargs):
-            if (self.width_raw is not None) and (self.width_raw!=value):
-                _logger.warning("Camera %s width changed: %d -> %d " % (self.camera_config.get_source(), self.width_raw, value))
-                self.width_raw = int(value)
-                self.shape_changed = True
-
-        def _height_callback(value, timestamp, status, **kwargs):
-            if (self.height_raw is not None) and (self.height_raw!=value):
-                _logger.warning("Camera %s height changed: %d -> %d " % (self.camera_config.get_source(), self.height_raw, value))
-                self.height_raw = int(value)
-                self.shape_changed = True
-
-        # Retrieve with and height of cam_server image.
-        if self.channel_width is None:
-            self.channel_width = self.connect_monitored_channel(config.EPICS_PV_SUFFIX_WIDTH)
-            self.channel_width.add_callback(_width_callback)
-
-        if self.channel_height is None:
-            self.channel_height = self.connect_monitored_channel(config.EPICS_PV_SUFFIX_HEIGHT)
-            self.channel_height.add_callback(_height_callback)
-
-        self._update_shape()
+        if self.channel_height is not None:
+            value = self.channel_height.get(timeout=config.EPICS_TIMEOUT)
+            if not value:
+                raise RuntimeError("Could not fetch height for cam_server:{}".format(self.camera_config.get_source()))
+            self.height_raw = int(value)
+        else:
+            self.height_raw = int(self.caget(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_HEIGHT))
 
     def connect(self):
         self.verify_camera_online()
         self._collect_camera_settings()
         # Connect image channel
         self.channel_image = self.connect_monitored_channel(config.EPICS_PV_SUFFIX_IMAGE)
+        self.channel_width = self.connect_monitored_channel(config.EPICS_PV_SUFFIX_WIDTH)
+        self.channel_height = self.connect_monitored_channel(config.EPICS_PV_SUFFIX_HEIGHT)
 
     def disconnect(self):
         self.clear_callbacks()
@@ -138,19 +120,38 @@ class CameraEpics:
                 self.channel_height = None
 
     def add_callback(self, callback_function):
-
+        shape_changed = False
         def _callback(value, timestamp, status, **kwargs):
+            nonlocal shape_changed
             image = self._get_image(value)
             if image is not None:
+                changed = shape_changed
+                if changed:
+                    shape_changed = False
                 try:
-                    callback_function(image, timestamp, self.shape_changed)
+                    callback_function(image, timestamp, changed)
                 except:
                     _logger.info("Error getting image from camera %s: %s" % (self.camera_config.get_source(), sys.exc_info()[1]))
-                self.shape_changed = False
             else:
                 _logger.debug("Null image read from camera %s" % (self.camera_config.get_source()))
 
+        def _width_callback(value, timestamp, status, **kwargs):
+            nonlocal shape_changed
+            if (self.width_raw is not None) and (self.width_raw!=value):
+                _logger.warning("Camera %s width changed: %d -> %d " % (self.camera_config.get_source(), self.width_raw, value))
+                self.width_raw = int(value)
+                shape_changed = True
+
+        def _height_callback(value, timestamp, status, **kwargs):
+            nonlocal shape_changed
+            if (self.height_raw is not None) and (self.height_raw!=value):
+                _logger.warning("Camera %s height changed: %d -> %d " % (self.camera_config.get_source(), self.height_raw, value))
+                self.height_raw = int(value)
+                shape_changed = True
+
         self.channel_image.add_callback(_callback)
+        self.channel_width.add_callback(_width_callback)
+        self.channel_height.add_callback(_height_callback)
 
     def _get_image(self, value, raw=False):
 

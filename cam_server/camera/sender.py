@@ -191,15 +191,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             x_axis, y_axis = camera.get_x_y_axis()
             x_size, y_size = camera.get_geometry()
 
-        def check_changes():
-            if camera.shape_changed:
-                process_parameters()
-                camera.shape_changed = False
-            while not parameter_queue.empty():
-                new_parameters = parameter_queue.get()
-                camera.camera_config.set_configuration(new_parameters)
-                process_parameters()
-
         def data_change_callback(channels):
             nonlocal reconfigure_lock
             if reconfigure_lock.locked():
@@ -209,7 +200,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             else:
                 reconfigure_lock.acquire()
                 try:
-                    camera._update_shape()
+                    camera._collect_camera_settings()
                     process_parameters()
                     _logger.warning("Image shape changed: %dx%d [%s]." % (x_size, y_size, camera.get_name()))
                 finally:
@@ -252,7 +243,10 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         last_pid = pulse_id
                     if size == 0:
                         time.sleep(0.001)
-                        check_changes()
+                    while not parameter_queue.empty():
+                        new_parameters = parameter_queue.get()
+                        camera.camera_config.set_configuration(new_parameters)
+                        process_parameters()
 
                 _logger.info("stop_event set to send thread [%s]" % (camera.get_name(),))
             except Exception as e:
@@ -483,7 +477,10 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 for i in range(len(camera_streams)):
                     if not process_stream(camera_streams[i], i):
                         break
-                check_changes()
+                while not parameter_queue.empty():
+                    new_parameters = parameter_queue.get()
+                    camera.camera_config.set_configuration(new_parameters)
+                    process_parameters()
 
         _logger.info("Stopping transceiver  [%s]" % (camera.get_name(),))
 
