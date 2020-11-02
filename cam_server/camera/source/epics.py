@@ -76,17 +76,28 @@ class CameraEpics:
         if channel_init_value != 'INIT':
             raise RuntimeError(("Camera with prefix %s is not initialized - Status %s" % (camera_prefix, channel_init_value)))
 
+    def _has_cache(self, channel):
+        if channel is not None:
+            try:
+                if channel._args['value'] is not None:
+                    return True
+            except:
+                pass
+        return False
+
     def _collect_camera_settings(self):
-        if self.channel_width is not None:
-            value = self.channel_width.get(timeout=config.EPICS_TIMEOUT)
+        #If using channel.get without monitor there is an error creating the same channel in following processes
+        #For every get with no cache the channel must be disconnected after access
+        if self._has_cache(self.channel_width):
+            value = self.channel_width.get(timeout=config.EPICS_TIMEOUT, use_monitor=True)
             if not value:
                 raise RuntimeError("Could not fetch width for cam_server:{}".format(self.camera_config.get_source()))
             self.width_raw = int(value)
         else:
             self.width_raw = int(self.caget(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_WIDTH))
 
-        if self.channel_height is not None:
-            value = self.channel_height.get(timeout=config.EPICS_TIMEOUT)
+        if self._has_cache(self.channel_height):
+            value = self.channel_height.get(timeout=config.EPICS_TIMEOUT, use_monitor=True)
             if not value:
                 raise RuntimeError("Could not fetch height for cam_server:{}".format(self.camera_config.get_source()))
             self.height_raw = int(value)
@@ -177,16 +188,11 @@ class CameraEpics:
         return transform_image(value, self.camera_config)
 
     def get_image(self, raw=False):
-        # If we are not connected to the image channel, we have to do this first.
-        if self.channel_image is None:
-            self.connect()
-            value = self.channel_image.get()
-            self.disconnect()
-
-        # If we are already connected, just grab the next image.
+        if self._has_cache(self.channel_image):
+            # If we are already connected, just grab current image.
+            value = self.channel_image.get(use_monitor=True)
         else:
-            value = self.channel_image.get()
-
+            value = self.caget(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_IMAGE)
         return self._get_image(value, raw=raw)
 
     def get_geometry(self):
