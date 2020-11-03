@@ -504,7 +504,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             elif number_processing_threads > 0:
                 tx_buffer_lock = RLock()
                 processing_thread_index=0
-                thread_buffer_size = 10
+                thread_buffer_size = pipeline_parameters.get("thread_buffer_size", 10)
                 received_pids = deque()
                 tx_buffer = MaxLenDict(maxlen=(thread_buffer_size * number_processing_threads))
                 message_buffer_send_thread = Thread(target=threaded_processing_send_task, args=(tx_buffer, tx_buffer_lock, stop_event))
