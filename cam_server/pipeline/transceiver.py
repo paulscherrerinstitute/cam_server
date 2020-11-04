@@ -370,7 +370,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             _logger.info("Exit processing thread %d" % index)
 
     def threaded_processing_send_task(tx_buffer, tx_buffer_lock, stop_event):
-        nonlocal sender, pulse_id
+        nonlocal sender
         _logger.info("Start threaded processing send thread")
         sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
         #last_pid = None
@@ -379,6 +379,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         try:
             while not stop_event.is_set():
                 tx = None
+                popped = False
                 with tx_buffer_lock:
                     size = len(tx_buffer)
                     if (size > 0) and (len(received_pids) > 0):
@@ -389,9 +390,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         else:
                             if size >= tx_buffer.maxlen:
                                 received_pids.popleft()
+                                popped = True
                 if tx is not None:
                     send_data(sender, processed_data, global_timestamp, pulse_id, message_buffer)
-                else:
+                elif not popped:
                     time.sleep(0.001)
 
         except Exception as e:
