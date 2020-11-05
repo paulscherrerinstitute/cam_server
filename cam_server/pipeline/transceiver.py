@@ -16,7 +16,7 @@ from bsread.sender import Sender
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
 from cam_server.pipeline.data_processing.pre_processor import process_image as pre_process_image
-from cam_server.utils import get_host_port_from_stream_address, set_statistics, init_statistics, MaxLenDict
+from cam_server.utils import get_host_port_from_stream_address, set_statistics, on_message_sent, init_statistics, MaxLenDict
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
 from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number, subtract_background, \
     get_region_of_interest, apply_threshold, binning
@@ -69,8 +69,9 @@ def check_records(sender, pipeline_parameters):
         if sender.record_count >= records:
             raise ProcessingCompleated("Reached number of records: " + str(records))
 
-def send(sender, data, timestamp, pulse_id, pipeline_parameters):
+def send(sender, data, timestamp, pulse_id, pipeline_parameters, statistics):
     sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id)
+    on_message_sent(statistics)
     if pipeline_parameters.get("records"):
         check_records(sender, pipeline_parameters)
 
@@ -184,7 +185,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     time.sleep(0.01)
                 else:
                     (processed_data, timestamp, pulse_id) = message_buffer.popleft()
-                    send(sender, processed_data, timestamp, pulse_id, pipeline_parameters)
+                    send(sender, processed_data, timestamp, pulse_id, pipeline_parameters, statistics)
 
         except Exception as e:
             _logger.error("Error on message buffer send thread" + str(e))
@@ -427,7 +428,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             if message_buffer:
                 message_buffer.append((processed_data, global_timestamp, pulse_id))
             else:
-                send(sender, processed_data, global_timestamp, pulse_id, pipeline_parameters)
+                send(sender, processed_data, global_timestamp, pulse_id, pipeline_parameters, statistics)
             _logger.debug("Sent PID %d" % (pulse_id,))
 
     def process_image(image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=0):
@@ -689,6 +690,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
     parameters = pipeline_config.get_configuration()
     if parameters.get("no_client_timeout") is None:
         parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
+    module = parameters.get("module", None)
 
     try:
         init_statistics(statistics)
@@ -711,7 +713,6 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
         sender = Sender(port=output_stream_port, mode=PUSH,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
-
         sender.open(no_client_action=no_client_action, no_client_timeout=parameters["no_client_timeout"]
                     if parameters["no_client_timeout"] > 0 else sys.maxsize)
         # TODO: Register proper channels.
@@ -719,11 +720,19 @@ def store_pipeline(stop_event, statistics, parameter_queue,
         stop_event.clear()
 
         _logger.debug("Transceiver started. %s" % log_tag)
+        counter = 1
 
         while not stop_event.is_set():
             try:
                 data = source.receive()
                 set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes, 1 if data else 0)
+
+                if module:
+                    if counter < module:
+                        counter = counter + 1
+                        continue
+                    else:
+                        counter = 1
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
@@ -735,6 +744,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
                 timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
 
                 sender.send(data=forward_data, pulse_id=pulse_id, timestamp=timestamp)
+                on_message_sent(statistics)
 
             except:
                 _logger.exception("Could not process message. %s" % log_tag)
@@ -829,7 +839,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
                     except Exception as e:
                         _logger.error("Error processing bs buffer: " + str(e) + ". %s" % log_tag)
                         continue
-                    send(sender, stream_data, timestamp, pulse_id, parameters)
+                    send(sender, stream_data, timestamp, pulse_id, parameters, statistics)
                 except Exception as e:
                     _logger.exception("Could not process message: " + str(e) + ". %s" % log_tag)
                     stop_event.set()

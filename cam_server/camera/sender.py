@@ -6,7 +6,7 @@ from zmq import Again
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
-from cam_server.utils import set_statistics, init_statistics, MaxLenDict
+from cam_server.utils import set_statistics, on_message_sent, init_statistics, MaxLenDict
 
 from threading import Thread, RLock, Lock
 
@@ -129,6 +129,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
             try:
                 pulse_id = int(time.time() *100) if simulate_pulse_id else None
                 sender.send(data=data, pulse_id = pulse_id, timestamp=timestamp, check_data=False)
+                on_message_sent(statistics)
             except Again:
                 _logger.warning("Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera.get_name()))
 
@@ -225,6 +226,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                             pulse_id = pids[0]
                             if (last_pid) and (pulse_id <= last_pid):
                                 message_buffer.pop(pulse_id) #Remove ancient PIDs
+                                _logger.info("Removed ancient Pulse ID from queue: %d [%s]" % (pulse_id, camera.get_name()))
                             else:
                                 if not last_pid or \
                                      (pulse_id <= (last_pid+interval)) or (size > threshold):
@@ -234,6 +236,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                     tx = True
                     if tx:
                         sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
+                        on_message_sent(statistics)
                         if (last_pid):
                             expected = (last_pid + interval);
                             if pulse_id != expected:
@@ -435,7 +438,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         message_buffer[pulse_id]= (data, timestamp)
                 else:
                     sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
-
+                    on_message_sent(statistics)
             except Exception as e:
                 _logger.error("Could not process message: %s [%s]" % (str(e), camera.get_name()))
                 stop_event.set()

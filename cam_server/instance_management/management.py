@@ -219,6 +219,8 @@ class InstanceWrapper:
         self.statistics.update_timestamp = None
         self.statistics.throughput = 0
         self.statistics.frame_rate = 0
+        self.statistics.tx_count = 0
+        self.statistics.tx_rate = 0
         self.statistics.frame_shape = None
         self.statistics.timestamp = 0
         self.statistics.pid = ""
@@ -299,7 +301,8 @@ class InstanceWrapper:
                 "clients": self.statistics.clients,
                 "throughput": self.statistics.throughput,
                 "time": "" if not self.statistics.update_timestamp else time.strftime("%H:%M:%S", self.statistics.update_timestamp),
-                "frame_rate": self.statistics.frame_rate,
+                "rx_rate": self.statistics.frame_rate,
+                "tx_rate": self.statistics.tx_rate,
                 "pid": str(self.statistics.pid),
                 "cpu": self.statistics.cpu,
                 "memory": self.statistics.memory,

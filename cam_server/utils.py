@@ -79,6 +79,9 @@ def get_clients(sender):
     return 0
 
 
+def on_message_sent(statistics):
+    statistics.tx_count = statistics.tx_count + 1
+
 def set_statistics(statistics, sender, total_bytes, frame_count, frame_shape = None):
     now = time.time()
     timespan = now - statistics.timestamp
@@ -90,9 +93,11 @@ def set_statistics(statistics, sender, total_bytes, frame_count, frame_shape = N
         statistics._last_proc_total_bytes = total_bytes
         statistics.clients = get_clients(sender)
         statistics.throughput = (received_bytes / timespan) if (timespan > 0) else None
-        statistics.frame_rate = (statistics._frame_count / timespan) if (timespan > 0) else None
         statistics.frame_shape = frame_shape
+        statistics.frame_rate = (statistics._frame_count / timespan) if (timespan > 0) else None
         statistics._frame_count = 0
+        statistics.tx_rate = ((statistics.tx_count - statistics._tx_count) / timespan) if (timespan > 0) else None
+        statistics._tx_count = statistics.tx_count
         statistics.timestamp = now
         if psutil and statistics._process:
             statistics.cpu = statistics._process.cpu_percent()
@@ -109,6 +114,7 @@ def init_statistics(statistics):
     statistics.total_bytes = 0
     statistics.throughput = 0
     statistics.frame_rate = 0
+    statistics._tx_count = 0
     statistics.frame_shape = None
     statistics.pid = os.getpid()
     statistics.cpu = 0
