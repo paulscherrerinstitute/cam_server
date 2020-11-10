@@ -122,12 +122,10 @@ class CameraSimulation(CameraEpics):
 
                         for callback in self.callback_functions:
                              callback(image, timestamp)
-                        if timestamp < (next_img_timestamp + 1.0):
-                            #Try keep time base
-                            next_img_timestamp = next_img_timestamp + interval
-                        else:
-                            #But align if behind 1s
-                            next_img_timestamp = timestamp + interval
+                        #Try keep time base in long
+                        next_img_timestamp = next_img_timestamp + interval
+                        #Does not try to compensate lagging
+                        #next_img_timestamp = timestamp + interval
 
                     time.sleep(interval / 10)
 
