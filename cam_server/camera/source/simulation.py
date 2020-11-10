@@ -110,17 +110,26 @@ class CameraSimulation(CameraEpics):
 
         def call_callbacks(stop_event):
             image = None
+            next_img_timestamp=time.time()
+            interval = 1.0/self.frame_rate
             while not stop_event.is_set():
                 try:
-                    if (image is None) or (not self.static):
-                        image = self.get_image(self.raw)
                     # Same timestamp as used by PyEpics.
                     timestamp = time.time()
+                    if timestamp>=next_img_timestamp:
+                        if (image is None) or (not self.static):
+                            image = self.get_image(self.raw)
 
-                    for callback in self.callback_functions:
-                         callback(image, timestamp)
+                        for callback in self.callback_functions:
+                             callback(image, timestamp)
+                        if timestamp < (next_img_timestamp + 1.0):
+                            #Try keep time base
+                            next_img_timestamp = next_img_timestamp + interval
+                        else:
+                            #But align if behind 1s
+                            next_img_timestamp = timestamp + interval
 
-                    time.sleep(1.0/self.frame_rate)
+                    time.sleep(interval / 10)
 
                 except:
                     _logger.exception("Error occurred in camera simulation.")
