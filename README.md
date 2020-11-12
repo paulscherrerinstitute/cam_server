@@ -235,6 +235,8 @@ For camera configuration, all fields must be specified, and there is no defaulti
     - reference_marker_height (Default _100.0_): Height of reference markers.
     - angle_horizontal (Default _0.0_): Horizontal angle.
     - angle_vertical (Default _0.0_): Vertical angle.
+- **alias**: List of aliases for this camera (alternative ways to refer to the camera, must be unique).
+- **group**: List of camera groups this camera belongs to (so cameras can be listed by group).
 
 ##### Source type
 cam_server can connect to different type of sources. The type of source you select defines the meaning of the
