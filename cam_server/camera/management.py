@@ -2,7 +2,7 @@ import socket
 from logging import getLogger
 
 from cam_server import config
-from cam_server.camera.sender import get_sender_function
+from cam_server.camera.sender import get_sender_function, get_ipc_address
 from cam_server.camera.source.utils import get_source_class
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 
@@ -96,7 +96,11 @@ class CameraInstance(InstanceWrapper):
         if not hostname:
             hostname = socket.gethostname()
 
-        self.stream_address = "tcp://%s:%d" % (hostname, stream_port)
+        if self.get_configuration().get("protocol", "tcp") == "ipc":
+            self.stream_address = get_ipc_address(camera.get_name())
+        else:
+            self.stream_address = "tcp://%s:%d" % (hostname, stream_port)
+
 
     def get_info(self):
         return {"stream_address": self.stream_address,

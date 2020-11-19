@@ -21,6 +21,7 @@ from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_
 from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number, subtract_background, \
     get_region_of_interest, apply_threshold, binning
 
+from cam_server.ipc import IpcSource
 
 _logger = getLogger(__name__)
 
@@ -161,7 +162,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         nonlocal source, camera_host, camera_port
         camera_stream_address = cam_client.get_instance_stream(pipeline_config.get_camera_name())
         _logger.warning("Connecting to camera stream address %s. %s" % (camera_stream_address, log_tag))
-        source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
+        if camera_stream_address.startswith("ipc"):
+            source_host, source_port = camera_stream_address.split("//")[1], -1
+        else:
+            source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
         if source is None or source_host != camera_host or source_port != camera_port:
             if source:
                 try:
@@ -170,8 +174,12 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 except:
                     pass
 
-            source = Source(host=source_host, port=source_port,
-                            receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
+            if camera_stream_address.startswith("ipc"):
+                source = IpcSource(address=camera_stream_address,
+                                receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
+            else:
+                source = Source(host=source_host, port=source_port,
+                                receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
             source.connect()
             camera_host, camera_port = source_host, source_port
 

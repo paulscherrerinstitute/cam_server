@@ -8,6 +8,8 @@ from cam_server import config
 from cam_server.camera.source.common import transform_image
 from cam_server.utils import set_statistics, on_message_sent, init_statistics, MaxLenDict
 
+from cam_server.ipc import IpcSender
+
 from threading import Thread, RLock, Lock
 
 _logger = getLogger(__name__)
@@ -54,6 +56,15 @@ def get_buffer_logs(camera):
         pass
     return True
 
+def get_ipc_address(name):
+    return "ipc:///tmp/cam_server_icp_%s" % (name)
+
+def create_sender(camera, port):
+    if camera.camera_config.get_configuration().get("protocol", "tcp") == "ipc":
+        return IpcSender(address=get_ipc_address(camera.get_name()), mode=PUB, data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+    else:
+        return Sender(port=port, mode=PUB, data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+
 def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     """
     Start the camera stream and listen for image monitors. This function blocks until stop_event is set.
@@ -87,8 +98,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
         x_size = y_size = x_axis = y_axis = simulate_pulse_id = None
         camera.connect()
 
-        sender = Sender(port=port, mode=PUB,
-                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+        sender = create_sender(camera, port)
 
         # Register the bsread channels - compress only the image.
         sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
@@ -210,7 +220,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         def message_buffer_send_task(message_buffer, stop_event, message_buffer_lock):
             nonlocal sender
             _logger.info("Start message buffer send thread [%s]" % (camera.get_name(),))
-            sender = Sender(port=port, mode=PUB,data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+            sender = create_sender(camera, port)
             sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
             last_pid = None
             interval = 1
@@ -295,7 +305,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event, message_buffer_lock))
             message_buffer_send_thread.start()
         else:
-            sender = Sender(port=port, mode=PUB,data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+            sender = create_sender(camera, port)
             sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
 
 
