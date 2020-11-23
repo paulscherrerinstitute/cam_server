@@ -1,4 +1,5 @@
 import time
+import os
 from logging import getLogger
 
 from bsread.sender import Sender, PUB
@@ -57,7 +58,9 @@ def get_buffer_logs(camera):
     return True
 
 def get_ipc_address(name):
-    return "ipc:///tmp/cam_server_icp_%s" % (name)
+    if not os.path.exists(config.IPC_FEEDS_FOLDER):
+        os.makedirs(config.IPC_FEEDS_FOLDER)
+    return "ipc://" + config.IPC_FEEDS_FOLDER + "/cam_server_icp_%s" % (name)
 
 def create_sender(camera, port):
     if camera.camera_config.get_configuration().get("protocol", "tcp") == "ipc":

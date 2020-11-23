@@ -40,6 +40,7 @@ def main():
     parser.add_argument('-w', '--web_server', default=config.DEFAULT_WEB_SERVER)
     parser.add_argument('-a', '--web_server_args', default="")
     parser.add_argument('-e', '--epics_timeout', default=None)
+    parser.add_argument('-f', '--ipc_feed_folder', default="/tmp")
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
@@ -50,6 +51,8 @@ def main():
     initialize_api_logger(arguments.log_level)
     if arguments.epics_timeout is not None:
         config.EPICS_TIMEOUT = float(arguments.epics_timeout)
+    if arguments.ipc_feed_folder is not None:
+        config.IPC_FEEDS_FOLDER = str(arguments.ipc_feed_folder)
     start_camera_worker(arguments.interface, arguments.port, arguments.hostname, None,
                           int(arguments.mode), arguments.web_server, string_to_dict(arguments.web_server_args))
 

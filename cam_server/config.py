@@ -34,6 +34,9 @@ DEFAULT_CAMERA_SIMULATION_INTERVAL = 0.1
 # Number of image format error before rising exception
 FORMAT_ERROR_COUNT = 10
 
+#Format for creating shared memory files for IPC protocol.
+IPC_FEEDS_FOLDER = "/tmp"
+
 #####################
 # Pipeline settings #
 #####################
