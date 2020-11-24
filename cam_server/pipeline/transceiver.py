@@ -143,6 +143,12 @@ def get_function(pipeline_parameters, user_scripts_manager, log_tag):
         _logger.exception("Could not import function: %s. %s" % (str(name), log_tag))
         return None
 
+def create_source(camera_stream_address, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB):
+    source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
+    if camera_stream_address.startswith("ipc"):
+        return IpcSource(address=camera_stream_address,receive_timeout=receive_timeout, mode=mode)
+    else:
+        return Source(host=source_host, port=source_port, receive_timeout=receive_timeout, mode=mode)
 
 
 def processing_pipeline(stop_event, statistics, parameter_queue,
@@ -162,10 +168,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         nonlocal source, camera_host, camera_port
         camera_stream_address = cam_client.get_instance_stream(pipeline_config.get_camera_name())
         _logger.warning("Connecting to camera stream address %s. %s" % (camera_stream_address, log_tag))
-        if camera_stream_address.startswith("ipc"):
-            source_host, source_port = camera_stream_address.split("//")[1], -1
-        else:
-            source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
+        source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
         if source is None or source_host != camera_host or source_port != camera_port:
             if source:
                 try:
@@ -173,13 +176,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     source = None
                 except:
                     pass
-
-            if camera_stream_address.startswith("ipc"):
-                source = IpcSource(address=camera_stream_address,
-                                receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
-            else:
-                source = Source(host=source_host, port=source_port,
-                                receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
+            source = create_source(camera_stream_address)
             source.connect()
             camera_host, camera_port = source_host, source_port
 
@@ -711,10 +708,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
         _logger.debug("Connecting to camera stream address %s. %s" % (camera_stream_address, log_tag))
 
-        source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
-
-        source = Source(host=source_host, port=source_port, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB)
-
+        source = create_source(camera_stream_address)
         source.connect()
 
         _logger.debug("Opening output stream on port %d. %s", output_stream_port,  log_tag)

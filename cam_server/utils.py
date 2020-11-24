@@ -114,6 +114,7 @@ def init_statistics(statistics):
     statistics.total_bytes = 0
     statistics.throughput = 0
     statistics.frame_rate = 0
+    statistics.tx_count = 0
     statistics._tx_count = 0
     statistics.frame_shape = None
     statistics.pid = os.getpid()
