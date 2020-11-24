@@ -23,8 +23,7 @@
   "alias": ["c2", "camera2"],
   "binning_x":1,
   "binning_y":1,
- "binning_mean":false,
- "protocol": "ipc"
+ "binning_mean":false
 }
 
 

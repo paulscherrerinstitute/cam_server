@@ -7,7 +7,5 @@
  "image_slices": null,
  "pipeline_type": "processing",
  "camera_name": "camera_example_1",
- "name": "camera_example_1_sp",
- "no_client_timeout": 0,
- "camera_timeout": 0
+ "name": "camera_example_1_sp"
 }

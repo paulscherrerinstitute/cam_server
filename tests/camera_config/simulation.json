@@ -21,6 +21,7 @@
  "size_x": 400,
  "size_y": 200,
  "frame_rate":5,
+ "image_type": "static_raw",
  "group": ["Electrons","Test"],
  "alias": ["c1", "camera1"]
 }

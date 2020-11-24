@@ -524,7 +524,7 @@ class PipelineManagerTest(unittest.TestCase):
         instance_id_0, _ = instance_manager.create_pipeline(configuration={"camera_name": "simulation"})
         latest_statistics = instance_manager.get_instance(instance_id_0).get_statistics()
 
-        for stat in "total_bytes", "clients", "throughput", "frame_rate", "pid", "cpu", "memory":
+        for stat in "total_bytes", "clients", "throughput", "rx_rate", "tx_rate", "pid", "cpu", "memory":
             self.assertTrue(stat in latest_statistics)
 
         instance_manager.stop_all_instances()

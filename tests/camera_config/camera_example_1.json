@@ -2,9 +2,8 @@
  "camera_calibration": null,
  "mirror_x": true,
  "mirror_y": true,
- "rotate": 0,
+ "rotate": 1,
  "source_type": "epics",
  "name": "camera_example_1",
- "source": "EPICS_example_1",
-  "no_client_timeout": 0
+ "source": "EPICS_example_1"
 }
