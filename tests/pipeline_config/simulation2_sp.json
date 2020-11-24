@@ -2,14 +2,14 @@
  "image_background_enable": false,
  "image_background": null,
  "image_threshold": 1.0,
- "image_region_of_interest": null,
+ "image_region_of_interest": [454,383,375,225],
  "image_good_region": null,
  "image_slices": null,
  "pipeline_type": "processing",
  "camera_name": "simulation2",
  "name": "simulation2_sp",
  "function": "transparent",
- "max_frame_rate": 2.1,
+ "max_frame_rate": 100,
  "exclude": [],
  "include": [
   "image",
@@ -18,5 +18,6 @@
   "processing_parameters",
   "x_axis",
   "y_axis"
- ]
+ ],
+ "processing_threads": 4
 }

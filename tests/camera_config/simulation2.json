@@ -15,13 +15,16 @@
  "mirror_y": false,
  "rotate": 0,
  "source_type": "simulation",
- "name": "simulation",
+ "name": "simulation2",
  "source": "",
- "frame_rate":2,
- "size_x": 400,
- "size_y": 200,
+ "frame_rate":100,
+ "image_type": "static_beam",
   "group": ["Photonics","Test"],
-  "alias": ["c2", "camera2"]
+  "alias": ["c2", "camera2"],
+  "binning_x":1,
+  "binning_y":1,
+ "binning_mean":false,
+ "protocol": "ipc"
 }
 
 

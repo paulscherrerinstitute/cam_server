@@ -2,7 +2,7 @@
     "http://localhost:8880": {
         "expanding": true,
         "instances": [
-            "simulation2:4444"
+            "simulation4:4444"
         ]
     }
 }

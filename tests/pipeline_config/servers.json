@@ -5,7 +5,10 @@
         "expanding": true,
         "instances": [
             "simulation2_sp:5555",
-            "simulation_sp:5554"
+            "simulation_sp:5554",
+            "arrival_time_proc:5556",
+            "SLG-LCAM-C102_data:5556",
+            "SLG-LCAM-C102_img:5557"
         ]
     }
 }
