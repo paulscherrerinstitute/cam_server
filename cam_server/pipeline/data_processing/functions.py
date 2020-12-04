@@ -37,10 +37,13 @@ def is_number(var):
 
 
 def rotate(image, degrees, order = 1, mode = "0.0"):
-    output = chunk_copy(image)
-    scipy.ndimage.rotate(image, float(degrees), reshape=False, output=output, order=order,
-                         mode="constant" if is_number(mode) else mode,
-                         cval=float(mode) if is_number(mode)  else 0.0, prefilter=True)
+    if mode == "ortho":
+        output = numpy.rot90(image, int(degrees/90))
+    else:
+        output = chunk_copy(image)
+        scipy.ndimage.rotate(image, float(degrees), reshape=False, output=output, order=order,
+                             mode="constant" if is_number(mode) else mode,
+                             cval=float(mode) if is_number(mode)  else 0.0, prefilter=True)
     return output
 
 def get_region_of_interest(image, offset_x, size_x, offset_y, size_y):

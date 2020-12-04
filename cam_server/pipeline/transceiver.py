@@ -19,8 +19,7 @@ from cam_server.pipeline.data_processing.processor import process_image as defau
 from cam_server.pipeline.data_processing.pre_processor import process_image as pre_process_image
 from cam_server.utils import get_host_port_from_stream_address, set_statistics, on_message_sent, init_statistics, MaxLenDict
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
-from cam_server.pipeline.data_processing.functions import chunk_copy, rotate, is_number, subtract_background, \
-    get_region_of_interest, apply_threshold, binning
+from cam_server.pipeline.data_processing.functions import chunk_copy, is_number, binning
 
 from cam_server.ipc import IpcSource
 
@@ -601,6 +600,14 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
                 x_axis = data.data.data["x_axis"].value
                 y_axis = data.data.data["y_axis"].value
+                if pipeline_parameters.get("rotation") and (pipeline_parameters["rotation"]["mode"] == "ortho"):
+                    r = int(pipeline_parameters["rotation"]["angle"] / 90) % 4
+                    if r==1:
+                        x_axis,y_axis = y_axis, numpy.flip(x_axis)
+                    if r == 2:
+                        x_axis, y_axis = numpy.flip(x_axis), numpy.flip(y_axis)
+                    if r == 3:
+                        x_axis, y_axis = numpy.flip(y_axis), x_axis
                 function = get_function(pipeline_parameters, user_scripts_manager, log_tag)
                 global_timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
                 global_timestamp_float = data.data.data["timestamp"].value

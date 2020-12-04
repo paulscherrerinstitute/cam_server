@@ -349,8 +349,10 @@ pipeline is added to the output bsread stream in the
     - Rotation to be applied to image prior to running the pipeline:
         - angle (Default 0.0): Rotation angle in degrees.
         - order (Default 1): Order of the interpolation (1 to 5)
-        - mode (Default '0.0') Filling mode of empty pixels: ‘reflect’, ‘nearest’, ‘mirror’, ‘wrap’, or a 
-                               number for constant filling.
+        - mode (Default '0.0'): Rotation mode. By default preserves image shape and fills empty pixels with zeros.
+            - Rotation modes that  preserve image shape and axis scaling (the mode indicates how empty pixels are filled):
+              _reflect_, _nearest_, _mirror_, _wrap_, or a constant.                            
+            - _ortho_: orthogonal mode, preserve image pixels and adapt axis scaling. The angle must be a multiple of 90:                            
 - **downsampling** (Default _None_):
     - If defined the incoming stream is downsampled by the given factor.
 - **averaging** (Default _None_):
