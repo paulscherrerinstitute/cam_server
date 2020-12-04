@@ -18,6 +18,10 @@ import time
 import numpy
 import ast
 from bottle import ServerAdapter
+import threading
+import epics
+import sys
+
 
 _logger = getLogger(__name__)
 
@@ -285,3 +289,85 @@ def validate_web_server(web_server):
     if web_server=="cherrypy":
         return CherryPyV9Server
     return web_server
+
+
+#EPICS utilities for threading
+epics_lock = threading.RLock()
+
+def create_pv(name, **args):
+    with epics_lock:
+        if epics.ca.current_context() is None:
+            try:
+                if epics.ca.initial_context is None:
+                    _logger.info("Creating initial EPICS context for pid:" + str(os.getpid()) + " thread: " + str(
+                        threading.get_ident()))
+                    epics.ca.initialize_libca()
+                else:
+                    # TODO: using epics.ca.use_initial_context() generates a segmentation fault
+                    # _logger.info("Using initial EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
+                    # epics.ca.use_initial_context()
+                    _logger.info("Creating EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
+                    epics.ca.create_context()
+            except:
+                _logger.warning("Error creating PV context: " + str(sys.exc_info()[1]))
+    return epics.PV(name, **args)
+
+_thread_pvs = None
+
+def create_thread_pv(pv_name, wait=True):
+    global _thread_pvs, epics_lock
+    with epics_lock:
+        if _thread_pvs is None:
+            _thread_pvs = collections.OrderedDict()
+            epics.ca.clear_cache()
+        if threading.get_ident() not in _thread_pvs.keys():
+            _thread_pvs[threading.get_ident()] = {}
+        if pv_name in _thread_pvs[threading.get_ident()].keys():
+            return _thread_pvs[threading.get_ident()][pv_name]
+        pv = create_pv(pv_name)
+        _thread_pvs[threading.get_ident()][pv_name] = pv
+    if wait:
+        pv.wait_for_connection()
+    return pv
+
+def create_thread_pvs(pv_names):
+    if isinstance(pv_names, str):
+        pv_names = [pv_names]
+    ret = []
+    with epics_lock:
+        if (_thread_pvs is not None) and (threading.get_ident() in _thread_pvs.keys()):
+            pvs = _thread_pvs[threading.get_ident()]
+            for name, pv in pvs.items():
+                if not pv.connected:
+                    pass # Must manage reconnection?
+            return pvs.values()
+    for name in pv_names:
+        ret.append(create_thread_pv(name, False))
+    for pv in ret:
+        pv.wait_for_connection()
+    return ret
+
+def get_thread_pv(name):
+    global _thread_pvs, epics_lock
+    with epics_lock:
+        if _thread_pvs is not None:
+            if threading.get_ident() in _thread_pvs.keys():
+                ret = _thread_pvs[threading.get_ident()].get(name)
+                return ret
+
+def get_thread_pvs():
+    global _thread_pvs, epics_lock
+    with epics_lock:
+        if _thread_pvs is not None and threading.get_ident() in _thread_pvs.keys():
+                return _thread_pvs[threading.get_ident()]
+        return []
+
+def remove_thread_pvs():
+    with epics_lock:
+        for pv in get_thread_pvs():
+            try:
+                pv.disconnect()
+            except:
+                pass
+        if _thread_pvs is not None and threading.get_ident() in _thread_pvs.keys():
+            del _thread_pvs[threading.get_ident()]

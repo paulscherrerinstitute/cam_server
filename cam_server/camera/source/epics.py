@@ -8,6 +8,7 @@ from logging import getLogger
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
+from cam_server.utils import create_pv
 from cam_server.pipeline.data_processing.functions import binning
 
 _logger = getLogger(__name__)
@@ -31,26 +32,9 @@ class CameraEpics:
         self.channel_height = None
         self.channel_creation_lock = threading.Lock()
 
-    #Thread-safe pv creation
-    def create_pv(self, name, **args):
-        with self.channel_creation_lock:
-            if epics.ca.current_context() is None:
-                try:
-                     if epics.ca.initial_context is None:
-                         _logger.info("Creating initial EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
-                         epics.ca.initialize_libca()
-                     else:
-                         # TODO: using epics.ca.use_initial_context() generates a segmentation fault
-                         #_logger.info("Using initial EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
-                         #epics.ca.use_initial_context()
-                         _logger.info("Creating EPICS context for pid:" + str(os.getpid()) + " thread: " + str(threading.get_ident()))
-                         epics.ca.create_context()
-                except:
-                    _logger.warning("Error creating PV context: " + str(sys.exc_info()[1]))
-        return epics.PV(name, **args)
 
     def caget(self, channel_name, timeout=config.EPICS_TIMEOUT, as_string=True):
-        channel = self.create_pv(channel_name)
+        channel = create_pv(channel_name)
         try:
             ret = channel.get(timeout=timeout, as_string=as_string)
             if ret is None:
@@ -60,7 +44,7 @@ class CameraEpics:
             channel.disconnect()
 
     def connect_monitored_channel(self, suffix):
-        ret = self.create_pv(self.camera_config.get_source() + suffix, auto_monitor=True)
+        ret = create_pv(self.camera_config.get_source() + suffix, auto_monitor=True)
         ret.wait_for_connection(config.EPICS_TIMEOUT)
         if not ret.connected:
             raise RuntimeError("Could not connect to: {}".format(ret.pvname))
