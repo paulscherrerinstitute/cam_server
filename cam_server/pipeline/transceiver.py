@@ -6,7 +6,6 @@ import sys
 import os
 from collections import deque, OrderedDict
 from threading import Thread, Event, RLock
-from epics.ca import CAThread
 
 import numpy
 import json
@@ -502,7 +501,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         if image_with_stream:
             bs_buffer = deque(maxlen=pipeline_parameters["bsread_data_buf"] )
             bs_img_buffer = deque(maxlen=pipeline_parameters["bsread_image_buf"] )
-            bs_send_thread = CAThread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, dispatcher_parameters, stop_event))
+            bs_send_thread = Thread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, dispatcher_parameters, stop_event))
             bs_send_thread.start()
 
         else:
@@ -522,7 +521,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 for i in range(number_processing_threads):
                     thread_buffer = deque(maxlen=thread_buffer_size)
                     thread_buffers.append(thread_buffer)
-                    processing_thread = CAThread(target=process_thread_task, args=(thread_buffer, tx_buffer, tx_buffer_lock, stop_event, i))
+                    processing_thread = Thread(target=process_thread_task, args=(thread_buffer, tx_buffer, tx_buffer_lock, stop_event, i))
                     processing_threads.append(processing_thread)
                     processing_thread.start()
             else:
