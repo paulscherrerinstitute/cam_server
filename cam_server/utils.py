@@ -91,6 +91,7 @@ def set_statistics(statistics, sender, total_bytes, frame_count, frame_shape = N
     timespan = now - statistics.timestamp
     statistics.update_timestamp = time.localtime()
     statistics.total_bytes = total_bytes
+    statistics.rx_count = statistics.rx_count + frame_count
     statistics._frame_count = statistics._frame_count + frame_count
     if timespan > 1.0:
         received_bytes = total_bytes - statistics._last_proc_total_bytes
@@ -98,9 +99,9 @@ def set_statistics(statistics, sender, total_bytes, frame_count, frame_shape = N
         statistics.clients = get_clients(sender)
         statistics.throughput = (received_bytes / timespan) if (timespan > 0) else None
         statistics.frame_shape = frame_shape
-        statistics.frame_rate = (statistics._frame_count / timespan) if (timespan > 0) else None
+        statistics.frame_rate = (statistics._frame_count / timespan) if (timespan > 0) else 0
         statistics._frame_count = 0
-        statistics.tx_rate = ((statistics.tx_count - statistics._tx_count) / timespan) if (timespan > 0) else None
+        statistics.tx_rate = ((statistics.tx_count - statistics._tx_count) / timespan) if (timespan > 0) else 0
         statistics._tx_count = statistics.tx_count
         statistics.timestamp = now
         if psutil and statistics._process:
@@ -118,6 +119,7 @@ def init_statistics(statistics):
     statistics.total_bytes = 0
     statistics.throughput = 0
     statistics.frame_rate = 0
+    statistics.rx_count = 0
     statistics.tx_count = 0
     statistics._tx_count = 0
     statistics.frame_shape = None
