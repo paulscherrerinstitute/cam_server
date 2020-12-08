@@ -241,9 +241,12 @@ class Manager(ProxyBase):
         if config.get("image_background_enable"):
             image_background = config.get("image_background")
             if image_background:
-                # Check if the background can be loaded
-                image_array = self.background_manager.get_background(image_background)
-                server.set_background_image_bytes(image_background, image_array)
+                try:
+                    # Check if the background can be loaded
+                    image_array = self.background_manager.get_background(image_background)
+                    server.set_background_image_bytes(image_background, image_array)
+                except:
+                    _logger.error("Bad background file for %s: %s" % (str(config.get("name")),str(image_background)))
 
     def _check_script(self, server, config, instance_name=None):
         function = config.get("function")
