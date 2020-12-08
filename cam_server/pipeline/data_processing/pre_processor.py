@@ -1,5 +1,5 @@
 from logging import getLogger
-from cam_server.pipeline.data_processing.functions import rotate, subtract_background, \
+from cam_server.pipeline.data_processing.functions import rotate, subtract_background, subtract_background_signed, \
     get_region_of_interest, apply_threshold, binning
 
 _logger = getLogger(__name__)
@@ -18,6 +18,8 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_
             raise RuntimeError("Invalid background_image size")
         if parameters.get("image_background_enable") == "passive":
             parameters["background_data"] = image_background_array
+        elif parameters.get("image_background_enable") == "signed":
+            image = subtract_background_signed(image, image_background_array)
         else:
             image = subtract_background(image, image_background_array)
 

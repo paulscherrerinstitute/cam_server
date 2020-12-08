@@ -42,7 +42,10 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     return_value["x_fwhm"] = x_fwhm
     return_value["y_fwhm"] = y_fwhm
 
-    # Needed for config tr  aceability.
+    # If set in background subtraction passive mode, it cannot be serialized
+    if "background_data" in parameters:
+        del parameters["background_data"]
+    # Needed for config traceability.
     return_value["processing_parameters"] = json.dumps(parameters)
 
     # TODO Provide - Center of mass of profile

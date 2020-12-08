@@ -27,6 +27,13 @@ def subtract_background(image, background_image):
         image[mask_for_zeros] = 0
     return image
 
+def subtract_background_signed(image, background_image):
+    # We do not want negative numbers int the image.
+    image = image.astype("int32")
+    if background_image is not None:
+        numpy.subtract(image, background_image, image)
+    return image
+
 
 def is_number(var):
     try:
