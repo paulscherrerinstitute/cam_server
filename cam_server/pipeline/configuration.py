@@ -6,6 +6,7 @@ import copy
 import os
 from datetime import datetime
 from os.path import basename
+from cam_server.ipc import ipc_source
 from cam_server.utils import sum_images, get_host_port_from_stream_address
 from bsread import source, SUB
 
@@ -116,7 +117,7 @@ class BackgroundImageManager(object):
             host, port = get_host_port_from_stream_address(stream_address)
             accumulator_image = None
 
-            with source(host=host, port=port, mode=SUB) as stream:
+            with (ipc_source(address=stream_address, mode=SUB) if stream_address.startswith("ipc") else source(host=host, port=port, mode=SUB)) as stream:
                 for _ in range(n_images):
                     data = stream.receive()
                     image = data.data.data["image"].value

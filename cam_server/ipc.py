@@ -40,3 +40,18 @@ class IpcSender(Sender):
 
         # Update internal status
         self.status_stream_open = True
+
+
+# Support of "with" statement
+class ipc_source:
+
+    def __init__(self, address, config_port=None, conn_type=CONNECT, mode=None, queue_size=100,
+                 copy=True, receive_timeout=None):
+        self.source = IpcSource(address, config_port, conn_type, mode,  queue_size, copy, receive_timeout)
+
+    def __enter__(self):
+        self.source.connect()
+        return self.source
+
+    def __exit__(self, type, value, traceback):
+        self.source.disconnect()
