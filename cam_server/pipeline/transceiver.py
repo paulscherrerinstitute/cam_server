@@ -282,10 +282,12 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
             try:
                 background_array = background_manager.get_background(background_id)
+                parameters["image_background_ok"] = True
             except:
                 _logger.warning("Invalid background_id: %s. %s" % (background_id, log_tag))
-                if parameters.get("abort_on_error", config.ABORT_ON_ERROR):
-                    raise
+                #if parameters.get("abort_on_error", config.ABORT_ON_ERROR):
+                #    raise
+                parameters["image_background_ok"] = False
             if background_array is not None:
                 background_array = background_array.astype("uint16",copy=False)
 
