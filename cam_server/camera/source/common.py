@@ -21,6 +21,7 @@ def transform_image(image, camera_config):
 
     if camera_config.parameters["roi"]:
         offset_x, size_x, offset_y, size_y = camera_config.parameters["roi"]
+        offset_x, size_x, offset_y, size_y = int(offset_x), int(size_x), int(offset_y), int(size_y)
         image = image[offset_y:offset_y + size_y, offset_x:offset_x + size_x]
 
     background = camera_config.parameters.get("background_data")
