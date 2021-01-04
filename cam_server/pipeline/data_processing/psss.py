@@ -9,20 +9,19 @@ import scipy.signal
 import scipy.optimize
 import numba
 
-numba.set_num_threads(2)
+numba.set_num_threads(4)
 
 import epics
 
-
 _logger = getLogger(__name__)
 
-output_pv, center_pv, fwhm_pv, ymin_pv, ymax_pv, axis_pv  = None, None, None, None, None, None
+output_pv, center_pv, fwhm_pv, ymin_pv, ymax_pv, axis_pv = None, None, None, None, None, None
 roi = [0, 0]
 initialized = False
 
 
 @numba.njit(parallel=True)
-def get_spectrum (image, background):
+def get_spectrum(image, background):
     y = image.shape[0]
     x = image.shape[1]
 
@@ -30,15 +29,13 @@ def get_spectrum (image, background):
 
     for i in numba.prange(y):
         for j in range(x):
-            v = image[i,j]
-            b = background[i,j]
+            v = image[i, j]
+            b = background[i, j]
             if v > b:
                 v -= b
             else:
                 v = 0
-
             profile[j] += v
-
     return profile
 
 
@@ -106,6 +103,8 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
 
     if isinstance(background_image, numpy.ndarray):
         if background_image.shape != processing_image.shape:
+            _logger.info("Invalid background shape: %s instead of %s" % (
+            str(background_image.shape), str(processing_image.shape)))
             background_image = None
     else:
         background_image = None
@@ -117,7 +116,7 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     ymin, ymax = int(roi[0]), int(roi[1])
     if nrows >= ymax > ymin >= 0:
         if (nrows != ymax) or (ymin != 0):
-            processing_image = processing_image[ymin:ymax, :]
+            processing_image = processing_image[ymin: ymax, :]
             if background_image is not None:
                 background_image = background_image[ymin:ymax, :]
 
