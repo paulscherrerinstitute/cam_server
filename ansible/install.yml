@@ -7,12 +7,16 @@
       file: path=/cam_server_configuration/configuration/pipeline_config state=directory
       file: path=/cam_server_configuration/configuration/background_config state=directory
       file: path=/cam_server_configuration/configuration/user_scripts state=directory
+      file: path=/tmp/cam_server state=directory
 
     - name: Create camera_worker  systemd config file
       template: src=../docker/camera_worker.service dest=/etc/systemd/system/camera_worker.service owner=root group=root mode=0644
 
     - name: Create pipeline_worker systemd config file
       template: src=../docker/pipeline_worker.service dest=/etc/systemd/system/pipeline_worker.service owner=root group=root mode=0644
+
+    - name: Create server_tuning systemd config file
+      template: src=../docker/server_tuning.service dest=/etc/systemd/system/server_tuning.service owner=root group=root mode=0644
 
     - name: Create epics environment file
       template: src=./templates/camera_environment dest=/cam_server_configuration/camera_environment owner=root group=root mode=0644
