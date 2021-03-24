@@ -1,4 +1,6 @@
 from cam_server import __VERSION__
+from bottle import static_file
+import os
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -11,6 +13,14 @@ def register_rest_interface(app, instance_manager, api_root_address):
     :param instance_manager: Manager for camera instances.
     :param api_root_address: Prefix to put before commands, and after api prefix.
     """
+
+    @app.route('/')
+    def home():
+        return static_file("index_srv.html", os.path.dirname(__file__))
+
+    @app.route('/utils.js')
+    def utils():
+        return static_file("utils.js", os.path.dirname(__file__))
 
     @app.delete(api_root_address)
     def stop_all_instances():
@@ -52,4 +62,17 @@ def register_rest_interface(app, instance_manager, api_root_address):
         return {"state": "ok",
                 "status": "Version",
                 "version":  __VERSION__}
+
+    @app.get('/base')
+    def get_base():
+        """
+        Get proxy config.
+        :return: Configuration.
+        """
+
+        return {"state": "ok",
+                "status": "Base",
+                "base":  api_root_address}
+
+
 

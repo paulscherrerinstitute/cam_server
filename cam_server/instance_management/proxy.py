@@ -217,6 +217,12 @@ class ProxyBase:
         def home():
             return static_file("index.html", self._get_root())
 
+
+        @app.route('/utils.js')
+        def utils():
+            return static_file("utils.js", self._get_root())
+
+
     def get_status(self):
         def task(server):
             try:

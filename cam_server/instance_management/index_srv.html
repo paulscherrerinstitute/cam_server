@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Server Management</title>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script type="text/javascript" src="utils.js"></script>
+</head>
+<body>
+
+<script type="text/javascript">
+    var base = ''
+    function getBase(){
+        return  base
+    }
+
+    function deleteInstance(key){
+            $.delete(getBase() +"/" + key).error(function (xhr, textStatus, errorThrown) {
+            $("#scripterror").show()
+            $("#scripterror").html(xhr.responseText)
+        });
+    }
+
+    function deleteAllInstances(){
+            $.delete(getBase()).error(function (xhr, textStatus, errorThrown) {
+            $("#scripterror").show()
+            $("#scripterror").html(xhr.responseText)
+        });
+    }
+
+    function showLogs(){
+        window.open("/api/v1/logs/txt" );
+    }
+
+
+    //Adding $.delete and $.put functions
+    jQuery.each( [ "put", "delete" ], function( i, method ) {
+      jQuery[ method ] = function( url, data, callback, type ) {
+        if ( jQuery.isFunction( data ) ) {
+          type = type || callback;
+          callback = data;
+          data = undefined;
+        }
+
+        return jQuery.ajax({
+          url: url,
+          type: method,
+          dataType: type,
+          data: data,
+          success: callback
+        });
+      };
+    });
+
+
+
+    function update() {
+        $.get(getBase() + '/info', function (data) {
+            data = data["info"]
+            var info = data["active_instances"]
+            var servers = location.host
+            var version = data["version"]
+            var load = 0
+            var cpu = data["cpu"]
+            var memory = data["memory"]
+            var tx = data["tx"]
+            var rx = data["rx"]
+            var table = $("#servers_table")
+
+            if (load>=1000) {
+                load = "off"
+            }
+            if (getRows(table) == 0){
+                var row = appendTableRow(table, [servers, version, load,
+                    formatNum(cpu), formatNum(memory), formatNum(tx), formatNum(rx)])
+                var callback = 'onclick="showLogs()"'
+                row.append($('<td align="center"><button ' + callback + '>Logs</button></td>'))
+                var callback = 'onclick="deleteAllInstances()"'
+                row.append($('<td align="center"><button ' + callback + '>Stop</button></td>'))
+            } else {
+
+                setTableCell(servers , "servers_table", 0, 0)
+                setTableCell(version , "servers_table", 0, 1)
+                //setTableCell(load, "servers_table", 0, 2)
+                setTableCell(formatNum(cpu), "servers_table", 0, 3)
+                setTableCell(formatNum(memory), "servers_table", 0, 4)
+                setTableCell(formatNum(tx), "servers_table", 0, 5)
+                setTableCell(formatNum(rx), "servers_table", 0, 6)
+            }
+
+
+            var table = $("#instances_table")
+            clear(table)
+
+            $.each(info, function(key, value) {
+                //Compact display
+                for (var k in value["statistics"]) {
+                    var cur = value["statistics"][k]
+                    if(typeof cur == 'number'){
+                        value["statistics"][k] = formatNum(cur, false)
+                    }
+                }
+                //Save columns
+                if (value["camera_geometry"] != undefined) {
+                    value["statistics"]["geometry"] = value["camera_geometry"]
+                }
+                if (value["read_only"] != undefined) {
+                    value["statistics"]["read_only"] = value["read_only"]
+                }
+                value["statistics"]["camera"] = value["camera_name"]
+                value["statistics"]["start"] = dateToStr(value["last_start_time"])
+                var statistics = dictToStr(value["statistics"])
+                var config = dictToStr(value["config"])
+                var instance = {}
+                instance["name"] = key
+                instance["stream"] = value["stream_address"]
+                instance = dictToStr(instance)
+                var row = appendTableRow(table, [instance,statistics,config,])
+                var callback = 'onclick="deleteInstance(\'' + key + '\')"'
+                row.append($('<td align="center"><button ' + callback + '>Stop</button></td>'))
+                load = load+1
+            });
+
+        }).error(function (xhr, textStatus, errorThrown) {
+            $("#scripterror").show()
+            $("#scripterror").text(xhr.responseText)
+        });
+    }
+
+    function timer() {
+        if (base == ""){
+            $.get( '/base', function( data ) {
+                base = data["base"]
+                timer();
+            });
+        } else {
+            if ($("#servers").is(":visible")) {
+                update();
+            }
+        }
+        window.setTimeout("timer()",2000);
+    }
+
+    $(document).ready(function(){
+        //$("#scripterror").hide()
+        //update()
+        timer()
+    });
+
+
+
+</script>
+
+
+
+<div id="msgid">
+</div>
+
+<p>
+<section>
+ <h1>
+Server
+ </h1>
+
+<div id="servers">
+<table id="servers_table"  border="1" width="100%" >
+  <thead>
+    <tr>
+      <th width="20%">Host</th>
+      <th width="10%">Ver</th>
+      <th width="10%">Load</th>
+      <th width="10%">CPU</th>
+      <th width="10%">Mem</th>
+      <th width="10%">TX</th>
+      <th width="10%">RX</th>
+      <th width="10%">Logs</th>
+      <th width="10%">Stop</th>
+    </tr>
+  </thead>
+  <tbody id="servers_table_rows">
+  </tbody>
+</table>
+</div>
+</section>
+
+<p><br>
+<section>
+ <h1>
+Instances
+</h1>
+<div id="instances">
+<table id="instances_table"  border="1" width="100%">
+  <thead>
+    <tr>
+        <th width="33%">Instance</th>
+        <th width="33%">Info</th>
+        <th width="33%">Config</th>
+        <th width="1%">Stop</th>
+    </tr>
+  </thead>
+  <tbody id="instances_table_rows">
+  </tbody>
+</table>
+</div>
+</section>
+
+<p><br>
+<section>
+    <div id="scripterror" style="color:red">
+    </div>
+</section>
+
+<p>
+</body>
+</html>
+
