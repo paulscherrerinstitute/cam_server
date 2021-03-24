@@ -239,11 +239,16 @@ class CameraEpics:
                 return center_x, center_y
 
             def _calculate_pixel_size():
-                size_y = reference_marker_height / (lower_right_y - upper_left_y)
-                size_y *= numpy.cos(vertical_camera_angle * numpy.pi / 180)
+                try:
+                    size_y = reference_marker_height / (lower_right_y - upper_left_y)
+                    size_y *= numpy.cos(vertical_camera_angle * numpy.pi / 180)
 
-                size_x = reference_marker_width / (lower_right_x - upper_left_x)
-                size_x *= numpy.cos(horizontal_camera_angle * numpy.pi / 180)
+                    size_x = reference_marker_width / (lower_right_x - upper_left_x)
+                    size_x *= numpy.cos(horizontal_camera_angle * numpy.pi / 180)
+                except:
+                    _logger.error("Invalid calibration for camera %s" % (self.camera_config.get_source()))
+                    # Dont't abort pipeline if calibration is invalid (division by zero)
+                    size_x, size_y = 1.0, 1.0
 
                 return size_x, size_y
 
@@ -272,7 +277,7 @@ class CameraEpics:
             background_array = numpy.load(background_filename)
             if background_array is not None:
                 if ((background_array.shape[1] != x_axis.shape[0]) or (background_array.shape[0] != y_axis.shape[0])):
-                    _logger.info("Invalid background shape for camera %s: %s" % (self.camera_config.get_source(background_array.shape), str()))
+                    _logger.info("Invalid background shape for camera %s: %s" % (self.camera_config.get_source(), str(background_array.shape)))
                 else:
                     self.camera_config.parameters["background_data"] = background_array.astype("uint16", copy=False)
 
