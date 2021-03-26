@@ -470,6 +470,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
     source, sender = None, None
     message_buffer, message_buffer_send_thread  = None, None
     bs_buffer, bs_img_buffer, bs_send_thread = None, None, None
+    processing_threads = []
 
     try:
         init_statistics(statistics)
@@ -483,7 +484,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         number_processing_threads = pipeline_parameters.get("processing_threads", 0)
         thread_buffers = None if number_processing_threads==0 else []
-        processing_threads = None if number_processing_threads==0 else []
         bsread_address = pipeline_parameters.get("bsread_address")
         bsread_channels = pipeline_parameters.get("bsread_channels")
         bsread_mode = pipeline_parameters.get("bsread_mode")
@@ -673,6 +673,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 source.disconnect()
             except:
                 pass
+
         if message_buffer_send_thread:
             try:
                 message_buffer_send_thread.join(0.1)
@@ -684,8 +685,13 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     sender.close()
                 except:
                     pass
-        if exit_code:
-            sys.exit(exit_code)
+        for t in processing_threads + [bs_send_thread]:
+            if t:
+                try:
+                    t.join(0.1)
+                except:
+                    pass
+        sys.exit(exit_code)
 
 
 def store_pipeline(stop_event, statistics, parameter_queue,
@@ -701,6 +707,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
     source = None
     sender = None
     log_tag = "store_pipeline"
+    exit_code = 0
 
     parameters = pipeline_config.get_configuration()
     if parameters.get("no_client_timeout") is None:
@@ -766,6 +773,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
     except:
         _logger.exception("Exception while trying to start the receive and process thread. %s" % log_tag)
+        exit_code = 1
         raise
 
     finally:
@@ -777,6 +785,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
                 sender.close()
             except:
                 pass
+        sys.exit(exit_code)
 
 
 def stream_pipeline(stop_event, statistics, parameter_queue,
@@ -785,6 +794,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
     source = None
     sender = None
     log_tag = "stream_pipeline"
+    exit_code = 0
 
     parameters = get_pipeline_parameters(pipeline_config)
 
@@ -860,6 +870,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
 
     except:
         _logger.exception("Exception while trying to start the receive and process thread. %s" % log_tag)
+        exit_code = 1
         raise
 
     finally:
@@ -868,6 +879,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
                 sender.close()
             except:
                 pass
+        sys.exit(exit_code)
 
 
 pipeline_name_to_pipeline_function_mapping = {

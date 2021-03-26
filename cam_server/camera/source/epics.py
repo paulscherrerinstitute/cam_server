@@ -69,9 +69,10 @@ class CameraEpics:
                 pass
         return False
 
-    def _collect_camera_settings(self):
+    def updtate_size_raw(self):
         #If using channel.get without monitor there is an error creating the same channel in following processes
         #For every get with no cache the channel must be disconnected after access
+        import threading
         if self._has_cache(self.channel_width):
             value = self.channel_width.get(timeout=config.EPICS_TIMEOUT, use_monitor=True)
             if not value:
@@ -87,6 +88,9 @@ class CameraEpics:
             self.height_raw = int(value)
         else:
             self.height_raw = int(self.caget(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_HEIGHT))
+
+    def _collect_camera_settings(self):
+        self.updtate_size_raw()
 
     def connect(self):
         self.verify_camera_online()

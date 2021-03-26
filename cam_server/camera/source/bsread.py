@@ -18,6 +18,10 @@ class CameraBsread(CameraEpics):
         self.bsread_stream_address = None
         self.bsread_source = None
 
+    def connect(self):
+        self.verify_camera_online()
+        self._collect_camera_settings()
+
     def _collect_camera_settings(self):
         super(CameraBsread, self)._collect_camera_settings()
 
@@ -34,10 +38,6 @@ class CameraBsread(CameraEpics):
                 self.camera_config.get_source()))
 
     def get_stream(self, timeout=config.ZMQ_RECEIVE_TIMEOUT, data_change_callback=None):
-
-        self.verify_camera_online()
-        self._collect_camera_settings()
-
         source_host, source_port = get_host_port_from_stream_address(self.bsread_stream_address)
 
         self.bsread_source = Source(host=source_host, port=source_port, mode=PULL,
@@ -63,8 +63,11 @@ class CameraBsreadSim (CameraBsread):
                 stream.connect()
                 data = stream.receive()
                 image = data.data.data[self.camera_config.get_source() + config.EPICS_PV_SUFFIX_IMAGE].value
-                image = transform_image(image, self.camera_config)
-                self.height_raw, self.width_raw = image.shape
+                if image is None:
+                    self.height_raw, self.width_raw = 0,0
+                else:
+                    image = transform_image(image, self.camera_config)
+                    self.height_raw, self.width_raw = image.shape
             except:
                 raise RuntimeError("Could not fetch camera settings cam_server:{}".format(self.camera_config.get_source()))
             finally:

@@ -1,5 +1,6 @@
 import time
 import os
+import sys
 from logging import getLogger
 
 from bsread.sender import Sender, PUB
@@ -78,6 +79,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     :param port: Port to use to bind the output stream.
     """
     sender = None
+    exit_code = 0
     try:
         init_statistics(statistics)
 
@@ -158,6 +160,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
 
     except:
         _logger.exception("Error while processing camera stream [%s]" % (camera.get_name(),))
+        exit_code = 1
 
     finally:
 
@@ -171,6 +174,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
                 sender.close()
             except:
                 pass
+        sys.exit(exit_code)
 
 
 
@@ -185,9 +189,12 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
     """
     sender = None
     camera_streams = []
+    receive_threads = []
     threaded = False
     message_buffer, message_buffer_send_thread, message_buffer_lock = None, None, None
-    reconfigure_lock = Lock()
+    data_changed = False
+    format_error = False
+    exit_code = 0
 
     try:
         init_statistics(statistics)
@@ -206,19 +213,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             x_size, y_size = camera.get_geometry()
 
         def data_change_callback(channels):
-            nonlocal reconfigure_lock
-            if reconfigure_lock.locked():
-                #If a thread is updating properties already, wait for it to finish and return
-                reconfigure_lock.acquire()
-                reconfigure_lock.release()
-            else:
-                reconfigure_lock.acquire()
-                try:
-                    camera._collect_camera_settings()
-                    process_parameters()
-                    _logger.warning("Image shape changed: %dx%d [%s]." % (x_size, y_size, camera.get_name()))
-                finally:
-                    reconfigure_lock.release()
+            nonlocal data_changed
+            data_changed = True
 
         def message_buffer_send_task(message_buffer, stop_event, message_buffer_lock):
             nonlocal sender
@@ -259,13 +255,14 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         last_pid = pulse_id
                     if size == 0:
                         time.sleep(0.001)
-                    while not parameter_queue.empty():
-                        new_parameters = parameter_queue.get()
-                        camera.camera_config.set_configuration(new_parameters)
-                        process_parameters()
+                    #while not parameter_queue.empty():
+                    #    new_parameters = parameter_queue.get()
+                    #    camera.camera_config.set_configuration(new_parameters)
+                    #    process_parameters()
 
                 _logger.info("stop_event set to send thread [%s]" % (camera.get_name(),))
             except Exception as e:
+                exit_code = 2
                 _logger.error("Error on message buffer send thread: %s [%s]" % (str(e), camera.get_name()))
             finally:
                 isset = stop_event.is_set()
@@ -289,6 +286,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         #                                           "type": dtype})
 
         x_size = y_size = x_axis = y_axis = None
+        camera.connect()
         camera_name = camera.get_name()
 
         connections = get_connections(camera)
@@ -321,7 +319,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         if not threaded:
             for i in range(connections):
                 stream = camera.get_stream(data_change_callback=data_change_callback)
-                stream.format_error_counter = 0
+                #stream.format_error_counter = 0
                 camera_streams.append(stream)
                 stream.connect()
 
@@ -383,24 +381,24 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         frame_shape = None
 
         def process_stream(camera_stream, index):
-            nonlocal total_bytes, last_pid, frame_shape
+            nonlocal total_bytes, last_pid, frame_shape, format_error
             try:
                 if stop_event.is_set():
                     return False
                 data = camera_stream.receive()
 
-                def on_format_error():
-                    camera_stream.format_error_counter = camera_stream.format_error_counter + 1
-                    _logger.warning(
-                        "Invalid image format: retry %d of %d [%s]" % (
-                        camera_stream.format_error_counter, config.FORMAT_ERROR_COUNT, camera.get_name()))
-                    if camera_stream.format_error_counter >= config.FORMAT_ERROR_COUNT:
-                        raise Exception("Invalid image format")
+                #def on_format_error():
+                #    camera_stream.format_error_counter = camera_stream.format_error_counter + 1
+                #    _logger.warning(
+                #        "Invalid image format: retry %d of %d [%s]" % (
+                #        camera_stream.format_error_counter, config.FORMAT_ERROR_COUNT, camera.get_name()))
+                #    if camera_stream.format_error_counter >= config.FORMAT_ERROR_COUNT:
+                #        raise Exception("Invalid image format")
 
                 if data is not None:
                     image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
                     if image is None:
-                        on_format_error()
+                        format_error = True #on_format_error()
                         return True
                     else:
                         # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
@@ -409,9 +407,10 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         # Numpy is slowest dimension first, but bsread is fastest dimension first.
                         height, width = image.shape
                         if (len(x_axis)!=width) or (len(y_axis)!=height):
-                            on_format_error()
+                            format_error = True #on_format_error()
                             return True
-                        camera_stream.format_error_counter = 0
+                        format_error = False
+                        #camera_stream.format_error_counter = 0
                         frame_shape = str(width) + "x" + str(height) + "x" + str(image.itemsize)
                         total_bytes[index] = data.statistics.total_bytes_received
 
@@ -454,6 +453,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     on_message_sent(statistics)
             except Exception as e:
                 _logger.error("Could not process message: %s [%s]" % (str(e), camera.get_name()))
+                exit_code = 3
                 stop_event.set()
             return True
 
@@ -468,6 +468,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 _logger.info("stop_event set to receive thread %d [%s]" % (index, camera.get_name()))
             except Exception as e:
                 _logger.error("Error on receive thread %d: %s [%s]" % (index, str(e), camera.get_name()))
+                exit_code = 4
             finally:
                 stop_event.set()
                 if camera_stream:
@@ -477,31 +478,60 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         pass
                 _logger.info("Exit receive thread %d [%s]" % (index, camera.get_name()))
 
-        receive_threads = []
         if threaded:
             for i in range(connections):
                 camera_stream = camera.get_stream(data_change_callback=data_change_callback)
-                camera_stream.format_error_counter = 0
+                #camera_stream.format_error_counter = 0
                 receive_thread = Thread(target=receive_task, args=(i, message_buffer, stop_event, message_buffer_lock, camera_stream))
                 receive_thread.start()
                 receive_threads.append(receive_thread)
 
+        start_error = 0
         while not stop_event.is_set():
+            while not parameter_queue.empty():
+                new_parameters = parameter_queue.get()
+                camera.camera_config.set_configuration(new_parameters)
+                process_parameters()
+
+            if data_changed:
+                time.sleep(0.1) #Sleeping in case channels are monitored and were not updated
+                camera.updtate_size_raw()
+                process_parameters()
+                _logger.warning("Image shape changed: %dx%d [%s]." % (x_size, y_size, camera.get_name()))
+                if threaded:
+                    time.sleep(0.25) #If threaded give some time to other threads report the change
+                data_changed = False
+
+            if format_error:
+                now=time.time()
+                if start_error<=0:
+                    _logger.warning("Invalid image format [%s]" % (camera.get_name()))
+                    start_error = now
+                else:
+                    if (now-start_error) >config.BSREAD_FORMAT_ERROR_TIMEOUT:
+                        _logger.error("Invalid image format timeout: stopping instance[%s]" % (camera.get_name()))
+                        stop_event.set()
+                        exit_code = 5
+                        break
+            else:
+                if start_error > 0:
+                    _logger.info("Image format ok [%s]" % (camera.get_name()))
+                start_error = 0
+
             if threaded:
                 time.sleep(0.01)
             else:
                 for i in range(len(camera_streams)):
                     if not process_stream(camera_streams[i], i):
                         break
-                while not parameter_queue.empty():
-                    new_parameters = parameter_queue.get()
-                    camera.camera_config.set_configuration(new_parameters)
-                    process_parameters()
+
+
 
         _logger.info("Stopping transceiver  [%s]" % (camera.get_name(),))
 
     except Exception as e:
         _logger.exception("Error while processing camera stream: %s [%s]" % (str(e), camera.get_name()))
+        exit_code = 1
 
     finally:
         # Wait for termination / update configuration / etc.
@@ -524,6 +554,14 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     sender.close()
                 except:
                     pass
+        else:
+            for t in receive_threads + [message_buffer_send_thread]:
+                if t:
+                    try:
+                        t.join(0.1)
+                    except:
+                        pass
+        sys.exit(exit_code)
 
 
 source_type_to_sender_function_mapping = {
