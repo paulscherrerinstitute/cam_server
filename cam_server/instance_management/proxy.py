@@ -73,7 +73,7 @@ class ProxyBase:
             """
             return {"state": "ok",
                     "status": "Status of available servers.",
-                    "servers": self.get_active_instances()}
+                    "servers": self.get_status()}
 
         @app.get(api_root_address + "/info")
         def get_info():
@@ -88,6 +88,7 @@ class ProxyBase:
         @app.delete(api_root_address + "/<instance_name>")
         def stop_instance(instance_name):
             """
+            Stop a specific camera.
             :param instance_name: Name of the camera.
             """
             self.stop_instance(instance_name)
@@ -222,6 +223,24 @@ class ProxyBase:
             return static_file("utils.js", self._get_root())
 
 
+    def get_status(self):
+        def task(server):
+            try:
+                instances = server.get_server_info(
+                    timeout = self.update_timeout if self.update_timeout else config.DEFAULT_SERVER_INFO_TIMEOUT)['active_instances']
+            except:
+                instances = None
+            return (server,instances)
+        futures = []
+        for server in self.server_pool:
+            futures.append(self.executor.submit(task, server))
+
+        ret = {}
+        for future in futures:
+            (server,instances) = future.result()
+            ret[server.get_address()] = instances
+        return ret
+
     def get_servers_info(self):
             def task(server):
                 try:
@@ -240,25 +259,6 @@ class ProxyBase:
                 (server, info) = future.result()
                 ret[server.get_address()] = info
             return ret
-
-    def get_active_instances(self, servers_info = None):
-        if servers_info is None:
-            servers_info = self.get_servers_info()
-        ret = {}
-        for (server, info) in servers_info.items():
-            active_instances = info['active_instances']
-            if active_instances is not None:
-                for k in active_instances.keys():
-                    active_instances[k]["host"] = server
-            ret[server] = active_instances
-        return ret
-
-    def get_info(self):
-        servers_info = self.get_servers_info()
-        active_instances = self.get_active_instances(servers_info)
-        for (server, info) in servers_info.items():
-            info.pop('active_instances', None)
-        return {"active_instances":active_instances, "servers_info":servers_info}
 
     def get_fixed_server(self, name):
         for server in self.configuration.keys():
@@ -281,7 +281,7 @@ class ProxyBase:
         if instance_name is None:
             return self.default_server
         if status is None:
-            status = self.get_active_instances()
+            status = self.get_status()
 
         for server in self.server_pool:
             try:
@@ -299,7 +299,7 @@ class ProxyBase:
         return None
 
     def get_load(self, status=None):
-        if status is None: status = self.get_active_instances()
+        if status is None: status = self.get_status()
         load = []
         for server in self.server_pool:
             try:
@@ -309,7 +309,7 @@ class ProxyBase:
         return load
 
     def get_server_load(self, server, status=None):
-        if status is None: status = self.get_active_instances()
+        if status is None: status = self.get_status()
         if server in self.server_pool:
             try:
                 return len(status[server.get_address()])
@@ -386,8 +386,19 @@ class ProxyBase:
             _logger.warning('Failed to identify request origin: '+ str(e))
         return None
 
+    def get_info(self):
+        ret = {'active_instances':{}}
+        status = self.get_status()
+        for server in status.keys():
+            info = status[server]
+            if info is not None:
+                for k in info.keys():
+                    info[k]["host"] = server
+                ret['active_instances'].update(info)
+        return ret
+
     def get_instance_stream(self, instance_name):
-        status = self.get_active_instances()
+        status = self.get_status()
         server = self.get_server(instance_name, status)
         port = None
         if server is None:
@@ -425,7 +436,7 @@ class ProxyBase:
             pass
 
     def stop_instance(self, instance_name):
-        status = self.get_active_instances()
+        status = self.get_status()
         server = self.get_server(instance_name, status)
         if server is not None:
             _logger.info("Stopping %s at %s" % (instance_name, server.get_address()))
@@ -488,7 +499,7 @@ class ProxyBase:
                 except:
                     _logger.warning("Error stopping permanent instance " + instance + ": " + str(sys.exc_info()[1]))
         try:
-            instances = self.get_active_instances()
+            instances = self.get_info()['active_instances']
         except:
             instances = {}
         for instance,name in permanent_instances.items():
@@ -517,7 +528,8 @@ class ProxyBase:
 
     def manage_permanent_instances(self):
         _logger.debug("Managing permanent instances")
-        instances = self.get_active_instances()
+        info = self.get_info()
+        instances = info['active_instances']
         for instance, name in self.permanent_instances.items():
             if not name in instances.keys():
                 try:
