@@ -27,40 +27,6 @@
 
     function getServers() {
         $.get(base + 'servers', function (data) {
-            var version = data["version"]
-            var servers = data["servers"]
-            var load = data["load"]
-            var cpu = data["cpu"]
-            var memory = data["memory"]
-            var tx = data["tx"]
-            var rx = data["rx"]
-            var instances =  data["instances"]
-            var table = $("#servers_table")
-
-            for (var i = 0; i < servers.length; i++) {
-                instances[i] = listToStr(instances[i], false)
-                if (load[i] >=1000) {
-                    load[i] = "off"
-                }
-                if (getRows(table) <= i){
-                    var row = appendTableRow(table, [servers[i], version[i], load[i],
-                        formatNum(cpu[i]), formatNum(memory[i]), formatNum(tx[i]), formatNum(rx[i]), instances[i]])
-                    var callback = 'onclick="showLogs(\'' + i + '\')"'
-                    row.append($('<td align="center"><button ' + callback + '>Logs</button></td>'))
-                    var callback = 'onclick="deleteAllInstances(\'' + i + '\')"'
-                    row.append($('<td align="center"><button ' + callback + '>Stop</button></td>'))
-                } else {
-
-                    setTableCell(servers[i] , "servers_table", i, 0)
-                    setTableCell(version[i] , "servers_table", i, 1)
-                    setTableCell(load[i], "servers_table", i, 2)
-                    setTableCell(formatNum(cpu[i]), "servers_table", i, 3)
-                    setTableCell(formatNum(memory[i]), "servers_table", i, 4)
-                    setTableCell(formatNum(tx[i]), "servers_table", i, 5)
-                    setTableCell(formatNum(rx[i]), "servers_table", i, 6)
-                    setTableCell(instances[i], "servers_table", i, 7)
-                }
-            }
         }).error(function (xhr, textStatus, errorThrown) {
             $("#scripterror").show()
             $("#scripterror").html(xhr.responseText)
@@ -89,13 +55,53 @@
 
 
 
-    function getInstances() {
+
+    function update() {
         $.get(base + 'info', function (data) {
+            var info = data["info"]
+
+            //Servers table
+            var servers_info = info["servers"]
+            var version = servers_info["version"]
+            var servers = servers_info["servers"]
+            var load = servers_info["load"]
+            var cpu = servers_info["cpu"]
+            var memory = servers_info["memory"]
+            var tx = servers_info["tx"]
+            var rx = servers_info["rx"]
+            var instances =  servers_info["instances"]
+
+            var table = $("#servers_table")
+            for (var i = 0; i < servers.length; i++) {
+                instances[i] = listToStr(instances[i], false)
+                if (load[i] >=1000) {
+                    load[i] = "off"
+                }
+                if (getRows(table) <= i){
+                    var row = appendTableRow(table, [servers[i], version[i], load[i],
+                        formatNum(cpu[i]), formatNum(memory[i]), formatNum(tx[i]), formatNum(rx[i]), instances[i]])
+                    var callback = 'onclick="showLogs(\'' + i + '\')"'
+                    row.append($('<td align="center"><button ' + callback + '>Logs</button></td>'))
+                    var callback = 'onclick="deleteAllInstances(\'' + i + '\')"'
+                    row.append($('<td align="center"><button ' + callback + '>Stop</button></td>'))
+                } else {
+
+                    setTableCell(servers[i] , "servers_table", i, 0)
+                    setTableCell(version[i] , "servers_table", i, 1)
+                    setTableCell(load[i], "servers_table", i, 2)
+                    setTableCell(formatNum(cpu[i]), "servers_table", i, 3)
+                    setTableCell(formatNum(memory[i]), "servers_table", i, 4)
+                    setTableCell(formatNum(tx[i]), "servers_table", i, 5)
+                    setTableCell(formatNum(rx[i]), "servers_table", i, 6)
+                    setTableCell(instances[i], "servers_table", i, 7)
+                }
+            }
+
+            //Instances table
+            var active_instances = info["active_instances"]
             var table = $("#instances_table")
             clear(table)
-            var info = data["info"]["active_instances"]
-
-            $.each(info, function(key, value) {
+            $.each(active_instances, function(key, value) {
                 //Compact display
                 for (var k in value["statistics"]) {
                     var cur = value["statistics"][k]
@@ -110,14 +116,11 @@
                 if (value["read_only"] != undefined) {
                     value["statistics"]["read_only"] = value["read_only"]
                 }
-                //value["statistics"]["active"] = value["is_stream_active"]
                 value["statistics"]["camera"] = value["camera_name"]
                 value["statistics"]["start"] = dateToStr(value["last_start_time"])
 
                 var statistics = dictToStr(value["statistics"])
                 var config = dictToStr(value["config"])
-                //var date = dateToStr(value["last_start_time"])
-
                 var instance = {}
                 instance["name"] = key
                 instance["host"] = value["host"]
@@ -125,22 +128,13 @@
                 instance = dictToStr(instance)
 
                 var row = appendTableRow(table, [
-                    //key,
-                    //value["host"],
-                    //value["stream_address"],
                     instance,
-                    //value["is_stream_active"],
-                    //value["camera_name"],
-                    //JSON.stringify(value["camera_geometry"]),
-                    //date,
                     statistics,
-
                     config,
                     ]
                     )
                 var callback = 'onclick="deleteInstance(\'' + key + '\')"'
                 row.append($('<td align="center"><button ' + callback + '>Stop</button></td>'))
-                //row.append($('<button ' + callback + '/>').html("Stop"));
             });
 
 
@@ -148,12 +142,6 @@
             $("#scripterror").show()
             $("#scripterror").text(xhr.responseText)
         });
-    }
-
-
-    function update() {
-            getServers()
-            getInstances()
     }
 
     function timer() {

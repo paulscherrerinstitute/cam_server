@@ -387,14 +387,32 @@ class ProxyBase:
         return None
 
     def get_info(self):
-        ret = {'active_instances':{}}
-        status = self.get_status()
-        for server in status.keys():
-            info = status[server]
-            if info is not None:
-                for k in info.keys():
-                    info[k]["host"] = server
-                ret['active_instances'].update(info)
+        info = self.get_servers_info()
+        ret = {'active_instances': {}}
+        for server in info.keys():
+            active_instances = info[server]['active_instances']
+            if active_instances is not None:
+                for k in active_instances.keys():
+                    active_instances[k]["host"] = server
+                ret['active_instances'].update(active_instances)
+
+        status = {server: (info[server]['active_instances'] if info[server] else None) for server in info}
+        servers = [server.get_address() for server in self.server_pool]
+        instances, cpu, memory, tx, rx = [], [], [], [], []
+        for server in self.server_pool:
+            try:
+                instances.append(list(status[server.get_address()].keys()))
+            except:
+                instances.append([])
+        servers_info =  {"state": "ok",
+                "status": "List of servers.",
+                "servers": servers,
+                "load":  self.get_load(status),
+                "instances": instances
+                }
+        for key in ["version", "cpu", "memory", "tx", "rx"]:
+            servers_info[key] = [(info[server].get(key) if info[server] else None) for server in info] if info else []
+        ret['servers'] = servers_info
         return ret
 
     def get_instance_stream(self, instance_name):
