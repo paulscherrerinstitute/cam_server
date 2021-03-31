@@ -67,9 +67,6 @@
             var rx = data["rx"]
             var table = $("#servers_table")
 
-            if (load>=1000) {
-                load = "off"
-            }
             if (getRows(table) == 0){
                 var row = appendTableRow(table, [servers, version, load,
                     formatNum(cpu), formatNum(memory), formatNum(tx), formatNum(rx)])
@@ -81,7 +78,7 @@
 
                 setTableCell(servers , "servers_table", 0, 0)
                 setTableCell(version , "servers_table", 0, 1)
-                //setTableCell(load, "servers_table", 0, 2)
+                setTableCell("", "servers_table", 0, 2)
                 setTableCell(formatNum(cpu), "servers_table", 0, 3)
                 setTableCell(formatNum(memory), "servers_table", 0, 4)
                 setTableCell(formatNum(tx), "servers_table", 0, 5)
@@ -120,6 +117,7 @@
                 row.append($('<td align="center"><button ' + callback + '>Stop</button></td>'))
                 load = load+1
             });
+            setTableCell(load, "servers_table", 0, 2)
 
         }).error(function (xhr, textStatus, errorThrown) {
             $("#scripterror").show()
@@ -131,14 +129,14 @@
         if (base == ""){
             $.get( '/base', function( data ) {
                 base = data["base"]
-                timer();
+                update();
             });
         } else {
             if ($("#servers").is(":visible")) {
                 update();
             }
         }
-        window.setTimeout("timer()",2000);
+        window.setTimeout("timer()",3000);
     }
 
     $(document).ready(function(){
