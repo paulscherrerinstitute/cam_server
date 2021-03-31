@@ -1,25 +1,18 @@
 import logging
 import requests
 from cam_server_client import config
-from cam_server_client.utils import validate_response
+from cam_server_client.client import Client
 
 
 _logger = logging.getLogger(__name__)
 
 
-class ProxyClient(object):
+class ProxyClient(Client):
     def __init__(self, address):
         """
         :param address: Address of the cam API, e.g. http://localhost:10000
         """
-        self.api_address_format = address.rstrip("/") + config.API_PREFIX + config.PROXY_REST_INTERFACE_PREFIX + "%s"
-        self.address = address
-
-    def get_address(self):
-        """
-        Return the REST api endpoint address.
-        """
-        return self.address
+        Client.__init__(self, address, config.PROXY_REST_INTERFACE_PREFIX, None)
 
     def get_servers_info(self):
         """
@@ -30,7 +23,7 @@ class ProxyClient(object):
         rest_endpoint = "/servers"
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
 
-        validate_response(server_response)
+        self.validate_response(server_response)
         ret = {}
         servers = server_response["servers"]
         for i in range (len(servers)):
@@ -48,7 +41,7 @@ class ProxyClient(object):
         rest_endpoint = "/status"
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
 
-        return validate_response(server_response)["servers"]
+        return self.validate_response(server_response)["servers"]
 
 
     def get_instances_info(self):
@@ -57,9 +50,7 @@ class ProxyClient(object):
         For administrative purposes only.
         :return: Dictionary
         """
-        rest_endpoint = "/info"
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return validate_response(server_response)["info"]["active_instances"]
+        return self.get_server_info()["active_instances"]
 
     def get_config(self):
         """
@@ -69,7 +60,7 @@ class ProxyClient(object):
         rest_endpoint = "/config"
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return validate_response(server_response)["config"]
+        return self.validate_response(server_response)["config"]
 
     def set_config(self, configuration):
         """
@@ -80,18 +71,7 @@ class ProxyClient(object):
         rest_endpoint = "/config"
 
         server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration).json()
-        return validate_response(server_response)["config"]
-
-    def get_version(self):
-        """
-        Return the software version.
-        :return: Version.
-        """
-        rest_endpoint = "/version"
-
-        server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return validate_response(server_response)["version"]
-
+        return self.validate_response(server_response)["config"]
 
     def get_permanent_instances(self):
         """
@@ -101,7 +81,7 @@ class ProxyClient(object):
         rest_endpoint = "/permanent"
 
         server_response = requests.get(self.api_address_format % rest_endpoint).json()
-        return validate_response(server_response)["permanent_instances"]
+        return self.validate_response(server_response)["permanent_instances"]
 
     def set_permanent_instances(self, permanent_instances):
         """
@@ -112,4 +92,4 @@ class ProxyClient(object):
         rest_endpoint = "/permanent"
 
         server_response = requests.post(self.api_address_format % rest_endpoint, json=permanent_instances).json()
-        return validate_response(server_response)["permanent_instances"]
+        return self.validate_response(server_response)["permanent_instances"]
