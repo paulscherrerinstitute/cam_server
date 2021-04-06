@@ -67,7 +67,7 @@ class CameraConfigTest(unittest.TestCase):
 
     def test_groups(self):
         groups = {'Photonics': ['camera_example_4', 'camera_example_3', 'simulation4', 'simulation2'],
-                  'Test': ['camera_example_4', 'simulation4', 'simulation2', 'simulation'], 'Electrons': ['camera_example_2', 'simulation']}
+                  'Test': ['camera_example_4', 'simulation4', 'simulation2', 'simulation'], 'Electrons': ['camera_example_2', 'simulation'], '2Pulses': ['simulation4']}
 
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         config_base = os.path.join(test_base_dir, "camera_config/")
