@@ -9,7 +9,9 @@ function appendTableRow(table, rowData) {
 
 function setTableCell(value, tableName, row, col) {
     var cell = $('#' + tableName + ' tbody tr:eq(' + row  + ') td:eq(' + col  + ')')[0]
-    cell.innerHTML = value
+    //if (cell.innerHTML != value){
+        cell.innerHTML = value
+    //}
 }
 
 
