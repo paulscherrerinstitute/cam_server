@@ -42,17 +42,20 @@ class CameraConfigManager(object):
         camera_groups = {}
         cameras = self.get_camera_list()
         for name in cameras:
-            cfg = self.config_provider.get_config(name)
-            groups = cfg.get("group")
-            if groups is not None:
-                if not isinstance(groups, list):
-                    groups = [groups,]
-                for group in groups:
-                    group = str(group)
-                    if not group in camera_groups.keys():
-                        camera_groups[group]=[]
-                    if not name in camera_groups[group]:
-                        camera_groups[group].append(name)
+            try:
+                cfg = self.config_provider.get_config(name)
+                groups = cfg.get("group")
+                if groups is not None:
+                    if not isinstance(groups, list):
+                        groups = [groups,]
+                    for group in groups:
+                        group = str(group)
+                        if not group in camera_groups.keys():
+                            camera_groups[group]=[]
+                        if not name in camera_groups[group]:
+                            camera_groups[group].append(name)
+            except:
+                pass
         return camera_groups
 
     def get_camera_config(self, camera_name):

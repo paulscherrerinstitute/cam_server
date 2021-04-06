@@ -28,6 +28,29 @@ class PipelineConfigManager(object):
         configured_pipelines = self.config_provider.get_available_configs()
         return configured_pipelines
 
+    def get_pipeline_groups(self):
+        """
+        Retrieve pipeline groups.
+        :return: Dictionary of group name: list of pipeline_names.
+        """
+        pipeline_groups = {}
+        for name in self.get_pipeline_list():
+            try:
+                cfg = self.config_provider.get_config(name)
+                groups = cfg.get("group")
+                if groups is not None:
+                    if not isinstance(groups, list):
+                        groups = [groups,]
+                    for group in groups:
+                        group = str(group)
+                        if not group in pipeline_groups.keys():
+                            pipeline_groups[group]=[]
+                        if not name in pipeline_groups[group]:
+                            pipeline_groups[group].append(name)
+            except:
+                pass
+        return pipeline_groups
+
     def get_pipeline_config(self, pipeline_name):
         """
         Return the pipeline configuration.
