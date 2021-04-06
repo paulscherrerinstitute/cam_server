@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 setup(name="cam_server",
-      version="4.2.0",
+      version="4.2.1",
       maintainer="Paul Scherrer Institute",
       maintainer_email="daq@psi.ch",
       author="Paul Scherrer Institute",
