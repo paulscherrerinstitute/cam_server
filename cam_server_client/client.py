@@ -93,6 +93,40 @@ class InstanceManagementClient(Client):
 
         self.validate_response(server_response)
 
+    def set_config(self, name, configuration):
+        """
+        Set config of the pipeline.
+        :param name: name of the config to save.
+        :param configuration: Config to save, in dictionary format.
+        :return: Actual applied config.
+        """
+        rest_endpoint = "/%s/config" % name
+        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration,
+                                        timeout=self.timeout).json()
+
+        return self.validate_response(server_response)["config"]
+
+    def delete_config(self, name):
+        """
+        Delete a pipeline config.
+        :param pipeline_name: Name of config to delete.
+        """
+        rest_endpoint = "/%s/config" % name
+
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        self.validate_response(server_response)
+
+    def get_config(self, name):
+        """
+        Return the  configuration.
+        :param pipeline_name: Name of the config.
+        :return: Pipeline configuration.
+        """
+        rest_endpoint = "/%s/config" % name
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+
+        return self.validate_response(server_response)["config"]
+
 
 
 

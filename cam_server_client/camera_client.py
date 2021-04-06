@@ -34,8 +34,8 @@ class CamClient(InstanceManagementClient):
 
     def get_camera_groups(self):
         """
-        Cameras aliases.
-        :return: Dicionary alias->name.
+        Cameras groups.
+        :return: Dicionary group name ->list of cameras.
         """
         rest_endpoint = "/groups"
 
@@ -48,10 +48,7 @@ class CamClient(InstanceManagementClient):
         :param camera_name: Name of the cam.
         :return: Camera configuration.
         """
-        rest_endpoint = "/%s/config" % camera_name
-
-        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
-        return self.validate_response(server_response)["config"]
+        return self.get_config(camera_name)
 
     def set_camera_config(self, camera_name, configuration):
         """
@@ -60,10 +57,7 @@ class CamClient(InstanceManagementClient):
         :param configuration: Config to set, in dictionary format.
         :return: Actual applied config.
         """
-        rest_endpoint = "/%s/config" % camera_name
-
-        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration, timeout=self.timeout).json()
-        return self.validate_response(server_response)["config"]
+        return self.set_config(camera_name, configuration)
 
     def delete_camera_config(self, camera_name):
         """
@@ -71,10 +65,7 @@ class CamClient(InstanceManagementClient):
         :param camera_name: Camera to set the config to.
         :return: Actual applied config.
         """
-        rest_endpoint = "/%s/config" % camera_name
-
-        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
-        self.validate_response(server_response)
+        return self.delete_config(camera_name)
 
     def get_camera_geometry(self, camera_name):
         """

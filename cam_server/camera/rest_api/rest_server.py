@@ -46,7 +46,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     @app.get(api_root_address + "/aliases")
     def get_camera_aliases():
         """
-        Return the list of available cameras.save_config
+        Return a dictionary of alias -> camera name
         :return:
         """
         return {"state": "ok",
@@ -56,7 +56,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     @app.get(api_root_address + "/groups")
     def get_camera_groups():
         """
-        Return the list of available cameras.save_config
+        Return a dictionary of groups name - list of cameras
         :return:
         """
         return {"state": "ok",

@@ -35,10 +35,16 @@ class PipelineClient(InstanceManagementClient):
         :param pipeline_name: Name of the pipeline.
         :return: Pipeline configuration.
         """
-        rest_endpoint = "/%s/config" % pipeline_name
-        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        return self.get_config(pipeline_name)
 
-        return self.validate_response(server_response)["config"]
+    def get_pipeline_groups(self):
+        """
+        Pipeline groups.
+        :return: Dicionary group name ->list of pipelines.
+        """
+        rest_endpoint = "/groups"
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        return self.validate_response(server_response)["groups"]
 
     def get_instance_config(self, instance_id):
         """
@@ -153,21 +159,14 @@ class PipelineClient(InstanceManagementClient):
         :param configuration: Config to save, in dictionary format.
         :return: Actual applied config.
         """
-        rest_endpoint = "/%s/config" % pipeline_name
-        server_response = requests.post(self.api_address_format % rest_endpoint, json=configuration,
-                                        timeout=self.timeout).json()
-
-        return self.validate_response(server_response)["config"]
+        return self.set_config(pipeline_name, configuration)
 
     def delete_pipeline_config(self, pipeline_name):
         """
         Delete a pipeline config.
         :param pipeline_name: Name of pipeline config to delete.
         """
-        rest_endpoint = "/%s/config" % pipeline_name
-
-        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
-        self.validate_response(server_response)
+        return self.delete_config(pipeline_name)
 
     def set_instance_config(self, instance_id, configuration):
         """

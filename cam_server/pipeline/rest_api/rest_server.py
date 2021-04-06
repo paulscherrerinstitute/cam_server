@@ -43,6 +43,16 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "List of available cameras.",
                 "pipelines": list(instance_manager.get_pipeline_list())}
 
+    @app.get(api_root_address + "/groups")
+    def get_pipeline_groups():
+        """
+        Return a dictionary of groups name - list of pipelines
+        :return:
+        """
+        return {"state": "ok",
+                "status": "Pipeline groups.",
+                "groups": instance_manager.config_manager.get_pipeline_groups()}
+
     @app.post(api_root_address)
     def create_pipeline_from_config():
         pipeline_config = request.json
