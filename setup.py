@@ -11,7 +11,7 @@ def read(fname):
 
 
 setup(name="cam_server",
-      version="4.2.1",
+      version="4.2.2",
       maintainer="Paul Scherrer Institute",
       maintainer_email="daq@psi.ch",
       author="Paul Scherrer Institute",
@@ -33,7 +33,7 @@ setup(name="cam_server",
 
       package_data={
                 # If any package contains *.html, include them:
-                '': ['*.html', ],
+                '': ['*.html', '*.js',],
             },
 
       # long_description=read('Readme.md'),
