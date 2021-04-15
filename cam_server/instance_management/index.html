@@ -12,6 +12,13 @@
 
     var base = 'api/v1/proxy/';
 
+    function deleteInstance(key){
+            $.delete(base + key).error(function (xhr, textStatus, errorThrown) {
+            $("#scripterror").show()
+            $("#scripterror").html(xhr.responseText)
+        });
+    }
+
     function deleteAllInstances(server_index){
             $.delete(base + "server/" + server_index).error(function (xhr, textStatus, errorThrown) {
             $("#scripterror").show()
