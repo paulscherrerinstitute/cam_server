@@ -184,7 +184,8 @@ def _gauss_fit(axis, profile, center_of_mass=None):
     except BaseException as e:
         # print(e)
         # logging.info("COULD NOT CONVERGE!")
-        optimal_parameter = [offset, amplitude, center, standard_deviation]
+        # Make sure return always as same type
+        optimal_parameter = numpy.array([offset, amplitude, center, standard_deviation]).astype("float64")
 
     return optimal_parameter
 
@@ -466,10 +467,11 @@ def gauss_fit_psss(profile, axis, **kwargs):
             jac=_gauss_deriv,
             col_deriv=1,
             maxfev=maxfev)
-        offset, amplitude, center, standard_deviation = optimal_parameter
     except BaseException as e:
-        pass
+        #Make sure return always as same type
+        optimal_parameter = numpy.array([offset, amplitude, center, standard_deviation]).astype("float64")
 
+    offset, amplitude, center, standard_deviation = optimal_parameter
     return offset, amplitude, center, abs(standard_deviation)
 
 def binning(image, x_axis, y_axis, bx, by, mean = False):

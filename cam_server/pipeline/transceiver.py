@@ -29,6 +29,18 @@ class ProcessingCompleated(Exception):
      pass
 
 
+def init_sender(sender, pipeline_parameters):
+    sender.record_count = 0
+    sender.data_format = None
+    create_header = pipeline_parameters.get("create_header")
+    if create_header in (True,"always"):
+        sender.create_header = True
+    elif create_header in (False, "once"):
+        sender.create_header = False
+    else:
+        sender.create_header = None
+    sender.records=pipeline_parameters.get("records")
+
 def create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag):
     sender = None
     def no_client_action():
@@ -59,7 +71,7 @@ def create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag):
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
     sender.open(no_client_action=no_client_action, no_client_timeout=pipeline_parameters["no_client_timeout"]
                 if pipeline_parameters["no_client_timeout"] > 0 else sys.maxsize)
-    sender.record_count = 0
+    init_sender(sender, pipeline_parameters)
     return sender
 
 
@@ -71,10 +83,25 @@ def check_records(sender, pipeline_parameters):
             raise ProcessingCompleated("Reached number of records: " + str(records))
 
 def send(sender, data, timestamp, pulse_id, pipeline_parameters, statistics):
-    sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id)
-    on_message_sent(statistics)
-    if pipeline_parameters.get("records"):
-        check_records(sender, pipeline_parameters)
+    try:
+        if sender.create_header == True:
+            check_header = True
+        elif sender.create_header == False:
+            check_header = (sender.data_format is None)
+            sender.data_format = True
+        else:
+            #data_format = {k: ((v.shape, v.dtype) if isinstance(v, numpy.ndarray) else type(v)) for k, v in data.items()}
+            data_format = {k: ((v.shape, v.dtype) if isinstance(v, numpy.ndarray) else
+                            (len(v) if isinstance(v, list) else type(v))) for k, v in data.items()}
+            check_header = data_format != sender.data_format
+            if check_header:
+                sender.data_format = data_format
+        sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_header)
+        on_message_sent(statistics)
+        if sender.records:
+            check_records(sender, pipeline_parameters)
+    except Exception as e :
+        raise
 
 
 def get_pipeline_parameters(pipeline_config):
@@ -734,6 +761,8 @@ def store_pipeline(stop_event, statistics, parameter_queue,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
         sender.open(no_client_action=no_client_action, no_client_timeout=parameters["no_client_timeout"]
                     if parameters["no_client_timeout"] > 0 else sys.maxsize)
+        init_sender(sender, parameters)
+
         # TODO: Register proper channels.
         # Indicate that the startup was successful.
         stop_event.clear()
@@ -762,8 +791,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
                 pulse_id = data.data.pulse_id
                 timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
 
-                sender.send(data=forward_data, pulse_id=pulse_id, timestamp=timestamp)
-                on_message_sent(statistics)
+                send(sender, forward_data, timestamp, pulse_id, parameters, statistics)
 
             except:
                 _logger.exception("Could not process message. %s" % log_tag)

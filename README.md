@@ -307,6 +307,13 @@ pipeline is added to the output bsread stream in the
     - If no message received in camera_timeout seconds, pipeline attempts to reconnect to the camera
       stream. If reconnection is not possible, the pipeline will stop. 
       If null or non positive then the timeout handling is disabled.
+- **create_header** (Default _'on_change'_): Message header creation strategy ('once', 'always' or 'on_change').
+    - **once**: Header is created only in the first message. Assume types and shapes never change.
+      This has the best  performance but the  pipeline function must make sure channel types don't change, otherwise the pipeline 
+      will break.
+    - **always**: Creates header for each message. It is the most flexible, as the message is always consistent with 
+      the header. Suited for pipelines with changing channels. There is a cost of regenerating the header each time.      
+    - **on_change**: A compromise of the options above. Inspect channels types and shapes and recreate the header only if there is any change. 
 - **mode** (Default _'PUB'_): Output type ('PUB', 'PUSH' or 'FILE').
     - For stream modes (PUB or PUSH), the following parameters are valid:
         - **queue_size** (Default _10_): stream High Water Mark.
