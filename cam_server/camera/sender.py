@@ -80,6 +80,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     """
     sender = None
     exit_code = 0
+    data_format_changed = False
     try:
         init_statistics(statistics)
 
@@ -92,13 +93,14 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
                 stop_event.set()
 
         def process_parameters():
-            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
+            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id, data_format_changed
             x_size, y_size = camera.get_geometry()
             x_axis, y_axis = camera.get_x_y_axis()
             simulate_pulse_id=camera.camera_config.get_configuration().get("simulate_pulse_id")
             sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
                                                   "shape": [x_size, y_size],
                                                   "type": "uint16"})
+            data_format_changed = True
 
         x_size = y_size = x_axis = y_axis = simulate_pulse_id = None
         camera.connect()
@@ -120,13 +122,12 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
 
         sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
                                                "type": "float32"})
-
         sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
 
         process_parameters()
 
         def collect_and_send(image, timestamp, shape_changed = False):
-            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
+            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id, data_format_changed
 
             if shape_changed:
                 process_parameters()
@@ -143,7 +144,8 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
 
             try:
                 pulse_id = int(time.time() *100) if simulate_pulse_id else None
-                sender.send(data=data, pulse_id = pulse_id, timestamp=timestamp, check_data=False)
+                sender.send(data=data, pulse_id = pulse_id, timestamp=timestamp, check_data=data_format_changed)
+                data_format_changed = False
                 on_message_sent(statistics)
             except Again:
                 _logger.warning("Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera.get_name()))
@@ -195,6 +197,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
     data_changed = False
     format_error = False
     exit_code = 0
+    data_format_changed = True
 
     try:
         init_statistics(statistics)
@@ -208,16 +211,17 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 stop_event.set()
 
         def process_parameters():
-            nonlocal x_size, y_size, x_axis, y_axis
+            nonlocal x_size, y_size, x_axis, y_axis, data_format_changed
             x_axis, y_axis = camera.get_x_y_axis()
             x_size, y_size = camera.get_geometry()
+            data_format_changed = True
 
         def data_change_callback(channels):
             nonlocal data_changed
             data_changed = True
 
         def message_buffer_send_task(message_buffer, stop_event, message_buffer_lock):
-            nonlocal sender
+            nonlocal sender, data_format_changed
             _logger.info("Start message buffer send thread [%s]" % (camera.get_name(),))
             sender = create_sender(camera, port)
             sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
@@ -244,7 +248,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                     #Don't send inside the sync block
                                     tx = True
                     if tx:
-                        sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
+                        sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
+                        data_format_changed = False
                         on_message_sent(statistics)
                         if (last_pid):
                             expected = (last_pid + interval);
@@ -381,7 +386,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         frame_shape = None
 
         def process_stream(camera_stream, index):
-            nonlocal total_bytes, last_pid, frame_shape, format_error
+            nonlocal total_bytes, last_pid, frame_shape, format_error, data_format_changed
             try:
                 if stop_event.is_set():
                     return False
@@ -449,7 +454,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     with message_buffer_lock:
                         message_buffer[pulse_id]= (data, timestamp)
                 else:
-                    sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
+                    sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
+                    data_format_changed = False
                     on_message_sent(statistics)
             except Exception as e:
                 _logger.error("Could not process message: %s [%s]" % (str(e), camera.get_name()))
