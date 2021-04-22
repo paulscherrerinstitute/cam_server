@@ -391,28 +391,30 @@ class ProxyBase:
         urls = info.keys()
         ret = {'active_instances': {}}
         for server in urls:
-            active_instances = info[server]['active_instances']
-            if active_instances is not None:
-                for k in active_instances.keys():
-                    active_instances[k]["host"] = server
-                ret['active_instances'].update(active_instances)
+            if info[server] != None:
+                active_instances = info[server].get('active_instances')
+                if active_instances is not None:
+                    for k in active_instances.keys():
+                        active_instances[k]["host"] = server
+                    ret['active_instances'].update(active_instances)
 
         status = {server: (info[server]['active_instances'] if info[server] else None) for server in info}
         servers_info = {}
         load = self.get_load(status)
         i=0
         for server in urls:
-            try:
-                server_info={}
-                server_info["instances"] = list(status[server].keys())
-                server_info["load"] =load[i]
-                for key in ["version", "cpu", "memory", "tx", "rx"]:
-                    server_info[key] = info[server].get(key) if info[server] else None
-                servers_info[server] = server_info
-            except:
-                print (sys.exc_info()[0])
-                _logger.warning("Error getting info for server " + str(server.get_address()) + ": " + str(sys.exc_info()[0]))
-            i=i+1
+            if (server is not None) and (status.get(server) is not None):
+                try:
+                    server_info={}
+                    server_info["instances"] = list(status[server].keys())
+                    server_info["load"] =load[i]
+                    for key in ["version", "cpu", "memory", "tx", "rx"]:
+                        server_info[key] = info[server].get(key) if info[server] else None
+                    servers_info[server] = server_info
+                except:
+                    print (sys.exc_info()[0])
+                    _logger.warning("Error getting info for server " + str(server.get_address()) + ": " + str(sys.exc_info()[0]))
+            i = i + 1
 
         """
         instances, cpu, memory, tx, rx = [], [], [], [], []
