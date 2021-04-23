@@ -403,17 +403,18 @@ class ProxyBase:
         load = self.get_load(status)
         i=0
         for server in urls:
-            if (server is not None) and (status.get(server) is not None):
-                try:
-                    server_info={}
-                    server_info["instances"] = list(status[server].keys())
-                    server_info["load"] =load[i]
-                    for key in ["version", "cpu", "memory", "tx", "rx"]:
-                        server_info[key] = info[server].get(key) if info[server] else None
-                    servers_info[server] = server_info
-                except:
-                    print (sys.exc_info()[0])
-                    _logger.warning("Error getting info for server " + str(server.get_address()) + ": " + str(sys.exc_info()[0]))
+            server_info = {}
+            try:
+                server_info["instances"] = list(status[server].keys())
+                server_info["load"] =load[i]
+                for key in ["version", "cpu", "memory", "tx", "rx"]:
+                    server_info[key] = info[server].get(key) if info[server] else None
+            except:
+                server_info["instances"] = []
+                server_info["load"] = None
+                for key in ["version", "cpu", "memory", "tx", "rx"]:
+                    server_info[key] = None
+            servers_info[server] = server_info
             i = i + 1
 
         """
