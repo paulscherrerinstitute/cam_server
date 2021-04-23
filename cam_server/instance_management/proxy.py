@@ -17,13 +17,9 @@ class ProxyBase:
         self.config_manager = config_manager
         self.config_file = None
         self.update_timeout = update_timeout
-        configuration = self._parse_proxy_config(config_str)
-        server_pool = [client_class(server, server_timeout) for server in configuration.keys()]
-
-        self.server_pool = server_pool
-        self.configuration = configuration
-
-        self.default_server = server_pool[0]
+        self.configuration, self.enabled_servers = self._parse_proxy_config(config_str)
+        self.server_pool = [client_class(server, server_timeout) for server in self.get_enabled_servers()]
+        self.default_server = self.server_pool[0]
         self.executor = ThreadPoolExecutor(len(self.server_pool))
 
         self.permanent_instances_file = self.get_config_folder() + "/permanent_instances.json"
@@ -260,8 +256,11 @@ class ProxyBase:
                 ret[server.get_address()] = info
             return ret
 
+    def get_enabled_servers(self):
+        return self.enabled_servers
+
     def get_fixed_server(self, name):
-        for server in self.configuration.keys():
+        for server in self.get_enabled_servers():
             try:
                 for entry in self.configuration[server]["instances"]:
                     if ':' in entry:
@@ -513,7 +512,13 @@ class ProxyBase:
                 configuration = {}
                 for server in [s.strip() for s in config_str.split(",")]:
                     configuration[server] = {"expanding": True}
-        return configuration
+
+        enabled_servers = []
+        for server in configuration.keys():
+            if configuration[server].get("enabled", True):
+                enabled_servers.append(server)
+
+        return configuration, enabled_servers
 
     def set_permanent_instances(self, permanent_instances):
         _logger.info("Setting permanent instances: " + str(permanent_instances))

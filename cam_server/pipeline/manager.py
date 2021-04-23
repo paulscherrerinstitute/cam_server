@@ -267,7 +267,7 @@ class Manager(ProxyBase):
                 pass
 
     def get_fixed_server_for_camera(self, name):
-        for server in self.configuration.keys():
+        for server in self.get_enabled_servers():
             try:
                 if name in self.configuration[server]["cameras"]:
                     return self.get_server_from_address(server)
