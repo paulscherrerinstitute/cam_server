@@ -541,14 +541,15 @@ class ProxyBase:
         except:
             instances = {}
         for instance,name in permanent_instances.items():
-            if name in instances.keys():
-                _logger.info("Permanent instance " + instance + " is already running")
-            else:
-                if not (instance,name) in former.items():
-                    try:
-                        self.start_permanent_instance(instance,name)
-                    except:
-                        _logger.warning("Error starting permanent instance " + instance + ": " + str(sys.exc_info()[1]))
+            if name:
+                if name in instances.keys():
+                    _logger.info("Permanent instance " + instance + " is already running")
+                else:
+                    if not (instance,name) in former.items():
+                        try:
+                            self.start_permanent_instance(instance,name)
+                        except:
+                            _logger.warning("Error starting permanent instance " + instance + ": " + str(sys.exc_info()[1]))
         if former and not permanent_instances:
             self.stop_permanent_instances_manager()
 
@@ -569,12 +570,13 @@ class ProxyBase:
         info = self.get_info()
         instances = info['active_instances']
         for instance, name in self.permanent_instances.items():
-            if not name in instances.keys():
-                try:
-                    _logger.info("Instance not active: %s name: %s" % (instance, name))
-                    self.start_permanent_instance(instance, name)
-                except:
-                    _logger.warning("Error starting permanent instance " + instance + ": " + str(sys.exc_info()[1]))
+            if name:
+                if not name in instances.keys():
+                    try:
+                        _logger.info("Instance not active: %s name: %s" % (instance, name))
+                        self.start_permanent_instance(instance, name)
+                    except:
+                        _logger.warning("Error starting permanent instance " + instance + ": " + str(sys.exc_info()[1]))
         self.schedule_timer()
 
 
