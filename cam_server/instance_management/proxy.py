@@ -98,7 +98,13 @@ class ProxyBase:
             Stop a specific camera.
             :param server_index
             """
-            server = self.server_pool[int(server_index)]
+            server = None
+            for s in self.server_pool:
+                compact_name = s.address.replace("http", "").replace("/", "").replace(":", "")
+                if compact_name == server_index:
+                    server = s
+            if server is None:
+                server = self.server_pool[int(server_index)]
             self.stop_all_server_instances(server)
             return {"state": "ok",
                     "status": "All instances stopped in '%s'." % server.get_address()}
@@ -168,6 +174,44 @@ class ProxyBase:
             return {"state": "ok",
                     "status": "Proxy configuration retrieved.",
                     "permanent_instances": self.permanent_instances}
+
+        @app.get(api_root_address + '/config_names')
+        def get_config_names():
+            """
+            Get list of configuration names.
+            :return: List.
+            """
+            return {"state": "ok",
+                    "status": "Configuration names retrieved.",
+                    "config_names": self.get_config_names()}
+
+        @app.get(api_root_address + '/<name>/config')
+        def get_named_config(name):
+            """
+            Get instance  configuration.
+            :param name: Name of the instance yo retrieve the config for.
+            :return: Config.
+            """
+            camera_config = self.config_manager.config_provider.get_config(name, True)
+
+            return {"state": "ok",
+                    "status": "%s configuration retrieved." % name,
+                    "config": camera_config}
+
+        @app.post(api_root_address + '/<name>/config')
+        def set_named_config(name):
+            """
+            Set an instance  config.
+            :param name: Name of the instnce to change the config for.
+            :return: New config.
+            """
+            new_config = request.json
+            _logger.info("Setting '%s' config: %s" % (name, str(new_config)))
+            self.config_manager.config_provider.save_config(name, new_config)
+
+            return {"state": "ok",
+                    "status": "%s configuration saved." % name,
+                    "config": new_config}
 
         @app.post(api_root_address + '/permanent')
         def set_permanent_instances():
@@ -389,49 +433,35 @@ class ProxyBase:
         info = self.get_servers_info()
         urls = info.keys()
         ret = {'active_instances': {}}
-        for server in urls:
-            if info[server] != None:
-                active_instances = info[server].get('active_instances')
-                if active_instances is not None:
-                    for k in active_instances.keys():
-                        active_instances[k]["host"] = server
-                    ret['active_instances'].update(active_instances)
-
-        status = {server: (info[server]['active_instances'] if info[server] else None) for server in info}
         servers_info = {}
-        load = self.get_load(status)
-        i=0
-        for server in urls:
-            server_info = {}
-            try:
-                server_info["instances"] = list(status[server].keys())
-                server_info["load"] =load[i]
-                for key in ["version", "cpu", "memory", "tx", "rx"]:
-                    server_info[key] = info[server].get(key) if info[server] else None
-            except:
-                server_info["instances"] = []
-                server_info["load"] = None
-                for key in ["version", "cpu", "memory", "tx", "rx"]:
-                    server_info[key] = None
-            servers_info[server] = server_info
-            i = i + 1
+        try:
+            for server in urls:
+                if info[server] != None:
+                    active_instances = info[server].get('active_instances')
+                    if active_instances is not None:
+                        for k in active_instances.keys():
+                            active_instances[k]["host"] = server
+                        ret['active_instances'].update(active_instances)
 
-        """
-        instances, cpu, memory, tx, rx = [], [], [], [], []
-        for server in self.server_pool:
-            try:
-                instances.append(list(status[server.get_address()].keys()))
-            except:
-                instances.append([])
-        servers_info =  {"state": "ok",
-                "status": "List of servers.",
-                "servers": servers,
-                "load":  self.get_load(status),
-                "instances": instances
-                }
-        for key in ["version", "cpu", "memory", "tx", "rx"]:
-            servers_info[key] = [(info[server].get(key) if info[server] else None) for server in info] if info else []
-        """
+            status = {server: (info[server]['active_instances'] if info[server] else None) for server in info}
+            load = self.get_load(status)
+            i=0
+            for server in urls:
+                server_info = {}
+                try:
+                    server_info["instances"] = list(status[server].keys())
+                    server_info["load"] =load[i]
+                    for key in ["version", "cpu", "memory", "tx", "rx"]:
+                        server_info[key] = info[server].get(key) if info[server] else None
+                except:
+                    server_info["instances"] = []
+                    server_info["load"] = None
+                    for key in ["version", "cpu", "memory", "tx", "rx"]:
+                        server_info[key] = None
+                servers_info[server] = server_info
+                i = i + 1
+        except Exception as e:
+            _logger.warning("Error getting proxy info: " + str(sys.exc_info()[1]))
         ret['servers'] = servers_info
         return ret
 
@@ -573,16 +603,19 @@ class ProxyBase:
 
     def manage_permanent_instances(self):
         _logger.debug("Managing permanent instances")
-        info = self.get_info()
-        instances = info['active_instances']
-        for instance, name in self.permanent_instances.items():
-            if name:
-                if not name in instances.keys():
-                    try:
-                        _logger.info("Instance not active: %s name: %s" % (instance, name))
-                        self.start_permanent_instance(instance, name)
-                    except:
-                        _logger.warning("Error starting permanent instance " + instance + ": " + str(sys.exc_info()[1]))
+        try:
+            info = self.get_info()
+            instances = info['active_instances']
+            for instance, name in self.permanent_instances.items():
+                if name:
+                    if not name in instances.keys():
+                        try:
+                            _logger.info("Instance not active: %s name: %s" % (instance, name))
+                            self.start_permanent_instance(instance, name)
+                        except:
+                            _logger.warning("Error starting permanent instance " + instance + ": " + str(sys.exc_info()[1]))
+        except:
+            _logger.warning("Error managing permanent instances: " + str(sys.exc_info()[1]))
         self.schedule_timer()
 
 
@@ -609,3 +642,5 @@ class ProxyBase:
                 return instance
         return None
 
+    def get_config_names(self):
+        return []

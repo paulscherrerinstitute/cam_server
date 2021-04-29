@@ -21,6 +21,7 @@ from bottle import ServerAdapter
 import threading
 import epics
 import sys
+import signal
 
 
 _logger = getLogger(__name__)
@@ -373,3 +374,12 @@ def remove_thread_pvs():
                 pass
         if _thread_pvs is not None and threading.get_ident() in _thread_pvs.keys():
             del _thread_pvs[threading.get_ident()]
+
+def reset():
+    def thread_func():
+        time.sleep(0.1)
+        _logger.warning("Closing process")
+        os.killpg(os.getpgid(os.getpid()), signal.SIGTERM)
+        #os.kill(os.getpid(), signal.SIGTERM)
+    th = threading.Thread(target=thread_func)
+    th.start()

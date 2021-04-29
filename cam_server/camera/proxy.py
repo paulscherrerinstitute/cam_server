@@ -9,6 +9,9 @@ class Proxy(ProxyBase):
     def __init__(self, config_manager, config_str, server_timeout=None):
         ProxyBase.__init__(self, config_manager, config_str, CamClient, server_timeout)
 
+    def get_config_names(self):
+        return self.get_camera_list()
+
     def get_camera_list(self):
         return self.get_server().get_cameras()
 

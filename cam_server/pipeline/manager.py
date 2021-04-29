@@ -110,6 +110,9 @@ class Manager(ProxyBase):
     def get_pipeline_list(self):
         return self.config_manager.get_pipeline_list()
 
+    def get_config_names(self):
+        return self.get_pipeline_list()
+
     def get_pipeline_last_backgrounds(self):
         ret = {}
         for pipeline in self.get_pipeline_list():

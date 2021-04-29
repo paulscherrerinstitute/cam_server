@@ -9,6 +9,9 @@ class Manager(ProxyBase):
     def __init__(self, config_manager, config_str, client_timeout=None, update_timeout=None):
         ProxyBase.__init__(self, config_manager, config_str,CamClient, client_timeout, update_timeout)
 
+    def get_config_names(self):
+        return self.get_camera_list()
+
     def get_camera_list(self):
         return self.config_manager.get_camera_list()
 

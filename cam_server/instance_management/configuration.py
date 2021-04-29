@@ -47,7 +47,7 @@ class ConfigFileStorage(object):
         """
         return self.config_folder + '/' + config_name + '.json'
 
-    def _get_named_configuration(self, config_name):
+    def _get_named_configuration(self, config_name, as_text=False):
         """
         Load the entire configuration file (which includes also section we might not be interested in).
         :param config_name: Name of the configuration to load.
@@ -61,18 +61,21 @@ class ConfigFileStorage(object):
                              (config_name, config_file))
 
         with open(config_file) as data_file:
-            configuration = json.load(data_file)
+            if as_text:
+                configuration = data_file.read()
+            else:
+                configuration = json.load(data_file)
 
         return configuration
 
-    def get_config(self, config_name):
+    def get_config(self, config_name, as_text=False):
         """
         Return config for a camera.
         :param config_name: Camera config to retrieve.
         :return: Dict containing the camera config.
         """
 
-        configuration = self._get_named_configuration(config_name)
+        configuration = self._get_named_configuration(config_name, as_text)
         return configuration
 
     def save_config(self, config_name, configuration):
@@ -86,7 +89,10 @@ class ConfigFileStorage(object):
         configuration["name"] = config_name
 
         with open(target_config_file, 'w') as data_file:
-            json.dump(configuration, data_file, indent=True)
+            if isinstance(configuration, str):
+                json.write(configuration)
+            else:
+                json.dump(configuration, data_file, indent=True)
 
     def delete_config(self, config_name):
         """

@@ -127,6 +127,14 @@ class InstanceManagementClient(Client):
 
         return self.validate_response(server_response)["config"]
 
+    def get_config_names(self):
+        """
+        List existing configuration2.
+        :return:
+        """
+        rest_endpoint = "/config_names"
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
 
+        return self.validate_response(server_response)["config_names"]
 
 

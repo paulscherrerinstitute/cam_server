@@ -10,5 +10,7 @@ CAMERA_REST_INTERFACE_PREFIX = "/cam"
 PIPELINE_REST_INTERFACE_PREFIX = "/pipeline"
 # Pipeline server prefix
 PROXY_REST_INTERFACE_PREFIX = "/proxy"
-# Pipeline server prefix
+# Logs prefix
 LOGS_INTERFACE_PREFIX = "/logs"
+# Reset prefix
+RESET_INTERFACE_PREFIX = "/reset"

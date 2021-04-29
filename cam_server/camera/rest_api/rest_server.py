@@ -129,6 +129,17 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         return {"state": "ok",
                 "status": "Camera %s configuration deleted." % camera_name}
 
+        @app.get(api_root_address + '/config_names')
+        def get_config_names():
+            """
+            Get list of configuration names.
+            :return: List.
+            """
+            return {"state": "ok",
+                    "status": "Configuration names retrieved.",
+                    "config_names": list(instance_manager.get_camera_list())}
+
+
     @app.get(api_root_address + '/<camera_name>/geometry')
     def get_camera_geometry(camera_name):
         """

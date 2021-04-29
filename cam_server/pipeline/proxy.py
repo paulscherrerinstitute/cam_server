@@ -10,6 +10,9 @@ class Proxy(ProxyBase):
         self.cam_server_client = cam_server_client
         ProxyBase.__init__(self, config_manager, config_str, PipelineClient, server_timeout)
 
+    def get_config_names(self):
+        return self.get_pipeline_list()
+
     def get_pipeline_list(self):
         return self.get_server().get_pipelines()
 
