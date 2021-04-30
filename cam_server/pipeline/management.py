@@ -166,6 +166,8 @@ class PipelineInstanceManager(InstanceManager):
     def save_script(self, script_name, script):
         return self.user_scripts_manager.save_script(script_name, script)
 
+    def delete_script(self, script_name):
+        return self.user_scripts_manager.delete_script(script_name)
 
 class PipelineInstance(InstanceWrapper):
     def __init__(self, instance_id, process_function, pipeline_config, stream_port, cam_client,

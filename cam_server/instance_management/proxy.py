@@ -189,7 +189,7 @@ class ProxyBase:
         def get_named_config(name):
             """
             Get instance  configuration.
-            :param name: Name of the instance yo retrieve the config for.
+            :param name: Name of the instance to retrieve the config for.
             :return: Config.
             """
             camera_config = self.config_manager.config_provider.get_config(name, True)
@@ -212,6 +212,18 @@ class ProxyBase:
             return {"state": "ok",
                     "status": "%s configuration saved." % name,
                     "config": new_config}
+
+        @app.delete(api_root_address + '/<name>/config')
+        def delete_named_config(name):
+            """
+            Delete instance  configuration.
+            :param name: Name of the configuration to delete
+            :return: Config.
+            """
+            self.config_manager.config_provider.delete_config(name)
+
+            return {"state": "ok",
+                    "status": "%s configuration deleted." % name}
 
         @app.post(api_root_address + '/permanent')
         def set_permanent_instances():

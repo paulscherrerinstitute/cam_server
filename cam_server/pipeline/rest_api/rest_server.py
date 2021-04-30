@@ -321,7 +321,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         # TODO: Remove dependency on cam_server_client.
 
         return {"state": "ok",
-                "status": "List of available cameras.",
+                "status": "List of scripts.",
                 "scripts": instance_manager.user_scripts_manager.get_scripts()}
 
     @app.get(api_root_address + '/script/<script_name>/script_bytes')
@@ -351,6 +351,17 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         return {"state": "ok",
                 "status": "Script file %s stored." % script_name,
                 }
+
+    @app.delete(api_root_address + '/script/<script_name>/script_bytes')
+    def delete_script(script_name):
+
+        # TODO: Remove dependency on config_manager.
+
+        instance_manager.delete_script(script_name)
+
+        return {"state": "ok",
+                "status": "Script %s configuration deleted." % script_name}
+
 
     @app.error(405)
     def method_not_allowed(res):

@@ -184,14 +184,19 @@ class UserScriptsManager(object):
             return os.path.join(self.scripts_folder, script_name)
         return None
 
-    def get_script(self, script_name):
+    def _get_script_filename(self, script_name):
         if not script_name or not self.scripts_folder:
             return None
 
         if not script_name.endswith(".py"):
             script_name += ".py"
 
-        script_filename = os.path.join(self.scripts_folder, script_name)
+        return os.path.join(self.scripts_folder, script_name)
+
+    def get_script(self, script_name):
+        script_filename = self._get_script_filename(script_name)
+        if script_filename is None:
+                return
 
         if not os.path.isfile(script_filename):
             raise ValueError("Requested script '%s' does not exist." % script_name)
@@ -200,13 +205,10 @@ class UserScriptsManager(object):
             return data_file.read()
 
     def save_script(self, script_name, script):
-        if not script_name or not self.scripts_folder:
-            return None
 
-        if not script_name.endswith(".py"):
-            script_name += ".py"
-
-        script_filename = os.path.join(self.scripts_folder, script_name)
+        script_filename = self._get_script_filename(script_name)
+        if script_filename is None:
+                return
 
         if type(script) != str:
             #bytes = str.encode(bytes, 'utf-8')
@@ -214,6 +216,17 @@ class UserScriptsManager(object):
 
         with open(script_filename, "w") as data_file:
             data_file.write(script)
+
+    def delete_script(self, script_name):
+        """
+        Delete the provided script.
+        :param script_name: Script name to delete.
+        """
+        script_filename = self._get_script_filename(script_name)
+        if script_filename is None:
+                return
+
+        os.remove(script_filename)
 
     def get_scripts(self):
         if not self.scripts_folder:

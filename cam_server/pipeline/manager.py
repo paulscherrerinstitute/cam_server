@@ -232,13 +232,22 @@ class Manager(ProxyBase):
         return background_id
 
     def save_script(self, script_name, script):
-            if script_name  and script:
+            if script_name and script:
                 self.user_scripts_manager.save_script(script_name, script)
                 for server in self.server_pool:
                     try:
                         server.set_user_script( script_name, script)
                     except:
                         _logger.error("Error setting user script %s on %s" % (script_name, server.get_address()))
+
+    def delete_script(self, script_name):
+        if script_name:
+            self.user_scripts_manager.delete_script(script_name)
+            for server in self.server_pool:
+                try:
+                    server.delete_script(script_name)
+                except:
+                    _logger.error("Error deleting user script %s on %s" % (script_name, server.get_address()))
 
     def _check_background(self, server, config):
         if config.get("image_background_enable"):

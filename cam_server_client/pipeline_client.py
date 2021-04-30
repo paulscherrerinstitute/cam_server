@@ -318,6 +318,15 @@ class PipelineClient(InstanceManagementClient):
         server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return self.validate_response(server_response)["script"]
 
+    def delete_script(self, script_name):
+        """
+        Delete user script file bytes.
+        :param filename: Script name on the server.
+        """
+        rest_endpoint = "/script/%s/script_bytes" % script_name
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        self.validate_response(server_response)
+
     def upload_user_script(self, filename):
         """
         Upload user script file.
