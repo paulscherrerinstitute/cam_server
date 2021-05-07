@@ -319,12 +319,13 @@ class ProxyBase:
         for server in self.get_enabled_servers():
             try:
                 for entry in self.configuration[server]["instances"]:
-                    if ':' in entry:
-                        [instance, port] = entry.split(":")
-                    else:
-                        instance, port = entry, None
-                    if name == instance.strip():
-                        return self.get_server_from_address(server), port
+                    if not entry.startswith('#'):
+                        if ':' in entry:
+                            [instance, port] = entry.split(":")
+                        else:
+                            instance, port = entry, None
+                        if name == instance.strip():
+                            return self.get_server_from_address(server), port
             except:
                 pass
         return None, None
@@ -566,7 +567,8 @@ class ProxyBase:
         _logger.info("Setting permanent instances: " + str(permanent_instances))
         instances = self.config_manager.config_provider.get_available_configs()
         for instance in list(permanent_instances.keys()):
-            if not instance in instances:
+            instance_name = instance[1:] if instance.startswith('#') else instance
+            if not instance_name in instances:
                 del permanent_instances[instance]
         # Check if can serialize first
         permanent_instances_str = json.dumps(permanent_instances, sort_keys=True, indent=4, )
@@ -589,7 +591,9 @@ class ProxyBase:
         except:
             instances = {}
         for instance,name in permanent_instances.items():
-            if name:
+            if not instance.startswith('#'):
+                if not name:
+                    name = instance
                 if name in instances.keys():
                     _logger.info("Permanent instance " + instance + " is already running")
                 else:
@@ -619,7 +623,9 @@ class ProxyBase:
             info = self.get_info()
             instances = info['active_instances']
             for instance, name in self.permanent_instances.items():
-                if name:
+                if not instance.startswith('#'):
+                    if not name:
+                        name = instance
                     if not name in instances.keys():
                         try:
                             _logger.info("Instance not active: %s name: %s" % (instance, name))
