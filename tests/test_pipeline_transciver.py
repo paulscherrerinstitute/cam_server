@@ -53,7 +53,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         thread = Thread(target=send)
         thread.start()
 
-        with source(host="127.0.0.1", port=12000, mode=SUB, receive_timeout = 3000) as stream:
+        with source(host="127.0.0.1", port=12000, mode=SUB, receive_timeout=3000) as stream:
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
 
@@ -70,6 +70,24 @@ class PipelineTransceiverTest(unittest.TestCase):
         stop_event.set()
         thread.join()
 
+    def test_system_exit(self):
+        manager = multiprocessing.Manager()
+        stop_event = multiprocessing.Event()
+        statistics = manager.Namespace()
+        parameter_queue = multiprocessing.Queue()
+        pipeline_config = PipelineConfig("test_pipeline", parameters={
+            "camera_name": "simulation",
+            "image_background": "full_background",
+            "image_background_enable": True,
+            "image_threshold": 0
+        })
+
+        background_manager = MockBackgroundManager()
+
+        with self.assertRaises(SystemExit):
+            processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
+                                12001, background_manager)
+
     def test_pipeline_background_manager(self):
         manager = multiprocessing.Manager()
         stop_event = multiprocessing.Event()
@@ -85,9 +103,6 @@ class PipelineTransceiverTest(unittest.TestCase):
 
         background_manager = MockBackgroundManager()
 
-        with self.assertRaises(SystemExit):
-            processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
-                                12001, background_manager)
 
         x_size, y_size = get_simulated_camera().get_geometry()
         simulated_camera_shape = (y_size, x_size)

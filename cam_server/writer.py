@@ -232,7 +232,7 @@ class WriterSender(object):
     def open(self, no_client_action=None, no_client_timeout=None):
         pass
 
-    def send(self, data, timestamp, pulse_id):
+    def send(self, data, timestamp, pulse_id, check_data=True):
         bsdata = {}
         shapes = {}
         for key in data.keys():
