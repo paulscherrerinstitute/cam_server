@@ -66,12 +66,12 @@ def get_port_generator(port_range):
     return cycle(iter(range(*port_range)))
 
 
-def sum_images(image, accumulator_image):
+def sum_images(image, accumulator_image, dtype="uint64"):
 
     if accumulator_image is None:
-        accumulator_image = numpy.array(image).astype(dtype="uint64")
+        accumulator_image = numpy.array(image).astype(dtype=dtype)
     else:
-        accumulator_image += image
+        accumulator_image += image.astype(dtype=dtype)
 
     return accumulator_image
 
