@@ -21,7 +21,7 @@ class CameraSimulation(CameraEpics):
 
     # TODO: Make this a config.
     def __init__(self, camera_config, size_x=1280, size_y=960, number_of_dead_pixels=100, noise=0.1,
-                 beam_size_x=100, beam_size_y=20, frame_rate=10):
+                 beam_size_x=100, beam_size_y=20, frame_rate=10, dtype="int16"):
         """
         Initialize the camera simulation.
         :param size_x: Image width.
@@ -40,8 +40,11 @@ class CameraSimulation(CameraEpics):
             size_x = camera_config.get_configuration()["size_x"]
         if "size_y" in camera_config.get_configuration():
             size_y = camera_config.get_configuration()["size_y"]
+        if "dtype" in camera_config.get_configuration():
+            dtype = camera_config.get_configuration()["dtype"]
 
         self.frame_rate = frame_rate
+        self.dtype = dtype
         self.width_raw = size_x
         self.height_raw = size_y
         self.noise = noise  # double {0,1} noise amplification factor
@@ -97,7 +100,7 @@ class CameraSimulation(CameraEpics):
         image.clip(0, 0.9, out=image)
         image *= (numpy.power(2, 16) - 1)
 
-        image = image.astype("uint16")
+        image = image.astype(self.dtype)
 
         return self._get_image(image, raw=raw)
 
