@@ -2,6 +2,8 @@ from cam_server import __VERSION__
 from bottle import static_file
 import os
 import logging
+from cam_server import config
+from cam_server.utils import reset
 
 _logger = logging.getLogger(__name__)
 
@@ -74,5 +76,12 @@ def register_rest_interface(app, instance_manager, api_root_address):
                 "status": "Base",
                 "base":  api_root_address}
 
-
+    @app.get(config.API_PREFIX + config.RESET_INTERFACE_PREFIX)
+    def restart():
+        # TODO: Remove dependency on instance.
+        _logger.warning("Reset command")
+        reset()
+        return {"state": "ok",
+                "status": "System reset."
+        }
 

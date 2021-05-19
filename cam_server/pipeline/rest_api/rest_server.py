@@ -9,7 +9,7 @@ from bottle import request, response
 from cam_server import config
 from cam_server.instance_management import rest_api
 from cam_server.pipeline.data_processing.functions import get_png_from_image
-from cam_server.utils import register_logs_rest_interface, reset
+from cam_server.utils import register_logs_rest_interface
 
 _logger = logging.getLogger(__name__)
 
@@ -32,15 +32,6 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
 
     # Register logs  API.
     register_logs_rest_interface(app,config.API_PREFIX + config.LOGS_INTERFACE_PREFIX)
-
-    @app.get(config.API_PREFIX + config.RESET_INTERFACE_PREFIX)
-    def restart():
-        # TODO: Remove dependency on instance.
-        _logger.warning("Reset command")
-        reset()
-        return {"state": "ok",
-                "status": "System reset."
-        }
 
 
     @app.get(api_root_address)
