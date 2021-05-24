@@ -50,6 +50,12 @@ def get_buffer_threshold(camera):
         _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (camera.get_name(),))
     return 0.5
 
+def get_dtype(camera):
+    dtype = camera.camera_config.get_configuration().get("dtype")
+    if dtype is None:
+        return "uint16"
+    return dtype
+
 def get_buffer_logs(camera):
     buffer_logs = camera.camera_config.get_configuration().get("buffer_logs")
     try:
@@ -80,7 +86,6 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     """
     sender = None
     exit_code = 0
-    data_format_changed = False
     try:
         init_statistics(statistics)
 
@@ -93,14 +98,14 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
                 stop_event.set()
 
         def process_parameters():
-            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id, data_format_changed
+            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
             x_size, y_size = camera.get_geometry()
             x_axis, y_axis = camera.get_x_y_axis()
+            dtype = get_dtype(camera)
             simulate_pulse_id=camera.camera_config.get_configuration().get("simulate_pulse_id")
             sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
                                                   "shape": [x_size, y_size],
-                                                  "type": "uint16"})
-            data_format_changed = True
+                                                  "type": dtype})
 
         x_size = y_size = x_axis = y_axis = simulate_pulse_id = None
         camera.connect()
@@ -127,7 +132,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
         process_parameters()
 
         def collect_and_send(image, timestamp, shape_changed = False):
-            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id, data_format_changed
+            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
 
             if shape_changed:
                 process_parameters()
@@ -144,8 +149,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
 
             try:
                 pulse_id = int(time.time() *100) if simulate_pulse_id else None
-                sender.send(data=data, pulse_id = pulse_id, timestamp=timestamp, check_data=data_format_changed)
-                data_format_changed = False
+                sender.send(data=data, pulse_id = pulse_id, timestamp=timestamp, check_data=False)
                 on_message_sent(statistics)
             except Again:
                 _logger.warning("Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera.get_name()))
