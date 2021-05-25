@@ -106,6 +106,13 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
             sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
                                                   "shape": [x_size, y_size],
                                                   "type": dtype})
+            sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
+                                                   "shape": [x_size],
+                                                   "type": "float32"})
+
+            sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
+                                                   "shape": [y_size],
+                                                   "type": "float32"})
 
         x_size = y_size = x_axis = y_axis = simulate_pulse_id = None
         camera.connect()
@@ -122,11 +129,6 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
         sender.add_channel("timestamp", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
                                                   "type": "float64"})
 
-        sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                               "type": "float32"})
-
-        sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                               "type": "float32"})
         sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
 
         process_parameters()
