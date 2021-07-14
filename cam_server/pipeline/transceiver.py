@@ -884,8 +884,9 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
                         for key, value in data.data.data.items():
                             stream_data[key] = value.value
                         function = get_function(parameters, user_scripts_manager, log_tag)
-                        if function is not None:
-                            stream_data = function(stream_data, pulse_id, timestamp, parameters)
+                        if function is None:
+                            continue
+                        stream_data = function(stream_data, pulse_id, timestamp, parameters)
                     except Exception as e:
                         _logger.error("Error processing bs buffer: " + str(e) + ". %s" % log_tag)
                         continue
