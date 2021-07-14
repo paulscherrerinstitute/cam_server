@@ -152,22 +152,28 @@ class CameraEpics:
         self.channel_width.add_callback(_width_callback)
         self.channel_height.add_callback(_height_callback)
 
+    def get_raw_geometry(self):
+        if self.width_raw is None or self.height_raw is None:
+            self._collect_camera_settings()
+        return self.width_raw, self.height_raw
+
     def _get_image(self, value, raw=False):
 
         if value is None:
             return None
+        width, height = self.get_raw_geometry()
 
-        size = self.width_raw * self.height_raw
+        size = width * height
         if value.size != size:
             if value.size < size:
                 _logger.warning("Image array too small: %d -  shape: %dx%d [%s]." % (
-                value.size, self.width_raw,  self.height_raw, self.camera_config.get_source()))
+                value.size, width,  height, self.camera_config.get_source()))
                 return None
             else:
                 value = value[:(size)]
 
         # Shape image
-        value = value.reshape((self.height_raw, self.width_raw))
+        value = value.reshape((height, width))
 
         # Return raw image without any corrections
         if raw:
@@ -184,10 +190,7 @@ class CameraEpics:
         return self._get_image(value, raw=raw)
 
     def get_geometry(self):
-        if self.width_raw is None or self.height_raw is None:
-            self._collect_camera_settings()
-
-        width, height = self.width_raw, self.height_raw
+        width, height = self.get_raw_geometry()
         if self.camera_config.parameters.get("binning_y"):
             height = int(height / self.camera_config.parameters.get("binning_y"))
         if self.camera_config.parameters.get("binning_x"):
