@@ -126,7 +126,8 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
         skip = False
     # gaussian fitting
     offset, amplitude, center, sigma = functions.gauss_fit_psss(smoothed_spectrum[::2], axis[::2],
-                                                                offset=minimum, amplitude=amplitude, skip=skip)
+                                                                offset=minimum, amplitude=amplitude, skip=skip,
+                                                                maxfev=20)
 
     # outputs
     processed_data[epics_pv_name_prefix + ":SPECTRUM_Y"] = spectrum
