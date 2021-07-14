@@ -58,6 +58,9 @@ class MockBackgroundManager:
     def get_latest_background_id(self, background_prefix):
         raise NotImplementedError("This cannot work in the mock.")
 
+    def get_background_ids(self, background_prefix):
+        raise NotImplementedError("This cannot work in the mock.")
+
 
 class MockConfigStorage:
     def __init__(self):

@@ -5,6 +5,8 @@ import pickle
 import bottle
 import numpy
 from bottle import request, response
+from io import BytesIO
+from PIL import Image
 
 from cam_server import config
 from cam_server.instance_management import rest_api
@@ -212,12 +214,21 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     def get_latest_background_for_camera(camera_name):
 
         # TODO: Remove dependency to instance_manager
-
         background_id = instance_manager.background_manager.get_latest_background_id(camera_name)
 
         return {"state": "ok",
                 "status": "Latest background for camera %s." % camera_name,
                 "background_id": background_id}
+
+    @app.get(api_root_address + '/camera/<camera_name>/backgrounds')
+    def get_backgrounds_for_camera(camera_name):
+
+        # TODO: Remove dependency to instance_manager
+        backgrounds = instance_manager.background_manager.get_background_ids(camera_name)
+
+        return {"state": "ok",
+                "status": "Latest background for camera %s." % camera_name,
+                "background_ids": backgrounds}
 
     @app.get(api_root_address + '/camera')
     def get_camera_list():

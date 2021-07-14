@@ -208,6 +208,17 @@ class PipelineClient(InstanceManagementClient):
 
         return self.validate_response(server_response)["background_id"]
 
+    def get_backgrounds(self, camera_name):
+        """
+        Return all collected background for a camera.
+        :param camera_name: Name of the camera to return the background.
+        :return: List of background ids.
+        """
+
+        rest_endpoint = "/camera/%s/backgrounds" % camera_name
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        return self.validate_response(server_response)["background_ids"]
+
     def get_cameras(self):
         """
         List available cameras.

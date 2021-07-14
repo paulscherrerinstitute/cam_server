@@ -122,16 +122,26 @@ class BackgroundImageManager(object):
 
         return background_name
 
-    def get_latest_background_id(self, background_prefix):
+    def _get_background_files(self, background_prefix):
+        if not background_prefix.endswith("_"):
+            background_prefix=background_prefix+"_"
         matching_backgrounds = glob.glob(self.background_folder + '/%s*.npy' % background_prefix)
-
         if not matching_backgrounds:
-            raise ValueError("No background matches for the specified prefix '%s'." % background_prefix)
+            raise ValueError("No backgr6/68=69/ound matches for the specified prefix '%s'." % background_prefix)
+        return sorted(matching_backgrounds)
 
-        latest_background_filename = sorted(matching_backgrounds)[-1]
+    def get_latest_background_id(self, background_prefix):
+        backgrounds=self._get_background_files(background_prefix)
+        latest_background_filename = backgrounds[-1]
         latest_background_id = os.path.splitext(basename(latest_background_filename))[0]
-
         return latest_background_id
+
+    def get_background_ids(self, background_prefix):
+        backgrounds = self._get_background_files(background_prefix)
+        for i in range(len(backgrounds)):
+            backgrounds[i] = os.path.splitext(basename(backgrounds[i]))[0]
+        return backgrounds
+
 
     def collect_background(self, cam_server_client, camera_name, n_images):
         stream_address = cam_server_client.get_instance_stream(camera_name)
