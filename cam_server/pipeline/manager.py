@@ -20,11 +20,12 @@ class Manager(ProxyBase):
         ProxyBase.__init__(self, config_manager, config_str, PipelineClient, client_timeout, update_timeout)
         # background cleanup every day and upon start
         if bg_days_to_live>=0:
+            self.bg_days_to_live = bg_days_to_live
             def background_cleanup():
                 self.cleanup_background_folder()
-                self.timer = Timer(24*3600, background_cleanup)
-                self.timer.daemon = True
-                self.timer.start()
+                #self.timer = Timer(24*3600, background_cleanup)
+                #self.timer.daemon = True
+                #self.timer.start()
             background_cleanup()
 
     def get_current_servers_for_camera(self, camera, status=None):
