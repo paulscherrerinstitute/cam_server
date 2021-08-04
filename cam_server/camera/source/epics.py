@@ -186,7 +186,7 @@ class CameraEpics:
             # If we are already connected, just grab current image.
             value = self.channel_image.get(use_monitor=True)
         else:
-            value = self.caget(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_IMAGE)
+            value = self.caget(self.camera_config.get_source() + config.EPICS_PV_SUFFIX_IMAGE, as_string=False)
         return self._get_image(value, raw=raw)
 
     def get_geometry(self):
