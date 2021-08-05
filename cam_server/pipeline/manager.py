@@ -114,17 +114,20 @@ class Manager(ProxyBase):
     def get_config_names(self):
         return self.get_pipeline_list()
 
-    def get_pipeline_last_backgrounds(self):
+    def get_cameras(self):
+        return self.cam_server_client.get_cameras()
+
+    def get_last_backgrounds(self):
         ret = {}
-        for pipeline in self.get_pipeline_list():
+        for camera in self.background_manager.get_cameras_with_background():
             try:
-                ret[pipeline] = self.background_manager.get_latest_background_id(pipeline)
+                ret[camera] = self.background_manager.get_latest_background_id(camera)
             except:
-                ret[pipeline] = None
+                ret[camera] = None
         return ret
 
     def get_last_background_filenames(self):
-        return [(x + ".npy") for x in self.get_pipeline_last_backgrounds().values() if x is not None]
+        return [(x + ".npy") for x in self.get_last_backgrounds().values() if x is not None]
 
     def cleanup_background_folder(self, age_in_days = None, simulated=False):
         if age_in_days is None:

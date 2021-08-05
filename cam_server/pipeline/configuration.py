@@ -122,6 +122,17 @@ class BackgroundImageManager(object):
 
         return background_name
 
+    def get_cameras_with_background(self):
+        cameras = set()
+        try:
+            files = glob.glob(
+                self.background_folder + '/*_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9].npy')
+            for f in files:
+                cameras.add(os.path.basename(f)[0:-27])
+        except:
+            pass
+        return cameras
+
     def _get_background_files(self, background_prefix):
         if not background_prefix.endswith("_"):
             background_prefix=background_prefix+"_"

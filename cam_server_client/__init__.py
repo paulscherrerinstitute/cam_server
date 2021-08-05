@@ -1,4 +1,4 @@
-__VERSION__ = "4.3.2"
+__VERSION__ = "4.3.3"
 
 # Import the cam client.
 from cam_server_client.camera_client import CamClient
