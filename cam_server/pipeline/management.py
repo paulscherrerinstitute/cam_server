@@ -28,7 +28,7 @@ class PipelineInstanceManager(InstanceManager):
         return self.config_manager.get_pipeline_list()
 
     def _create_and_start_pipeline(self, instance_id, pipeline_config, read_only_pipeline):
-        if pipeline_config.get_pipeline_type() == config.PIPELINE_TYPE_STREAM:
+        if pipeline_config.get_pipeline_type() in (config.PIPELINE_TYPE_STREAM, config.PIPELINE_TYPE_CUSTOM):
             camera_name = None
         else:
             camera_name = pipeline_config.get_camera_name()

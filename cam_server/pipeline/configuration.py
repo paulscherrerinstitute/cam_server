@@ -264,7 +264,7 @@ class PipelineConfig:
 
         verify_attributes("configuration", configuration,  PipelineConfig.MANDATORY_ATTRIBUTES)
 
-        if configuration["pipeline_type"] != config.PIPELINE_TYPE_STREAM:
+        if (configuration["pipeline_type"] != config.PIPELINE_TYPE_STREAM) and (configuration["pipeline_type"] != config.PIPELINE_TYPE_CUSTOM):
             if "camera_name" not in configuration:
                 raise ValueError("Camera name not specified in configuration.")
 

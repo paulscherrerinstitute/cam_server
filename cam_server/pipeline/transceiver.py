@@ -912,10 +912,75 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
         sys.exit(exit_code)
 
 
+
+def custom_pipeline(stop_event, statistics, parameter_queue,
+                   cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager=None):
+    sender = None
+    log_tag = "custom_pipeline"
+    exit_code = 0
+
+    parameters = get_pipeline_parameters(pipeline_config)
+    try:
+        init_statistics(statistics)
+        log_tag = " ["  + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
+        sender = create_sender(parameters, output_stream_port, stop_event, log_tag)
+
+        function = get_function(parameters, user_scripts_manager, log_tag)
+        if function is None:
+            raise Exception ("Invalid function")
+        max_frame_rate = parameters.get("max_frame_rate")
+        sample_interval = (1.0 / max_frame_rate) if max_frame_rate else None
+
+        _logger.debug("Transceiver started. %s" % log_tag)
+        # Indicate that the startup was successful.
+        stop_event.clear()
+
+        while not stop_event.is_set():
+            try:
+                if sample_interval:
+                    start = time.time()
+                while not parameter_queue.empty():
+                    new_parameters = parameter_queue.get()
+                    pipeline_config.set_configuration(new_parameters)
+                    parameters = get_pipeline_parameters(pipeline_config)
+
+                stream_data, timestamp, pulse_id, data_size = function(parameters)
+                set_statistics(statistics, sender,statistics.total_bytes + data_size, 1 if stream_data else 0)
+
+                if not stream_data or stop_event.is_set():
+                    continue
+
+                send(sender, stream_data, timestamp, pulse_id, parameters, statistics)
+                if sample_interval:
+                    sleep = sample_interval - (time.time()-start)
+                    if (sleep>0):
+                        time.sleep(sleep)
+
+            except Exception as e:
+                _logger.exception("Could not process message: " + str(e) + ". %s" % log_tag)
+                stop_event.set()
+
+        _logger.info("Stopping transceiver. %s" % log_tag)
+
+    except:
+        _logger.exception("Exception while trying to start the receive and process thread. %s" % log_tag)
+        exit_code = 1
+        raise
+
+    finally:
+        if sender:
+            try:
+                sender.close()
+            except:
+                pass
+        sys.exit(exit_code)
+
+
 pipeline_name_to_pipeline_function_mapping = {
     config.PIPELINE_TYPE_PROCESSING: processing_pipeline,
     config.PIPELINE_TYPE_STORE: store_pipeline,
-    config.PIPELINE_TYPE_STREAM: stream_pipeline
+    config.PIPELINE_TYPE_STREAM: stream_pipeline,
+    config.PIPELINE_TYPE_CUSTOM: custom_pipeline
 }
 
 
