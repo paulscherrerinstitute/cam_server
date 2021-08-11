@@ -40,14 +40,14 @@ class CameraClientProxyTest(unittest.TestCase):
         for p in self.cam_server_ports:
             port_range = [port_range[0]+10000, port_range[1]+10000]
             self.cam_server_address.append("http://%s:%s" % (self.host, p))
-            process = Process(target=start_camera_worker, args=(self.host, p, None, port_range))
+            process = Process(target=start_camera_worker, args=(self.host, p, self.user_scripts_folder, None, port_range))
             self.process_camserver.append(process)
             process.start()
         self.cam_proxy_host = "0.0.0.0"
 
         self.process_camproxy = Process(target=start_camera_manager,
                                         args=(self.host, self.cam_manager_port, ",".join(self.cam_server_address),
-                                              self.cam_config_folder))
+                                              self.cam_config_folder, self.user_scripts_folder))
         self.process_camproxy.start()
         cam_server_proxy_address = "http://%s:%s" % (self.host, self.cam_manager_port)
         pipeline_server_proxy_address = "http://%s:%s" % (self.host, self.pipeline_manager_port)

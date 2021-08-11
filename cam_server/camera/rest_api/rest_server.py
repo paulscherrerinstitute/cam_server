@@ -200,6 +200,54 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                           "shape": image_shape,
                           "dtype": image_dtype}}
 
+    @app.get(api_root_address + '/script')
+    def get_script_list():
+
+        # TODO: Remove dependency on cam_server_client.
+
+        return {"state": "ok",
+                "status": "List of scripts.",
+                "scripts": instance_manager.user_scripts_manager.get_scripts()}
+
+    @app.get(api_root_address + '/script/<script_name>/script_bytes')
+    def get_script(script_name):
+        """
+        Return the bytes of aa a script file.
+        :param background_name: script file name.
+        :return: JSON with details and byte stream.
+        """
+        script = instance_manager.user_scripts_manager.get_script(script_name)
+        return {"state": "ok",
+                "status": "Script file '%s'." % script_name,
+                "script": script,
+            }
+
+
+    @app.put(api_root_address + '/script/<script_name>/script_bytes')
+    def set_script(script_name):
+        """
+        Return the bytes of aa a script file.
+        :param background_name: script file name.
+        :return:
+        """
+        data = request.body.read()
+        script = data.decode("utf-8")
+        instance_manager.save_script(script_name, script)
+        return {"state": "ok",
+                "status": "Script file %s stored." % script_name,
+                }
+
+    @app.delete(api_root_address + '/script/<script_name>/script_bytes')
+    def delete_script(script_name):
+
+        # TODO: Remove dependency on config_manager.
+
+        instance_manager.delete_script(script_name)
+
+        return {"state": "ok",
+                "status": "Script %s configuration deleted." % script_name}
+
+
     @app.error(405)
     def method_not_allowed(res):
         if request.method == 'OPTIONS':

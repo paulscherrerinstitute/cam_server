@@ -134,11 +134,10 @@ class BackgroundImageManager(object):
         return cameras
 
     def _get_background_files(self, background_prefix):
-        if not background_prefix.endswith("_"):
-            background_prefix=background_prefix+"_"
-        matching_backgrounds = glob.glob(self.background_folder + '/%s*.npy' % background_prefix)
+        bg = (background_prefix + "_") if not background_prefix.endswith("_") else background_prefix
+        matching_backgrounds = glob.glob(self.background_folder + '/%s*.npy' % bg)
         if not matching_backgrounds:
-            raise ValueError("No backgr6/68=69/ound matches for the specified prefix '%s'." % background_prefix)
+            raise ValueError("No background matches for the specified prefix '%s'." % background_prefix)
         return sorted(matching_backgrounds)
 
     def get_latest_background_id(self, background_prefix):
@@ -182,80 +181,6 @@ class BackgroundImageManager(object):
             raise
 
 
-
-class UserScriptsManager(object):
-    def __init__(self, scripts_folder):
-        if scripts_folder is not None:
-            if len(scripts_folder) > 1 and scripts_folder[-1] == '/':
-                scripts_folder = scripts_folder[:-1]
-
-        self.scripts_folder = scripts_folder
-
-    def exists(self, script_name):
-        if script_name and self.scripts_folder:
-            if not script_name.endswith(".py"):
-                script_name += ".py"
-            script_filename = os.path.join(self.scripts_folder, script_name)
-            return os.path.isfile(script_filename)
-
-    def get_path(self, script_name):
-        if script_name and self.scripts_folder:
-            if not script_name.endswith(".py"):
-                script_name += ".py"
-            return os.path.join(self.scripts_folder, script_name)
-        return None
-
-    def _get_script_filename(self, script_name):
-        if not script_name or not self.scripts_folder:
-            return None
-
-        if not script_name.endswith(".py"):
-            script_name += ".py"
-
-        return os.path.join(self.scripts_folder, script_name)
-
-    def get_script(self, script_name):
-        script_filename = self._get_script_filename(script_name)
-        if script_filename is None:
-                return
-
-        if not os.path.isfile(script_filename):
-            raise ValueError("Requested script '%s' does not exist." % script_name)
-
-        with open(script_filename, "r") as data_file:
-            return data_file.read()
-
-    def save_script(self, script_name, script):
-
-        script_filename = self._get_script_filename(script_name)
-        if script_filename is None:
-                return
-
-        if type(script) != str:
-            #bytes = str.encode(bytes, 'utf-8')
-            script = script.decode("utf-8")
-
-        with open(script_filename, "w") as data_file:
-            data_file.write(script)
-
-    def delete_script(self, script_name):
-        """
-        Delete the provided script.
-        :param script_name: Script name to delete.
-        """
-        script_filename = self._get_script_filename(script_name)
-        if script_filename is None:
-                return
-
-        os.remove(script_filename)
-
-    def get_scripts(self):
-        if not self.scripts_folder:
-            return []
-        scripts = glob.glob(self.scripts_folder + '/*.py')
-        for i in range(len(scripts)):
-            scripts[i] = basename(scripts[i])
-        return scripts
 
 
 class PipelineConfig:

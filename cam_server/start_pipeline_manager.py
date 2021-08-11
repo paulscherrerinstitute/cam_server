@@ -3,10 +3,10 @@ import logging
 import os
 import bottle
 
-from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager, UserScriptsManager
+from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
 from cam_server import config, CamClient
-from cam_server.instance_management.configuration import ConfigFileStorage
+from cam_server.instance_management.configuration import ConfigFileStorage, UserScriptsManager
 from cam_server.pipeline.manager import Manager as PipelineManager
 from cam_server.utils import initialize_api_logger, string_to_dict,validate_web_server
 

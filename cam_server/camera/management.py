@@ -2,7 +2,9 @@ import socket
 from logging import getLogger
 
 from cam_server import config
-from cam_server.camera.sender import get_sender_function, get_ipc_address
+from cam_server.camera.source.camera import get_ipc_address
+from cam_server.camera.sender import get_sender_function
+import cam_server.camera.source.utils as utils
 from cam_server.camera.source.utils import get_source_class
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
 
@@ -22,14 +24,16 @@ class CameraInstanceManager(InstanceManager):
     #Mode: 4: Same as 4 but tries to reuse the same port as the last used by the camera.
 
     # default, allow_reinstantiate, auto_delete, auto_delete_prefer_same_port
-    def __init__(self, config_manager, hostname=None, port_range=None, mode=0):
+    def __init__(self, config_manager, user_scripts_manager, hostname=None, port_range=None, mode=0):
         super(CameraInstanceManager, self).__init__(
             port_range=config.CAMERA_STREAM_PORT_RANGE if (port_range is None) else port_range,
             auto_delete_stopped=(mode in (3, 4)))
         self.prefer_same_port = mode not in (1, 3)
         self.allow_reinstantiate = (mode == 1)
         self.config_manager = config_manager
+        self.user_scripts_manager = user_scripts_manager
         self.hostname = hostname
+        utils._user_scripts_manager = user_scripts_manager
 
     def get_camera_list(self):
         return self.config_manager.get_camera_list()
@@ -65,7 +69,7 @@ class CameraInstanceManager(InstanceManager):
                              (stream_port, camera_name))
 
             self.add_instance(camera_name, CameraInstance(
-                process_function=get_sender_function(camera_config.get_source_type()),
+                process_function=get_sender_function(camera_config.get_source_type(), self.user_scripts_manager),
                 camera=camera,
                 stream_port=stream_port,
                 hostname=self.hostname
@@ -83,6 +87,12 @@ class CameraInstanceManager(InstanceManager):
 
         camera_instance = self.get_instance(camera_name)
         camera_instance.set_parameter(new_config)
+
+    def save_script(self, script_name, script):
+        return self.user_scripts_manager.save_script(script_name, script)
+
+    def delete_script(self, script_name):
+        return self.user_scripts_manager.delete_script(script_name)
 
 
 class CameraInstance(InstanceWrapper):

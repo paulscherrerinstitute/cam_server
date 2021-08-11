@@ -25,10 +25,11 @@ class PipelineManagerTest(unittest.TestCase):
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         self.config_folder = os.path.join(test_base_dir, "camera_config/")
         self.background_folder = os.path.join(test_base_dir, "background_config/")
+        self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
 
         require_folder(self.background_folder)
 
-        self.process = Process(target=start_camera_server, args=(self.host, self.port, self.config_folder))
+        self.process = Process(target=start_camera_server, args=(self.host, self.port, self.config_folder, self.user_scripts_folder))
         self.process.start()
 
         # Give it some time to start.

@@ -46,7 +46,7 @@ class PipelineClientTest(unittest.TestCase):
         pipeline_server_proxy_address = "http://%s:%s" % (self.host, self.pipeline_proxy_port)
 
         self.cam_process = Process(target=start_camera_server, args=(self.host, self.cam_port,
-                                                                     self.cam_config_folder))
+                                                                     self.cam_config_folder, self.user_scripts_folder))
         self.cam_process.start()
 
         self.cam_proxy_process =Process(target=start_camera_proxy, args=(self.host, self.cam_proxy_port,

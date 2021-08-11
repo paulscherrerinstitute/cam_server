@@ -18,13 +18,14 @@ class CameraClientProxyTest(unittest.TestCase):
     def setUp(self):
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
         self.config_folder = os.path.join(test_base_dir, "camera_config/")
+        self.user_scripts_folder = os.path.join(test_base_dir, "user_scripts/")
 
         self.host = "0.0.0.0"
         self.cam_server_port = 8888
         self.cam_proxy_port = 8898
         cam_server_address = "http://%s:%s" % (self.host, self.cam_server_port)
 
-        self.process_camserver = Process(target=start_camera_server, args=(self.host, self.cam_server_port, self.config_folder))
+        self.process_camserver = Process(target=start_camera_server, args=(self.host, self.cam_server_port, self.config_folder, self.user_scripts_folder))
         self.process_camserver.start()
 
 

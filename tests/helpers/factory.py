@@ -14,7 +14,7 @@ from cam_server.pipeline.management import PipelineInstanceManager
 
 def get_test_instance_manager():
     config_manager = CameraConfigManager(config_provider=MockConfigStorage())
-    camera_instance_manager = CameraInstanceManager(config_manager)
+    camera_instance_manager = CameraInstanceManager(config_manager, None)
 
     return camera_instance_manager
 

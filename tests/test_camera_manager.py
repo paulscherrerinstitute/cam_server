@@ -195,7 +195,7 @@ class CameraTest(unittest.TestCase):
 
     def test_custom_hostname(self):
         config_manager = CameraConfigManager(config_provider=MockConfigStorage())
-        camera_instance_manager = CameraInstanceManager(config_manager, hostname="custom_cam_hostname")
+        camera_instance_manager = CameraInstanceManager(config_manager, None, hostname="custom_cam_hostname")
         config_manager.save_camera_config("simulation", CameraConfig("simulation").get_configuration())
 
         stream_address = camera_instance_manager.get_instance_stream("simulation")

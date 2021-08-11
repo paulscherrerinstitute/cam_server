@@ -333,7 +333,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         if image_region_of_interest:
             _, size_x, _, size_y = image_region_of_interest
 
-        _logger.debug("Image width %d and height %d. %s" % (size_x, size_y, log_tag))
+        if size_x and size_y:
+            _logger.debug("Image width %d and height %d. %s" % (size_x, size_y, log_tag))
 
         if not parameters.get("camera_timeout"):
             parameters["camera_timeout"] = 10.0

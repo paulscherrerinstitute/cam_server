@@ -2,78 +2,23 @@ import time
 import os
 import sys
 from logging import getLogger
+from importlib import import_module
+from imp import load_source
 
-from bsread.sender import Sender, PUB
+
 from zmq import Again
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
 from cam_server.utils import set_statistics, on_message_sent, init_statistics, MaxLenDict
 
-from cam_server.ipc import IpcSender
+
 
 from threading import Thread, RLock, Lock
 
 _logger = getLogger(__name__)
 
 
-def get_client_timeout(camera):
-    client_timeout = camera.camera_config.get_configuration().get("no_client_timeout")
-    if client_timeout is not None:
-        return client_timeout
-    return config.MFLOW_NO_CLIENTS_TIMEOUT
-
-def get_connections(camera):
-    connections = camera.camera_config.get_configuration().get("connections")
-    try:
-        if connections is not None:
-            return max(int(connections), 1)
-    except:
-        _logger.warning("Invalid number of connections (using 1) [%s]" % (camera.get_name(),))
-    return 1
-
-def get_buffer_size(camera):
-    buffer_size = camera.camera_config.get_configuration().get("buffer_size")
-    try:
-        if buffer_size is not None:
-            return max(int(buffer_size), 0)
-    except:
-        _logger.warning("Invalid buffer size (using 0) [%s]" % (camera.get_name(),))
-    return 0
-
-def get_buffer_threshold(camera):
-    buffer_threshold = camera.camera_config.get_configuration().get("buffer_threshold")
-    try:
-        if buffer_threshold is not None:
-            return min(max(float(buffer_threshold), 0), 1.0)
-    except:
-        _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (camera.get_name(),))
-    return 0.5
-
-def get_dtype(camera):
-    dtype = camera.camera_config.get_configuration().get("dtype")
-    if dtype is None:
-        return "uint16"
-    return dtype
-
-def get_buffer_logs(camera):
-    buffer_logs = camera.camera_config.get_configuration().get("buffer_logs")
-    try:
-          return str(buffer_logs).lower() == "true"
-    except:
-        pass
-    return True
-
-def get_ipc_address(name):
-    if not os.path.exists(config.IPC_FEEDS_FOLDER):
-        os.makedirs(config.IPC_FEEDS_FOLDER)
-    return "ipc://" + config.IPC_FEEDS_FOLDER + "/cam_server_icp_%s" % (name)
-
-def create_sender(camera, port):
-    if camera.camera_config.get_configuration().get("protocol", "tcp") == "ipc":
-        return IpcSender(address=get_ipc_address(camera.get_name()), mode=PUB, data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
-    else:
-        return Sender(port=port, mode=PUB, data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
 
 def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     """
@@ -89,20 +34,11 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     try:
         init_statistics(statistics)
 
-        # If there is no client for some time, disconnect.
-        def no_client_timeout():
-            client_timeout = get_client_timeout(camera)
-            if client_timeout > 0:
-                _logger.info("No client connected to the stream for %d seconds. Closing instance. [%s]" %
-                             (client_timeout, camera.get_name()))
-                stop_event.set()
-
         def process_parameters():
-            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
+            nonlocal x_size, y_size, x_axis, y_axis
             x_size, y_size = camera.get_geometry()
             x_axis, y_axis = camera.get_x_y_axis()
-            dtype = get_dtype(camera)
-            simulate_pulse_id=camera.camera_config.get_configuration().get("simulate_pulse_id")
+            dtype = camera.get_dtype()
             sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
                                                   "shape": [x_size, y_size],
                                                   "type": dtype})
@@ -114,10 +50,10 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
                                                    "shape": [y_size],
                                                    "type": "float32"})
 
-        x_size = y_size = x_axis = y_axis = simulate_pulse_id = None
+        x_size = y_size = x_axis = y_axis = None
         camera.connect()
 
-        sender = create_sender(camera, port)
+        sender = camera.create_sender(stop_event, port)
 
         # Register the bsread channels - compress only the image.
         sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
@@ -129,12 +65,10 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
         sender.add_channel("timestamp", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
                                                   "type": "float64"})
 
-        sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
-
         process_parameters()
 
         def collect_and_send(image, timestamp, shape_changed = False):
-            nonlocal x_size, y_size, x_axis, y_axis, simulate_pulse_id
+            nonlocal x_size, y_size, x_axis, y_axis
 
             if shape_changed:
                 process_parameters()
@@ -150,7 +84,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
             set_statistics(statistics, sender, statistics.total_bytes + frame_size, 1 if (image is not None) else 0, frame_shape)
 
             try:
-                pulse_id = int(time.time() *100) if simulate_pulse_id else None
+                pulse_id = int(time.time() *100) if camera.get_simulated_pulse_id() else None
                 sender.send(data=data, pulse_id = pulse_id, timestamp=timestamp, check_data=False)
                 on_message_sent(statistics)
             except Again:
@@ -208,13 +142,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
     try:
         init_statistics(statistics)
 
-        # If there is no client for some time, disconnect.
-        def no_client_timeout():
-            client_timeout = get_client_timeout(camera)
-            if client_timeout > 0:
-                _logger.info("No client connected to the stream for %d seconds. Closing instance [%s]." %
-                             (client_timeout, camera.get_name()))
-                stop_event.set()
 
         def process_parameters():
             nonlocal x_size, y_size, x_axis, y_axis, data_format_changed
@@ -229,12 +156,11 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         def message_buffer_send_task(message_buffer, stop_event, message_buffer_lock):
             nonlocal sender, data_format_changed
             _logger.info("Start message buffer send thread [%s]" % (camera.get_name(),))
-            sender = create_sender(camera, port)
-            sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
+            sender = camera.create_sender(stop_event, port)
             last_pid = None
             interval = 1
-            threshold = int(message_buffer.maxlen * get_buffer_threshold(camera))
-            buffer_logs = get_buffer_logs(camera)
+            threshold = int(message_buffer.maxlen * camera.get_buffer_threshold())
+            buffer_logs = camera.get_buffer_logs()
             try:
                 while not stop_event.is_set():
                     tx = False
@@ -300,8 +226,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         camera.connect()
         camera_name = camera.get_name()
 
-        connections = get_connections(camera)
-        buffer_size = get_buffer_size(camera)
+        connections = camera.get_connections()
+        buffer_size = camera.get_buffer_size()
         threaded = buffer_size > 0
 
         process_parameters()
@@ -317,8 +243,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event, message_buffer_lock))
             message_buffer_send_thread.start()
         else:
-            sender = create_sender(camera, port)
-            sender.open(no_client_action=no_client_timeout, no_client_timeout=get_client_timeout(camera))
+            sender = camera.create_sender(stop_event, port)
 
 
         if connections > 1:
@@ -584,9 +509,25 @@ source_type_to_sender_function_mapping = {
 }
 
 
-def get_sender_function(source_type_name):
+def get_sender_function(source_type_name, user_scripts_manager):
     if source_type_name not in source_type_to_sender_function_mapping:
-        raise ValueError("source_type '%s' not present in sender function pv_to_stream_mapping. Available: %s." %
-                         (source_type_name, list(source_type_to_sender_function_mapping.keys())))
+            try:
+                name = source_type_name
+                _logger.info("Importing source: %s." % (name))
+
+                if '/' in name:
+                    mod = load_source('mod', name)
+                else:
+                    if user_scripts_manager and user_scripts_manager.exists(name):
+                        mod = load_source('mod', user_scripts_manager.get_path(name))
+                    else:
+                        mod = import_module("cam_server.camera.source." + str(name))
+                function = mod.process
+                return function
+            except:
+                _logger.exception("Could not import function: %s." % (str(name)))
+
+            raise ValueError("source_type '%s' not present in sender function pv_to_stream_mapping. Available: %s." %
+                             (source_type_name, list(source_type_to_sender_function_mapping.keys())))
 
     return source_type_to_sender_function_mapping[source_type_name]

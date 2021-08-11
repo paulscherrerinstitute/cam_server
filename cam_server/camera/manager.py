@@ -1,13 +1,16 @@
 import logging
 from cam_server.instance_management.proxy import ProxyBase
+from cam_server.camera.source.utils import is_builtin_source
 from cam_server import CamClient
-
+import cam_server.camera.source.utils as utils
 _logger = logging.getLogger(__name__)
 
 
 class Manager(ProxyBase):
-    def __init__(self, config_manager, config_str, client_timeout=None, update_timeout=None):
+    def __init__(self, config_manager, user_scripts_manager, config_str, client_timeout=None, update_timeout=None):
         ProxyBase.__init__(self, config_manager, config_str,CamClient, client_timeout, update_timeout)
+        self.user_scripts_manager = user_scripts_manager
+        utils._user_scripts_manager = user_scripts_manager
 
     def get_config_names(self):
         return self.get_camera_list()
@@ -29,6 +32,11 @@ class Manager(ProxyBase):
                 config["port"] = port
             server.set_camera_config(instance_name, config)
 
+            source_type = config.get("source_type")
+            if not is_builtin_source(source_type):
+                if self.user_scripts_manager.exists(source_type):
+                    server.set_user_script(source_type, self.user_scripts_manager.get_script(source_type))
+
     def start_permanent_instance(self, camera, name):
         _logger.info("Starting permanent instance of %s" % (camera))
 
@@ -38,3 +46,21 @@ class Manager(ProxyBase):
             cfg = server.get_camera_config(camera)
             cfg["no_client_timeout"] = 0
             server.set_camera_config(camera, cfg)
+
+    def save_script(self, script_name, script):
+        if script_name and script:
+            self.user_scripts_manager.save_script(script_name, script)
+            for server in self.server_pool:
+                try:
+                    server.set_user_script(script_name, script)
+                except:
+                    _logger.error("Error setting user script %s on %s" % (script_name, server.get_address()))
+
+    def delete_script(self, script_name):
+        if script_name:
+            self.user_scripts_manager.delete_script(script_name)
+            for server in self.server_pool:
+                try:
+                    server.delete_script(script_name)
+                except:
+                    _logger.error("Error deleting user script %s on %s" % (script_name, server.get_address()))

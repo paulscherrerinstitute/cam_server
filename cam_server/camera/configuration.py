@@ -196,9 +196,13 @@ class CameraConfig:
 
         available_source_types = source_type_to_source_class_mapping.keys()
 
-        if configuration["source_type"] not in available_source_types:
-            raise ValueError("Invalid source_type '%s'. Available: %s." % (configuration["source_type"],
-                                                                           list(available_source_types)))
+        if configuration["source_type"] is None:
+            raise ValueError("Undefined source_type")
+        #if configuration["source_type"] not in available_source_types:
+        #    raise ValueError("Invalid source_type '%s'. Available: %s." % (configuration["source_type"],
+        #                                                                   list(available_source_types)))
+
+
 
     @staticmethod
     def expand_config(configuration):

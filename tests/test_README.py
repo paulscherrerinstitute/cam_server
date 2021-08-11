@@ -31,7 +31,7 @@ class PipelineClientTest(unittest.TestCase):
         pipeline_server_address = "http://%s:%s" % (self.host, self.pipeline_port)
 
         self.cam_process = Process(target=start_camera_server, args=(self.host, self.cam_port,
-                                                                     self.cam_config_folder))
+                                                                     self.cam_config_folder, None))
         self.cam_process.start()
 
         self.pipeline_process = Process(target=start_pipeline_server, args=(self.host, self.pipeline_port,
