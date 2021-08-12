@@ -48,7 +48,7 @@ class CameraInstanceManager(InstanceManager):
         if self.allow_reinstantiate and self.is_instance_present(camera_name):
             try:
                 if type(self.get_instance(camera_name).camera) != \
-                        get_source_class(self.get_instance(camera_name).get_configuration()["source_type"]):
+                        get_source_class(self.get_instance(camera_name).get_configuration()):
                     self.stop_instance(camera_name)
                     self.delete_stopped_instance(camera_name)
             except:
@@ -69,7 +69,7 @@ class CameraInstanceManager(InstanceManager):
                              (stream_port, camera_name))
 
             self.add_instance(camera_name, CameraInstance(
-                process_function=get_sender_function(camera_config.get_source_type(), self.user_scripts_manager),
+                process_function=get_sender_function(camera_config.get_source_type()),
                 camera=camera,
                 stream_port=stream_port,
                 hostname=self.hostname

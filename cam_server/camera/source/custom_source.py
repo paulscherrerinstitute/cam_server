@@ -5,7 +5,7 @@ from cam_server.camera.source.camera import *
 _logger = getLogger(__name__)
 
 
-class source_test(Camera):
+class custom_source(Camera):
     def __init__(self, camera_config):
         Camera.__init__(self, camera_config, check_sender_data=False)
         self.camera_config = camera_config
@@ -29,6 +29,5 @@ class source_test(Camera):
         width, height = self.get_raw_geometry()
         return numpy.random.randint(1, 101,  width * height, "uint16").reshape((height, width))
 
-
-def process(stop_event, statistics, parameter_queue, camera, port):
-    return default_process(stop_event, statistics, parameter_queue, camera, port)
+    def process(self, stop_event, statistics, parameter_queue, port):
+        return Camera.process(self, stop_event, statistics, parameter_queue, port)

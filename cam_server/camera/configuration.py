@@ -85,7 +85,7 @@ class CameraConfigManager(object):
         :return: Camera instance.
         """
         camera_config = self.get_camera_config(camera_name)
-        camera_class = get_source_class(camera_config.get_source_type())
+        camera_class = get_source_class(camera_config)
 
         return camera_class(camera_config)
 
@@ -167,6 +167,7 @@ class CameraConfig:
     def get_source(self):
         return self.parameters["source"]
 
+
     @staticmethod
     def validate_camera_config(configuration):
         """
@@ -198,9 +199,9 @@ class CameraConfig:
 
         if configuration["source_type"] is None:
             raise ValueError("Undefined source_type")
-        #if configuration["source_type"] not in available_source_types:
-        #    raise ValueError("Invalid source_type '%s'. Available: %s." % (configuration["source_type"],
-        #                                                                   list(available_source_types)))
+        if configuration["source_type"] not in available_source_types:
+            raise ValueError("Invalid source_type '%s'. Available: %s." % (configuration["source_type"],
+                                                                           list(available_source_types)))
 
 
 

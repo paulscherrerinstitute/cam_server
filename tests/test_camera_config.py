@@ -187,7 +187,6 @@ class CameraConfigTest(unittest.TestCase):
         updated_config = update_camera_config(updated_config, {"camera_calibration": None})
         self.assertIsNone(updated_config["camera_calibration"])
 
-    """
     def test_invalid_source_type(self):
         configuration = {
             "source": "simulation",
@@ -196,7 +195,6 @@ class CameraConfigTest(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "Invalid source_type "):
             configuration = CameraConfig("simulation", configuration)
-    """
 
     def test_save_simulation_new_frame_rate(self):
         instance_manager = get_test_instance_manager()

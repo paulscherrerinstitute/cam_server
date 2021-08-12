@@ -265,79 +265,79 @@ class Camera:
 # PROCESSING FUNCTION
 ####################################################################################################################
 
-def default_process(stop_event, statistics, parameter_queue, camera, port):
-    sender = None
-
-    try:
-        init_statistics(statistics)
-        sender = camera.create_sender(stop_event, port)
-        camera.connect()
-        camera_name = camera.get_name()
-        x_axis, y_axis = camera.get_x_y_axis()
-        x_size, y_size = camera.get_geometry()
-        dtype = camera.get_dtype()
-        frame_rate = camera.get_frame_rate()
-        sample_interval = (1.0 / frame_rate) if frame_rate else None
-
-        if not camera.check_sender_data:
-            # Register the bsread channels - compress only the image.
-            sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"type": "int64"})
-            sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"type": "int64"})
-            sender.add_channel("timestamp", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"type": "float64"})
-            sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,"shape": [x_size, y_size],"type": dtype})
-            sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [x_size],"type": "float32"})
-            sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"shape": [y_size],"type": "float32"})
-
-
-        # This signals that the camera has suc cessfully started.
-        stop_event.clear()
-
-        while not stop_event.is_set():
-            if sample_interval:
-                start = time.time()
-            image, timestamp, pulse_id = camera.get_data()
-            frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
-            frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
-            set_statistics(statistics, sender, statistics.total_bytes + frame_size, 1 if (image is not None) else 0,
-                           frame_shape)
-
-            # In case of receiving error or timeout, the returned data is None.
-            if image is None:
-                continue
-
-            data = {"image": image,
-                    "timestamp": timestamp,
-                    "width": x_size,
-                    "height": y_size,
-                    "x_axis": x_axis,
-                    "y_axis": y_axis}
-            try:
-                sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=camera.check_sender_data)
-                on_message_sent(statistics)
-            except Again:
-                _logger.warning(
-                    "Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera.get_name()))
-            if sample_interval:
-                sleep = sample_interval - (time.time()-start)
-                if (sleep>0):
-                    time.sleep(sleep)
-
-    except Exception as e:
-        _logger.exception("Error while processing camera stream: %s" % (str(e),))
-
-    finally:
-        _logger.info("Stopping transceiver.")
-
-        # Wait for termination / update configuration / etc.
-        stop_event.wait()
+    def process(self, stop_event, statistics, parameter_queue, port):
+        sender = None
 
         try:
-            camera.disconnect()
-        except:
-            pass
+            init_statistics(statistics)
+            sender = self.create_sender(stop_event, port)
+            self.connect()
+            camera_name = self.get_name()
+            x_axis, y_axis = self.get_x_y_axis()
+            x_size, y_size = self.get_geometry()
+            dtype = self.get_dtype()
+            frame_rate = self.get_frame_rate()
+            sample_interval = (1.0 / frame_rate) if frame_rate else None
 
-        if sender:
+            if not self.check_sender_data:
+                # Register the bsread channels - compress only the image.
+                sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"type": "int64"})
+                sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"type": "int64"})
+                sender.add_channel("timestamp", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"type": "float64"})
+                sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,"shape": [x_size, y_size],"type": dtype})
+                sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [x_size],"type": "float32"})
+                sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"shape": [y_size],"type": "float32"})
+
+
+            # This signals that the camera has suc cessfully started.
+            stop_event.clear()
+
+            while not stop_event.is_set():
+                if sample_interval:
+                    start = time.time()
+                image, timestamp, pulse_id = self.get_data()
+                frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
+                frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
+                set_statistics(statistics, sender, statistics.total_bytes + frame_size, 1 if (image is not None) else 0,
+                               frame_shape)
+
+                # In case of receiving error or timeout, the returned data is None.
+                if image is None:
+                    continue
+
+                data = {"image": image,
+                        "timestamp": timestamp,
+                        "width": x_size,
+                        "height": y_size,
+                        "x_axis": x_axis,
+                        "y_axis": y_axis}
+                try:
+                    sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=self.check_sender_data)
+                    on_message_sent(statistics)
+                except Again:
+                    _logger.warning(
+                        "Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera_name))
+                if sample_interval:
+                    sleep = sample_interval - (time.time()-start)
+                    if (sleep>0):
+                        time.sleep(sleep)
+
+        except Exception as e:
+            _logger.exception("Error while processing camera stream: %s" % (str(e),))
+
+        finally:
+            _logger.info("Stopping transceiver.")
+
+            # Wait for termination / update configuration / etc.
+            stop_event.wait()
+
             try:
-                sender.close()
+                self.disconnect()
             except:
                 pass
+
+            if sender:
+                try:
+                    sender.close()
+                except:
+                    pass

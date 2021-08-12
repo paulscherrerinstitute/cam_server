@@ -33,9 +33,10 @@ class Manager(ProxyBase):
             server.set_camera_config(instance_name, config)
 
             source_type = config.get("source_type")
-            if not is_builtin_source(source_type):
-                if self.user_scripts_manager.exists(source_type):
-                    server.set_user_script(source_type, self.user_scripts_manager.get_script(source_type))
+            if source_type == "custom":
+                source_class = str(config.get("class"))
+                if self.user_scripts_manager.exists(source_class):
+                    server.set_user_script(source_class, self.user_scripts_manager.get_script(source_class))
 
     def start_permanent_instance(self, camera, name):
         _logger.info("Starting permanent instance of %s" % (camera))

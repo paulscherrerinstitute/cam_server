@@ -501,33 +501,22 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         sys.exit(exit_code)
 
 
+def process_custom_camera(stop_event, statistics, parameter_queue, camera, port):
+    camera.process(stop_event, statistics, parameter_queue, port)
+
+
 source_type_to_sender_function_mapping = {
     "epics": process_epics_camera,
     "simulation": process_epics_camera,
     "bsread": process_bsread_camera,
-    "bsread_simulation" : process_bsread_camera
+    "bsread_simulation" : process_bsread_camera,
+    "custom" : process_custom_camera
 }
 
 
-def get_sender_function(source_type_name, user_scripts_manager):
+def get_sender_function(source_type_name):
     if source_type_name not in source_type_to_sender_function_mapping:
-            try:
-                name = source_type_name
-                _logger.info("Importing source: %s." % (name))
-
-                if '/' in name:
-                    mod = load_source('mod', name)
-                else:
-                    if user_scripts_manager and user_scripts_manager.exists(name):
-                        mod = load_source('mod', user_scripts_manager.get_path(name))
-                    else:
-                        mod = import_module("cam_server.camera.source." + str(name))
-                function = mod.process
-                return function
-            except:
-                _logger.exception("Could not import function: %s." % (str(name)))
-
-            raise ValueError("source_type '%s' not present in sender function pv_to_stream_mapping. Available: %s." %
-                             (source_type_name, list(source_type_to_sender_function_mapping.keys())))
+        raise ValueError("source_type '%s' not present in sender function pv_to_stream_mapping. Available: %s." %
+                         (source_type_name, list(source_type_to_sender_function_mapping.keys())))
 
     return source_type_to_sender_function_mapping[source_type_name]
