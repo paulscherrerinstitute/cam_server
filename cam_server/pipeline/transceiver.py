@@ -934,6 +934,7 @@ def custom_pipeline(stop_event, statistics, parameter_queue,
         _logger.debug("Transceiver started. %s" % log_tag)
         # Indicate that the startup was successful.
         stop_event.clear()
+        init=True
 
         while not stop_event.is_set():
             try:
@@ -944,7 +945,8 @@ def custom_pipeline(stop_event, statistics, parameter_queue,
                     pipeline_config.set_configuration(new_parameters)
                     parameters = get_pipeline_parameters(pipeline_config)
 
-                stream_data, timestamp, pulse_id, data_size = function(parameters)
+                stream_data, timestamp, pulse_id, data_size = function(parameters, init)
+                init = False
                 set_statistics(statistics, sender,statistics.total_bytes + data_size, 1 if stream_data else 0)
 
                 if not stream_data or stop_event.is_set():
@@ -958,7 +960,8 @@ def custom_pipeline(stop_event, statistics, parameter_queue,
 
             except Exception as e:
                 _logger.exception("Could not process message: " + str(e) + ". %s" % log_tag)
-                stop_event.set()
+                if parameters.get("abort_on_error", config.ABORT_ON_ERROR):
+                    stop_event.set()
 
         _logger.info("Stopping transceiver. %s" % log_tag)
 
