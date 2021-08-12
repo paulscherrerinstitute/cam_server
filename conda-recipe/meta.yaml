@@ -1,6 +1,6 @@
 package:
     name: cam_server
-    version: 4.3.3
+    version: 4.4.0
 
 source:
     path: ..
@@ -24,6 +24,7 @@ requirements:
       - numba
       - paste
       - cheroot
+      - jungfrau_utils
 
 build:
   number: 0
