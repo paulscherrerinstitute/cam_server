@@ -1,6 +1,5 @@
 import os
 from setuptools import setup
-from cam_server_client import __VERSION__
 
 
 # Utility function to read the README file.
@@ -12,7 +11,7 @@ def read(fname):
 
 
 setup(name="cam_server",
-      version=__VERSION__,
+      version=4.4.1,
       maintainer="Paul Scherrer Institute",
       maintainer_email="daq@psi.ch",
       author="Paul Scherrer Institute",
