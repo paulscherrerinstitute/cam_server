@@ -37,6 +37,8 @@ FORMAT_ERROR_COUNT = 10
 #Format for creating shared memory files for IPC protocol.
 IPC_FEEDS_FOLDER = "/tmp"
 
+CAMERA_STREAM_REQUIRED_FIELDS = set(["image", "timestamp", "width", "height", "x_axis", "y_axis"])
+
 #####################
 # Pipeline settings #
 #####################

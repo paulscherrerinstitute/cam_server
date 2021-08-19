@@ -1,6 +1,6 @@
 package:
     name: cam_server_client
-    version: 4.4.1
+    version: 4.4.3
 
 source:
     path: ..

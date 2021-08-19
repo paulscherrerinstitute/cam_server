@@ -678,8 +678,13 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                                            y_axis,
                                            pipeline_parameters]])
                 else:
+                    additional_data = {}
+                    if len(data.data.data) != len(config.CAMERA_STREAM_REQUIRED_FIELDS):
+                        for key, value in data.data.data.items():
+                            if not key in config.CAMERA_STREAM_REQUIRED_FIELDS:
+                                additional_data[key] = value.value
                     on_receive_data(function, global_timestamp, global_timestamp_float, sender, message_buffer, image,
-                                 pulse_id, x_axis, y_axis, pipeline_parameters)
+                                 pulse_id, x_axis, y_axis, pipeline_parameters, additional_data)
             except ProcessingCompleated:
                 break
             except Exception as e:

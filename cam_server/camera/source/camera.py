@@ -245,6 +245,27 @@ class Camera:
         pulse_id = int(time.time() * 100) if self.get_simulated_pulse_id() else None
         return image, timestamp, pulse_id
 
+    def register_channels(self, sender):
+        # Register the bsread channels - compress only the image.
+        dtype = self.get_dtype()
+        x_size, y_size = self.get_geometry()
+        sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "int64"})
+        sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "int64"})
+        sender.add_channel("timestamp",
+                           metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "float64"})
+        sender.add_channel("image",
+                           metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION, "shape": [x_size, y_size],
+                                     "type": dtype})
+        sender.add_channel("x_axis",
+                           metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [x_size],
+                                     "type": "float32"})
+        sender.add_channel("y_axis",
+                           metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [y_size],
+                                     "type": "float32"})
+
+    def get_send_channels(self, default_channels):
+        return default_channels
+
     ####################################################################################################################
     # VIRTUALS
     ####################################################################################################################
@@ -275,18 +296,11 @@ class Camera:
             camera_name = self.get_name()
             x_axis, y_axis = self.get_x_y_axis()
             x_size, y_size = self.get_geometry()
-            dtype = self.get_dtype()
             frame_rate = self.get_frame_rate()
             sample_interval = (1.0 / frame_rate) if frame_rate else None
 
             if not self.check_sender_data:
-                # Register the bsread channels - compress only the image.
-                sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"type": "int64"})
-                sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"type": "int64"})
-                sender.add_channel("timestamp", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"type": "float64"})
-                sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,"shape": [x_size, y_size],"type": dtype})
-                sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [x_size],"type": "float32"})
-                sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,"shape": [y_size],"type": "float32"})
+                self.register_channels(sender)
 
 
             # This signals that the camera has suc cessfully started.
@@ -305,12 +319,14 @@ class Camera:
                 if image is None:
                     continue
 
-                data = {"image": image,
+                default_channels = {"image": image,
                         "timestamp": timestamp,
                         "width": x_size,
                         "height": y_size,
                         "x_axis": x_axis,
                         "y_axis": y_axis}
+                data = self.get_send_channels(default_channels)
+
                 try:
                     sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=self.check_sender_data)
                     on_message_sent(statistics)
