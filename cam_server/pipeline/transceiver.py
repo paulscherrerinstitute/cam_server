@@ -6,6 +6,7 @@ import sys
 import os
 from collections import deque, OrderedDict
 from threading import Thread, Event, RLock
+import multiprocessing
 
 import numpy
 import json
@@ -187,6 +188,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
     camera_port = None
     sender = None
     number_processing_threads = 0
+    multiprocessed = False
     processing_thread_index = 0
     exit_code = 0
 
@@ -388,7 +390,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 else:
                     (function, global_timestamp, global_timestamp_float, sender, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata) = thread_buffer.popleft()
 
-                    processed_data = process_image(image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=index)
+                    processed_data = process_image(function, image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=index)
                     if processed_data is None:
                         with tx_buffer_lock:
                             try:
@@ -409,9 +411,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         nonlocal sender
         _logger.info("Start threaded processing send thread")
         sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
-        #last_pid = None
-        #interval = 1
-        #threshold = int(tx_buffer.maxlen * 0.5)
         try:
             while not stop_event.is_set():
                 tx = None
@@ -429,6 +428,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                                 popped = True
                 if tx is not None:
                     send_data(sender, processed_data, global_timestamp, pulse_id, message_buffer)
+                    #_logger.info("Sent PID %d" % (pulse_id))
                 elif not popped:
                     time.sleep(0.001)
 
@@ -442,6 +442,79 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 except:
                     pass
             _logger.info("Exit threaded processing send thread")
+
+    def process_task(thread_buffer, tx_buffer, tx_buffer_lock, stop_event, index):
+        _logger.info("Start process %d" % index)
+
+        try:
+            while not stop_event.is_set():
+                if thread_buffer.empty():
+                    time.sleep(0.01)
+                else:
+                    try:
+                        msg = thread_buffer.get(False)
+                    except:
+                        continue
+
+                    (function, global_timestamp, global_timestamp_float, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata) = msg
+
+                    processed_data = process_image(function, image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=index)
+                    with tx_buffer_lock:
+                        tx_buffer.put((processed_data, global_timestamp, pulse_id, message_buffer), False)
+                        #_logger.info("Processed message %d in process %d" % (pulse_id, index))
+
+
+        except Exception as e:
+            _logger.error("Error on process %d: %s" % (index, str(e)))
+            import traceback
+            traceback.print_exc()
+        finally:
+            stop_event.set()
+            _logger.info("Exit process  %d" % index)
+
+
+    def process_send_task(tx_queue, queue_lock, stop_event):
+        nonlocal received_pids, tx_buffer
+        _logger.info("Start send process")
+        #sender = create_sender(pipeline_parameters, output_stream_port, stop_event, "")
+        received_pids = deque()
+        tx_buffer = MaxLenDict(maxlen=(thread_buffer_size * number_processing_threads))
+        tx_buffer_lock_thread = RLock()
+        send_thread = Thread(target=threaded_processing_send_task,
+                                            args=(tx_buffer, tx_buffer_lock_thread, stop_event))
+        send_thread.start()
+
+        try:
+            while not stop_event.is_set():
+                time.sleep(0.001)
+                with tx_buffer_lock:
+                    try:
+                        tx = tx_queue.get(False)
+                    except:
+                        continue
+                if tx is not None:
+                    (processed_data, global_timestamp, pulse_id, message_buffer) = tx
+                    #if processed_data is not"" None:
+                    #    #send_data(sender, processed_data, global_timestamp, pulse_id, message_buffer)
+                    # with tx_buffer_lock:
+                    #    received_pids.append(pulse_id)
+                    with tx_buffer_lock_thread:
+                        tx_buffer[pulse_id] = (processed_data, global_timestamp, pulse_id, message_buffer)
+                        received_pids.append(pulse_id)
+
+
+        except Exception as e:
+            _logger.error("Error send process" + str(e))
+            import traceback
+            traceback.print_exc()
+        finally:
+            stop_event.set()
+            if sender:
+                try:
+                    sender.close()
+                except:
+                    pass
+            _logger.info("Exit send process")
 
 
     def send_data(sender, processed_data, global_timestamp, pulse_id, message_buffer = None):
@@ -466,7 +539,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 send(sender, processed_data, global_timestamp, pulse_id, pipeline_parameters, statistics)
             _logger.debug("Sent PID %d" % (pulse_id,))
 
-    def process_image(image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=0):
+    def process_image(function, image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=0):
         try:
             image, x_axis, y_axis = pre_process_image(image, pulse_id, global_timestamp_float, x_axis, y_axis, pipeline_parameters, image_background_array)
             processed_data = function(image, pulse_id, global_timestamp_float, x_axis, y_axis, pipeline_parameters, bsdata)
@@ -478,19 +551,24 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 raise
 
     def on_receive_data(function, global_timestamp, global_timestamp_float, sender, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata=None):
-        nonlocal number_processing_threads, processing_thread_index, received_pids
+        nonlocal number_processing_threads, multiprocessed , processing_thread_index, received_pids
 
         if number_processing_threads > 0:
             thread_buffer = thread_buffers[processing_thread_index]
-            processing_thread_index = processing_thread_index+1
-            if processing_thread_index>=number_processing_threads:
+            processing_thread_index = processing_thread_index + 1
+            if processing_thread_index >= number_processing_threads:
                 processing_thread_index = 0
-            #Deque append and popleft are supposed to be thread safe
-            thread_buffer.append((function, global_timestamp, global_timestamp_float, sender, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata))
-            with tx_buffer_lock:
-                received_pids.append(pulse_id)
+            if multiprocessed:
+                thread_buffer.put((function, global_timestamp, global_timestamp_float, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata))
+                #with tx_buffer_lock:
+                #    received_pids.put(pulse_id)
+            else:
+                #Deque append and popleft are supposed to be thread safe
+                thread_buffer.append((function, global_timestamp, global_timestamp_float, sender, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata))
+                with tx_buffer_lock:
+                    received_pids.append(pulse_id)
             return
-        processed_data = process_image(image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata)
+        processed_data = process_image(function, image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata)
         if processed_data is not None:
             send_data(sender, processed_data, global_timestamp, pulse_id, message_buffer)
 
@@ -512,6 +590,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         number_processing_threads = pipeline_parameters.get("processing_threads", 0)
         thread_buffers = None if number_processing_threads==0 else []
+        multiprocessed = pipeline_parameters.get("multiprocessing", False)
         bsread_address = pipeline_parameters.get("bsread_address")
         bsread_channels = pipeline_parameters.get("bsread_channels")
         bsread_mode = pipeline_parameters.get("bsread_mode")
@@ -540,19 +619,32 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event))
                 message_buffer_send_thread.start()
             elif number_processing_threads > 0:
-                tx_buffer_lock = RLock()
-                processing_thread_index=0
+                processing_thread_index = 0
                 thread_buffer_size = pipeline_parameters.get("thread_buffer_size", 10)
-                received_pids = deque()
-                tx_buffer = MaxLenDict(maxlen=(thread_buffer_size * number_processing_threads))
-                message_buffer_send_thread = Thread(target=threaded_processing_send_task, args=(tx_buffer, tx_buffer_lock, stop_event))
-                message_buffer_send_thread.start()
-                for i in range(number_processing_threads):
-                    thread_buffer = deque(maxlen=thread_buffer_size)
-                    thread_buffers.append(thread_buffer)
-                    processing_thread = Thread(target=process_thread_task, args=(thread_buffer, tx_buffer, tx_buffer_lock, stop_event, i))
-                    processing_threads.append(processing_thread)
-                    processing_thread.start()
+                if multiprocessed:
+                    tx_buffer_lock = multiprocessing.Lock()
+                    #received_pids = multiprocessing.Queue()
+                    tx_queue = multiprocessing.Queue(thread_buffer_size * number_processing_threads)
+                    message_buffer_send_thread= multiprocessing.Process(target=process_send_task,args=(tx_queue, tx_buffer_lock, stop_event))
+                    message_buffer_send_thread.start()
+                    for i in range(number_processing_threads):
+                        thread_buffer = multiprocessing.Queue(thread_buffer_size)
+                        thread_buffers.append(thread_buffer)
+                        processing_thread = multiprocessing.Process(target=process_task, args=(thread_buffer, tx_queue, tx_buffer_lock, stop_event, i))
+                        processing_threads.append(processing_thread)
+                        processing_thread.start()
+                else:
+                    tx_buffer_lock = RLock()
+                    received_pids = deque()
+                    tx_buffer = MaxLenDict(maxlen=(thread_buffer_size * number_processing_threads))
+                    message_buffer_send_thread = Thread(target=threaded_processing_send_task, args=(tx_buffer, tx_buffer_lock, stop_event))
+                    message_buffer_send_thread.start()
+                    for i in range(number_processing_threads):
+                        thread_buffer = deque(maxlen=thread_buffer_size)
+                        thread_buffers.append(thread_buffer)
+                        processing_thread = Thread(target=process_thread_task, args=(thread_buffer, tx_buffer, tx_buffer_lock, stop_event, i))
+                        processing_threads.append(processing_thread)
+                        processing_thread.start()
             else:
                 sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
 
