@@ -1,14 +1,24 @@
 {
     "http://localhost:8881": {
         "cameras": [
+            "simulation"
         ],
+        "enabled": true,
         "expanding": true,
         "instances": [
             "simulation2_sp:5555",
             "simulation_sp:5554",
             "arrival_time_proc:5556",
-            "SLG-LCAM-C102_data:5556",
-            "SLG-LCAM-C102_img:5557"
+            "SLG-LCAM-C102_data:5557",
+            "SLG-LCAM-C102_img:5558"
+        ]
+    },
+    "http://localhost:8882": {
+        "cameras": [],
+        "enabled": false,
+        "expanding": true,
+        "instances": [
+            "#arrival_time_proc"
         ]
     }
 }

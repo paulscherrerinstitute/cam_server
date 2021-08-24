@@ -11,6 +11,7 @@ from cam_server import CamClient
 from cam_server.start_camera_worker import start_camera_worker
 from cam_server.start_camera_manager import start_camera_manager
 from cam_server.utils import get_host_port_from_stream_address
+from cam_server import config
 
 from tests import test_cleanup, get_simulated_camera
 
@@ -76,7 +77,7 @@ class CameraClientProxyTest(unittest.TestCase):
             data = stream.receive()
             self.assertIsNotNone(data, "Received data was none.")
 
-            required_fields = set(["image", "timestamp", "width", "height", "x_axis", "y_axis"])
+            required_fields = config.CAMERA_STREAM_REQUIRED_FIELDS
             self.assertSetEqual(required_fields, set(data.data.data.keys()), "Required fields missing.")
 
             image = data.data.data["image"].value

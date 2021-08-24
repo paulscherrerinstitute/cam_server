@@ -1,4 +1,4 @@
 {
-  "camera_name": "simulation"
-
+  "camera_name": "simulation",
+  "group":["simulation"]
 }

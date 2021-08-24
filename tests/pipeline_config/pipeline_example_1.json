@@ -1,11 +1,9 @@
 {
-  "camera_name": "simulation",
-
-  "image_background": null,
-  "image_threshold": null,
-  "image_region_of_interest": null,
-
-  "image_good_region": null,
-
-  "image_slices": null
+ "camera_name": "simulation",
+ "image_background": null,
+ "image_threshold": null,
+ "image_region_of_interest": null,
+ "image_good_region": null,
+ "image_slices": null,
+ "name": "pipeline_example_1"
 }

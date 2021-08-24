@@ -1,3 +1,5 @@
 {
-  "camera_name": "simulation"
+ "camera_name": "simulation",
+ "test": false,
+ "name": "pipeline_example_2"
 }

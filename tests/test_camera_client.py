@@ -7,7 +7,7 @@ from time import sleep
 import numpy
 from bsread import source, SUB
 
-from cam_server import CamClient
+from cam_server import CamClient, config
 from cam_server.start_camera_server import start_camera_server
 from cam_server.utils import get_host_port_from_stream_address
 from tests import test_cleanup, get_simulated_camera
@@ -59,7 +59,7 @@ class CameraClientTest(unittest.TestCase):
             data = stream.receive()
             self.assertIsNotNone(data, "Received data was none.")
 
-            required_fields = set(["image", "timestamp", "width", "height", "x_axis", "y_axis"])
+            required_fields = config.CAMERA_STREAM_REQUIRED_FIELDS
             self.assertSetEqual(required_fields, set(data.data.data.keys()), "Required fields missing.")
 
             image = data.data.data["image"].value

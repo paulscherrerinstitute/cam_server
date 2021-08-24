@@ -1,4 +1,4 @@
-    
+
 from cam_server.pipeline.data_processing import functions
 
 

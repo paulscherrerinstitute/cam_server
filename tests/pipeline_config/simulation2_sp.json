@@ -17,7 +17,9 @@
   "height",
   "processing_parameters",
   "x_axis",
-  "y_axis"
+  "y_axis",
+  "value"
  ],
- "processing_threads": 4
+ "processing_threads": 4,
+ "group":["simulation", "sp"]
 }

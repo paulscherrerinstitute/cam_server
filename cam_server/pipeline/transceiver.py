@@ -448,22 +448,20 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         try:
             while not stop_event.is_set():
-                if thread_buffer.empty():
-                    time.sleep(0.01)
-                else:
-                    try:
-                        msg = thread_buffer.get(False)
-                    except:
-                        continue
+                try:
+                    msg = thread_buffer.get(False)
+                except:
+                    time.sleep(0.001)
+                    continue
 
-                    (global_timestamp, global_timestamp_float, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata) = msg
+                (global_timestamp, global_timestamp_float, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata) = msg
 
-                    function = get_function(parameters, user_scripts_manager, log_tag)
-                    if function is not None:
-                        processed_data = process_image(function, image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=index)
-                        #with tx_buffer_lock:
-                        tx_buffer.put((processed_data, global_timestamp, pulse_id, message_buffer), False)
-                        #_logger.info("Processed message %d in process %d" % (pulse_id, index))
+                function = get_function(parameters, user_scripts_manager, log_tag)
+                if function is not None:
+                    processed_data = process_image(function, image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=index)
+                    #with tx_buffer_lock:
+                    tx_buffer.put((processed_data, global_timestamp, pulse_id, message_buffer), False)
+                    #_logger.info("Processed message %d in process %d" % (pulse_id, index))
 
 
         except Exception as e:
@@ -487,11 +485,11 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         send_thread.start()
         try:
             while not stop_event.is_set():
-                time.sleep(0.001)
                 #with tx_buffer_lock:
                 try:
                     tx = tx_queue.get(False)
                 except:
+                    time.sleep(0.001)
                     continue
                 if tx is not None:
                     (processed_data, global_timestamp, pulse_id, message_buffer) = tx
