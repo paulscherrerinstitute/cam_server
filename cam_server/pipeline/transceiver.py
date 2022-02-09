@@ -806,7 +806,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
                 # If image is greater that the huge page size (2MB) then image copy makesCPU consumption increase by orders
                 # of magnitude. Perform a copy in chunks instead, where each chunk is smaller than 2MB
-                image = chunk_copy(image)
+                #image = chunk_copy(image)
 
                 if averaging:
                     continuous = averaging < 0

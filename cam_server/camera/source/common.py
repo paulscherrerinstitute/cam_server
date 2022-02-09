@@ -29,7 +29,7 @@ def transform_image(image, camera_config):
         if (by > 1) or (bx > 1):
             background, _, _ = binning(background, None, None, bx, by, bm)
         if background.shape == image.shape:
-            image = chunk_copy(image)
+            #image = chunk_copy(image)
             mask_for_zeros = (background > image)
             numpy.subtract(image, background, image)
             image[mask_for_zeros] = 0
