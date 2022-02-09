@@ -415,9 +415,13 @@ def get_png_from_image(image_raw_bytes, scale=None, min_value=None, max_value=No
 
 
 def get_fwhm(x, y):
+    return get_fw(x, y, 0.5)
+
+
+def get_fw(x, y, threshold=0.5):
     try:
         ymax, ymin =  numpy.amax(y),  numpy.amin(y)
-        hm =  (ymax - ymin) /2
+        hm =  (ymax - ymin) * threshold
         max_index, l_index, r_index = numpy.argmax(y), 0, len(x)-1
 
         for i in range(max_index-1, 0, -1):
