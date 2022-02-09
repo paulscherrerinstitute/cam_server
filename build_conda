@@ -1,0 +1,42 @@
+#!/bin/bash
+
+
+export PATH="$HOME/miniconda/bin:$PATH"
+
+if [ -d "$HOME/miniconda" ]
+then
+    echo "Directory $HOME/miniconda exists." 
+else
+    echo "Downloading miniconda to $HOME/miniconda."
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        curl -L http://repo.continuum.io/miniconda/Miniconda3-4.6.14-MacOSX-x86_64.sh -o miniconda.sh
+    else
+        curl -L https://repo.continuum.io/miniconda/Miniconda3-4.6.14-Linux-x86_64.sh -o miniconda.sh
+    fi
+
+    bash miniconda.sh -b -p $HOME/miniconda
+
+    # On MacOS if a anaconda environment is already selected, 
+    # one must first activate the base of miniconda after download 
+    #   $HOME/miniconda/bin/conda init bash
+    #   $HOME/miniconda/bin/conda activate base
+
+    #On MacOS  10.14 there are permissions problems on the update, fixed as (https://github.com/conda/conda/issues/8440):
+    #cd $HOME/miniconda && rm -rf *.app
+    #cd $HOME/miniconda/bin && rm -rf *.app
+
+    hash -r
+    conda config --set always_yes yes --set changeps1 no
+    conda config --add channels defaults
+
+    conda update --all
+    conda update -q --all
+    conda install conda-build anaconda-client
+    conda config --set anaconda_upload yes
+fi
+
+conda build --py 3.6 --no-test conda-recipe
+conda build --py 3.7 --no-test conda-recipe
+conda build --py 3.6 --no-test conda-recipe_client
+conda build --py 3.7 --no-test conda-recipe_client
