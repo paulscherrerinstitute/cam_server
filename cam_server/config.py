@@ -96,6 +96,7 @@ PROCESS_POLL_INTERVAL = 0.1
 ####################
 
 TIME_FORMAT = "%Y-%m-%d %H:%M:%S UTC%z"
+CHUNK_COPY_IMAGES = False
 
 ##################
 # EPICS settings #

@@ -216,6 +216,7 @@ class InstanceWrapper:
         self.statistics = self.manager.Namespace()
         self.statistics.total_bytes = 0
         self.statistics.clients = 0
+        self.statistics.num_clients = -1
         self.statistics.update_timestamp = None
         self.statistics.throughput = 0
         self.statistics.frame_rate = 0

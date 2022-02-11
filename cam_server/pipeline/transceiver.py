@@ -18,7 +18,7 @@ from bsread.sender import Sender
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
 from cam_server.pipeline.data_processing.pre_processor import process_image as pre_process_image
-from cam_server.utils import get_host_port_from_stream_address, set_statistics, on_message_sent, init_statistics, MaxLenDict
+from cam_server.utils import get_host_port_from_stream_address, set_statistics, on_message_sent, init_statistics, MaxLenDict, get_clients
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
 from cam_server.pipeline.data_processing.functions import chunk_copy, is_number, binning
 
@@ -73,6 +73,7 @@ def create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag):
     sender.open(no_client_action=no_client_action, no_client_timeout=pipeline_parameters["no_client_timeout"]
                 if pipeline_parameters["no_client_timeout"] > 0 else sys.maxsize)
     init_sender(sender, pipeline_parameters)
+    sender.last_client_update = time.time()
     return sender
 
 
@@ -575,6 +576,11 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 message_buffer.append((processed_data, global_timestamp, pulse_id))
             else:
                 send(sender, processed_data, global_timestamp, pulse_id, pipeline_parameters, statistics)
+            # When multiprocessed cannot access sender object from main process
+            if multiprocessed and ((time.time() - sender.last_client_update) > 1.0):
+                statistics.num_clients = get_clients(sender)
+                sender.last_client_update = time.time()
+
             #_logger.debug("Sent PID %d" % (pulse_id,))
 
     def process_image(function, image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=0):
@@ -806,7 +812,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
                 # If image is greater that the huge page size (2MB) then image copy makesCPU consumption increase by orders
                 # of magnitude. Perform a copy in chunks instead, where each chunk is smaller than 2MB
-                #image = chunk_copy(image)
+
+                if config.CHUNK_COPY_IMAGES:
+                    image = chunk_copy(image)
 
                 if averaging:
                     continuous = averaging < 0
