@@ -36,7 +36,7 @@ else
     conda config --set anaconda_upload yes
 fi
 
-conda build --py 3.6 --no-test conda-recipe
 conda build --py 3.7 --no-test conda-recipe
-conda build --py 3.6 --no-test conda-recipe_client
+conda build --py 3.8 --no-test conda-recipe
 conda build --py 3.7 --no-test conda-recipe_client
+conda build --py 3.8 --no-test conda-recipe_client

@@ -46,5 +46,5 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_
     # Apply threshold
     image_threshold = parameters.get("image_threshold")
     if image_threshold is not None and image_threshold > 0:
-        apply_threshold(image, image_threshold)
+        image = apply_threshold(image, image_threshold)
     return image, x_axis, y_axis

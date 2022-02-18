@@ -9,6 +9,5 @@
  "camera_name": "simulation",
  "name": "simulation_sp",
  "create_header": "on_change",
- "copy": true,
  "group":["simulation", "sp"]
 }
