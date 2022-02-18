@@ -20,7 +20,7 @@ from cam_server.pipeline.data_processing.processor import process_image as defau
 from cam_server.pipeline.data_processing.pre_processor import process_image as pre_process_image
 from cam_server.utils import get_host_port_from_stream_address, set_statistics, on_message_sent, init_statistics, MaxLenDict, get_clients
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
-from cam_server.pipeline.data_processing.functions import chunk_copy, is_number, binning
+from cam_server.pipeline.data_processing.functions import chunk_copy, is_number, binning, copy_image
 
 from cam_server.ipc import IpcSource
 
@@ -634,6 +634,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         max_frame_rate = pipeline_parameters.get("max_frame_rate")
         averaging = pipeline_parameters.get("averaging")
         rotation = pipeline_parameters.get("rotation")
+        copy_images = pipeline_parameters.get("copy")
         if rotation:
             rotation_mode = pipeline_parameters["rotation"]["mode"]
             rotation_angle = int(pipeline_parameters["rotation"]["angle"] / 90) % 4
@@ -731,6 +732,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     downsampling = pipeline_parameters.get("downsampling")
                     max_frame_rate = pipeline_parameters.get("max_frame_rate")
                     averaging = pipeline_parameters.get("averaging")
+                    copy_images = pipeline_parameters.get("copy")
                     rotation = pipeline_parameters.get("rotation")
                     if rotation:
                         rotation_mode = pipeline_parameters["rotation"]["mode"]
@@ -807,15 +809,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 if function is None:
                     return
 
-                # Make a copy if the original image (can be used by multiple pipelines)
-                # image = numpy.array(image)
-
-                # If image is greater that the huge page size (2MB) then image copy makesCPU consumption increase by orders
-                # of magnitude. Perform a copy in chunks instead, where each chunk is smaller than 2MB
-
-                if config.CHUNK_COPY_IMAGES:
-                    image = chunk_copy(image)
-
                 if averaging:
                     continuous = averaging < 0
                     averaging = abs(averaging)
@@ -832,6 +825,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                             continue
                     else:
                         continue
+                else:
+                    if copy_images:
+                        image = copy_image(image)
+
                 if (not averaging) or (not continuous):
                     image_buffer = []
 

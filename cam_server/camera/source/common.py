@@ -30,10 +30,8 @@ def transform_image(image, camera_config):
         if (by > 1) or (bx > 1):
             background, _, _ = binning(background, None, None, bx, by, bm)
         if background.shape == image.shape:
-            if config.CHUNK_COPY_IMAGES:
-                image = chunk_copy(image)
             mask_for_zeros = (background > image)
-            numpy.subtract(image, background, image)
+            image = numpy.subtract(image, background)
             image[mask_for_zeros] = 0
         else:
             _logger.info("Bad background shape for camera %s: %s instead of %s" % (camera_config.get_source(),background.shape, image.shape))

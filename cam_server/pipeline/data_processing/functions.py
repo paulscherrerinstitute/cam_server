@@ -21,7 +21,7 @@ def subtract_background(image, background_image):
         if image.shape != background_image.shape:
             raise RuntimeError("Invalid background_image size %s compared to image %s" % (background_image.shape,
                                                                                           image.shape))
-
+        image = enforce_image_writable(image)
         mask_for_zeros = (background_image > image)
         numpy.subtract(image, background_image, image)
         image[mask_for_zeros] = 0
@@ -31,6 +31,7 @@ def subtract_background_signed(image, background_image):
     # We do not want negative numbers int the image.
     image = image.astype("int32")
     if background_image is not None:
+        image = enforce_image_writable(image)
         numpy.subtract(image, background_image, image)
     return image
 
@@ -47,15 +48,9 @@ def rotate(image, degrees, order = 1, mode = "0.0"):
     if mode == "ortho":
         output = numpy.rot90(image, int(degrees/90))
     else:
-        if config.CHUNK_COPY_IMAGES:
-            output = chunk_copy(image)
-            scipy.ndimage.rotate(image, float(degrees), reshape=False, output=output, order=order,
-                                 mode="constant" if is_number(mode) else mode,
-                                 cval=float(mode) if is_number(mode)  else 0.0, prefilter=True)
-        else:
-            output = scipy.ndimage.rotate(image, float(degrees), reshape=False, order=order,
-                                 mode="constant" if is_number(mode) else mode,
-                                 cval=float(mode) if is_number(mode) else 0.0, prefilter=True)
+        output = scipy.ndimage.rotate(image, float(degrees), reshape=False, order=order,
+                             mode="constant" if is_number(mode) else mode,
+                             cval=float(mode) if is_number(mode) else 0.0, prefilter=True)
     return output
 
 def get_region_of_interest(image, offset_x, size_x, offset_y, size_y):
@@ -63,6 +58,7 @@ def get_region_of_interest(image, offset_x, size_x, offset_y, size_y):
 
 
 def apply_threshold(image, threshold=1):
+    image=enforce_image_writable(image)
     image[image < int(threshold)] = 0
 
 
@@ -541,3 +537,13 @@ def chunk_copy(image, max_chunk = 2000000):
     return buffer
 
 
+def copy_image(image):
+    if config.CHUNK_COPY_IMAGES:
+        return chunk_copy(image)
+    return numpy.array(image)
+
+
+def enforce_image_writable(image):
+    if not image.flags['WRITEABLE']:
+        return copy_image(image)
+    return image
