@@ -23,9 +23,11 @@
  "dtype": "uint16",
  "image_type": "static",
 
- "frame_rate":5.0,
+ "frame_rate":1.0,
  "group": ["Electrons","Test"],
- "alias": ["c1", "camera1"]
+ "alias": ["c1", "camera1"],
+
+ "_image_background": "../tests/background_config/simulation_20220217_172655_914633.npy"
 }
 
 

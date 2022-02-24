@@ -180,6 +180,17 @@ def create_source(camera_stream_address, receive_timeout=config.PIPELINE_RECEIVE
         return Source(host=source_host, port=source_port, receive_timeout=receive_timeout, mode=mode)
 
 
+def resolve_camera_source(cam_client, pipeline_config):
+    source_mode = SUB
+    if pipeline_config.get_input_stream():
+        camera_stream_address = pipeline_config.get_input_stream()
+        source_mode = pipeline_config.get_input_mode()
+    else:
+        camera_stream_address = cam_client.get_instance_stream(pipeline_config.get_camera_name())
+    source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
+    return camera_stream_address, source_host, source_port, source_mode
+
+
 def processing_pipeline(stop_event, statistics, parameter_queue,
                         cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager = None):
     camera_name = pipeline_config.get_camera_name()
@@ -196,9 +207,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
     def connect_to_camera():
         nonlocal source, camera_host, camera_port
-        camera_stream_address = cam_client.get_instance_stream(pipeline_config.get_camera_name())
+        camera_stream_address, source_host, source_port, source_mode = resolve_camera_source(cam_client, pipeline_config)
         _logger.warning("Connecting to camera stream address %s. %s" % (camera_stream_address, log_tag))
-        source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
         if source is None or source_host != camera_host or source_port != camera_port:
             if source:
                 try:
@@ -206,7 +216,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     source = None
                 except:
                     pass
-            source = create_source(camera_stream_address)
+            source = create_source(camera_stream_address, mode=source_mode)
             source.connect()
             camera_host, camera_port = source_host, source_port
 
@@ -913,13 +923,11 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
         camera_name = pipeline_config.get_camera_name()
         stream_image_name = camera_name + config.EPICS_PV_SUFFIX_IMAGE
-
         log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
-        camera_stream_address = cam_client.get_instance_stream(camera_name)
 
-        _logger.debug("Connecting to camera stream address %s. %s" % (camera_stream_address, log_tag))
-
-        source = create_source(camera_stream_address)
+        camera_stream_address, source_host, source_port, source_mode = resolve_camera_source(cam_client, pipeline_config)
+        _logger.warning("Connecting to camera stream address %s. %s" % (camera_stream_address, log_tag))
+        source = create_source(camera_stream_address, mode=source_mode)
         source.connect()
 
         _logger.debug("Opening output stream on port %d. %s", output_stream_port,  log_tag)
@@ -993,9 +1001,16 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
 
     parameters = get_pipeline_parameters(pipeline_config)
 
-    bsread_address = parameters.get("bsread_address")
-    bsread_channels = parameters.get("bsread_channels")
-    bsread_mode = parameters.get("bsread_mode")
+    if pipeline_config.get_input_stream():
+        bsread_address = pipeline_config.get_input_stream()
+        bsread_mode = pipeline_config.get_input_mode()
+        bsread_channels = None
+    else:
+        bsread_address = parameters.get("bsread_address")
+        bsread_mode = parameters.get("bsread_mode")
+        bsread_channels = parameters.get("bsread_channels")
+
+
     dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression = get_dispatcher_parameters(parameters)
 
     try:

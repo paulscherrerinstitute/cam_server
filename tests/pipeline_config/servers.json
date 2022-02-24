@@ -10,7 +10,8 @@
             "simulation_sp:5554",
             "arrival_time_proc:5556",
             "SLG-LCAM-C102_data:5557",
-            "SLG-LCAM-C102_img:5558"
+            "SLG-LCAM-C102_img:5558",
+            "pre_processor:5559"
         ]
     },
     "http://localhost:8882": {

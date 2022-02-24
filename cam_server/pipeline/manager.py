@@ -163,6 +163,13 @@ class Manager(ProxyBase):
                 if not configuration:
                     configuration = {}
                 configuration["port"] = port
+        input_pipeline=cfg.get("input_pipeline")
+        if input_pipeline:
+            #server.save_pipeline_config(pipeline_name, cfg)
+            #camera_stream = server.get_instance_stream(cfg.get("camera_pipeline"))
+            #cfg["camera_stream"] = camera_stream
+            _, input_stream = self.create_pipeline( pipeline_name=input_pipeline, configuration=None, instance_id=input_pipeline)
+            cfg["input_stream"] = input_stream
 
         self._check_background(server, cfg)
         self._check_script(server, cfg)

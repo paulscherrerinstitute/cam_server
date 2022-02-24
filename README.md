@@ -336,7 +336,13 @@ pipeline is added to the output bsread stream in the
 - **records** (Default _None_): Number of messages to be sent. 
   The list cannot be updated dynamically in FILE mode: datasets are created with fix size. 
   If the number of records is reached then the instance shuts itself down.  
-- **paused** (Default _False_): While set to _True_ the messages processing is stopped (received messages are dumped).         
+- **paused** (Default _False_): While set to _True_ the messages processing is stopped (received messages are dumped).
+- **input\_pipeline** : Name of a pipeline to be used as a pipeline source (instead a camera instance).
+        Creates the pipeline and sets tthe "input_stream" parameter.
+- **input\_stream** : Name of a bsread stream to be used as a pipeline source (instead a camera instance).
+- **input\_mode** (Default _SUB_): bsread stream mode (_SUB_ or _PULL_).
+
+
   
 ##### Configuration parameters for pipeline\_type = _'processing'_  
 - **image\_background** (Default _None_): Background to subtract from the original image.
@@ -371,12 +377,15 @@ pipeline is added to the output bsread stream in the
 - **bsread_address** (Default _None_): Source of bsread data to be merged with camera data. 
 - **bsread_channels** (Default _None_): Channel names of bsread to be merged with camera data. 
   If defined and bsread_address is not, then reads from the dispatcher.
-- **bsread_mode** (Default _None_): "PULL"(default if bsread_address is defined ) or "SUB" (default if bsread_address is not defined )
+- **bsread_mode** (Default _None_): "PULL"(default if bsread_address is defined ) or "SUB" (default if bsread_address is not defined)
 - **bsread_image_buf** (Default _1000_): Size of image buffer to merge with bsread data.
 - **bsread_data_buf** (Default _1000_): Size of data buffer to merge with image data. 
 - **processing_threads** (Default _None_): Number of  processing threads. If greater than 0 then the processing is parallelized.
 - **abort_on_error** (Default _True_): If true (default) the pipeline stops upon errors during processing. 
-
+- **copy** (Default _False_): If true the received image is copied before the pipeline is processed. The received image is read-only. 
+        Operations in-place in the default pipeline create a copy of the image if needed (thresholding and background subtraction).
+        If custom pipelines change the received image in-place they must make a copy of it before - or set this parameter to true. 
+        
 ##### Configuration parameters for pipeline\_type = _'stream'_    
 - **bsread_address** (Default _None_): Source of bsread data. 
 - **bsread_channels** (Default _None_): Channel names of bsread data. 

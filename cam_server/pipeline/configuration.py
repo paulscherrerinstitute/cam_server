@@ -328,6 +328,15 @@ class PipelineConfig:
     def get_camera_name(self):
         return self.parameters.get("camera_name")
 
+    def get_input_stream(self):
+        return self.parameters.get("input_stream")
+
+    def get_input_pipeline(self):
+        return self.parameters.get("input_pipeline")
+
+    def get_input_mode(self):
+        return self.parameters.get("input_mode", SUB)
+
     def get_pipeline_type(self):
         return self.parameters["pipeline_type"]
 

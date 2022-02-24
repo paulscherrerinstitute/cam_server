@@ -7,6 +7,8 @@
  "image_slices": null,
  "pipeline_type": "processing",
  "camera_name": "simulation",
+ "_input_stream": "tcp://localhost:5559",
+ "input_pipeline": "pre_processor",
  "name": "simulation_sp",
  "create_header": "on_change",
  "group":["simulation", "sp"]
