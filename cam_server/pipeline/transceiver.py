@@ -252,10 +252,16 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 if img_pid < bs_pid:
                     bs_img_buffer.popleft()
                 elif img_pid == bs_pid:
-                    [pulse_id, [function, global_timestamp, global_timestamp_float, image, pulse_id, x_axis, y_axis, pipeline_parameters]] = bs_img_buffer.popleft()
+                    [pulse_id, [function, global_timestamp, global_timestamp_float, image, pulse_id, x_axis, y_axis, pipeline_parameters, additional_data]] = bs_img_buffer.popleft()
                     stream_data = OrderedDict()
+                    stream_data.update(bsdata)
                     for key, value in bsdata.items():
                         stream_data[key] = value.value
+                    if additional_data is not None:
+                        try:
+                            stream_data.update(additional_data)
+                        except:
+                            pass
                     on_receive_data(function, global_timestamp, global_timestamp_float, sender, None, image, pulse_id, x_axis, y_axis, pipeline_parameters, stream_data)
                     for k in range(i):
                         bs_buffer.popleft()
@@ -275,9 +281,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             bsread_host, bsread_port =None, 9999
             bsread_mode = PULL if bsread_mode == "PULL" else SUB
 
-
-        _logger.info("Start bs send thread")
-        sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
+        if number_processing_threads <= 0:
+            _logger.info("Start bs send thread")
+            sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
 
         try:
             with bssource(host=bsread_host,
@@ -672,19 +678,19 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         stop_event.clear()
 
         image_with_stream = bsread_address or (bsread_channels is not None)
-        if image_with_stream:
-            bs_buffer = deque(maxlen=pipeline_parameters["bsread_data_buf"] )
-            bs_img_buffer = deque(maxlen=pipeline_parameters["bsread_image_buf"] )
-            bs_send_thread = Thread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, dispatcher_parameters, stop_event))
-            bs_send_thread.start()
 
+        buffer_size = pipeline_parameters.get("buffer_size")
+        if buffer_size:
+            message_buffer = deque(maxlen=buffer_size)
+            message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event))
+            message_buffer_send_thread.start()
         else:
-            buffer_size = pipeline_parameters.get("buffer_size")
-            if buffer_size:
-                message_buffer = deque(maxlen=buffer_size)
-                message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event))
-                message_buffer_send_thread.start()
-            elif number_processing_threads > 0:
+            if image_with_stream:
+                bs_buffer = deque(maxlen=pipeline_parameters["bsread_data_buf"])
+                bs_img_buffer = deque(maxlen=pipeline_parameters["bsread_image_buf"])
+                bs_send_thread = Thread(target=bs_send_task, args=(bs_buffer, bs_img_buffer, bsread_address, bsread_channels, bsread_mode, dispatcher_parameters,stop_event))
+                bs_send_thread.start()
+            if number_processing_threads > 0:
                 processing_thread_index = 0
                 thread_buffer_size = pipeline_parameters.get("thread_buffer_size", 10)
                 if multiprocessed:
@@ -718,7 +724,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         processing_threads.append(processing_thread)
                         processing_thread.start()
             else:
-                sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
+                if not image_with_stream:
+                    sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
 
         function = get_function(pipeline_parameters, user_scripts_manager, log_tag)
         eval_function = not multiprocessed or (number_processing_threads <= 0) or (image_with_stream)
@@ -843,19 +850,20 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     image_buffer = []
 
                 # image, x_axis, y_axis = pre_process_image(image, x_axis, y_axis, image_background_array, pipeline_parameters)
+                additional_data = {}
+                if len(data.data.data) != len(config.CAMERA_STREAM_REQUIRED_FIELDS):
+                    for key, value in data.data.data.items():
+                        if not key in config.CAMERA_STREAM_REQUIRED_FIELDS:
+                            additional_data[key] = value.value
                 if image_with_stream:
                     bs_img_buffer.append([pulse_id,
-                                          [function, global_timestamp, global_timestamp_float, image, pulse_id, x_axis,
+                                          [function, global_timestamp, global_timestamp_float, image, pulse_id,
+                                           x_axis,
                                            y_axis,
-                                           pipeline_parameters]])
+                                           pipeline_parameters, additional_data]])
                 else:
-                    additional_data = {}
-                    if len(data.data.data) != len(config.CAMERA_STREAM_REQUIRED_FIELDS):
-                        for key, value in data.data.data.items():
-                            if not key in config.CAMERA_STREAM_REQUIRED_FIELDS:
-                                additional_data[key] = value.value
                     on_receive_data(function, global_timestamp, global_timestamp_float, sender, message_buffer, image,
-                                 pulse_id, x_axis, y_axis, pipeline_parameters, additional_data)
+                             pulse_id, x_axis, y_axis, pipeline_parameters, additional_data)
             except ProcessingCompleated:
                 break
             except Exception as e:

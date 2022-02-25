@@ -65,7 +65,7 @@ def tx_task(bind_address, input_folder, stop_event):
                                 pid = int(time.time() * 100)
                                 h["pulse_id"] = pid
                                 #time.sleep(0.017)
-                                time.sleep(0.5)
+                                time.sleep(0.25)
                                 pid = pid + 1
                                 data = bytes(json.dumps(h), 'utf-8')
                                 #print("")

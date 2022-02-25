@@ -23,7 +23,7 @@
  "dtype": "uint16",
  "image_type": "static",
 
- "frame_rate":1.0,
+ "_frame_rate":1.0,
  "group": ["Electrons","Test"],
  "alias": ["c1", "camera1"],
 
