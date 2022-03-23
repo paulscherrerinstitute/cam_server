@@ -442,8 +442,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                             tx = (processed_data, global_timestamp, pulse_id, message_buffer) = tx_buffer.pop(pid)
                         else:
                             if size >= tx_buffer.maxlen:
-                                received_pids.popleft()
-                                _logger.error("Failed processing Pulse ID" + str(pulse_id))
+                                pid = received_pids.popleft()
+                                _logger.error("Failed processing Pulse ID" + str(pid))
                                 popped = True
                 if tx is not None:
                     send_data(sender, processed_data, global_timestamp, pulse_id, message_buffer)
@@ -547,8 +547,8 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                                 tx = (processed_data, global_timestamp, pulse_id, message_buffer) = tx_buffer.pop(pid)
                             else:
                                 if size >= tx_buffer.maxlen:
-                                    received_pids.popleft()
-                                    _logger.error("Failed processing Pulse ID" + str(pulse_id))
+                                    pid = received_pids.popleft()
+                                    _logger.error("Failed processing PID" + str(pid))
                             if tx is not None:
                                 send_data(sender, processed_data, global_timestamp, pulse_id, message_buffer)
                                 #if last_sent!=-1:
@@ -1080,7 +1080,8 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
                     except Exception as e:
                         _logger.error("Error processing bs buffer: " + str(e) + ". %s" % log_tag)
                         continue
-                    send(sender, stream_data, timestamp, pulse_id, parameters, statistics)
+                    if stream_data is not None:
+                        send(sender, stream_data, timestamp, pulse_id, parameters, statistics)
                 except Exception as e:
                     _logger.exception("Could not process message: " + str(e) + ". %s" % log_tag)
                     stop_event.set()
