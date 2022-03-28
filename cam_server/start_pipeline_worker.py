@@ -8,7 +8,7 @@ from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
 from cam_server import config, CamClient
 from cam_server.instance_management.configuration import TransientConfig, UserScriptsManager
-from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server
+from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server, cleanup
 
 _logger = logging.getLogger(__name__)
 
@@ -29,6 +29,7 @@ def start_pipeline_worker(host, port, background_base, scripts_base, cam_server_
 
     cam_server_client = CamClient(cam_server_api_address)
     config_manager = PipelineConfigManager(config_provider=TransientConfig())
+    cleanup(0, background_base, False, False, [], simulated=False)
     background_manager = BackgroundImageManager(background_base)
     user_scripts_manager = UserScriptsManager(scripts_base)
     pipeline_instance_manager = PipelineInstanceManager(config_manager, background_manager, user_scripts_manager,
