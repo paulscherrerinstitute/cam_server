@@ -222,7 +222,7 @@ class Manager(ProxyBase):
     def update_instance_config(self, instance_name, config_updates):
         server = self.get_server(instance_name)
         if server is not None:
-            self._check_background(server, config_updates)
+            self._check_background(server, config_updates, instance_name)
             self._check_script(server, config_updates, instance_name)
             server.set_instance_config(instance_name, config_updates)
 
@@ -260,9 +260,11 @@ class Manager(ProxyBase):
                 except:
                     _logger.error("Error deleting user script %s on %s" % (script_name, server.get_address()))
 
-    def _check_background(self, server, config):
+    def _check_background(self, server, config, instance_name=None):
         if config.get("image_background_enable"):
             image_background = config.get("image_background")
+            if not image_background:
+                image_background = server.get_instance_config(instance_name).get("image_background")
             if image_background:
                 try:
                     # Check if the background can be loaded
