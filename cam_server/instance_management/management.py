@@ -7,6 +7,7 @@ from epics.multiproc import CAProcess as Process
 
 from cam_server import config
 from cam_server.utils import get_port_generator
+from threading import RLock
 
 try:
     import psutil
@@ -19,6 +20,7 @@ _logger = getLogger(__name__)
 class InstanceManager(object):
     def __init__(self, port_range=None, auto_delete_stopped=False):
         self.instances = {}
+        self.instances_lock=RLock()
         self._info_timestamp = None
         self._tx = None
         self._rx = None
@@ -75,6 +77,15 @@ class InstanceManager(object):
         instance = self.instances.get(instance_id)
         return instance and not instance.is_running()
 
+    #Thread safe acesses
+    def get_instances_values(self):
+        with self.instances_lock:
+            return self.instances.values()
+
+    def get_instances_names(self):
+        with self.instances_lock:
+            return list(self.instances.keys())
+
 
     def get_info(self):
         """
@@ -83,8 +94,7 @@ class InstanceManager(object):
         """
         info = { "version": __VERSION__,
                  "active_instances": dict((instance.get_instance_id(), instance.get_info())
-                                         for instance in self.instances.values() if instance.is_running())}
-
+                                         for instance in self.get_instances_values() if instance.is_running())}
         if psutil:
             info["cpu"] = psutil.cpu_percent()
             info["memory"] = psutil.virtual_memory().used
@@ -116,7 +126,8 @@ class InstanceManager(object):
         :param instance_name: Instance name to add.
         :param instance_wrapper: Instance wrapper.
         """
-        self.instances[instance_name] = instance_wrapper
+        with self.instances_lock:
+            self.instances[instance_name] = instance_wrapper
 
     def is_instance_present(self, instance_name):
         """
@@ -126,16 +137,18 @@ class InstanceManager(object):
         """
         if self.auto_delete_stopped:
             self.delete_stopped_instance(instance_name)
-        return instance_name in self.instances
+        return self.instances.get(instance_name) is not None
 
     def get_instance_stream_port(self, instance_name):
-        if instance_name in self.instances:
-            self.instances[instance_name].stream_port
+        instance = self.instances.get(instance_name)
+        if instance is not None:
+            return instance.stream_port
 
     def _get_instance(self, instance_name):
-        if instance_name not in self.instances:
+        instance = self.instances.get(instance_name)
+        if instance is None:
             raise ValueError("Instance '%s' does not exist." % instance_name)
-        return self.instances[instance_name]
+        return instance
 
     def get_instance(self, instance_name):
         """
@@ -160,8 +173,8 @@ class InstanceManager(object):
         :param instance_name: Instance to start.
         """
         _logger.info("Starting instance '%s'." % instance_name)
-        if instance_name in self.instances:
-            instance = self.instances[instance_name]
+        instance = self.instances.get(instance_name)
+        if instance is not None:
             if not instance.is_running():
                 instance.start()
             else:
@@ -175,9 +188,9 @@ class InstanceManager(object):
         :param instance_name: Name of the instance to stop.
         """
         _logger.info("Stopping instance '%s'." % instance_name)
-
-        if instance_name in self.instances:
-            self.instances[instance_name].stop()
+        instance = self.instances.get(instance_name)
+        if instance is not None:
+            instance.stop()
         if self.auto_delete_stopped:
             self.delete_stopped_instance(instance_name)
 
@@ -188,13 +201,14 @@ class InstanceManager(object):
         """
         _logger.info("Stopping all instances.")
 
-        for instance_id in list(self.instances.keys()):
+        for instance_id in self.get_instances_names():
             self.stop_instance(instance_id)
 
 
     def delete_instance(self, instance_name):
         self._get_instance(instance_name)
-        del self.instances[instance_name]
+        with self.instances_lock:
+            del self.instances[instance_name]
 
 
 class InstanceWrapper:
