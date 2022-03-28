@@ -11,6 +11,6 @@ TimeoutStartSec=0
 ExecStartPre=-/usr/bin/docker kill camera_worker
 ExecStartPre=-/usr/bin/docker rm camera_worker
 #ExecStartPre=/usr/bin/docker pull paulscherrerinstitute/cam_server
-ExecStart=/usr/bin/docker run --name camera_worker --env-file /cam_server_configuration/camera_environment -v /cam_server_configuration/configuration:/configuration -v /tmp/cam_server:/feeds --net=host paulscherrerinstitute/cam_server camera_worker --log_level=INFO --web_server=cherrypy --ipc_feed_folder=/feeds
+ExecStart=/usr/bin/docker run --name camera_worker --env-file /cam_server_configuration/camera_environment -v /cam_server_configuration/configuration:/configuration -v /tmp/cam_server:/feeds --net=host --ulimit core=0 paulscherrerinstitute/cam_server camera_worker --log_level=INFO --web_server=cherrypy --ipc_feed_folder=/feeds
 ExecStop=/usr/bin/docker stop camera_worker
 Restart=always
