@@ -43,8 +43,7 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     return_value["y_fwhm"] = y_fwhm
 
     # If set in background subtraction passive mode, it cannot be serialized
-    if "background_data" in parameters:
-        del parameters["background_data"]
+    background_data = parameters.pop("background_data", None)
     # Needed for config traceability.
     return_value["processing_parameters"] = json.dumps(parameters)
 

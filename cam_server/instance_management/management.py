@@ -244,6 +244,7 @@ class InstanceWrapper:
         self.statistics.memory = 0
         self.statistics._process = None
         self.statistics._frame_count = 0
+        self.statistics.last_rcvd_timestamp = time.time()
 
 
         self.parameter_queue = multiprocessing.Queue()

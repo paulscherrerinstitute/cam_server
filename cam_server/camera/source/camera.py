@@ -6,7 +6,7 @@ from cam_server.camera.sender import *
 from logging import getLogger
 from cam_server import config
 from cam_server.camera.source.common import transform_image
-from cam_server.utils import set_statistics, on_message_sent, init_statistics
+from cam_server.utils import update_statistics, on_message_sent, init_statistics
 
 
 _logger = getLogger(__name__)
@@ -312,8 +312,7 @@ class Camera:
                 image, timestamp, pulse_id = self.get_data()
                 frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
                 frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
-                set_statistics(statistics, sender, statistics.total_bytes + frame_size, 1 if (image is not None) else 0,
-                               frame_shape)
+                update_statistics(sender, -frame_size, 1 if (image is not None) else 0, frame_shape)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if image is None:
@@ -329,7 +328,7 @@ class Camera:
 
                 try:
                     sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=self.check_sender_data)
-                    on_message_sent(statistics)
+                    on_message_sent()
                 except Again:
                     _logger.warning(
                         "Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera_name))

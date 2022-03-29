@@ -84,21 +84,32 @@ def get_clients(sender):
     return 0
 
 
-def on_message_sent(statistics):
+def on_message_sent():
+    if statistics is None:
+        return
     statistics.tx_count = statistics.tx_count + 1
 
-def set_statistics(statistics, sender, total_bytes, frame_count, frame_shape = None):
+
+statistics = None
+
+def update_statistics(sender, total_bytes_or_increment, frame_count, frame_shape = None):
+    if statistics is None:
+        return
+
     now = time.time()
     timespan = now - statistics.timestamp
     statistics.update_timestamp = time.localtime()
-    statistics.total_bytes = total_bytes
+    if total_bytes_or_increment<=0:
+        statistics.total_bytes = statistics.total_bytes+total_bytes_or_increment
+    else:
+        statistics.total_bytes = total_bytes_or_increment
     statistics.rx_count = statistics.rx_count + frame_count
     statistics._frame_count = statistics._frame_count + frame_count
     if statistics.num_clients >= 0: #Multiprocessed
         statistics.clients = statistics.num_clients
     if timespan > 1.0:
-        received_bytes = total_bytes - statistics._last_proc_total_bytes
-        statistics._last_proc_total_bytes = total_bytes
+        received_bytes = statistics.total_bytes - statistics._last_proc_total_bytes
+        statistics._last_proc_total_bytes = statistics.total_bytes
         if statistics.num_clients < 0: #Not multiprocessed
             statistics.clients = get_clients(sender)
         statistics.throughput = (received_bytes / timespan) if (timespan > 0) else None
@@ -117,7 +128,9 @@ def set_statistics(statistics, sender, total_bytes, frame_count, frame_shape = N
 
 
 
-def init_statistics(statistics):
+def init_statistics(stats):
+    global statistics
+    statistics = stats
     statistics.update_timestamp = None
     statistics.num_clients = -1
     statistics.clients = 0
@@ -141,6 +154,9 @@ def init_statistics(statistics):
 _api_logger = None
 #_api_log_capture_string = None
 _api_log_buffer = None
+
+
+
 
 
 class MyHandler(logging.StreamHandler):

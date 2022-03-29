@@ -18,13 +18,14 @@ from bsread.sender import Sender
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
 from cam_server.pipeline.data_processing.pre_processor import process_image as pre_process_image
-from cam_server.utils import get_host_port_from_stream_address, set_statistics, on_message_sent, init_statistics, MaxLenDict, get_clients
+from cam_server.utils import get_host_port_from_stream_address,  update_statistics, on_message_sent, init_statistics, MaxLenDict, get_clients
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS, LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
 from cam_server.pipeline.data_processing.functions import chunk_copy, is_number, binning, copy_image
 
 from cam_server.ipc import IpcSource
 
 _logger = getLogger(__name__)
+log_tag = ""
 
 class ProcessingCompleated(Exception):
      pass
@@ -42,7 +43,7 @@ def init_sender(sender, pipeline_parameters):
         sender.create_header = None
     sender.records=pipeline_parameters.get("records")
 
-def create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag):
+def create_sender(pipeline_parameters, output_stream_port, stop_event):
     sender = None
     def no_client_action():
         nonlocal sender,pipeline_parameters
@@ -84,7 +85,7 @@ def check_records(sender, pipeline_parameters):
         if sender.record_count >= records:
             raise ProcessingCompleated("Reached number of records: " + str(records))
 
-def send(sender, data, timestamp, pulse_id, pipeline_parameters, statistics):
+def send(sender, data, timestamp, pulse_id, pipeline_parameters):
     try:
         if sender.create_header == True:
             check_header = True
@@ -99,7 +100,7 @@ def send(sender, data, timestamp, pulse_id, pipeline_parameters, statistics):
             if check_header:
                 sender.data_format = data_format
         sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_header)
-        on_message_sent(statistics)
+        on_message_sent()
         if sender.records:
             check_records(sender, pipeline_parameters)
     except Exception as e :
@@ -141,7 +142,7 @@ def get_dispatcher_parameters(parameters):
 
 functions = {}
 
-def get_function(pipeline_parameters, user_scripts_manager, log_tag):
+def get_function(pipeline_parameters, user_scripts_manager):
     name = pipeline_parameters.get("function")
     if not name:
         if pipeline_parameters.get("pipeline_type") == config.PIPELINE_TYPE_STREAM:
@@ -193,6 +194,7 @@ def resolve_camera_source(cam_client, pipeline_config):
 
 def processing_pipeline(stop_event, statistics, parameter_queue,
                         cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager = None):
+    global log_tag
     camera_name = pipeline_config.get_camera_name()
     log_tag = " [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
     source = None
@@ -223,7 +225,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
     def message_buffer_send_task(message_buffer, stop_event):
         nonlocal sender
         _logger.info("Start message buffer send thread")
-        sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
+        sender = create_sender(pipeline_parameters, output_stream_port, stop_event)
         try:
             while not stop_event.is_set():
                 if len(message_buffer) == 0:
@@ -283,7 +285,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
         if number_processing_threads <= 0:
             _logger.info("Start bs send thread")
-            sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
+            sender = create_sender(pipeline_parameters, output_stream_port, stop_event)
 
         try:
             with bssource(host=bsread_host,
@@ -428,7 +430,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
         nonlocal sender
         _logger.info("Start threaded processing send thread")
         last_sent = -1
-        sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
+        sender = create_sender(pipeline_parameters, output_stream_port, stop_event)
         try:
             while not stop_event.is_set():
                 tx = None
@@ -468,7 +470,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     pass
             _logger.info("Exit threaded processing send thread")
 
-    def process_task(thread_buffer, tx_queue, stop_event, index, user_scripts_manager, log_tag):
+    def process_task(thread_buffer, tx_queue, stop_event, index, user_scripts_manager, ltag):
+        global log_tag
+        log_tag = ltag
         _logger.info("Start process %d" % index)
 
         try:
@@ -482,7 +486,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
                 (global_timestamp, global_timestamp_float, message_buffer, image, pulse_id, x_axis, y_axis, parameters, bsdata) = msg
 
-                function = get_function(parameters, user_scripts_manager, log_tag)
+                function = get_function(parameters, user_scripts_manager)
                 if function is not None:
                     processed_data = process_image(function, image, x_axis, y_axis, pulse_id, global_timestamp_float, bsdata, thread_index=index)
                     try:
@@ -501,7 +505,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
             _logger.info("Exit process  %d" % index)
 
 
-    def process_send_task(tx_queue, received_pids_queue, spawn_send_thread, stop_event):
+    def process_send_task(tx_queue, received_pids_queue, spawn_send_thread, stop_event, ltag):
+        global log_tag
+        log_tag = ltag
+
         sender = None
         _logger.info("Start send process")
         received_pids = deque()
@@ -516,7 +523,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                                             args=(tx_buffer, tx_buffer_lock, received_pids, stop_event))
             send_thread.start()
         else:
-            sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
+            sender = create_sender(pipeline_parameters, output_stream_port, stop_event)
 
         try:
             while not stop_event.is_set():
@@ -573,7 +580,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
 
     def send_data(sender, processed_data, global_timestamp, pulse_id, message_buffer = None):
-        nonlocal last_sent_timestamp
         if processed_data is not None:
             # Requesting subset of the data
             include = pipeline_parameters.get("include")
@@ -587,11 +593,10 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 for field in exclude:
                     processed_data.pop(field, None)
 
-            last_sent_timestamp = time.time()
             if message_buffer:
                 message_buffer.append((processed_data, global_timestamp, pulse_id))
             else:
-                send(sender, processed_data, global_timestamp, pulse_id, pipeline_parameters, statistics)
+                send(sender, processed_data, global_timestamp, pulse_id, pipeline_parameters)
             # When multiprocessed cannot access sender object from main process
             if multiprocessed and ((time.time() - sender.last_client_update) > 1.0):
                 statistics.num_clients = get_clients(sender)
@@ -703,7 +708,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         received_pids = multiprocessing.Queue()
                         tx_queue = multiprocessing.Queue(thread_buffer_size * number_processing_threads)
                     spawn_send_thread = pipeline_parameters.get("spawn_send_thread", True)
-                    message_buffer_send_thread= multiprocessing.Process(target=process_send_task,args=(tx_queue, received_pids, spawn_send_thread, stop_event))
+                    message_buffer_send_thread= multiprocessing.Process(target=process_send_task,args=(tx_queue, received_pids, spawn_send_thread, stop_event, log_tag))
                     message_buffer_send_thread.start()
                     for i in range(number_processing_threads):
                         thread_buffer = multiprocessing.Queue(thread_buffer_size)
@@ -725,9 +730,9 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                         processing_thread.start()
             else:
                 if not image_with_stream:
-                    sender = create_sender(pipeline_parameters, output_stream_port, stop_event, log_tag)
+                    sender = create_sender(pipeline_parameters, output_stream_port, stop_event)
 
-        function = get_function(pipeline_parameters, user_scripts_manager, log_tag)
+        function = get_function(pipeline_parameters, user_scripts_manager)
         eval_function = not multiprocessed or (number_processing_threads <= 0) or (image_with_stream)
 
         _logger.debug("Transceiver started. %s" % (log_tag))
@@ -754,7 +759,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     if rotation:
                         rotation_mode = pipeline_parameters["rotation"]["mode"]
                         rotation_angle =int(pipeline_parameters["rotation"]["angle"] / 90) % 4
-                    function = get_function(pipeline_parameters, user_scripts_manager, log_tag)
+                    function = get_function(pipeline_parameters, user_scripts_manager)
 
                 frame_shape = None
                 data = source.receive()
@@ -763,7 +768,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     if image is not None:
                         frame_shape = str(image.shape[1]) + "x" + str(image.shape[0]) + "x" + str(image.itemsize)
                     last_rcvd_timestamp = time.time()
-                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes,  1 if data else 0, frame_shape)
+                update_statistics(sender, data.statistics.total_bytes_received if data else 0,  1 if data else 0, frame_shape)
 
                 if not data:
                     if camera_timeout:
@@ -800,11 +805,6 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                     if downsampling_counter > downsampling:
                         downsampling_counter = 0
                     else:
-                        continue
-                #Check maximum frame rate parameter
-                if max_frame_rate:
-                    min_interval = 1.0 / max_frame_rate
-                    if (time.time() - last_sent_timestamp) < min_interval:
                         continue
 
                 if image is None:
@@ -849,6 +849,12 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 if (not averaging) or (not continuous):
                     image_buffer = []
 
+                #Check maximum frame rate parameter
+                if max_frame_rate:
+                    min_interval = 1.0 / max_frame_rate
+                    if (time.time() - last_sent_timestamp) < min_interval:
+                        continue
+
                 # image, x_axis, y_axis = pre_process_image(image, x_axis, y_axis, image_background_array, pipeline_parameters)
                 additional_data = {}
                 if len(data.data.data) != len(config.CAMERA_STREAM_REQUIRED_FIELDS):
@@ -864,6 +870,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
                 else:
                     on_receive_data(function, global_timestamp, global_timestamp_float, sender, message_buffer, image,
                              pulse_id, x_axis, y_axis, pipeline_parameters, additional_data)
+                last_sent_timestamp = time.time()
             except ProcessingCompleated:
                 break
             except Exception as e:
@@ -908,7 +915,7 @@ def processing_pipeline(stop_event, statistics, parameter_queue,
 
 def store_pipeline(stop_event, statistics, parameter_queue,
                    cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager=None):
-
+    global log_tag
     def no_client_action():
         nonlocal  parameters
         if parameters["no_client_timeout"] > 0:
@@ -956,7 +963,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
         while not stop_event.is_set():
             try:
                 data = source.receive()
-                set_statistics(statistics, sender, data.statistics.total_bytes_received if data else statistics.total_bytes, 1 if data else 0)
+                update_statistics(sender, data.statistics.total_bytes_received if data else 0, 1 if data else 0)
 
                 if module:
                     if counter < module:
@@ -1001,7 +1008,7 @@ def store_pipeline(stop_event, statistics, parameter_queue,
 
 def stream_pipeline(stop_event, statistics, parameter_queue,
                    cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager=None):
-
+    global log_tag
     source = None
     sender = None
     log_tag = "stream_pipeline"
@@ -1017,6 +1024,14 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
         bsread_address = parameters.get("bsread_address")
         bsread_mode = parameters.get("bsread_mode")
         bsread_channels = parameters.get("bsread_channels")
+
+    message_buffer, message_buffer_send_thread  = None, None
+    bs_buffer, bs_img_buffer, bs_send_thread = None, None, None
+    processing_threads = []
+    number_processing_threads = parameters.get("processing_threads", 0)
+    thread_buffers = None if number_processing_threads == 0 else []
+    multiprocessed = parameters.get("multiprocessing", False)
+
 
 
     dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression = get_dispatcher_parameters(parameters)
@@ -1040,7 +1055,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
                 bsread_channels = json.loads(bsread_channels)
             if len(bsread_channels)==0:
                 bsread_channels = None
-        sender = create_sender(parameters, output_stream_port, stop_event, log_tag)
+        sender = create_sender(parameters, output_stream_port, stop_event)
 
         # Indicate that the startup was successful.
         stop_event.clear()
@@ -1063,7 +1078,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
                         parameters = get_pipeline_parameters(pipeline_config)
 
                     data = stream.receive()
-                    set_statistics(statistics, sender,data.statistics.total_bytes_received if data else statistics.total_bytes, 1 if data else 0)
+                    update_statistics(sender,data.statistics.total_bytes_received if data else 0, 1 if data else 0)
                     if not data or stop_event.is_set():
                         continue
 
@@ -1073,7 +1088,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
                     try:
                         for key, value in data.data.data.items():
                             stream_data[key] = value.value
-                        function = get_function(parameters, user_scripts_manager, log_tag)
+                        function = get_function(parameters, user_scripts_manager)
                         if function is None:
                             continue
                         stream_data = function(stream_data, pulse_id, timestamp, parameters)
@@ -1081,7 +1096,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
                         _logger.error("Error processing bs buffer: " + str(e) + ". %s" % log_tag)
                         continue
                     if stream_data is not None:
-                        send(sender, stream_data, timestamp, pulse_id, parameters, statistics)
+                        send(sender, stream_data, timestamp, pulse_id, parameters)
                 except Exception as e:
                     _logger.exception("Could not process message: " + str(e) + ". %s" % log_tag)
                     stop_event.set()
@@ -1105,6 +1120,7 @@ def stream_pipeline(stop_event, statistics, parameter_queue,
 
 def custom_pipeline(stop_event, statistics, parameter_queue,
                    cam_client, pipeline_config, output_stream_port, background_manager, user_scripts_manager=None):
+    global log_tag
     sender = None
     log_tag = "custom_pipeline"
     exit_code = 0
@@ -1112,10 +1128,10 @@ def custom_pipeline(stop_event, statistics, parameter_queue,
     parameters = get_pipeline_parameters(pipeline_config)
     try:
         init_statistics(statistics)
-        log_tag = " ["  + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
-        sender = create_sender(parameters, output_stream_port, stop_event, log_tag)
+        log_tag = " [" + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]"
+        sender = create_sender(parameters, output_stream_port, stop_event)
 
-        function = get_function(parameters, user_scripts_manager, log_tag)
+        function = get_function(parameters, user_scripts_manager)
         if function is None:
             raise Exception ("Invalid function")
         max_frame_rate = parameters.get("max_frame_rate")
@@ -1137,12 +1153,12 @@ def custom_pipeline(stop_event, statistics, parameter_queue,
 
                 stream_data, timestamp, pulse_id, data_size = function(parameters, init)
                 init = False
-                set_statistics(statistics, sender,statistics.total_bytes + data_size, 1 if stream_data else 0)
+                update_statistics(sender,-data_size, 1 if stream_data else 0)
 
                 if not stream_data or stop_event.is_set():
                     continue
 
-                send(sender, stream_data, timestamp, pulse_id, parameters, statistics)
+                send(sender, stream_data, timestamp, pulse_id, parameters)
                 if sample_interval:
                     sleep = sample_interval - (time.time()-start)
                     if (sleep>0):

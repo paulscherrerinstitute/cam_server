@@ -8,7 +8,7 @@ from zmq import Again
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
-from cam_server.utils import set_statistics, on_message_sent, init_statistics, MaxLenDict
+from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict
 
 
 
@@ -79,12 +79,12 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
                     "y_axis": y_axis}
             frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
             frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
-            set_statistics(statistics, sender, statistics.total_bytes + frame_size, 1 if (image is not None) else 0, frame_shape)
+            update_statistics(sender, -frame_size, 1 if (image is not None) else 0, frame_shape)
 
             try:
                 pulse_id = int(time.time() *100) if camera.get_simulated_pulse_id() else None
                 sender.send(data=data, pulse_id = pulse_id, timestamp=timestamp, check_data=False)
-                on_message_sent(statistics)
+                on_message_sent()
             except Again:
                 _logger.warning("Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera.get_name()))
 
@@ -180,7 +180,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     if tx:
                         sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
                         data_format_changed = False
-                        on_message_sent(statistics)
+                        on_message_sent()
                         if (last_pid):
                             expected = (last_pid + interval);
                             if pulse_id != expected:
@@ -349,7 +349,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         total_bytes[index] = data.statistics.total_bytes_received
 
                 with stats_lock:
-                    set_statistics(statistics, sender, sum(total_bytes), 1 if data else 0, frame_shape)
+                    update_statistics(sender, sum(total_bytes), 1 if data else 0, frame_shape)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
@@ -385,7 +385,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 else:
                     sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
                     data_format_changed = False
-                    on_message_sent(statistics)
+                    on_message_sent()
             except Exception as e:
                 _logger.error("Could not process message: %s [%s]" % (str(e), camera.get_name()))
                 exit_code = 3
