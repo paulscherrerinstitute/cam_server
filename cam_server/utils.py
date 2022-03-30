@@ -126,7 +126,8 @@ def update_statistics(sender, total_bytes_or_increment, frame_count, frame_shape
             statistics.cpu = None
             statistics.memory = None
 
-
+def get_statistics():
+    return statistics
 
 def init_statistics(stats):
     global statistics
