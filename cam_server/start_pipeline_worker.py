@@ -57,6 +57,7 @@ def main():
     parser.add_argument('-w', '--web_server', default=config.DEFAULT_WEB_SERVER)
     parser.add_argument('-a', '--web_server_args', default="")
     parser.add_argument('-x', '--abort_on_error', default=True)
+    parser.add_argument('-y', '--abort_on_timeout', default=False)
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
@@ -67,6 +68,8 @@ def main():
     initialize_api_logger(arguments.log_level)
     if arguments.abort_on_error is not None:
         config.ABORT_ON_ERROR = str(arguments.abort_on_error).lower() == "true"
+    if arguments.abort_on_timeout is not None:
+        config.ABORT_ON_TIMEOUT = not (str(arguments.abort_on_timeout).lower() == "false")
     start_pipeline_worker(arguments.interface, arguments.port,
                           arguments.background_base,
                           arguments.scripts_base,

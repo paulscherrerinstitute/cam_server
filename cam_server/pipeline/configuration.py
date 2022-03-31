@@ -335,7 +335,7 @@ class PipelineConfig:
         return self.parameters.get("input_pipeline")
 
     def get_input_mode(self):
-        return self.parameters.get("input_mode", SUB)
+        return self.parameters.get("input_mode", "SUB")
 
     def get_pipeline_type(self):
         return self.parameters["pipeline_type"]

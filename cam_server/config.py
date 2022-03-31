@@ -81,6 +81,7 @@ PIPELINE_TYPE_CUSTOM = "custom"
 
 
 ABORT_ON_ERROR = True
+ABORT_ON_TIMEOUT = False
 
 ################
 # IPC settings #

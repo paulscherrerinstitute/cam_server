@@ -74,6 +74,8 @@ def main():
     initialize_api_logger(arguments.log_level)
     if arguments.abort_on_error is not None:
         config.ABORT_ON_ERROR = str(arguments.abort_on_error).lower() == "true"
+    if arguments.abort_on_timeout is not None:
+        config.ABORT_ON_TIMEOUT = not (str(arguments.abort_on_error).lower() == "false")
     start_pipeline_server(arguments.interface, arguments.port, arguments.base,
                           arguments.background_base, arguments.scripts_base,
                           arguments.cam_server, arguments.hostname, None,
