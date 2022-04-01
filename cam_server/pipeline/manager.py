@@ -3,6 +3,7 @@ import socket
 from threading import Timer
 from cam_server.instance_management.proxy import ProxyBase
 from cam_server.pipeline.configuration import PipelineConfig
+from cam_server.pipeline.transceiver import get_builtin_pipelines
 from cam_server import config
 from cam_server import PipelineClient
 from cam_server.utils import get_host_port_from_stream_address, cleanup
@@ -171,8 +172,10 @@ class Manager(ProxyBase):
             _, input_stream = self.create_pipeline( pipeline_name=input_pipeline, configuration=None, instance_id=input_pipeline)
             cfg["input_stream"] = input_stream
 
+        self._check_type(server, cfg)
         self._check_background(server, cfg)
         self._check_script(server, cfg)
+
         if pipeline_name is not None:
             server.save_pipeline_config(pipeline_name, cfg)
             _logger.info("Creating stream from name %s at %s" % (pipeline_name, server.get_address()))
@@ -260,9 +263,9 @@ class Manager(ProxyBase):
                 except:
                     _logger.error("Error deleting user script %s on %s" % (script_name, server.get_address()))
 
-    def _check_background(self, server, config, instance_name=None):
-        if config.get("image_background_enable"):
-            image_background = config.get("image_background")
+    def _check_background(self, server, configuration, instance_name=None):
+        if configuration.get("image_background_enable"):
+            image_background = configuration.get("image_background")
             if not image_background:
                 image_background = server.get_instance_config(instance_name).get("image_background")
             if image_background:
@@ -271,17 +274,24 @@ class Manager(ProxyBase):
                     image_array = self.background_manager.get_background(image_background)
                     server.set_background_image_bytes(image_background, image_array)
                 except:
-                    _logger.error("Bad background file for %s: %s" % (str(config.get("name")),str(image_background)))
+                    _logger.error("Bad background file for %s: %s" % (str(configuration.get("name")),str(image_background)))
 
-    def _check_script(self, server, config, instance_name=None):
-        function = config.get("function")
+    def _check_script(self, server, configuration, instance_name=None):
+        function = configuration.get("function")
         if not function:
-            if config.get("reload"):
+            if configuration.get("reload"):
                 function =server.get_instance_config(instance_name).get("function")
 
         if function:
             if self.user_scripts_manager.exists(function):
                 server.set_user_script(function, self.user_scripts_manager.get_script(function))
+
+    def _check_type(self, server, configuration, instance_name=None):
+        pipeline_type = configuration.get("pipeline_type", None)
+        if pipeline_type == config.PIPELINE_TYPE_SCRIPT:
+            script =configuration.get("pipeline_script")
+            if self.user_scripts_manager.exists(script):
+                server.set_user_script(script, self.user_scripts_manager.get_script(script))
 
     def save_pipeline_config(self, pipeline_name, config):
         self.config_manager.save_pipeline_config(pipeline_name, config)

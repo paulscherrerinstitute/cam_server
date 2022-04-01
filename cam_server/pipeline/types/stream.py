@@ -17,7 +17,6 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
 
 
     def process_stream(pulse_id, global_tamestamp, function,input_data):
-        pars = get_parameters()
         try:
             return function(input_data, pulse_id, global_tamestamp, parameters)
         except Exception as e:

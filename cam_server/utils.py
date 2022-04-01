@@ -92,9 +92,12 @@ def on_message_sent():
 
 statistics = None
 
-def update_statistics(sender, total_bytes_or_increment, frame_count, frame_shape = None):
+def update_statistics(_sender=None, total_bytes_or_increment=0, frame_count=0, frame_shape = None):
+    global sender
     if statistics is None:
         return
+    if _sender is None:
+        _sender = sender
 
     now = time.time()
     timespan = now - statistics.timestamp
@@ -111,7 +114,7 @@ def update_statistics(sender, total_bytes_or_increment, frame_count, frame_shape
         received_bytes = statistics.total_bytes - statistics._last_proc_total_bytes
         statistics._last_proc_total_bytes = statistics.total_bytes
         if statistics.num_clients < 0: #Not multiprocessed
-            statistics.clients = get_clients(sender)
+            statistics.clients = get_clients(_sender)
         statistics.throughput = (received_bytes / timespan) if (timespan > 0) else None
         statistics.frame_shape = frame_shape
         statistics.frame_rate = (statistics._frame_count / timespan) if (timespan > 0) else 0

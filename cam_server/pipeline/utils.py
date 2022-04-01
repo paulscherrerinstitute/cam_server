@@ -48,7 +48,7 @@ message_buffer_size = None
 
 
 
-class ProcessingCompleated(Exception):
+class ProcessingCompleted(Exception):
      pass
 
 
@@ -116,7 +116,7 @@ def check_records(sender):
     if records:
         sender.record_count = sender.record_count + 1
         if sender.record_count >= records:
-            raise ProcessingCompleated("Reached number of records: " + str(records))
+            raise ProcessingCompleted("Reached number of records: " + str(records))
 
 def send(sender, data, timestamp, pulse_id):
     try:
@@ -230,6 +230,8 @@ def get_function(pipeline_parameters, user_scripts_manager):
             pipeline_parameters["reload"] = False
         return f
     except:
+        import traceback
+        traceback.print_exc()
         _logger.exception("Could not import function: %s. %s" % (str(name), log_tag))
         return None
 
@@ -384,7 +386,7 @@ def receive_stream(camera=False):
                 return pulse_id, global_timestamp, None
             elif (pid_range[1] > 0) and (pulse_id > pid_range[1]):
                 _logger.warning("Reached end of pid range: stopping pipeline")
-                raise ProcessingCompleated("End of pid range")
+                raise ProcessingCompleted("End of pid range")
 
         # Check downsampling parameter
         if downsampling:

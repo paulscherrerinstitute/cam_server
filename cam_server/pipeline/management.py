@@ -1,6 +1,7 @@
 import socket
 import uuid
 from logging import getLogger
+from imp import load_source
 
 from cam_server import config
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
@@ -28,12 +29,12 @@ class PipelineInstanceManager(InstanceManager):
         return self.config_manager.get_pipeline_list()
 
     def _create_and_start_pipeline(self, instance_id, pipeline_config, read_only_pipeline):
-        if pipeline_config.get_pipeline_type() in (config.PIPELINE_TYPE_STREAM, config.PIPELINE_TYPE_CUSTOM):
-            camera_name = None
-        else:
+        if pipeline_config.get_pipeline_type() in (config.PIPELINE_TYPE_PROCESSING, config.PIPELINE_TYPE_STORE):
             camera_name = pipeline_config.get_camera_name()
             if not self.cam_server_client.is_camera_online(camera_name):
                 raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
+        else:
+            camera_name = None
 
         if pipeline_config.get_configuration().get("port"):
             stream_port =  int(pipeline_config.get_configuration().get("port"))
@@ -44,10 +45,20 @@ class PipelineInstanceManager(InstanceManager):
             _logger.info("Creating pipeline on port '%s' for camera '%s'. instance_id=%s" %
                      (stream_port, camera_name, instance_id))
 
+        pipeline_type = pipeline_config.get_pipeline_type()
+        if pipeline_type == config.PIPELINE_TYPE_SCRIPT:
+            pipeline_script = pipeline_config.get_configuration().get("pipeline_script")
+            if self.user_scripts_manager and self.user_scripts_manager.exists(pipeline_script):
+                mod = load_source('mod', self.user_scripts_manager.get_path(pipeline_script))
+                process_function = mod.run
+            else:
+                raise ValueError("Invalid pipeline script: %s" % pipeline_script)
+        else:
+            process_function = get_pipeline_function(pipeline_type)
 
         self.add_instance(instance_id, PipelineInstance(
             instance_id=instance_id,
-            process_function=get_pipeline_function(pipeline_config.get_pipeline_type()),
+            process_function=process_function,
             pipeline_config=pipeline_config,
             stream_port=stream_port,
             cam_client=self.cam_server_client,

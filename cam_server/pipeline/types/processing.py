@@ -293,7 +293,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                 else:
                     process_data(process_image, pulse_id, *pars)
                 last_sent_timestamp = time.time()
-            except ProcessingCompleated:
+            except ProcessingCompleted:
                 break
             except Exception as e:
                 exit_code = 2
