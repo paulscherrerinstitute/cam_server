@@ -23,7 +23,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     set_log_tag("store_pipeline")
     exit_code = 0
 
-    parameters = pipeline_config.get_configuration()
+    parameters = get_pipeline_parameters(pipeline_config, user_scripts_manager)
     if parameters.get("no_client_timeout") is None:
         parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
     module = parameters.get("module", None)
@@ -35,10 +35,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
         stream_image_name = camera_name + config.EPICS_PV_SUFFIX_IMAGE
         set_log_tag(" [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
 
-        camera_stream_address, source_host, source_port, source_mode = resolve_camera_source(cam_client, pipeline_config)
-        _logger.warning("Connecting to camera stream address %s. %s" % (camera_stream_address, log_tag))
-        source = create_source(camera_stream_address, mode=source_mode)
-        source.connect()
+        source = connect_to_camera(cam_client)
 
         _logger.debug("Opening output stream on port %d. %s", output_stream_port,  log_tag)
 

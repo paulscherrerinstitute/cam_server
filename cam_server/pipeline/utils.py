@@ -241,8 +241,9 @@ def create_source(camera_stream_address, receive_timeout=config.PIPELINE_RECEIVE
         return Source(host=source_host, port=source_port, receive_timeout=receive_timeout, mode=mode)
 
 
-def resolve_camera_source(cam_client):
-    pars = get_parameters()
+def resolve_camera_source(cam_client, pars=None):
+    if pars is None:
+        pars = get_parameters()
     source_mode = SUB
     input_stream = pars.get("input_stream")
     if input_stream:
