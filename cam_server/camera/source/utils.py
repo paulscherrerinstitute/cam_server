@@ -12,7 +12,7 @@ source_type_to_source_class_mapping = {
     "simulation": CameraSimulation,
     "bsread": CameraBsread,
     "bsread_simulation": CameraBsreadSim,
-    "custom": None
+    "script": None
 }
 
 _user_scripts_manager = None
@@ -25,7 +25,7 @@ def get_source_class(camera_config):
     if source_type_name not in source_type_to_source_class_mapping:
         raise ValueError("source_type '%s' not present in source class mapping. Available: %s." %
                          (source_type_name, list(source_type_to_source_class_mapping.keys())))
-    if source_type_name == "custom":
+    if source_type_name == "script":
         name = ""
         try:
             name = camera_config.parameters.get("class")

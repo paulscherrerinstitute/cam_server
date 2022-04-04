@@ -499,7 +499,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         sys.exit(exit_code)
 
 
-def process_custom_camera(stop_event, statistics, parameter_queue, camera, port):
+def process_scripted_camera(stop_event, statistics, parameter_queue, camera, port):
     camera.process(stop_event, statistics, parameter_queue, port)
 
 
@@ -508,7 +508,7 @@ source_type_to_sender_function_mapping = {
     "simulation": process_epics_camera,
     "bsread": process_bsread_camera,
     "bsread_simulation" : process_bsread_camera,
-    "custom" : process_custom_camera
+    "script" : process_scripted_camera
 }
 
 

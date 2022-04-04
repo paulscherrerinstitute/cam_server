@@ -110,6 +110,9 @@ def create_sender(output_stream_port, stop_event):
     init_sender(sender, pars)
     return sender
 
+def get_sender():
+    global sender
+    return sender
 
 def check_records(sender):
     records =get_parameters().get("records")
@@ -448,15 +451,16 @@ def setup_sender(output_port, stop_event, pipeline_processing_function, user_scr
         if number_processing_threads > 0:
             processing_thread_index = 0
             thread_buffer_size = pars.get("thread_buffer_size", 10)
+            send_buffer_size = pars.get("send_buffer_size", 10)
             if multiprocessed:
                 tx_lock = multiprocessing.Lock()
 
                 if pars.get("processing_manager", False):
                     received_pids = multiprocessing.Manager().Queue()
-                    tx_queue = multiprocessing.Manager().Queue(thread_buffer_size * number_processing_threads)
+                    tx_queue = multiprocessing.Manager().Queue(send_buffer_size)
                 else:
                     received_pids = multiprocessing.Queue()
-                    tx_queue = multiprocessing.Queue(thread_buffer_size * number_processing_threads)
+                    tx_queue = multiprocessing.Queue(send_buffer_size)
                 spawn_send_thread = pars.get("spawn_send_thread", True)
                 message_buffer_send_thread = multiprocessing.Process(target=process_send_task, args=(output_port, tx_queue, received_pids, spawn_send_thread, stop_event, log_tag))
                 message_buffer_send_thread.start()
@@ -470,13 +474,13 @@ def setup_sender(output_port, stop_event, pipeline_processing_function, user_scr
             else:
                 tx_lock = RLock()
                 received_pids = deque()
-                tx_buffer = MaxLenDict(maxlen=(thread_buffer_size * number_processing_threads))
-                message_buffer_send_thread = Thread(target=threaded_processing_send_task,args=(output_port, tx_buffer, tx_lock, received_pids, stop_event))
+                tx_buffer = MaxLenDict(maxlen=(send_buffer_size))
+                message_buffer_send_thread = Thread(target=thread_send_task,args=(output_port, tx_buffer, tx_lock, received_pids, stop_event))
                 message_buffer_send_thread.start()
                 for i in range(number_processing_threads):
                     thread_buffer = deque(maxlen=thread_buffer_size)
                     thread_buffers.append(thread_buffer)
-                    processing_thread = Thread(target=process_thread_task, args=(
+                    processing_thread = Thread(target=thread_task, args=(
                     pipeline_processing_function, thread_buffer, tx_buffer, tx_lock, received_pids, stop_event, i))
                     processing_threads.append(processing_thread)
                     processing_thread.start()
@@ -510,7 +514,7 @@ def message_buffer_send_task(message_buffer, output_port, stop_event):
 
 
 #Multi-threading
-def process_thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pids, stop_event, index):
+def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pids, stop_event, index):
     _logger.info("Start processing thread %d: %d" % (index,threading.get_ident()))
     try:
         while not stop_event.is_set():
@@ -527,7 +531,7 @@ def process_thread_task(process_function, thread_buffer, tx_buffer, tx_lock, rec
                             _logger.warning("Error removing PID %d at %d" % (pulse_id, index))
                 else:
                     with tx_lock:
-                        tx_buffer[pulse_id]= (processed_data, global_timestamp, pulse_id, message_buffer)
+                        tx_buffer[pulse_id] = (processed_data, global_timestamp, pulse_id, message_buffer)
 
     except Exception as e:
         _logger.error("Error on processing thread %d: %s" % (index, str(e)))
@@ -535,38 +539,29 @@ def process_thread_task(process_function, thread_buffer, tx_buffer, tx_lock, rec
         stop_event.set()
         _logger.info("Exit processing thread %d" % index)
 
-def threaded_processing_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event):
+
+def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event):
     _logger.info("Start threaded processing send thread")
-    last_sent = -1
-    parameters = get_parameters()
     sender = create_sender(output_port, stop_event)
     try:
         while not stop_event.is_set():
-            tx = None
-            popped = False
             with tx_lock:
                 size = len(tx_buffer)
                 if (size > 0) and (len(received_pids) > 0):
                     pid = received_pids[0]
                     if pid in tx_buffer.keys():
                         received_pids.popleft()
-                        tx = (processed_data, global_timestamp, pulse_id, message_buffer) = tx_buffer.pop(pid)
+                        tx = tx_buffer.pop(pid)  # tx=(processed_data, global_timestamp, pulse_id, message_buffer)
+                        send_data(*tx)
                     else:
                         if size >= tx_buffer.maxlen:
                             pid = received_pids.popleft()
                             _logger.error("Failed processing Pulse ID" + str(pid))
-                            popped = True
-            if tx is not None:
-                send_data(processed_data, global_timestamp, pulse_id, message_buffer)
+                        else:
+                            time.sleep(0.001)
+                else:
+                    time.sleep(0.001)
 
-                #_logger.info("Sent PID %d" % (pulse_id))
-                #if last_sent != -1:
-                #    if pulse_id != (last_sent + 1):
-                #        print("Error TX: expected %d - sent %d" %(last_sent + 1, pulse_id))
-                last_sent = pulse_id
-
-            elif not popped:
-                time.sleep(0.001)
 
     except Exception as e:
         _logger.error("Error on threaded processing send thread" + str(e))
@@ -622,11 +617,9 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
     received_pids = deque()
     tx_buffer = MaxLenDict(maxlen=(tx_queue._maxsize))
 
-    last_sent = -1
-
     if spawn_send_thread:
         tx_buffer_lock = RLock()
-        send_thread = Thread(target=threaded_processing_send_task,
+        send_thread = Thread(target=thread_send_task,
                                         args=(output_port, tx_buffer, tx_buffer_lock, received_pids, stop_event))
         send_thread.start()
     else:
@@ -666,15 +659,11 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
                                 _logger.error("Failed processing PID" + str(pid))
                         if tx is not None:
                             send_data(processed_data, global_timestamp, pulse_id, message_buffer)
-                            #if last_sent!=-1:
-                            #    if pulse_id != (last_sent+1):
-                            #        print ("Error TX: expected %d - sent %d", last_sent+1, pulse_id)
-                            last_sent = pulse_id
                         else:
                             break
                 # When multiprocessed cannot access sender object from main process
                 if ((time.time() - last_msg_timestamp) > 1.0):
-                    get_statistics.num_clients = get_clients(sender)
+                    get_statistics().num_clients = get_clients(get_sender())
                     last_msg_timestamp = time.time()
 
     except Exception as e:

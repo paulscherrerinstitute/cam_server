@@ -280,8 +280,10 @@ class Manager(ProxyBase):
         function = configuration.get("function")
         if not function:
             if configuration.get("reload"):
-                function =server.get_instance_config(instance_name).get("function")
-
+                try:
+                    function =server.get_instance_config(instance_name).get("function")
+                except:
+                    pass
         if function:
             if self.user_scripts_manager.exists(function):
                 server.set_user_script(function, self.user_scripts_manager.get_script(function))

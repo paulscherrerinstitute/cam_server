@@ -652,12 +652,14 @@ class ProxyBase:
         self.stop_instance(name)
 
     def is_permanent_instance(self, name):
-        return name in self.permanent_instances.values()
+        return not self.get_permanent_instance(name) is None
+
 
     def get_permanent_instance(self, name):
         for instance, _name in self.permanent_instances.items():
             if name == _name:
-                return instance
+                if not instance.startswith('#'):
+                    return instance
         return None
 
     def get_config_names(self):
