@@ -21,7 +21,11 @@ from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
 from cam_server.ipc import IpcSource
 
 _logger = getLogger(__name__)
-_parameters = None
+_parameters = {}
+_parameter_queue = None
+_user_scripts_manager = None
+_parameters_post_proc = None
+_pipeline_config = None
 
 sender = None
 source = None
@@ -122,6 +126,8 @@ def check_records(sender):
             raise ProcessingCompleted("Reached number of records: " + str(records))
 
 def send(sender, data, timestamp, pulse_id):
+    if sender is None:
+        sender = get_sender()
     try:
         if sender.create_header == True:
             check_header = True
@@ -144,12 +150,12 @@ def send(sender, data, timestamp, pulse_id):
 
 
 def get_parameters():
-    if _parameters is None:
-        return {}
     return _parameters
 
-def get_pipeline_parameters(pipeline_config, user_scripts_manager=None):
-    global _parameters, debug, camera_timeout, pause, pid_range, downsampling, downsampling_counter, function
+def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_scripts_manager=None, post_processsing_function=None):
+    global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config, _debug
+    global _camera_timeout, pause, pid_range, downsampling, downsampling_counter, function
+
     parameters = pipeline_config.get_configuration()
     if parameters.get("no_client_timeout") is None:
         parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
@@ -175,8 +181,30 @@ def get_pipeline_parameters(pipeline_config, user_scripts_manager=None):
     downsampling = parameters.get("downsampling")
     downsampling_counter = sys.maxsize  # The first is always sent
     function = get_function(parameters, user_scripts_manager)
+
+    _parameter_queue = parameter_queue
     _parameters = parameters
+    #_parameters.clear()
+    #_parameters.update(parameters)
+    _user_scripts_manager=user_scripts_manager
+    _parameters_post_proc = post_processsing_function
+    _pipeline_config = pipeline_config
     return parameters
+
+
+def check_parameters_changes():
+    global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
+    changed = False
+    while not _parameter_queue.empty():
+        new_parameters = _parameter_queue.get()
+        _pipeline_config.set_configuration(new_parameters)
+        changed = True
+    if changed:
+        init_pipeline_parameters(_pipeline_config, _parameter_queue, _user_scripts_manager, _parameters_post_proc)
+        if _parameters_post_proc:
+            return _parameters_post_proc()
+        return get_parameters()
+    return None
 
 def abort_on_error():
     pars = get_parameters()
@@ -206,6 +234,8 @@ def get_dispatcher_parameters(parameters):
 
 
 def get_function(pipeline_parameters, user_scripts_manager):
+    if pipeline_parameters is None:
+        pipeline_parameters = get_parameters()
     name = pipeline_parameters.get("function")
     if not name:
         if pipeline_parameters.get("pipeline_type") == config.PIPELINE_TYPE_PROCESSING:
@@ -423,7 +453,7 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
             processing_thread_index = 0
         if multiprocessed:
             received_pids.put(pulse_id)
-            thread_buffer.put((pulse_id, global_timestamp, message_buffer, *args))
+            thread_buffer.put((pulse_id, global_timestamp, message_buffer, get_parameters(), *args))
         else:
             #Deque append and popleft are supposed to be thread safe
             thread_buffer.append((pulse_id, global_timestamp, message_buffer, *args))
@@ -467,8 +497,8 @@ def setup_sender(output_port, stop_event, pipeline_processing_function, user_scr
                 for i in range(number_processing_threads):
                     thread_buffer = multiprocessing.Queue(thread_buffer_size)
                     thread_buffers.append(thread_buffer)
-                    processing_thread = multiprocessing.Process(target=process_task, args=(
-                    pipeline_processing_function, thread_buffer, tx_queue, stop_event, i, user_scripts_manager, log_tag))
+                    processing_thread = multiprocessing.Process(target=process_task, args=( #TODO change config in processes
+                    pipeline_processing_function, thread_buffer, tx_queue, stop_event, i, user_scripts_manager, pars, log_tag))
                     processing_threads.append(processing_thread)
                     processing_thread.start()
             else:
@@ -576,20 +606,22 @@ def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event)
 
 
 # Multi-processing
-def process_task(process_function, thread_buffer, tx_queue, stop_event, index, user_scripts_manager, ltag):
+def process_task(process_function, thread_buffer, tx_queue, stop_event, index, user_scripts_manager, pipeline_config, ltag):
     global log_tag
+    global _parameters
     log_tag = ltag
     _logger.info("Start process %d: %d" % (index,os.getpid()) )
+
     try:
         while not stop_event.is_set():
             try:
-                (pulse_id, global_timestamp, message_buffer, *args) = thread_buffer.get(False)
-
+                (pulse_id, global_timestamp, message_buffer, pars, *args) = thread_buffer.get(False)
+                _parameters = pars
             except Exception as e:
                 time.sleep(0.001)
                 continue
-
-            function = get_function(get_parameters(), user_scripts_manager)
+            #check_parameters_changes()
+            function = get_function(pars, user_scripts_manager)
             processed_data = process_function(pulse_id, global_timestamp, function, *args)
             try:
                 tx_queue.put((processed_data, global_timestamp, pulse_id, message_buffer), False)

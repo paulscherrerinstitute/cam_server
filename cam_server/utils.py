@@ -84,6 +84,9 @@ def get_clients(sender):
     return 0
 
 
+def timestamp_to_float(timestamp):
+    return float(timestamp[0]) + (float(timestamp[1]) / 1e9)
+
 def on_message_sent():
     if statistics is None:
         return

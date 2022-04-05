@@ -23,7 +23,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     set_log_tag("store_pipeline")
     exit_code = 0
 
-    parameters = get_pipeline_parameters(pipeline_config, user_scripts_manager)
+    parameters = init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager)
     if parameters.get("no_client_timeout") is None:
         parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
     module = parameters.get("module", None)

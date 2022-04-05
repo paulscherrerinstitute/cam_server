@@ -15,16 +15,16 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     set_log_tag("custom_pipeline")
     exit_code = 0
 
-    parameters = get_pipeline_parameters(pipeline_config)
+    init_pipeline_parameters(pipeline_config)
     try:
         init_statistics(statistics)
         set_log_tag(" [" + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
         sender = create_sender(output_stream_port, stop_event)
 
-        function = get_function(parameters, user_scripts_manager)
+        function = get_function(get_parameters(), user_scripts_manager)
         if function is None:
             raise Exception ("Invalid function")
-        max_frame_rate = parameters.get("max_frame_rate")
+        max_frame_rate = get_parameters().get("max_frame_rate")
         sample_interval = (1.0 / max_frame_rate) if max_frame_rate else None
 
         _logger.debug("Transceiver started. %s" % log_tag)
@@ -36,12 +36,9 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
             try:
                 if sample_interval:
                     start = time.time()
-                while not parameter_queue.empty():
-                    new_parameters = parameter_queue.get()
-                    pipeline_config.set_configuration(new_parameters)
-                    parameters = get_pipeline_parameters(pipeline_config)
+                check_parameters_changes()
 
-                stream_data, timestamp, pulse_id, data_size = function(parameters, init)
+                stream_data, timestamp, pulse_id, data_size = function(get_parameters(), init)
                 init = False
                 update_statistics(sender,-data_size, 1 if stream_data else 0)
 

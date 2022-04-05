@@ -8,8 +8,7 @@ from zmq import Again
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
-from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict
-
+from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_to_float
 
 
 from threading import Thread, RLock, Lock
@@ -367,17 +366,14 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                 return False
                         last_pid = pulse_id
 
-                timestamp_s = data.data.global_timestamp
-                timestamp_ns = data.data.global_timestamp_offset
-                timestamp = timestamp_s + (timestamp_ns / 1e9)
-
+                timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
                 data = {
                     "image": image,
                     "height": height,
                     "width": width,
                     "x_axis": x_axis,
                     "y_axis": y_axis,
-                    "timestamp": timestamp
+                    "timestamp": timestamp_to_float(timestamp)
                 }
                 if threaded:
                     with message_buffer_lock:
@@ -387,6 +383,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     data_format_changed = False
                     on_message_sent()
             except Exception as e:
+                import traceback
+                traceback.print_exc()
                 _logger.error("Could not process message: %s [%s]" % (str(e), camera.get_name()))
                 exit_code = 3
                 stop_event.set()

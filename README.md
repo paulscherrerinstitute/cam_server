@@ -341,6 +341,10 @@ pipeline is added to the output bsread stream in the
         Creates the pipeline and sets tthe "input_stream" parameter.
 - **input\_stream** : Name of a bsread stream to be used as a pipeline source (instead a camera instance).
 - **input\_mode** (Default _SUB_): bsread stream mode (_SUB_ or _PULL_).
+- **downsampling** (Default _None_):
+    - If defined the incoming stream is downsampled by the given factor.
+- **processing_threads** (Default _None_): Number of  processing threads. If greater than 0 then the processing is parallelized.
+- **abort_on_error** (Default _True_): If true (default) the pipeline stops upon errors during processing. 
 
 
   
@@ -366,8 +370,6 @@ pipeline is added to the output bsread stream in the
             - Rotation modes that  preserve image shape and axis scaling (the mode indicates how empty pixels are filled):
               _reflect_, _nearest_, _mirror_, _wrap_, or a constant.                            
             - _ortho_: orthogonal mode, preserve image pixels and adapt axis scaling. The angle must be a multiple of 90:                            
-- **downsampling** (Default _None_):
-    - If defined the incoming stream is downsampled by the given factor.
 - **averaging** (Default _None_):
     - If defined specifies the size of the image buffer to be averaged.
         If number is positive, generates only one output when the buffer is full and clears it  (frame rate is reduced).
@@ -380,8 +382,6 @@ pipeline is added to the output bsread stream in the
 - **bsread_mode** (Default _None_): "PULL"(default if bsread_address is defined ) or "SUB" (default if bsread_address is not defined)
 - **bsread_image_buf** (Default _1000_): Size of image buffer to merge with bsread data.
 - **bsread_data_buf** (Default _1000_): Size of data buffer to merge with image data. 
-- **processing_threads** (Default _None_): Number of  processing threads. If greater than 0 then the processing is parallelized.
-- **abort_on_error** (Default _True_): If true (default) the pipeline stops upon errors during processing. 
 - **copy** (Default _False_): If true the received image is copied before the pipeline is processed. The received image is read-only. 
         Operations in-place in the default pipeline create a copy of the image if needed (thresholding and background subtraction).
         If custom pipelines change the received image in-place they must make a copy of it before - or set this parameter to true. 

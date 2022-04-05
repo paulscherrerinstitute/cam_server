@@ -34,7 +34,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                 if img_pid < bs_pid:
                     bs_img_buffer.popleft()
                 elif img_pid == bs_pid:
-                    [pulse_id, [global_timestamp, image, x_axis, y_axis, global_timestamp_float, additional_data]] = bs_img_buffer.popleft()
+                    [pulse_id, [global_timestamp, image, x_axis, y_axis, additional_data]] = bs_img_buffer.popleft()
                     stream_data = OrderedDict()
                     stream_data.update(bsdata)
                     for key, value in bsdata.items():
@@ -44,7 +44,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                             stream_data.update(additional_data)
                         except:
                             pass
-                    process_data(process_image, pulse_id, global_timestamp, image,x_axis, y_axis, global_timestamp_float, stream_data)
+                    process_data(process_image, pulse_id, global_timestamp, image,x_axis, y_axis, stream_data)
                     for k in range(i):
                         bs_buffer.popleft()
                     i = -1
@@ -85,7 +85,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
 
 
     def process_pipeline_parameters():
-        parameters = get_pipeline_parameters(pipeline_config, user_scripts_manager)
+        parameters = get_parameters()
         _logger.debug("Processing pipeline parameters %s. %s" % (parameters, log_tag))
 
         background_array = None
@@ -165,11 +165,11 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
 
 
 
-    def process_image(pulse_id, global_timestamp, function, image, x_axis, y_axis, global_timestamp_float, bsdata):
+    def process_image(pulse_id, global_timestamp, function, image, x_axis, y_axis, bsdata):
         pars = get_parameters()
         try:
-            image, x_axis, y_axis = pre_process_image(image, pulse_id, global_timestamp_float, x_axis, y_axis, pars, image_background_array)
-            processed_data = function(image, pulse_id, global_timestamp_float, x_axis, y_axis, pars, bsdata)
+            image, x_axis, y_axis = pre_process_image(image, pulse_id, global_timestamp, x_axis, y_axis, pars, image_background_array)
+            processed_data = function(image, pulse_id, global_timestamp, x_axis, y_axis, pars, bsdata)
             #print("Processing PID %d  at proc %d thread %d" % (pulse_id, os.getpid(), threading.get_ident()))
             return processed_data
         except Exception as e:
@@ -183,15 +183,8 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     try:
         init_statistics(statistics)
 
+        init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager, process_pipeline_parameters)
         pipeline_parameters, image_background_array = process_pipeline_parameters()
-        max_frame_rate = pipeline_parameters.get("max_frame_rate")
-        averaging = pipeline_parameters.get("averaging")
-        rotation = pipeline_parameters.get("rotation")
-        copy_images = pipeline_parameters.get("copy")
-        if rotation:
-            rotation_mode = pipeline_parameters["rotation"]["mode"]
-            rotation_angle = int(pipeline_parameters["rotation"]["angle"] / 90) % 4
-
         connect_to_camera(cam_client)
 
         _logger.debug("Opening output stream on port %d. %s" % (output_stream_port, log_tag))
@@ -217,17 +210,9 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
         image_buffer = []
         while not stop_event.is_set():
             try:
-                while not parameter_queue.empty():
-                    new_parameters = parameter_queue.get()
-                    pipeline_config.set_configuration(new_parameters)
-                    pipeline_parameters, image_background_array = process_pipeline_parameters()
-                    max_frame_rate = pipeline_parameters.get("max_frame_rate")
-                    averaging = pipeline_parameters.get("averaging")
-                    copy_images = pipeline_parameters.get("copy")
-                    rotation = pipeline_parameters.get("rotation")
-                    if rotation:
-                        rotation_mode = pipeline_parameters["rotation"]["mode"]
-                        rotation_angle =int(pipeline_parameters["rotation"]["angle"] / 90) % 4
+                ret = check_parameters_changes()
+                if ret is not None:
+                    pipeline_parameters, image_background_array = ret
 
                 assert_function_defined()
 
@@ -242,16 +227,18 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
 
                 x_axis = data["x_axis"].value
                 y_axis = data["y_axis"].value
-                if rotation and (rotation_mode == "ortho"):
-                    if rotation_angle==1:
-                        x_axis,y_axis = y_axis, numpy.flip(x_axis)
-                    if rotation_angle == 2:
-                        x_axis, y_axis = numpy.flip(x_axis), numpy.flip(y_axis)
-                    if rotation_angle == 3:
-                        x_axis, y_axis = numpy.flip(y_axis), x_axis
-                global_timestamp_float = data["timestamp"].value
 
+                if pipeline_parameters.get("rotation"):
+                    if pipeline_parameters["rotation"]["mode"] == "ortho":
+                        rotation_angle = int(pipeline_parameters["rotation"]["angle"] / 90) % 4
+                        if rotation_angle==1:
+                            x_axis,y_axis = y_axis, numpy.flip(x_axis)
+                        if rotation_angle == 2:
+                            x_axis, y_axis = numpy.flip(x_axis), numpy.flip(y_axis)
+                        if rotation_angle == 3:
+                            x_axis, y_axis = numpy.flip(y_axis), x_axis
 
+                averaging = pipeline_parameters.get("averaging")
                 if averaging:
                     continuous = averaging < 0
                     averaging = abs(averaging)
@@ -269,13 +256,14 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                     else:
                         continue
                 else:
-                    if copy_images:
+                    if pipeline_parameters.get("copy"):
                         image = copy_image(image)
 
                 if (not averaging) or (not continuous):
                     image_buffer = []
 
                 #Check maximum frame rate parameter
+                max_frame_rate = pipeline_parameters.get("max_frame_rate")
                 if max_frame_rate:
                     min_interval = 1.0 / max_frame_rate
                     if (time.time() - last_sent_timestamp) < min_interval:
@@ -287,7 +275,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                         if not key in config.CAMERA_STREAM_REQUIRED_FIELDS:
                                 additional_data[key] = value.value
 
-                pars = [global_timestamp, image, x_axis, y_axis, global_timestamp_float, additional_data]
+                pars = [global_timestamp, image, x_axis, y_axis, additional_data]
                 if image_with_stream:
                     bs_img_buffer.append([pulse_id, pars])
                 else:

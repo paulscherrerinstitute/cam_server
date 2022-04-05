@@ -13,15 +13,15 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     set_log_tag("stream_pipeline")
     exit_code = 0
 
-    parameters = get_pipeline_parameters(pipeline_config, user_scripts_manager)
+    init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager)
 
 
     def process_stream(pulse_id, global_tamestamp, function,input_data):
         try:
-            return function(input_data, pulse_id, global_tamestamp, parameters)
+            return function(input_data, pulse_id, global_tamestamp, get_parameters())
         except Exception as e:
-            import traceback
-            traceback.print_exc(e)
+            #import traceback
+            #traceback.print_exc()
             _logger.warning("Error processing PID %d at proc %d thread %d: %s" % (pulse_id, os.getpid(), threading.get_ident(), str(e)))
             if abort_on_error():
                 raise
@@ -42,10 +42,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
         with connect_to_stream():
             while not stop_event.is_set():
                 try:
-                    while not parameter_queue.empty():
-                        new_parameters = parameter_queue.get()
-                        pipeline_config.set_configuration(new_parameters)
-                        parameters = get_pipeline_parameters(pipeline_config, user_scripts_manager)
+                    check_parameters_changes()
                     assert_function_defined()
 
                     pulse_id, global_timestamp, data = receive_stream()
