@@ -11,7 +11,7 @@ def read(fname):
 
 
 setup(name="cam_server",
-      version="5.1.1",
+      version="5.1.2",
       maintainer="Paul Scherrer Institute",
       maintainer_email="daq@psi.ch",
       author="Paul Scherrer Institute",
@@ -28,6 +28,7 @@ setup(name="cam_server",
                 "cam_server.pipeline",
                 "cam_server.pipeline.data_processing",
                 "cam_server.pipeline.rest_api",
+                "cam_server.pipeline.types",
                 "cam_server_client"
             ],
 
