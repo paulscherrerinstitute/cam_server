@@ -1,9 +1,8 @@
 import logging
 import socket
-from threading import Timer
+
 from cam_server.instance_management.proxy import ProxyBase
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server.pipeline.transceiver import get_builtin_pipelines
 from cam_server import config
 from cam_server import PipelineClient
 from cam_server.utils import get_host_port_from_stream_address, cleanup

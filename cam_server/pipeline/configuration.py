@@ -289,8 +289,7 @@ class PipelineConfig:
                                      % image_slices["orientation"])
 
         # Verify if the pipeline exists.
-        if configuration["pipeline_type"] != config.PIPELINE_TYPE_SCRIPT:
-            get_pipeline_function(configuration["pipeline_type"])
+        get_pipeline_function(configuration["pipeline_type"])
 
         if configuration.get("mode") == "FILE":
             if not configuration.get("file"):

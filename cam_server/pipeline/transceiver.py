@@ -10,22 +10,20 @@ from cam_server import config
 _logger = getLogger(__name__)
 
 
-pipeline_name_to_pipeline_module_mapping = {
-    config.PIPELINE_TYPE_PROCESSING: processing,
-    config.PIPELINE_TYPE_STORE: store,
-    config.PIPELINE_TYPE_STREAM: stream,
-    config.PIPELINE_TYPE_CUSTOM: custom,
-    config.PIPELINE_TYPE_SCRIPT: config.PIPELINE_TYPE_SCRIPT
+pipeline_name_to_pipeline_function_mapping = {
+    config.PIPELINE_TYPE_PROCESSING: processing.run,
+    config.PIPELINE_TYPE_STORE: store.run,
+    config.PIPELINE_TYPE_STREAM: stream.run,
+    config.PIPELINE_TYPE_CUSTOM: custom.run,
+    config.PIPELINE_TYPE_SCRIPT: None
 }
 
 def get_builtin_pipelines():
-    return list(pipeline_name_to_pipeline_module_mapping.keys())
+    return list(pipeline_name_to_pipeline_function_mapping.keys())
 
 def get_pipeline_function(pipeline_type_name):
     builtin_pipelines = get_builtin_pipelines()
-    if pipeline_type_name not in builtin_pipelines:
+    if pipeline_type_name not in pipeline_name_to_pipeline_function_mapping:
         raise ValueError("pipeline_type '%s' not present in mapping. Available: %s." %
                          (pipeline_type_name, builtin_pipelines) )
-    if pipeline_type_name == config.PIPELINE_TYPE_SCRIPT:
-        return Exception("Cannot evaluated script pipelines")
-    return pipeline_name_to_pipeline_module_mapping[pipeline_type_name].run
+    return pipeline_name_to_pipeline_function_mapping[pipeline_type_name]
