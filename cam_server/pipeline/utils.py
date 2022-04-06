@@ -49,7 +49,7 @@ pid_range = None
 downsampling = None
 function = None
 message_buffer_size = None
-
+thread_exit_code=0
 
 
 class ProcessingCompleted(Exception):
@@ -545,6 +545,7 @@ def message_buffer_send_task(message_buffer, output_port, stop_event):
 
 #Multi-threading
 def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pids, stop_event, index):
+    global thread_exit_code
     _logger.info("Start processing thread %d: %d" % (index,threading.get_ident()))
     try:
         while not stop_event.is_set():
@@ -564,6 +565,7 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
                         tx_buffer[pulse_id] = (processed_data, global_timestamp, pulse_id, message_buffer)
 
     except Exception as e:
+        thread_exit_code = 2
         _logger.error("Error on processing thread %d: %s" % (index, str(e)))
     finally:
         stop_event.set()
@@ -737,3 +739,5 @@ def cleanup():
                 t.join(0.1)
             except:
                 pass
+    if thread_exit_code!=0:
+        sys.exit(thread_exit_code)

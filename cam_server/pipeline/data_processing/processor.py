@@ -2,7 +2,7 @@ import json
 from logging import getLogger
 
 from cam_server.pipeline.data_processing import functions
-from cam_server.utils import timestamp_to_float
+from cam_server.utils import timestamp_as_float
 
 _logger = getLogger(__name__)
 
@@ -34,7 +34,7 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     return_value["image"] = image
     return_value["width"] = image.shape[1]
     return_value["height"] = image.shape[0]
-    return_value["timestamp"] = timestamp_to_float(timestamp)
+    return_value["timestamp"] = timestamp_as_float(timestamp)
     return_value["min_value"] = min_value
     return_value["max_value"] = max_value
     return_value["x_profile"] = x_profile

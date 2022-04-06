@@ -11,7 +11,6 @@ _logger = getLogger(__name__)
 def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, output_stream_port,
         background_manager, user_scripts_manager=None):
 
-    sender = None
     set_log_tag("custom_pipeline")
     exit_code = 0
 
@@ -19,7 +18,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     try:
         init_statistics(statistics)
         set_log_tag(" [" + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
-        sender = create_sender(output_stream_port, stop_event)
+        create_sender(output_stream_port, stop_event)
 
         function = get_function(get_parameters(), user_scripts_manager)
         if function is None:
@@ -65,9 +64,5 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
 
     finally:
         _logger.info("Stopping transceiver. %s" % log_tag)
-        if sender:
-            try:
-                sender.close()
-            except:
-                pass
+        cleanup()
         sys.exit(exit_code)

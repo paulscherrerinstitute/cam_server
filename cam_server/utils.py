@@ -84,8 +84,13 @@ def get_clients(sender):
     return 0
 
 
-def timestamp_to_float(timestamp):
-    return float(timestamp[0]) + (float(timestamp[1]) / 1e9)
+def timestamp_as_float(timestamp):
+    if timestamp is None:
+        timestamp = time.time()
+    # If you pass a tuple for the timestamp, use this tuple value directly.
+    if isinstance(timestamp, tuple):
+        return float(timestamp[0]) + (float(timestamp[1]) / 1e9)
+    return timestamp
 
 def on_message_sent():
     if statistics is None:

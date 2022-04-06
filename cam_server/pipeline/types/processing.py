@@ -296,11 +296,11 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     finally:
         _logger.info("Stopping transceiver. %s" % log_tag)
         stop_event.set()
-        cleanup()
         if bs_send_thread:
             try:
                 bs_send_thread.join(0.1)
             except:
                 pass
+        cleanup()
         _logger.debug("Exiting process. %s" % log_tag)
         sys.exit(exit_code)

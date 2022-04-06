@@ -8,7 +8,7 @@ from zmq import Again
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
-from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_to_float
+from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_as_float
 
 
 from threading import Thread, RLock, Lock
@@ -373,7 +373,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     "width": width,
                     "x_axis": x_axis,
                     "y_axis": y_axis,
-                    "timestamp": timestamp_to_float(timestamp)
+                    "timestamp": timestamp_as_float(timestamp)
                 }
                 if threaded:
                     with message_buffer_lock:
