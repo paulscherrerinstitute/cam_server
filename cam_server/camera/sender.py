@@ -160,7 +160,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             buffer_logs = camera.get_buffer_logs()
             try:
                 while not stop_event.is_set():
-                    tx = False
+                    tx = None
                     with message_buffer_lock:
                         size=len(message_buffer)
                         if size > 0:
@@ -168,24 +168,25 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                             pulse_id = pids[0]
                             if (last_pid) and (pulse_id <= last_pid):
                                 message_buffer.pop(pulse_id) #Remove ancient PIDs
-                                _logger.info("Removed ancient Pulse ID from queue: %d [%s]" % (pulse_id, camera.get_name()))
+                                if buffer_logs:
+                                    _logger.info("Removed ancient Pulse ID from queue: %d [%s]" % (pulse_id, camera.get_name()))
                             else:
-                                if not last_pid or \
-                                     (pulse_id <= (last_pid+interval)) or (size > threshold):
-                                    (data, timestamp) = message_buffer.pop(pulse_id)
-                                    #sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=True)
-                                    #Don't send inside the sync block
-                                    tx = True
-                    if tx:
+                                if not last_pid or (pulse_id <= (last_pid+interval)) or (size > threshold):
+                                    tx = message_buffer.pop(pulse_id)
+                    if tx is not None:
+                        (data, timestamp) = tx
                         sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
                         data_format_changed = False
                         on_message_sent()
                         if (last_pid):
-                            expected = (last_pid + interval);
+                            expected = (last_pid + interval)
                             if pulse_id != expected:
                                 interval = pulse_id - last_pid
                                 if buffer_logs:
-                                    _logger.info("Failed Pulse ID %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
+                                    if pulse_id > expected:
+                                        _logger.info ("Failed Pulse ID: expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
+                                    else:
+                                        _logger.debug("Changed inteval: expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
                         last_pid = pulse_id
                     if size == 0:
                         time.sleep(0.001)

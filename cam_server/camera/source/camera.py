@@ -87,7 +87,7 @@ class Camera:
         buffer_threshold = self.camera_config.get_configuration().get("buffer_threshold")
         try:
             if buffer_threshold is not None:
-                return min(max(float(buffer_threshold), 0), 1.0)
+                return min(max(float(buffer_threshold), 0.0), 1.0)
         except:
             _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (self.get_name(),))
         return 0.5

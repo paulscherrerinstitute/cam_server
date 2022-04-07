@@ -526,7 +526,7 @@ def message_buffer_send_task(message_buffer, output_port, stop_event):
     try:
         while not stop_event.is_set():
             if len(message_buffer) == 0:
-                time.sleep(0.001)
+                time.sleep(0.01)
             else:
                 (processed_data, timestamp, pulse_id) = message_buffer.popleft()
                 send(sender, processed_data, timestamp, pulse_id)
@@ -550,7 +550,7 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
     try:
         while not stop_event.is_set():
             if len(thread_buffer) == 0:
-                time.sleep(0.001)
+                time.sleep(0.01)
             else:
                 (pulse_id, global_timestamp, message_buffer, *args) = thread_buffer.popleft()
                 processed_data = process_function(pulse_id, global_timestamp, function, *args)
@@ -575,8 +575,11 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
 def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event):
     _logger.info("Start threaded processing send thread")
     sender = create_sender(output_port, stop_event)
+    pid=None
     try:
         while not stop_event.is_set():
+            tx = None
+            popped = False
             with tx_lock:
                 size = len(tx_buffer)
                 if (size > 0) and (len(received_pids) > 0):
@@ -584,17 +587,17 @@ def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event)
                     if pid in tx_buffer.keys():
                         received_pids.popleft()
                         tx = tx_buffer.pop(pid)  # tx=(processed_data, global_timestamp, pulse_id, message_buffer)
-                        send_data(*tx)
                     else:
                         if size >= tx_buffer.maxlen:
                             pid = received_pids.popleft()
-                            _logger.error("Failed processing Pulse ID" + str(pid))
-                        else:
-                            time.sleep(0.001)
+                            popped = True
+            if tx is not None:
+                send_data(*tx)
+            else:
+                if popped:
+                    _logger.error("Failed processing Pulse ID" + str(pid))
                 else:
                     time.sleep(0.001)
-
-
     except Exception as e:
         _logger.error("Error on threaded processing send thread" + str(e))
     finally:
