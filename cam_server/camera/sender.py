@@ -157,7 +157,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             last_pid = None
             interval = 1
             threshold = int(message_buffer.maxlen * camera.get_buffer_threshold())
-            buffer_logs = camera.get_buffer_logs()
+            debug = camera.get_debug()
             try:
                 while not stop_event.is_set():
                     tx = None
@@ -168,7 +168,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                             pulse_id = pids[0]
                             if (last_pid) and (pulse_id <= last_pid):
                                 message_buffer.pop(pulse_id) #Remove ancient PIDs
-                                if buffer_logs:
+                                if debug:
                                     _logger.info("Removed ancient Pulse ID from queue: %d [%s]" % (pulse_id, camera.get_name()))
                             else:
                                 if not last_pid or (pulse_id <= (last_pid+interval)) or (size > threshold):
@@ -182,7 +182,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                             expected = (last_pid + interval)
                             if pulse_id != expected:
                                 interval = pulse_id - last_pid
-                                if buffer_logs:
+                                if debug:
                                     if pulse_id > expected:
                                         _logger.info ("Failed Pulse ID: expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
                                     else:
@@ -384,8 +384,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     data_format_changed = False
                     on_message_sent()
             except Exception as e:
-                import traceback
-                traceback.print_exc()
+                #import traceback
+                #traceback.print_exc()
                 _logger.error("Could not process message: %s [%s]" % (str(e), camera.get_name()))
                 exit_code = 3
                 stop_event.set()

@@ -1,6 +1,6 @@
 package:
     name: cam_server
-    version: 5.1.3
+    version: 5.1.4
 
 source:
     path: ..
@@ -38,6 +38,9 @@ build:
     - pipeline_manager = cam_server.start_pipeline_manager:main
     - validate_configs = cam_server.validate_configs:main
     - writer = cam_server.writer:main
+    - bs = cam_server.start_bs:main
 
 about:
     home: https://github.com/paulscherrerinstitute/cam_server
+
+

@@ -76,12 +76,14 @@ class Camera:
 
     def get_buffer_size(self):
         buffer_size = self.camera_config.get_configuration().get("buffer_size")
+        connections = self.get_connections()
+        default = (connections * 5) if (connections > 1) else 0
         try:
             if buffer_size is not None:
                 return max(int(buffer_size), 0)
         except:
-            _logger.warning("Invalid buffer size (using 0) [%s]" % (self.get_name(),))
-        return 0
+            _logger.warning("Invalid buffer size (using default: " + str(default) + ") [%s]" % (self.get_name(),))
+        return default
 
     def get_buffer_threshold(self):
         buffer_threshold = self.camera_config.get_configuration().get("buffer_threshold")
@@ -98,13 +100,13 @@ class Camera:
             return "uint16"
         return dtype
 
-    def get_buffer_logs(camera):
-        buffer_logs = camera.camera_config.get_configuration().get("buffer_logs")
+    def get_debug(camera):
+        debug = camera.camera_config.get_configuration().get("debug")
         try:
-            return str(buffer_logs).lower() == "true"
+            return str(debug).lower() == "true"
         except:
             pass
-        return True
+        return False
 
 
     def no_client_timeout(self):

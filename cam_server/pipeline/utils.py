@@ -50,6 +50,7 @@ downsampling = None
 function = None
 message_buffer_size = None
 thread_exit_code=0
+last_rcvd_timestamp = time.time()
 
 
 class ProcessingCompleted(Exception):
@@ -135,17 +136,22 @@ def send(sender, data, timestamp, pulse_id):
             check_header = (sender.data_format is None)
             sender.data_format = True
         else:
-            #data_format = {k: ((v.shape, v.dtype) if isinstance(v, numpy.ndarray) else type(v)) for k, v in data.items()}
-            data_format = {k: ((v.shape, v.dtype) if isinstance(v, numpy.ndarray) else
-                            (len(v) if isinstance(v, list) else type(v))) for k, v in data.items()}
-            check_header = data_format != sender.data_format
+            try:
+                data_format = {k: ((v.shape, v.dtype) if isinstance(v, numpy.ndarray) else
+                                (len(v) if isinstance(v, list) else type(v))) for k, v in data.items()}
+                check_header = data_format != sender.data_format
+            except Exception as ex:
+                _logger.warning("Exception checking header change: " + str(ex) + ". %s" % log_tag)
+                sender.data_format = None
+                check_header = True
             if check_header:
                 sender.data_format = data_format
         sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_header)
         on_message_sent()
         if sender.records:
             check_records(sender)
-    except Exception as e :
+    except Exception as ex:
+        _logger.exception("Exception in the sender: " + str(ex) + ". %s" % log_tag)
         raise
 
 
@@ -153,8 +159,8 @@ def get_parameters():
     return _parameters
 
 def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_scripts_manager=None, post_processsing_function=None):
-    global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config, _debug
-    global _camera_timeout, pause, pid_range, downsampling, downsampling_counter, function
+    global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
+    global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout
 
     parameters = pipeline_config.get_configuration()
     if parameters.get("no_client_timeout") is None:
@@ -174,11 +180,12 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_script
             parameters["pid_range"] = int(parameters.get("pid_range")[0]), int(parameters.get("pid_range")[1])
         except:
             parameters["pid_range"] = None
+
     debug = parameters.get("debug", False)
-    camera_timeout = parameters.get("camera_timeout, 10.0")
-    pause = parameters.get("pause")
-    pid_range = parameters.get("pid_range")
-    downsampling = parameters.get("downsampling")
+    camera_timeout = parameters.get("camera_timeout", 10.0)
+    pause = parameters.get("pause", False)
+    pid_range = parameters.get("pid_range", None)
+    downsampling = parameters.get("downsampling", None)
     downsampling_counter = sys.maxsize  # The first is always sent
     function = get_function(parameters, user_scripts_manager)
 
@@ -263,8 +270,8 @@ def get_function(pipeline_parameters, user_scripts_manager):
             pipeline_parameters["reload"] = False
         return f
     except:
-        import traceback
-        traceback.print_exc()
+        #import traceback
+        #traceback.print_exc()
         _logger.exception("Could not import function: %s. %s" % (str(name), log_tag))
         return None
 
@@ -384,7 +391,7 @@ def send_data(processed_data, global_timestamp, pulse_id, message_buffer = None)
 
 
 def receive_stream(camera=False):
-    global last_rcvd_timestamp, pause, pid_range, downsampling, downsampling_counter
+    global last_rcvd_timestamp, pause, pid_range, downsampling, downsampling_counter, camera_timeout
     pulse_id = global_timestamp = data = None
     rx = source.receive()
 
@@ -447,6 +454,7 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
     global number_processing_threads, multiprocessed, processing_thread_index, received_pids, tx_lock, thread_buffers, message_buffer, message_buffer_size
 
     if (not message_buffer_size) and (number_processing_threads > 0):
+        index = processing_thread_index
         thread_buffer = thread_buffers[processing_thread_index]
         processing_thread_index = processing_thread_index + 1
         if processing_thread_index >= number_processing_threads:
@@ -456,8 +464,16 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
             thread_buffer.put((pulse_id, global_timestamp, message_buffer, get_parameters(), *args))
         else:
             #Deque append and popleft are supposed to be thread safe
-            thread_buffer.append((pulse_id, global_timestamp, message_buffer, *args))
+            if len(thread_buffer) >= thread_buffer.maxlen:
+                with tx_lock:
+                    lost = thread_buffer.popleft()
+                    lost_pid = lost[0]
+                    received_pids.remove(lost_pid)
+                if debug:
+                    _logger.error("Thread %d buffer full: lost PID %d " % (index, lost_pid))
+
             with tx_lock:
+                thread_buffer.append((pulse_id, global_timestamp, message_buffer, *args))
                 received_pids.append(pulse_id)
         return
     processed_data = processing_function(pulse_id, global_timestamp, function, *args)
@@ -480,8 +496,8 @@ def setup_sender(output_port, stop_event, pipeline_processing_function, user_scr
     else:
         if number_processing_threads > 0:
             processing_thread_index = 0
-            thread_buffer_size = pars.get("thread_buffer_size", 10)
-            send_buffer_size = pars.get("send_buffer_size", 10)
+            thread_buffer_size = pars.get("thread_buffer_size", 20)
+            send_buffer_size = pars.get("send_buffer_size", 20)
             if multiprocessed:
                 tx_lock = multiprocessing.Lock()
 
@@ -492,7 +508,7 @@ def setup_sender(output_port, stop_event, pipeline_processing_function, user_scr
                     received_pids = multiprocessing.Queue()
                     tx_queue = multiprocessing.Queue(send_buffer_size)
                 spawn_send_thread = pars.get("spawn_send_thread", True)
-                message_buffer_send_thread = multiprocessing.Process(target=process_send_task, args=(output_port, tx_queue, received_pids, spawn_send_thread, stop_event, log_tag))
+                message_buffer_send_thread = multiprocessing.Process(target=process_send_task, args=(output_port, tx_queue, received_pids, spawn_send_thread, stop_event, pars, log_tag))
                 message_buffer_send_thread.start()
                 for i in range(number_processing_threads):
                     thread_buffer = multiprocessing.Queue(thread_buffer_size)
@@ -526,7 +542,7 @@ def message_buffer_send_task(message_buffer, output_port, stop_event):
     try:
         while not stop_event.is_set():
             if len(message_buffer) == 0:
-                time.sleep(0.01)
+                time.sleep(0.001)
             else:
                 (processed_data, timestamp, pulse_id) = message_buffer.popleft()
                 send(sender, processed_data, timestamp, pulse_id)
@@ -545,21 +561,26 @@ def message_buffer_send_task(message_buffer, output_port, stop_event):
 
 #Multi-threading
 def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pids, stop_event, index):
-    global thread_exit_code
+    global thread_exit_code, debug
     _logger.info("Start processing thread %d: %d" % (index,threading.get_ident()))
     try:
         while not stop_event.is_set():
-            if len(thread_buffer) == 0:
-                time.sleep(0.01)
+            with tx_lock:
+                size = len(thread_buffer)
+            if size == 0:
+                time.sleep(0.001)
             else:
-                (pulse_id, global_timestamp, message_buffer, *args) = thread_buffer.popleft()
+                with tx_lock:
+                    (pulse_id, global_timestamp, message_buffer, *args) = thread_buffer.popleft()
                 processed_data = process_function(pulse_id, global_timestamp, function, *args)
                 if processed_data is None:
-                    with tx_lock:
-                        try:
+                    if debug:
+                        _logger.info ("Error processing PID %d at %d" % (pulse_id, index))
+                    try:
+                        with tx_lock:
                             received_pids.remove(pulse_id)
-                        except:
-                            _logger.warning("Error removing PID %d at %d" % (pulse_id, index))
+                    except:
+                        _logger.warning("Error removing PID %d at %d" % (pulse_id, index))
                 else:
                     with tx_lock:
                         tx_buffer[pulse_id] = (processed_data, global_timestamp, pulse_id, message_buffer)
@@ -595,7 +616,8 @@ def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event)
                 send_data(*tx)
             else:
                 if popped:
-                    _logger.error("Failed processing Pulse ID" + str(pid))
+                    if debug:
+                        _logger.error("Timeout processing Pulse ID " + str(pid))
                 else:
                     time.sleep(0.001)
     except Exception as e:
@@ -637,19 +659,20 @@ def process_task(process_function, thread_buffer, tx_queue, stop_event, index, u
 
     except Exception as e:
         _logger.error("Error on process %d: %s" % (index, str(e)))
-        import traceback
-        traceback.print_exc()
+        #import traceback
+        #traceback.print_exc()
     finally:
         stop_event.set()
         _logger.info("Exit process  %d" % index)
         sys.exit(0)
 
 
-def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thread, stop_event, ltag):
+def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thread, stop_event, pars, ltag):
     global log_tag
     log_tag = ltag
 
     sender = None
+    _parameters = pars
     _logger.info("Start send process")
     received_pids = deque()
     tx_buffer = MaxLenDict(maxlen=(tx_queue._maxsize))
@@ -693,7 +716,8 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
                         else:
                             if size >= tx_buffer.maxlen:
                                 pid = received_pids.popleft()
-                                _logger.error("Failed processing PID" + str(pid))
+                                if get_parameters().get("debug"):
+                                    _logger.error("Timeout processing PID " + str(pid))
                         if tx is not None:
                             send_data(processed_data, global_timestamp, pulse_id, message_buffer)
                         else:
@@ -705,8 +729,6 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
 
     except Exception as e:
         _logger.error("Error send process" + str(e))
-        import traceback
-        traceback.print_exc()
     finally:
         stop_event.set()
         if sender:

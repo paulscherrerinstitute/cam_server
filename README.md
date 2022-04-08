@@ -250,8 +250,8 @@ cam_server can connect to different type of sources. The type of source you sele
 
 ##### Configuration parameters for source\_type = _'bsread'_  
 - **connections** (Default _1_): Number of ZMQ connections to the camera. More connections can increase the throughput.
-- **buffer_size** (Default _0_): If greater than 0 then receivers and sender are threaded, and this value 
-  defines the size of the message buffer.
+- **buffer_size** (Default _connections * 5_): If greater than 0, then receivers and sender are threaded, and this value 
+  defines the size of the message buffer. Irrelevant if connections < 2/
 
 
 #### Example
