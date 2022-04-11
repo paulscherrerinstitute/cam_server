@@ -39,6 +39,9 @@ IPC_FEEDS_FOLDER = "/tmp"
 
 CAMERA_STREAM_REQUIRED_FIELDS = set(["image", "timestamp", "width", "height", "x_axis", "y_axis"])
 
+CAMERA_DEFAULT_QUEUE_SIZE = 100
+
+
 #####################
 # Pipeline settings #
 #####################

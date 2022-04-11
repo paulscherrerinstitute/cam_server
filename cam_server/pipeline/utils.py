@@ -69,6 +69,8 @@ def get_log_tag(tag):
 
 def init_sender(sender, pipeline_parameters):
     sender.record_count = 0
+    sender.enforce_pid = pipeline_parameters.get("enforce_pid")
+    sender.last_pid=-1
     sender.data_format = None
     create_header = pipeline_parameters.get("create_header")
     if create_header in (True,"always"):
@@ -130,6 +132,11 @@ def send(sender, data, timestamp, pulse_id):
     if sender is None:
         sender = get_sender()
     try:
+        if sender.enforce_pid:
+            if pulse_id <= sender.last_pid:
+                _logger.warning("Sending invalid PID: %d - last: %d" ". %s" % (pulse_id, sender.last_pid, log_tag))
+                return
+            sender.last_pid = pulse_id
         if sender.create_header == True:
             check_header = True
         elif sender.create_header == False:
@@ -410,9 +417,14 @@ def receive_stream(camera=False):
         if debug:
             global former_pid, current_pid
             if (former_pid is not None) and (current_pid is not None):
-                if pulse_id != (current_pid + (current_pid - former_pid)):
-                    _logger.warning(
-                        "Unexpected PID: " + str(pulse_id) + " -  previous: " + str(former_pid) + ", " + str(current_pid))
+                modulo = current_pid - former_pid
+                expected = current_pid + modulo
+                if pulse_id != expected:
+                    lost = int((pulse_id - expected)/modulo)
+                    if lost >0:
+                        _logger.warning("Unexpected PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", rec:" + str(current_pid)+ ", lost:" + str(lost))
+                    else:
+                        _logger.debug("Newer PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", rec:" + str(current_pid))
                     current_pid, former_pid = None, None
             former_pid = current_pid
             current_pid = pulse_id
@@ -566,24 +578,25 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
     try:
         while not stop_event.is_set():
             with tx_lock:
-                size = len(thread_buffer)
-            if size == 0:
+                try:
+                    (pulse_id, global_timestamp, message_buffer, *args) = msg = thread_buffer.popleft()
+                except IndexError:
+                    msg = None
+            if msg is None:
                 time.sleep(0.001)
+                continue
+            processed_data = process_function(pulse_id, global_timestamp, function, *args)
+            if processed_data is None:
+                if debug:
+                    _logger.info ("Error processing PID %d at %d" % (pulse_id, index))
+                try:
+                    with tx_lock:
+                        received_pids.remove(pulse_id)
+                except:
+                    _logger.warning("Error removing PID %d at %d" % (pulse_id, index))
             else:
                 with tx_lock:
-                    (pulse_id, global_timestamp, message_buffer, *args) = thread_buffer.popleft()
-                processed_data = process_function(pulse_id, global_timestamp, function, *args)
-                if processed_data is None:
-                    if debug:
-                        _logger.info ("Error processing PID %d at %d" % (pulse_id, index))
-                    try:
-                        with tx_lock:
-                            received_pids.remove(pulse_id)
-                    except:
-                        _logger.warning("Error removing PID %d at %d" % (pulse_id, index))
-                else:
-                    with tx_lock:
-                        tx_buffer[pulse_id] = (processed_data, global_timestamp, pulse_id, message_buffer)
+                    tx_buffer[pulse_id] = (processed_data, global_timestamp, pulse_id, message_buffer)
 
     except Exception as e:
         thread_exit_code = 2

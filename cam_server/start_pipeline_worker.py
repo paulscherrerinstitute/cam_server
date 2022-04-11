@@ -58,6 +58,8 @@ def main():
     parser.add_argument('-a', '--web_server_args', default="")
     parser.add_argument('-x', '--abort_on_error', default=True)
     parser.add_argument('-y', '--abort_on_timeout', default=False)
+    parser.add_argument('-q', '--default_queue_size', default=None)
+    parser.add_argument('-b', '--default_block', default=None)
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
                         help="Log level to use.")
@@ -70,6 +72,11 @@ def main():
         config.ABORT_ON_ERROR = str(arguments.abort_on_error).lower() == "true"
     if arguments.abort_on_timeout is not None:
         config.ABORT_ON_TIMEOUT = not (str(arguments.abort_on_timeout).lower() == "false")
+    if arguments.default_queue_size is not None:
+        config.PIPELINE_DEFAULT_QUEUE_SIZE = int(arguments.default_queue_size)
+    if arguments.default_block is not None:
+        config.PIPELINE_DEFAULT_BLOCK = bool(arguments.default_queue_size)
+
     start_pipeline_worker(arguments.interface, arguments.port,
                           arguments.background_base,
                           arguments.scripts_base,

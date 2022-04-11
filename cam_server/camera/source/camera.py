@@ -30,8 +30,9 @@ class Camera:
         # Width and height of the raw image
         self.width_raw = None
         self.height_raw = None
-        self.simulate_pulse_id = None
+        self.simulate_pulse_id = self.camera_config.get_configuration().get("simulate_pulse_id", False)
         self.check_sender_data = check_sender_data
+        self.last_pid = 0
 
     def get_raw_geometry(self):
         return self.width_raw, self.height_raw
@@ -77,7 +78,7 @@ class Camera:
     def get_buffer_size(self):
         buffer_size = self.camera_config.get_configuration().get("buffer_size")
         connections = self.get_connections()
-        default = (connections * 5) if (connections > 1) else 0
+        default = (connections * 10) if (connections > 1) else 0
         try:
             if buffer_size is not None:
                 return max(int(buffer_size), 0)
@@ -108,6 +109,14 @@ class Camera:
             pass
         return False
 
+    def get_queue_size(self):
+        queue_size = self.camera_config.get_configuration().get("queue_size")
+        try:
+            if queue_size is not None:
+                return max(int(queue_size), 1)
+        except:
+            _logger.warning("Invalid number of queue_size (using %d) [%s]" % (config.CAMERA_DEFAULT_QUEUE_SIZE, self.get_name(),))
+        return config.CAMERA_DEFAULT_QUEUE_SIZE
 
     def no_client_timeout(self):
         client_timeout = self.get_client_timeout()
@@ -119,10 +128,10 @@ class Camera:
     def create_sender(self, stop_event, port):
         self.stop_event = stop_event
         if self.camera_config.get_configuration().get("protocol", "tcp") == "ipc":
-            sender = IpcSender(address=get_ipc_address(self.get_name()), mode=PUB,
+            sender = IpcSender(address=get_ipc_address(self.get_name()), mode=PUB, start_pulse_id=self.get_start_pulse_id(), queue_size=self.get_queue_size(),
                              data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
         else:
-            sender = Sender(port=port, mode=PUB, data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+            sender = Sender(queue_size=self.get_queue_size(), port=port, mode=PUB, start_pulse_id=self.get_start_pulse_id(), data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
         sender.open(no_client_action=self.no_client_timeout, no_client_timeout=self.get_client_timeout())
         return sender
 
@@ -229,11 +238,6 @@ class Camera:
                 return frame_rate
         return None
 
-    def get_simulated_pulse_id(self):
-        if self.simulate_pulse_id is None:
-            self.simulate_pulse_id = self.camera_config.get_configuration().get("simulate_pulse_id")
-        return self.simulate_pulse_id
-
     def get_image(self, raw=False):
         value = self.read()
         # Return raw image without any corrections
@@ -241,11 +245,23 @@ class Camera:
             return value
         return transform_image(value, self.camera_config)
 
+    def get_pulse_id(self):
+        if self.simulate_pulse_id:
+            ret = int(time.time() * 100)
+            if ret <= self.last_pid:
+                ret = self.last_pid+1
+            self.last_pid = ret
+            return ret
+        return None
+
+    def get_start_pulse_id(self):
+        return 0
+        # return int(time.time() * 100)
+
     def get_data(self):
         image = self.get_image()
         timestamp = time.time()
-        pulse_id = int(time.time() * 100) if self.get_simulated_pulse_id() else None
-        return image, timestamp, pulse_id
+        return image, timestamp, self.get_pulse_id()
 
     def register_channels(self, sender):
         # Register the bsread channels - compress only the image.

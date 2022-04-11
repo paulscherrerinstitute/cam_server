@@ -81,8 +81,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
             update_statistics(sender, -frame_size, 1 if (image is not None) else 0, frame_shape)
 
             try:
-                pulse_id = int(time.time() *100) if camera.get_simulated_pulse_id() else None
-                sender.send(data=data, pulse_id = pulse_id, timestamp=timestamp, check_data=False)
+                sender.send(data=data, pulse_id=camera.get_pulse_id(), timestamp=timestamp, check_data=False)
                 on_message_sent()
             except Again:
                 _logger.warning("Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera.get_name()))
@@ -184,9 +183,9 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                 interval = pulse_id - last_pid
                                 if debug:
                                     if pulse_id > expected:
-                                        _logger.info ("Failed Pulse ID: expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
+                                        _logger.info ("Failed Pulse ID:  expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
                                     else:
-                                        _logger.debug("Changed inteval: expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
+                                        _logger.debug("Changed interval: expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
                         last_pid = pulse_id
                     if size == 0:
                         time.sleep(0.001)
