@@ -5,8 +5,8 @@
       file: path=/cam_server_configuration/configuration state=directory
       file: path=/cam_server_configuration/configuration/camera_config state=directory
       file: path=/cam_server_configuration/configuration/pipeline_config state=directory
-      file: path=/cam_server_configuration/configuration/background_config state=directory
       file: path=/cam_server_configuration/configuration/user_scripts state=directory
+      file: path=/cam_server_configuration/configuration/tmp/background_config state=directory
       file: path=/tmp/cam_server state=directory
 
     - name: Create camera_worker  systemd config file

@@ -57,7 +57,10 @@ DEFAULT_USER_SCRIPT_FOLDER = "configuration/user_scripts"
 # How many days background files other than latest are kept (default -1 means forever)
 DEFAULT_BACKGROUND_FILES_DAYS_TO_LIVE = -1
 # Temporary storage.
-DEFAULT_TEMP_FOLDER = "temp"
+
+DEFAULT_TEMP_FOLDER = "configuration/tmp"
+DEFAULT_TEMP_BACKGROUND_CONFIG_FOLDER = DEFAULT_TEMP_FOLDER + "/background_config"
+
 # Maximum time to wait before aborting the receive.
 PIPELINE_RECEIVE_TIMEOUT = 1000
 # Default number of images to collect when acquiring the background.

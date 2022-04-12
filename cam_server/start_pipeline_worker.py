@@ -51,7 +51,7 @@ def main():
     parser.add_argument("-c", '--cam_server', default="http://0.0.0.0:8888", help="Cam server rest api address.")
     parser.add_argument('-p', '--port', default=8881, help="Server port")
     parser.add_argument('-i', '--interface', default='0.0.0.0', help="Hostname interface to bind to")
-    parser.add_argument('-g', '--background_base', default=config.DEFAULT_TEMP_FOLDER)
+    parser.add_argument('-g', '--background_base', default=config.DEFAULT_TEMP_BACKGROUND_CONFIG_FOLDER)
     parser.add_argument('-u', '--scripts_base', default=config.DEFAULT_USER_SCRIPT_FOLDER)
     parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
     parser.add_argument('-w', '--web_server', default=config.DEFAULT_WEB_SERVER)
