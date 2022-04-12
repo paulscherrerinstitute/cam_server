@@ -78,7 +78,7 @@ class Camera:
     def get_buffer_size(self):
         buffer_size = self.camera_config.get_configuration().get("buffer_size")
         connections = self.get_connections()
-        default = (connections * 10) if (connections > 1) else 0
+        default = (connections * 40) if (connections > 1) else 0
         try:
             if buffer_size is not None:
                 return max(int(buffer_size), 0)

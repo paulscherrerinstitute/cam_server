@@ -153,40 +153,46 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             nonlocal sender, data_format_changed
             _logger.info("Start message buffer send thread [%s]" % (camera.get_name(),))
             sender = camera.create_sender(stop_event, port)
-            last_pid = None
+            message_buffer.last_pid = -1
+            last_tx_pid = -1
             interval = 1
             threshold = int(message_buffer.maxlen * camera.get_buffer_threshold())
             debug = camera.get_debug()
             try:
                 while not stop_event.is_set():
                     tx = None
+                    old_pid=None
                     with message_buffer_lock:
                         size=len(message_buffer)
                         if size > 0:
                             pids = sorted(message_buffer.keys())
                             pulse_id = pids[0]
-                            if (last_pid) and (pulse_id <= last_pid):
-                                message_buffer.pop(pulse_id) #Remove ancient PIDs
-                                if debug:
-                                    _logger.info("Removed ancient Pulse ID from queue: %d [%s]" % (pulse_id, camera.get_name()))
+                            if pulse_id <= last_tx_pid:
+                                message_buffer.pop(pulse_id)  # Remove ancient PIDs
+                                old_pid = pulse_id
                             else:
-                                if not last_pid or (pulse_id <= (last_pid+interval)) or (size > threshold):
+                                if pulse_id <= (last_tx_pid+interval) or (size >= threshold):
+                                    message_buffer.last_pid = pulse_id
                                     tx = message_buffer.pop(pulse_id)
                     if tx is not None:
                         (data, timestamp) = tx
                         sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
                         data_format_changed = False
+                        #_logger.info("TX %d" % (pulse_id,))
                         on_message_sent()
-                        if (last_pid):
-                            expected = (last_pid + interval)
+                        if last_tx_pid>0:
+                            expected = (last_tx_pid + interval)
                             if pulse_id != expected:
-                                interval = pulse_id - last_pid
+                                interval = pulse_id - last_tx_pid
                                 if debug:
                                     if pulse_id > expected:
                                         _logger.info ("Failed Pulse ID:  expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
                                     else:
                                         _logger.debug("Changed interval: expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
-                        last_pid = pulse_id
+                        last_tx_pid = pulse_id
+                    elif old_pid is not None:
+                        if debug:
+                            _logger.info("Removed ancient Pulse ID from queue: %d  - Last: %d [%s]" % (pulse_id, last_tx_pid, camera.get_name()))
                     if size == 0:
                         time.sleep(0.001)
                     #while not parameter_queue.empty():
@@ -197,9 +203,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 _logger.info("stop_event set to send thread [%s]" % (camera.get_name(),))
             except Exception as e:
                 exit_code = 2
-                _logger.error("Error on message buffer send thread: %s [%s]" % (str(e), camera.get_name()))
+                _logger.exception("Error on message buffer send thread: %s [%s]" % (str(e), camera.get_name()))
             finally:
-                isset = stop_event.is_set()
                 stop_event.set()
                 if sender:
                     try:
@@ -309,12 +314,12 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                             break;
                 align_streams()
 
-        last_pid = None
+        last_rx_pid = None
         total_bytes = [0] * connections
         frame_shape = None
 
         def process_stream(camera_stream, index):
-            nonlocal total_bytes, last_pid, frame_shape, format_error, data_format_changed
+            nonlocal total_bytes, last_rx_pid, frame_shape, format_error, data_format_changed
             try:
                 if stop_event.is_set():
                     return False
@@ -331,6 +336,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 if data is not None:
                     image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
                     if image is None:
+                        if camera.get_debug():
+                            _logger.info("Format error - no image [%s]" % (camera.get_name(),))
                         format_error = True #on_format_error()
                         return True
                     else:
@@ -341,6 +348,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         height, width = image.shape
                         if (len(x_axis)!=width) or (len(y_axis)!=height):
                             format_error = True #on_format_error()
+                            if camera.get_debug():
+                                _logger.info("Format error - bad axis size  [%s]" % (camera.get_name(),))
                             return True
                         format_error = False
                         #camera_stream.format_error_counter = 0
@@ -352,19 +361,21 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
+                    if camera.get_debug():
+                        _logger.info("Null data [%s]" % (camera.get_name(),))
                     return True
 
                 pulse_id = data.data.pulse_id
 
                 if not threaded:
                     if connections > 1:
-                        if last_pid:
-                            if pulse_id != (last_pid + pid_offset):
-                                _logger.warning("Wrong pulse offset: realigning streams last=%d current=%d [%s]" % (last_pid, pulse_id, camera.get_name()))
+                        if last_rx_pid:
+                            if pulse_id != (last_rx_pid + pid_offset):
+                                _logger.warning("Wrong pulse offset: realigning streams last=%d current=%d [%s]" % (last_rx_pid, pulse_id, camera.get_name()))
                                 align_streams()
-                                last_pid = None
+                                last_rx_pid = None
                                 return False
-                        last_pid = pulse_id
+                        last_rx_pid = pulse_id
 
                 timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
                 data = {
@@ -377,17 +388,19 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 }
                 if threaded:
                     with message_buffer_lock:
-                        message_buffer[pulse_id]= (data, timestamp)
+                        last_pid = message_buffer.last_pid
+                        if pulse_id > last_pid:
+                            message_buffer[pulse_id] = (data, timestamp)
+                            #logger.info("RX %d [%d]" % (pulse_id, index))
+                    if pulse_id <= last_pid:
+                        _logger.warning("Invalid pulse id on stream %d: %d - Last: %d [%s]" % (index, pulse_id, last_pid, camera.get_name()))
+                        #flush_stream(camera_stream)
                 else:
                     sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
                     data_format_changed = False
                     on_message_sent()
             except Exception as e:
-                #import traceback
-                #traceback.print_exc()
-                _logger.error("Could not process message: %s [%s]" % (str(e), camera.get_name()))
-                exit_code = 3
-                stop_event.set()
+                raise
             return True
 
 
@@ -400,9 +413,10 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     process_stream(camera_stream, index)
                 _logger.info("stop_event set to receive thread %d [%s]" % (index, camera.get_name()))
             except Exception as e:
-                _logger.error("Error on receive thread %d: %s [%s]" % (index, str(e), camera.get_name()))
+                _logger.exception("Error on receive thread %d: %s [%s]" % (index, str(e), camera.get_name()))
                 exit_code = 4
             finally:
+                _logger.info("Exiting receive thread %d [%s]" % (index, camera.get_name()))
                 stop_event.set()
                 if camera_stream:
                     try:
@@ -459,16 +473,13 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         break
 
 
-
-        _logger.info("Stopping transceiver  [%s]" % (camera.get_name(),))
-
     except Exception as e:
         _logger.exception("Error while processing camera stream: %s [%s]" % (str(e), camera.get_name()))
         exit_code = 1
 
     finally:
-        # Wait for termination / update configuration / etc.
-        stop_event.wait()
+        _logger.info("Stopping sender. %s" % camera.get_name())
+        stop_event.set()
 
         if camera:
             try:
@@ -494,6 +505,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         t.join(0.1)
                     except:
                         pass
+        _logger.info("Exiting process. %s" % camera.get_name())
         sys.exit(exit_code)
 
 

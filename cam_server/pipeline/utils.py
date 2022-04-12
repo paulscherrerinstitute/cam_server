@@ -49,6 +49,7 @@ pid_range = None
 downsampling = None
 function = None
 message_buffer_size = None
+thread_load_balancing = True
 thread_exit_code=0
 last_rcvd_timestamp = time.time()
 
@@ -167,7 +168,7 @@ def get_parameters():
 
 def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_scripts_manager=None, post_processsing_function=None):
     global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
-    global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout
+    global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout, thread_load_balancing
 
     parameters = pipeline_config.get_configuration()
     if parameters.get("no_client_timeout") is None:
@@ -193,6 +194,7 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_script
     pause = parameters.get("pause", False)
     pid_range = parameters.get("pid_range", None)
     downsampling = parameters.get("downsampling", None)
+    thread_load_balancing = parameters.get("thread_load_balancing", True)
     downsampling_counter = sys.maxsize  # The first is always sent
     function = get_function(parameters, user_scripts_manager)
 
@@ -422,9 +424,9 @@ def receive_stream(camera=False):
                 if pulse_id != expected:
                     lost = int((pulse_id - expected)/modulo)
                     if lost >0:
-                        _logger.warning("Unexpected PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", rec:" + str(current_pid)+ ", lost:" + str(lost))
+                        _logger.warning("Unexpected PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", cur:" + str(current_pid)+ ", lost:" + str(lost))
                     else:
-                        _logger.debug("Newer PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", rec:" + str(current_pid))
+                        _logger.debug("Newer PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", cur:" + str(current_pid))
                     current_pid, former_pid = None, None
             former_pid = current_pid
             current_pid = pulse_id
@@ -463,20 +465,25 @@ def receive_stream(camera=False):
 
 
 def process_data(processing_function, pulse_id, global_timestamp, *args):
-    global number_processing_threads, multiprocessed, processing_thread_index, received_pids, tx_lock, thread_buffers, message_buffer, message_buffer_size
+    global number_processing_threads, multiprocessed, processing_thread_index, received_pids, tx_lock, thread_buffers, message_buffer, message_buffer_size, load_balancing
 
     if (not message_buffer_size) and (number_processing_threads > 0):
-        index = processing_thread_index
-        thread_buffer = thread_buffers[processing_thread_index]
-        processing_thread_index = processing_thread_index + 1
-        if processing_thread_index >= number_processing_threads:
-            processing_thread_index = 0
+        if (not thread_load_balancing) or multiprocessed:
+            index = processing_thread_index
+            thread_buffer = thread_buffers[index]
+            processing_thread_index = processing_thread_index + 1
+            if processing_thread_index >= number_processing_threads:
+                processing_thread_index = 0
         if multiprocessed:
             received_pids.put(pulse_id)
             thread_buffer.put((pulse_id, global_timestamp, message_buffer, get_parameters(), *args))
         else:
             lost_pid = None
             with tx_lock:
+                if thread_load_balancing:
+                    load = [len(thread_buffer) for thread_buffer in thread_buffers]
+                    index = load.index(min(load))
+                    thread_buffer = thread_buffers[index]
                 if len(thread_buffer) >= thread_buffer.maxlen:
                         lost = thread_buffer.popleft()
                         lost_pid = lost[0]
@@ -588,15 +595,24 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
             processed_data = process_function(pulse_id, global_timestamp, function, *args)
             if processed_data is None:
                 if debug:
-                    _logger.info ("Error processing PID %d at %d" % (pulse_id, index))
+                    _logger.info ("Error processing PID %d at thread %d" % (pulse_id, index))
                 try:
                     with tx_lock:
                         received_pids.remove(pulse_id)
                 except:
-                    _logger.warning("Error removing PID %d at %d" % (pulse_id, index))
+                    _logger.warning("Error removing PID %d at thread %d" % (pulse_id, index))
             else:
+                lost_pid = None
                 with tx_lock:
+                    if len(tx_buffer) >= tx_buffer.maxlen:
+                        #lost_pid = tx_buffer.popitem(last=False)
+                        lost_pid = min(tx_buffer.keys())
+                        del tx_buffer[lost_pid]
+                        received_pids.remove(lost_pid)
                     tx_buffer[pulse_id] = (processed_data, global_timestamp, pulse_id, message_buffer)
+                if lost_pid:
+                    if debug:
+                        _logger.info("Send buffer full - removing oldest PID: %d at thread %d" % (pulse_id, index))
 
     except Exception as e:
         thread_exit_code = 2
@@ -630,7 +646,7 @@ def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event)
             else:
                 if popped:
                     if debug:
-                        _logger.error("Timeout processing Pulse ID " + str(pid))
+                        _logger.error("Removed timed-out processing -  Pulse ID: " + str(pid))
                 else:
                     time.sleep(0.001)
     except Exception as e:

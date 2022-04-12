@@ -26,7 +26,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     parameters = init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager)
     if parameters.get("no_client_timeout") is None:
         parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
-    module = parameters.get("module", None)
+    modulo = parameters.get("modulo", None)
 
     try:
         init_statistics(statistics)
@@ -57,8 +57,8 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                 data = source.receive()
                 update_statistics(sender, data.statistics.total_bytes_received if data else 0, 1 if data else 0)
 
-                if module:
-                    if counter < module:
+                if modulo:
+                    if counter < modulo:
                         counter = counter + 1
                         continue
                     else:
