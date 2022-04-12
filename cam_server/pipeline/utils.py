@@ -475,18 +475,18 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
             received_pids.put(pulse_id)
             thread_buffer.put((pulse_id, global_timestamp, message_buffer, get_parameters(), *args))
         else:
-            #Deque append and popleft are supposed to be thread safe
-            if len(thread_buffer) >= thread_buffer.maxlen:
-                with tx_lock:
-                    lost = thread_buffer.popleft()
-                    lost_pid = lost[0]
-                    received_pids.remove(lost_pid)
+            lost_pid = None
+            with tx_lock:
+                if len(thread_buffer) >= thread_buffer.maxlen:
+                        lost = thread_buffer.popleft()
+                        lost_pid = lost[0]
+                        received_pids.remove(lost_pid)
+                thread_buffer.append((pulse_id, global_timestamp, message_buffer, *args))
+                received_pids.append(pulse_id)
+            if lost_pid is not None:
                 if debug:
                     _logger.error("Thread %d buffer full: lost PID %d " % (index, lost_pid))
 
-            with tx_lock:
-                thread_buffer.append((pulse_id, global_timestamp, message_buffer, *args))
-                received_pids.append(pulse_id)
         return
     processed_data = processing_function(pulse_id, global_timestamp, function, *args)
     if processed_data is not None:
@@ -609,7 +609,7 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
 def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event):
     _logger.info("Start threaded processing send thread")
     sender = create_sender(output_port, stop_event)
-    pid=None
+    pid = None
     try:
         while not stop_event.is_set():
             tx = None
