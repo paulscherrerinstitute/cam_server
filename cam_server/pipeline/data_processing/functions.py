@@ -68,8 +68,12 @@ def get_min_max(image):
 
 
 def get_x_y_profile(image):
-    x_profile = image.sum(0)
-    y_profile = image.sum(1)
+    dtype = None
+    #Avoid using uint64 not to be encoded as BigInteger in Java
+    if image.dtype.kind == "u":
+        dtype= "int64"
+    x_profile = image.sum(0, dtype=dtype)
+    y_profile = image.sum(1, dtype=dtype)
     return x_profile, y_profile
 
 
