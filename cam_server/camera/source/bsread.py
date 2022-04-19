@@ -1,5 +1,5 @@
 from logging import getLogger
-
+from collections import deque
 import epics
 from bsread import PULL, Source
 from cam_server import config
@@ -43,6 +43,7 @@ class CameraBsread(CameraEpics):
         self.bsread_source = Source(host=source_host, port=source_port, mode=PULL,
                                     receive_timeout=timeout)
         self.bsread_source.handler = Handler(data_change_callback)
+        self.bsread_source.last_pulse_ids = deque(maxlen=2)
         return self.bsread_source
 
 

@@ -78,7 +78,7 @@ class Camera:
     def get_buffer_size(self):
         buffer_size = self.camera_config.get_configuration().get("buffer_size")
         connections = self.get_connections()
-        default = (connections * 40) if (connections > 1) else 0
+        default = 100 if (connections > 1) else 0
         try:
             if buffer_size is not None:
                 return max(int(buffer_size), 0)
@@ -134,6 +134,9 @@ class Camera:
             sender = Sender(queue_size=self.get_queue_size(), port=port, mode=PUB, start_pulse_id=self.get_start_pulse_id(), data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
         sender.open(no_client_action=self.no_client_timeout, no_client_timeout=self.get_client_timeout())
         return sender
+
+    def abort_on_error(self):
+        return self.camera_config.get_configuration().get("abort_on_error", config.ABORT_ON_ERROR)
 
 
     def get_x_y_axis(self):

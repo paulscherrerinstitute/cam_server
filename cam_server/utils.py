@@ -411,3 +411,16 @@ def reset():
         #os.kill(os.getpid(), signal.SIGTERM)
     th = threading.Thread(target=thread_func)
     th.start()
+
+
+_thread_count = 0
+_thread_semaphore = threading.Semaphore()
+_thread_event = threading.Event()
+
+def synchronise_threads(number_of_threads):
+    global _thread_count, _thread_semaphore
+    with _thread_semaphore:
+        _thread_count += 1
+        if _thread_count == number_of_threads:
+            _thread_event.set()
+    _thread_event.wait()

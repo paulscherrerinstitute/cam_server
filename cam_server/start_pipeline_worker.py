@@ -56,8 +56,8 @@ def main():
     parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
     parser.add_argument('-w', '--web_server', default=config.DEFAULT_WEB_SERVER)
     parser.add_argument('-a', '--web_server_args', default="")
-    parser.add_argument('-x', '--abort_on_error', default=True)
-    parser.add_argument('-y', '--abort_on_timeout', default=False)
+    parser.add_argument('-x', '--abort_on_error', default=None)
+    parser.add_argument('-y', '--abort_on_timeout', default=None)
     parser.add_argument('-q', '--default_queue_size', default=None)
     parser.add_argument('-b', '--default_block', default=None)
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,

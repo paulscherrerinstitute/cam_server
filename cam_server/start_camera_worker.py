@@ -43,6 +43,7 @@ def main():
     parser.add_argument('-a', '--web_server_args', default="")
     parser.add_argument('-e', '--epics_timeout', default=None)
     parser.add_argument('-f', '--ipc_feed_folder', default="/tmp")
+    parser.add_argument('-x', '--abort_on_error', default=None)
     parser.add_argument('-q', '--default_queue_size', default=None)
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
                         choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG'],
@@ -52,6 +53,8 @@ def main():
     # Setup the logging level.
     logging.basicConfig(level=arguments.log_level)
     initialize_api_logger(arguments.log_level)
+    if arguments.abort_on_error is not None:
+        config.ABORT_ON_ERROR = str(arguments.abort_on_error).lower() == "true"
     if arguments.epics_timeout is not None:
         config.EPICS_TIMEOUT = float(arguments.epics_timeout)
     if arguments.ipc_feed_folder is not None:

@@ -3,12 +3,11 @@ import os
 import sys
 from logging import getLogger
 
-
 from zmq import Again
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
-from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_as_float
+from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_as_float, synchronise_threads
 
 
 from threading import Thread, RLock, Lock
@@ -126,6 +125,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
     :param port: Port to use to bind the output stream.
     """
     sender = None
+    stream_lock = RLock()
     camera_streams = []
     receive_threads = []
     threaded = False
@@ -134,6 +134,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
     format_error = False
     exit_code = 0
     data_format_changed = True
+    pid_offset = 1
+    fail_counter = 0
 
     try:
         init_statistics(statistics)
@@ -149,7 +151,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             nonlocal data_changed
             data_changed = True
 
-        def message_buffer_send_task(message_buffer, stop_event, message_buffer_lock):
+        def message_buffer_send_task(message_buffer, connections, stop_event, message_buffer_lock):
             nonlocal sender, data_format_changed
             _logger.info("Start message buffer send thread [%s]" % (camera.get_name(),))
             sender = camera.create_sender(stop_event, port)
@@ -167,13 +169,17 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         if size > 0:
                             pids = sorted(message_buffer.keys())
                             pulse_id = pids[0]
-                            if pulse_id <= last_tx_pid:
-                                message_buffer.pop(pulse_id)  # Remove ancient PIDs
-                                old_pid = pulse_id
+                            if connections==1:
+                                message_buffer.last_pid = pulse_id
+                                tx = message_buffer.pop(pulse_id)
                             else:
-                                if pulse_id <= (last_tx_pid+interval) or (size >= threshold):
-                                    message_buffer.last_pid = pulse_id
-                                    tx = message_buffer.pop(pulse_id)
+                                if pulse_id <= last_tx_pid:
+                                    message_buffer.pop(pulse_id)  # Remove ancient PIDs
+                                    old_pid = pulse_id
+                                else:
+                                    if pulse_id <= (last_tx_pid+interval) or (size >= threshold):
+                                        message_buffer.last_pid = pulse_id
+                                        tx = message_buffer.pop(pulse_id)
                     if tx is not None:
                         (data, timestamp) = tx
                         sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
@@ -188,7 +194,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                     if pulse_id > expected:
                                         _logger.info ("Failed Pulse ID:  expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
                                     else:
-                                        _logger.debug("Changed interval: expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
+                                        _logger.info ("Changed interval: expecting %d - received %d: Pulse ID interval set to: %d [%s]" % (expected, pulse_id, interval, camera.get_name()))
                         last_tx_pid = pulse_id
                     elif old_pid is not None:
                         if debug:
@@ -217,6 +223,83 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 while camera_stream.stream.receive(handler=camera_stream.handler.receive, block=False) is not None:
                     pass
 
+        def get_next_pid(camera_stream):
+            data = camera_stream.receive()
+            if data is None:
+                data = camera_stream.receive()
+            if data is None:
+                raise Exception("Received no data from stream: " + str(camera_stream))
+            return data.data.pulse_id
+
+        def flush_streams():
+            for camera_stream in camera_streams:
+                flush_stream(camera_stream)
+
+        def get_next_pids():
+            pids = []
+            for camera_stream in camera_streams:
+                pids.append(get_next_pid(camera_stream))
+            return pids
+
+        def check_pids(pids):
+            nonlocal pid_offset
+            pid_offset = pids[1] - pids[0]
+            if pid_offset <= 0:
+                pid_offset = 1
+                return False
+            for i in range(1, len(pids)):
+                if (pids[i] - pids[i - 1]) != pid_offset:
+                    return False
+            return True
+
+        def is_interleaved(r1, r2):
+            return (r1[0] < r2[0] < r1[1] < r2[1]) or (r2[0] < r1[0] < r2[1] < r1[1])
+
+        def is_near(r1, r2):
+            return abs(r2[1] - r1[1]) <= (buffer_size / connections / 2)
+
+        def is_regular(r1, r2):
+            return (r1[1] - r1[0]) == (r2[1] - r2[0])
+
+        pid_ranges = None
+
+        def get_pid_ranges():
+            nonlocal camera_streams, stream_lock, pid_ranges
+            with stream_lock:
+                last_pids = [camera_stream.last_pulse_ids for camera_stream in camera_streams]
+                pid_ranges = [(min(pids), max(pids)) if (len(pids) == pids.maxlen) else None for pids in last_pids]
+            return pid_ranges
+
+        def are_streams_aligned():
+            nonlocal connections
+            if connections > 1:
+                pid_ranges = get_pid_ranges()
+                if not None in pid_ranges:
+                    for i in range(1, len(pid_ranges)):
+                        if not is_regular(pid_ranges[i - 1], pid_ranges[i]) or (
+                                not is_near(pid_ranges[i - 1], pid_ranges[i]) and not is_interleaved(pid_ranges[i - 1], pid_ranges[i])):
+                            return False
+            return True
+
+        def are_streams_initialized():
+            return not None in get_pid_ranges()
+
+        def assert_streams_aligned(max_fail_count=0):
+            nonlocal fail_counter, pid_ranges, connections
+            if connections > 1:
+                if not are_streams_aligned():
+                    if fail_counter == 0:
+                        if camera.get_debug():
+                            _logger.info("Misalignment - counter:%d %s [%s]." % (fail_counter, str(pid_ranges), camera.get_name()))
+                    fail_counter += 1
+                else:
+                    if fail_counter > 0:
+                        if camera.get_debug():
+                            _logger.info("Aligned      - counter:%d %s [%s]." % (fail_counter, str(pid_ranges), camera.get_name()))
+                    fail_counter = 0
+                # If streams keep misaligned for 30s the restart them
+                if fail_counter > max_fail_count:
+                    raise Exception("Streams misaligned - aborting")
 
         # TODO: Use to register proper channels. But be aware that the size and dtype can change during the running.
         # def register_image_channel(size_x, size_y, dtype):
@@ -242,7 +325,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         if threaded:
             message_buffer_lock = RLock()
             message_buffer = MaxLenDict(maxlen=buffer_size)
-            message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, stop_event, message_buffer_lock))
+            message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, connections, stop_event, message_buffer_lock))
             message_buffer_send_thread.start()
         else:
             sender = camera.create_sender(stop_event, port)
@@ -263,32 +346,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
 
             # If multiple streams, ensure they are aligned
             if connections > 1:
-                pid_offset = None
-                def flush_streams():
-                    for camera_stream in camera_streams:
-                        flush_stream(camera_stream)
-
-                def get_next_pids():
-                    pids = []
-                    for camera_stream in camera_streams:
-                        data = camera_stream.receive()
-                        if data is None:
-                            data = camera_stream.receive()
-                        if data is None:
-                            raise Exception("Received no data from stream: " + str(camera_stream))
-                        pids.append(data.data.pulse_id)
-                    return pids
-
-                def check_pids(pids):
-                    nonlocal pid_offset
-                    pid_offset = pids[1] - pids[0]
-                    for i in range(1, len(pids)):
-                        if (pids[i] - pids[i - 1]) != pid_offset:
-                            return False
-                    return True
-
                 def align_streams():
-                    nonlocal camera_streams
+                    nonlocal camera_streams, stream_lock
                     retries = 50;
                     for retry in range(retries):
                         _logger.info("Aligning streams: retry - %d [%s]" % (retry, camera.get_name()))
@@ -300,7 +359,11 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
 
                         # Arrange the streams according to the PID
                         indexes = sorted(range(len(pids)), key=pids.__getitem__)
-                        camera_streams = [camera_streams[x] for x in indexes]
+                        with stream_lock:
+                            camera_streams = [camera_streams[x] for x in indexes]
+                            for camera_stream in camera_streams:
+                                camera_stream.last_pulse_ids.clear()
+
                         pids = [pids[x] for x in indexes]
 
                         # Check if the PID offsets are constant
@@ -314,12 +377,12 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                             break;
                 align_streams()
 
-        last_rx_pid = None
+        last_tx_pid = None
         total_bytes = [0] * connections
         frame_shape = None
 
         def process_stream(camera_stream, index):
-            nonlocal total_bytes, last_rx_pid, frame_shape, format_error, data_format_changed
+            nonlocal total_bytes, last_tx_pid, frame_shape, format_error, data_format_changed, fail_counter, pid_offset
             try:
                 if stop_event.is_set():
                     return False
@@ -369,13 +432,27 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
 
                 if not threaded:
                     if connections > 1:
-                        if last_rx_pid:
-                            if pulse_id != (last_rx_pid + pid_offset):
-                                _logger.warning("Wrong pulse offset: realigning streams last=%d current=%d [%s]" % (last_rx_pid, pulse_id, camera.get_name()))
-                                align_streams()
-                                last_rx_pid = None
-                                return False
-                        last_rx_pid = pulse_id
+                        if last_tx_pid:
+                            if pulse_id <= last_tx_pid:
+                                if camera.get_debug():
+                                    _logger.info("Old pulse id in stream %d: last=%d pid=%d [%s]" % (index, last_tx_pid, pulse_id,camera.get_name()))
+                                return True
+                            expected_pid = (last_tx_pid + pid_offset)
+                            if pulse_id != expected_pid:
+                                if camera.get_debug():
+                                    _logger.warning("Wrong pulse offset in stream %d: last=%d pid=%d offset=%d [%s]" % (index, last_tx_pid, pulse_id, pid_offset, camera.get_name()))
+                                offset = pulse_id - last_tx_pid
+                                if pulse_id < expected_pid:
+                                    if camera.get_debug():
+                                        _logger.warning("Setting offset to: %d [%s]" % (offset, camera.get_name(),))
+                                    pid_offset = offset
+                                else:
+                                    align_streams()
+                                    last_tx_pid = None
+                                    return False
+                        last_tx_pid = pulse_id
+                with stream_lock:
+                    camera_stream.last_pulse_ids.append(pulse_id)
 
                 timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
                 data = {
@@ -393,8 +470,11 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                             message_buffer[pulse_id] = (data, timestamp)
                             #logger.info("RX %d [%d]" % (pulse_id, index))
                     if pulse_id <= last_pid:
-                        _logger.warning("Invalid pulse id on stream %d: %d - Last: %d [%s]" % (index, pulse_id, last_pid, camera.get_name()))
+                        if camera.get_debug():
+                            _logger.warning("Invalid pulse id on stream %d: %d - Last: %d [%s]" % (index, pulse_id, last_pid, camera.get_name()))
                         #flush_stream(camera_stream)
+                    #else:
+                    #    _logger.info("Put : %d [%s]" % (pulse_id, camera.get_name(),))
                 else:
                     sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
                     data_format_changed = False
@@ -403,11 +483,14 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 raise
             return True
 
-
-        def receive_task(index, message_buffer, stop_event, message_buffer_lock, camera_stream):
+        def receive_task(index, message_buffer, stop_event, message_buffer_lock, camera_stream, connections):
+            global exit_code
             _logger.info("Start receive thread %d [%s]" % (index, camera.get_name()))
-            #camera_stream = camera.get_stream()
             camera_stream.connect()
+            if connections>1:
+                synchronise_threads(connections)
+                flush_stream(camera_stream)
+
             try:
                 while not stop_event.is_set():
                     process_stream(camera_stream, index)
@@ -428,12 +511,15 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         if threaded:
             for i in range(connections):
                 camera_stream = camera.get_stream(data_change_callback=data_change_callback)
-                #camera_stream.format_error_counter = 0
-                receive_thread = Thread(target=receive_task, args=(i, message_buffer, stop_event, message_buffer_lock, camera_stream))
-                receive_thread.start()
+                receive_thread = Thread(target=receive_task, args=(i, message_buffer, stop_event, message_buffer_lock, camera_stream, connections))
                 receive_threads.append(receive_thread)
+                camera_streams.append(camera_stream)
+
+            for receive_thread in receive_threads:
+                receive_thread.start()
 
         start_error = 0
+        realigned = False
         while not stop_event.is_set():
             while not parameter_queue.empty():
                 new_parameters = parameter_queue.get()
@@ -466,11 +552,20 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 start_error = 0
 
             if threaded:
+                if camera.abort_on_error():
+                    assert_streams_aligned(1000)
                 time.sleep(0.01)
             else:
                 for i in range(len(camera_streams)):
                     if not process_stream(camera_streams[i], i):
+                        if connections > 1:
+                            realigned = True
                         break
+
+                if realigned:
+                    if are_streams_initialized():
+                        assert_streams_aligned()
+                        realigned = False
 
 
     except Exception as e:
@@ -517,8 +612,8 @@ source_type_to_sender_function_mapping = {
     "epics": process_epics_camera,
     "simulation": process_epics_camera,
     "bsread": process_bsread_camera,
-    "bsread_simulation" : process_bsread_camera,
-    "script" : process_scripted_camera
+    "bsread_simulation": process_bsread_camera,
+    "script": process_scripted_camera
 }
 
 
