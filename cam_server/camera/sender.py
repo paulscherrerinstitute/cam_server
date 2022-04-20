@@ -433,23 +433,13 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 if not threaded:
                     if connections > 1:
                         if last_tx_pid:
-                            if pulse_id <= last_tx_pid:
-                                if camera.get_debug():
-                                    _logger.info("Old pulse id in stream %d: last=%d pid=%d [%s]" % (index, last_tx_pid, pulse_id,camera.get_name()))
-                                return True
                             expected_pid = (last_tx_pid + pid_offset)
                             if pulse_id != expected_pid:
                                 if camera.get_debug():
                                     _logger.warning("Wrong pulse offset in stream %d: last=%d pid=%d offset=%d [%s]" % (index, last_tx_pid, pulse_id, pid_offset, camera.get_name()))
-                                offset = pulse_id - last_tx_pid
-                                if pulse_id < expected_pid:
-                                    if camera.get_debug():
-                                        _logger.warning("Setting offset to: %d [%s]" % (offset, camera.get_name(),))
-                                    pid_offset = offset
-                                else:
-                                    align_streams()
-                                    last_tx_pid = None
-                                    return False
+                                align_streams()
+                                last_tx_pid = None
+                                return False
                         last_tx_pid = pulse_id
                 with stream_lock:
                     camera_stream.last_pulse_ids.append(pulse_id)
