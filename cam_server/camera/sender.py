@@ -1,5 +1,5 @@
+
 import time
-import os
 import sys
 from logging import getLogger
 
@@ -518,7 +518,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
 
             if data_changed:
                 time.sleep(0.1) #Sleeping in case channels are monitored and were not updated
-                camera.updtate_size_raw()
+                camera.update_size_raw()
                 process_parameters()
                 _logger.warning("Image shape changed: %dx%d [%s]." % (x_size, y_size, camera.get_name()))
                 if threaded:
@@ -601,6 +601,7 @@ def process_scripted_camera(stop_event, statistics, parameter_queue, camera, por
 source_type_to_sender_function_mapping = {
     "epics": process_epics_camera,
     "simulation": process_epics_camera,
+    "area_detector": process_epics_camera,
     "bsread": process_bsread_camera,
     "bsread_simulation": process_bsread_camera,
     "script": process_scripted_camera
