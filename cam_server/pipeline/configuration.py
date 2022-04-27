@@ -154,17 +154,25 @@ class BackgroundImageManager(object):
 
 
     def collect_background(self, cam_server_client, camera_name, n_images):
+
         stream_address = cam_server_client.get_instance_stream(camera_name)
+        ipc = stream_address.startswith("ipc")
+
         try:
 
             host, port = get_host_port_from_stream_address(stream_address)
             accumulator_image = None
 
-            with (ipc_source(address=stream_address, mode=SUB) if stream_address.startswith("ipc") else source(host=host, port=port, mode=SUB)) as stream:
+            if ipc:
                 for _ in range(n_images):
-                    data = stream.receive()
-                    image = data.data.data["image"].value
+                    image = cam_server_client.get_camera_array(camera_name)
                     accumulator_image = sum_images(image, accumulator_image)
+            else:
+                with source(host=host, port=port, mode=SUB) as stream:
+                    for _ in range(n_images):
+                        data = stream.receive()
+                        image = data.data.data["image"].value
+                        accumulator_image = sum_images(image, accumulator_image)
 
             background_prefix = camera_name
             background_image = accumulator_image / n_images

@@ -1,5 +1,6 @@
 import requests
-
+import base64
+import numpy
 from cam_server_client.client import InstanceManagementClient
 from cam_server_client import config
 
@@ -110,6 +111,18 @@ class CamClient(InstanceManagementClient):
 
         server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return self.validate_response(server_response)["image"]
+
+    def get_camera_array(self, camera_name):
+        """
+        Return the camera image.
+        :param camera_name: Camera name.
+        :return: Numpy array
+        """
+        image = self.get_camera_image_bytes(camera_name)
+        dtype = image["dtype"]
+        shape = image["shape"]
+        bytes = base64.b64decode(image["bytes"].encode())
+        return numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
 
     def get_instance_stream(self, camera_name):
         """

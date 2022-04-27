@@ -1,4 +1,5 @@
 import numpy
+import os
 
 from cam_server.ipc import IpcSender
 from bsread.sender import Sender, PUB
