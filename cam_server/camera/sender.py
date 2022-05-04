@@ -134,7 +134,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
     format_error = False
     exit_code = 0
     data_format_changed = True
-    pid_offset = 1
     fail_counter = 0
 
     try:
@@ -152,7 +151,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
             data_changed = True
 
         def message_buffer_send_task(message_buffer, connections, stop_event, message_buffer_lock):
-            nonlocal sender, data_format_changed
+            nonlocal sender, data_format_changed, exit_code
             _logger.info("Start message buffer send thread [%s]" % (camera.get_name(),))
             sender = camera.create_sender(stop_event, port)
             message_buffer.last_pid = -1
@@ -223,35 +222,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 while camera_stream.stream.receive(handler=camera_stream.handler.receive, block=False) is not None:
                     pass
 
-        def get_next_pid(camera_stream):
-            data = camera_stream.receive()
-            if data is None:
-                data = camera_stream.receive()
-            if data is None:
-                raise Exception("Received no data from stream: " + str(camera_stream))
-            return data.data.pulse_id
-
-        def flush_streams():
-            for camera_stream in camera_streams:
-                flush_stream(camera_stream)
-
-        def get_next_pids():
-            pids = []
-            for camera_stream in camera_streams:
-                pids.append(get_next_pid(camera_stream))
-            return pids
-
-        def check_pids(pids):
-            nonlocal pid_offset
-            pid_offset = pids[1] - pids[0]
-            if pid_offset <= 0:
-                pid_offset = 1
-                return False
-            for i in range(1, len(pids)):
-                if (pids[i] - pids[i - 1]) != pid_offset:
-                    return False
-            return True
-
         def is_interleaved(r1, r2):
             return (r1[0] < r2[0] < r1[1] < r2[1]) or (r2[0] < r1[0] < r2[1] < r1[1])
 
@@ -280,9 +250,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                                 not is_near(pid_ranges[i - 1], pid_ranges[i]) and not is_interleaved(pid_ranges[i - 1], pid_ranges[i])):
                             return False
             return True
-
-        def are_streams_initialized():
-            return not None in get_pid_ranges()
 
         def assert_streams_aligned(max_fail_count=0):
             nonlocal fail_counter, pid_ranges, connections
@@ -344,65 +311,26 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 camera_streams.append(stream)
                 stream.connect()
 
-            # If multiple streams, ensure they are aligned
-            if connections > 1:
-                def align_streams():
-                    nonlocal camera_streams, stream_lock
-                    retries = 50;
-                    for retry in range(retries):
-                        _logger.info("Aligning streams: retry - %d [%s]" % (retry, camera.get_name()))
-                        # First flush streams.
-                        flush_streams()
-
-                        # Get a message from streams
-                        pids = get_next_pids()
-
-                        # Arrange the streams according to the PID
-                        indexes = sorted(range(len(pids)), key=pids.__getitem__)
-                        with stream_lock:
-                            camera_streams = [camera_streams[x] for x in indexes]
-                            for camera_stream in camera_streams:
-                                camera_stream.last_pulse_ids.clear()
-
-                        pids = [pids[x] for x in indexes]
-
-                        # Check if the PID offsets are constant
-                        if not check_pids(pids):
-                            if retry >= (retries - 1):
-                                raise Exception("PID offsets of streams are not constant: " + str(pids))
-                            else:
-                                _logger.info("PID offsets of streams are not constant - retrying: %s [%s]" % (str(pids), camera.get_name()))
-                        else:
-                            _logger.info("Aligned streams: %s [%s]" % (str(pids), camera.get_name()))
-                            break;
-                align_streams()
-
         last_tx_pid = None
         total_bytes = [0] * connections
         frame_shape = None
 
         def process_stream(camera_stream, index):
-            nonlocal total_bytes, last_tx_pid, frame_shape, format_error, data_format_changed, fail_counter, pid_offset
+            nonlocal total_bytes, last_tx_pid, frame_shape, format_error, fail_counter
             try:
                 if stop_event.is_set():
-                    return False
+                    return
                 data = camera_stream.receive()
 
-                #def on_format_error():
-                #    camera_stream.format_error_counter = camera_stream.format_error_counter + 1
-                #    _logger.warning(
-                #        "Invalid image format: retry %d of %d [%s]" % (
-                #        camera_stream.format_error_counter, config.FORMAT_ERROR_COUNT, camera.get_name()))
-                #    if camera_stream.format_error_counter >= config.FORMAT_ERROR_COUNT:
-                #        raise Exception("Invalid image format")
-
                 if data is not None:
+                    pulse_id = data.data.pulse_id
+                    timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
                     image = data.data.data[camera_name + config.EPICS_PV_SUFFIX_IMAGE].value
                     if image is None:
                         if camera.get_debug():
                             _logger.info("Format error - no image [%s]" % (camera.get_name(),))
                         format_error = True #on_format_error()
-                        return True
+                        return pulse_id, timestamp, None
                     else:
                         # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
                         image = transform_image(image, camera.camera_config)
@@ -413,9 +341,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                             format_error = True #on_format_error()
                             if camera.get_debug():
                                 _logger.info("Format error - bad axis size  [%s]" % (camera.get_name(),))
-                            return True
+                            return pulse_id, timestamp, None
                         format_error = False
-                        #camera_stream.format_error_counter = 0
                         frame_shape = str(width) + "x" + str(height) + "x" + str(image.itemsize)
                         total_bytes[index] = data.statistics.total_bytes_received
 
@@ -424,27 +351,14 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
-                    if camera.get_debug():
+                    if threaded and camera.get_debug():
                         _logger.info("Null data [%s]" % (camera.get_name(),))
-                    return True
+                    return pulse_id, timestamp, None
 
-                pulse_id = data.data.pulse_id
 
-                if not threaded:
-                    if connections > 1:
-                        if last_tx_pid:
-                            expected_pid = (last_tx_pid + pid_offset)
-                            if pulse_id != expected_pid:
-                                if camera.get_debug():
-                                    _logger.warning("Wrong pulse offset in stream %d: last=%d pid=%d offset=%d [%s]" % (index, last_tx_pid, pulse_id, pid_offset, camera.get_name()))
-                                align_streams()
-                                last_tx_pid = None
-                                return False
-                        last_tx_pid = pulse_id
                 with stream_lock:
                     camera_stream.last_pulse_ids.append(pulse_id)
 
-                timestamp = (data.data.global_timestamp, data.data.global_timestamp_offset)
                 data = {
                     "image": image,
                     "height": height,
@@ -458,7 +372,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         last_pid = message_buffer.last_pid
                         if pulse_id > last_pid:
                             message_buffer[pulse_id] = (data, timestamp)
-                            #logger.info("RX %d [%d]" % (pulse_id, index))
                     if pulse_id <= last_pid:
                         if camera.get_debug():
                             _logger.warning("Invalid pulse id on stream %d: %d - Last: %d [%s]" % (index, pulse_id, last_pid, camera.get_name()))
@@ -466,12 +379,9 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     #else:
                     #    _logger.info("Put : %d [%s]" % (pulse_id, camera.get_name(),))
                 else:
-                    sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
-                    data_format_changed = False
-                    on_message_sent()
+                    return pulse_id, timestamp, data
             except Exception as e:
                 raise
-            return True
 
         def receive_task(index, message_buffer, stop_event, message_buffer_lock, camera_stream, connections):
             global exit_code
@@ -509,7 +419,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 receive_thread.start()
 
         start_error = 0
-        realigned = False
+        stream_buffers = [None,] * len(camera_streams)
+        last_pid = -1
         while not stop_event.is_set():
             while not parameter_queue.empty():
                 new_parameters = parameter_queue.get()
@@ -547,16 +458,28 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 time.sleep(0.01)
             else:
                 for i in range(len(camera_streams)):
-                    if not process_stream(camera_streams[i], i):
-                        if connections > 1:
-                            realigned = True
-                        break
+                    if stream_buffers[i] is None:
+                        stream_buffers[i] = process_stream(camera_streams[i], i)
+                #pids = [(sb[1] if (sb is not None) else sys.maxsize) for sb in stream_buffers]
+                #pid = min(pids)
+                #if pid < sys.maxsize:
 
-                if realigned:
-                    if are_streams_initialized():
-                        assert_streams_aligned()
-                        realigned = False
-
+                if None not in stream_buffers:
+                    pids = [sb[0] for sb in stream_buffers]
+                    pid = min(pids)
+                    i = pids.index(pid)
+                    pulse_id, timestamp, data = stream_buffers[i]
+                    stream_buffers[i] = None
+                    if pulse_id > last_pid:
+                        if data is not None:
+                            sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
+                            data_format_changed = False
+                            on_message_sent()
+                        last_pid = pulse_id
+                    else:
+                        if camera.get_debug():
+                            _logger.info("Received old Pulse ID on stream %d: %d - last: %d [%s]" % (i, pulse_id, last_pid,camera.get_name()))
+                        flush_stream(camera_streams[i])
 
     except Exception as e:
         _logger.exception("Error while processing camera stream: %s [%s]" % (str(e), camera.get_name()))

@@ -78,14 +78,12 @@ class Camera:
 
     def get_buffer_size(self):
         buffer_size = self.camera_config.get_configuration().get("buffer_size")
-        connections = self.get_connections()
-        default = 100 if (connections > 1) else 0
         try:
             if buffer_size is not None:
                 return max(int(buffer_size), 0)
         except:
-            _logger.warning("Invalid buffer size (using default: " + str(default) + ") [%s]" % (self.get_name(),))
-        return default
+            _logger.warning("Invalid buffer size (using default: " + str(0) + ") [%s]" % (self.get_name(),))
+        return 0
 
     def get_buffer_threshold(self):
         buffer_threshold = self.camera_config.get_configuration().get("buffer_threshold")
