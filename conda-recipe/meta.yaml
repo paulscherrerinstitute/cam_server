@@ -26,6 +26,7 @@ requirements:
       - cheroot
 
 build:
+  noarch: python
   number: 0
   entry_points:
     - camera_server = cam_server.start_camera_server:main

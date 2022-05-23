@@ -14,6 +14,7 @@ requirements:
       - bsread >1.5.1
 
 build:
+  noarch: python
   number: 0
 
 about:
