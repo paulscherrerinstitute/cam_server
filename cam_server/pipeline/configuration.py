@@ -165,7 +165,7 @@ class BackgroundImageManager(object):
 
             if ipc:
                 for _ in range(n_images):
-                    image = cam_server_client.get_camera_array(camera_name)
+                    image = cam_server_client.get_camera_array(camera_name).astype(dtype="uint16")
                     accumulator_image = sum_images(image, accumulator_image)
             else:
                 with source(host=host, port=port, mode=SUB) as stream:
