@@ -353,7 +353,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                 if data is None:
                     if threaded and camera.get_debug():
                         _logger.info("Null data [%s]" % (camera.get_name(),))
-                    return pulse_id, timestamp, None
+                    return None
 
 
                 with stream_lock:
@@ -469,17 +469,18 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                     pid = min(pids)
                     i = pids.index(pid)
                     pulse_id, timestamp, data = stream_buffers[i]
-                    stream_buffers[i] = None
-                    if pulse_id > last_pid:
-                        if data is not None:
-                            sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
-                            data_format_changed = False
-                            on_message_sent()
-                        last_pid = pulse_id
-                    else:
-                        if camera.get_debug():
-                            _logger.info("Received old Pulse ID on stream %d: %d - last: %d [%s]" % (i, pulse_id, last_pid,camera.get_name()))
-                        flush_stream(camera_streams[i])
+                    if pulse_id is not None:
+                        stream_buffers[i] = None
+                        if pulse_id > last_pid:
+                            if data is not None:
+                                sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
+                                data_format_changed = False
+                                on_message_sent()
+                            last_pid = pulse_id
+                        else:
+                            if camera.get_debug():
+                                _logger.info("Received old Pulse ID on stream %d: %d - last: %d [%s]" % (i, pulse_id, last_pid,camera.get_name()))
+                            flush_stream(camera_streams[i])
 
     except Exception as e:
         _logger.exception("Error while processing camera stream: %s [%s]" % (str(e), camera.get_name()))
