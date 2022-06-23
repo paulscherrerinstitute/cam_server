@@ -55,7 +55,7 @@ class CameraSimulation(CameraEpics):
         # Functions to call in simulation.
         self.callback_functions = []
         self.simulation_thread = None
-        self.simulation_stop_event = Event()
+        self.simulation_stop_event = None
         self.image_type =  camera_config.get_configuration().get("image_type")
         self.raw = self.image_type in ["raw", "static_raw"]
         self.static = self.image_type in ["static_beam", "static_raw"]
@@ -108,7 +108,8 @@ class CameraSimulation(CameraEpics):
         # Thread already exists.
         if self.simulation_thread:
             return
-
+        if self.simulation_stop_event is None:
+            self.simulation_stop_event = Event()
         self.simulation_stop_event.clear()
 
         def call_callbacks(stop_event):
