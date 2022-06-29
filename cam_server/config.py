@@ -89,6 +89,7 @@ PIPELINE_TYPE_SCRIPT = "script"
 
 ABORT_ON_ERROR = True
 ABORT_ON_TIMEOUT = False
+TIMEOUT_COUNT = 10
 
 ################
 # IPC settings #

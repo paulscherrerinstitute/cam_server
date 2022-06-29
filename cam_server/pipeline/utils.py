@@ -44,9 +44,11 @@ message_buffer, message_buffer_send_thread  = None, None
 debug = False
 current_pid, former_pid = None, None
 camera_timeout = None
+stream_timeout = None
 pause = False
 pid_range = None
 downsampling = None
+downsampling_counter= None
 function = None
 message_buffer_size = None
 thread_exit_code=0
@@ -167,7 +169,7 @@ def get_parameters():
 
 def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_scripts_manager=None, post_processsing_function=None):
     global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
-    global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout
+    global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout, stream_timeout
 
     parameters = pipeline_config.get_configuration()
     if parameters.get("no_client_timeout") is None:
@@ -194,6 +196,7 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_script
     pid_range = parameters.get("pid_range", None)
     downsampling = parameters.get("downsampling", None)
     downsampling_counter = sys.maxsize  # The first is always sent
+    stream_timeout = parameters.get("stream_timeout", 10.0)
     function = get_function(parameters, user_scripts_manager)
 
     _parameter_queue = parameter_queue
@@ -227,6 +230,10 @@ def abort_on_error():
 def abort_on_timeout():
     pars = get_parameters()
     return pars.get("abort_on_timeout", config.ABORT_ON_TIMEOUT)
+
+def timeout_count():
+    pars = get_parameters()
+    return pars.get("timeout_count", config.TIMEOUT_COUNT)
 
 def assert_function_defined():
     global function
@@ -398,7 +405,7 @@ def send_data(processed_data, global_timestamp, pulse_id, message_buffer = None)
 
 
 def receive_stream(camera=False):
-    global last_rcvd_timestamp, pause, pid_range, downsampling, downsampling_counter, camera_timeout
+    global last_rcvd_timestamp, pause, pid_range, downsampling, downsampling_counter, camera_timeout, stream_timeout
     pulse_id = global_timestamp = data = None
     rx = source.receive()
 
@@ -450,13 +457,15 @@ def receive_stream(camera=False):
     else:
         update_statistics(sender, 0, 0, None)
         if abort_on_timeout():
-            raise SourceTimeout("Source Timeout")
-        if camera_timeout:
-            if (camera_timeout > 0) and (time.time() - last_rcvd_timestamp) > camera_timeout:
-                _logger.warning("Camera timeout. %s" % log_tag)
-                last_rcvd_timestamp = time.time()
-                # Try reconnecting to the camera. If fails raise exception and stops pipeline.
-                connect_to_camera(cam_client)
+            if (stream_timeout > 0) and (time.time() - last_rcvd_timestamp) > stream_timeout:
+                 raise SourceTimeout("Stream Timeout")
+        if camera:
+            if camera_timeout:
+                if (camera_timeout > 0) and (time.time() - last_rcvd_timestamp) > camera_timeout:
+                    _logger.warning("Camera timeout. %s" % log_tag)
+                    last_rcvd_timestamp = time.time()
+                    # Try reconnecting to the camera. If fails raise exception and stops pipeline.
+                    connect_to_camera(cam_client)
 
 
     return pulse_id, global_timestamp, data
