@@ -13,6 +13,12 @@
         state: started
         daemon_reload: yes
 
+    - name: start server_tuning service
+      systemd:
+        name: server_tuning
+        state: started
+        daemon_reload: yes
+
 - hosts: cam_manager
   become: true
   tasks:

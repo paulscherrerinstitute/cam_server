@@ -7,7 +7,7 @@
 
     - name: Restart services
       shell: |
-        systemctl restart camera_worker pipeline_worker
+        systemctl restart camera_worker pipeline_worker server_tuning
 
 - hosts: cam_manager
   become: true
