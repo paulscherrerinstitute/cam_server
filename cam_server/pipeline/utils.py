@@ -179,7 +179,10 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_script
         parameters["queue_size"] = config.PIPELINE_DEFAULT_QUEUE_SIZE
 
     if parameters.get("mode") is None:
-        parameters["mode"] = config.PIPELINE_DEFAULT_MODE
+        if pipeline_config.get_pipeline_type() ==config.PIPELINE_TYPE_FANOUT:
+            parameters["mode"] = "PUSH"
+        else:
+            parameters["mode"] = config.PIPELINE_DEFAULT_MODE
 
     if parameters.get("block") is None:
         parameters["block"] = config.PIPELINE_DEFAULT_BLOCK
@@ -380,6 +383,16 @@ def connect_to_stream():
         source = ret.source
     return ret
 
+def connect_to_source(cam_client):
+    global _pipeline_config
+    camera_name = _pipeline_config.get_camera_name()
+    if camera_name:
+        source = connect_to_camera(cam_client)
+    else:
+        source = connect_to_stream()
+        source.source.connect()
+    return source
+
 
 
 def send_data(processed_data, global_timestamp, pulse_id, message_buffer = None):
@@ -521,7 +534,7 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
         send_data(processed_data, global_timestamp, pulse_id, message_buffer)
 
 
-def setup_sender(output_port, stop_event, pipeline_processing_function, user_scripts_manager):
+def setup_sender(output_port, stop_event, pipeline_processing_function=None, user_scripts_manager=None):
     global number_processing_threads, multiprocessed, processing_thread_index, received_pids, processing_threads, message_buffer_send_thread, tx_lock, thread_buffers, message_buffer_size
     pars = get_parameters()
     number_processing_threads = pars.get("processing_threads", 0)
