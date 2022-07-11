@@ -314,7 +314,7 @@ pipeline is added to the output bsread stream in the
     - **always**: Creates header for each message. It is the most flexible, as the message is always consistent with 
       the header. Suited for pipelines with changing channels. There is a cost of regenerating the header each time.      
     - **on_change**: A compromise of the options above. Inspect channels types and shapes and recreate the header only if there is any change. 
-- **mode** (Default _'PUB'_): Output type ('PUB', 'PUSH' or 'FILE').
+- **mode** (Default _PUB_, but  _PUSH_ for __fanout__ pipelines): Output type ('PUB', 'PUSH' or 'FILE').
     - For stream modes (PUB or PUSH), the following parameters are valid:
         - **queue_size** (Default _10_): stream High Water Mark.
         - **block** (Default _True_ for PUSH, _False_ for PUB): define if stream sending is blocking.   
@@ -340,15 +340,17 @@ pipeline is added to the output bsread stream in the
 - **input\_pipeline** : Name of a pipeline to be used as a pipeline source (instead a camera instance).
         Creates the pipeline and sets the "input_stream" parameter.
 - **input\_stream** : Name of a bsread stream to be used as a pipeline source (instead a camera instance).
-- **input\_mode** (Default _SUB_): bsread stream mode (_SUB_ or _PULL_).
+- **input\_mode** (Default _SUB_, but  _PULL_ for __fanin__ pipelines): bsread stream mode (_SUB_ or _PULL_).
 - **output\_pipeline** : Name of a pipeline to be used as a pipeline destination (in worker pipelines sending data to fan-in pipelines).
         Creates the pipeline and sets the "output_stream" parameter.
 - **output\_stream** : Address to be used as a pipeline destination (in worker pipelines sending data to fan-in pipelines).
 - **downsampling** (Default _None_):
     - If defined the incoming stream is downsampled by the given factor.
 - **processing_threads** (Default _None_): Number of  processing threads. If greater than 0 then the processing is parallelized.
-- **abort_on_error** (Default _True_): If true (default) the pipeline stops upon errors during processing. 
-
+- **abort_on_error** (Default _True_): If true (default) the pipeline stops upon errors during processing.
+- **abort_on_timeout** (Default _False_): If true the pipeline stops in source timeout.
+- **stream_timeout** (Default _10_): Timeout of the source stream, defined in seconds.
+- **enforce_pid** (Default _False_): If true pulse id is monotonic (excluding messages having smaller pulse id  than the last one send).
 
   
 ##### Configuration parameters for pipeline\_type = _'processing'_  

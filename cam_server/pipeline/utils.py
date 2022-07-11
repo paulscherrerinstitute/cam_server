@@ -365,11 +365,14 @@ def connect_to_stream():
     else:
         bsread_address = pars.get("bsread_address")
         bsread_channels = pars.get("bsread_channels")
-    bsread_mode = pars.get("input_mode", "SUB")
 
+    default_input_mode = "SUB"
     conn_type = CONNECT
     if pars.get("pipeline_type","") in ["fanin",]:
         conn_type = BIND
+        default_input_mode = "PULL"
+
+    bsread_mode = pars.get("input_mode", default_input_mode)
 
     _logger.debug("Connecting to stream %s. %s" % (str(bsread_address), str(bsread_channels)))
 
