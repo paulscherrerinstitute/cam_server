@@ -26,9 +26,12 @@ _parameter_queue = None
 _user_scripts_manager = None
 _parameters_post_proc = None
 _pipeline_config = None
+_message_buffer = None
 
 sender = None
 source = None
+pid_buffer = None
+pid_buffer_size = None
 camera_host = None
 camera_port = None
 cam_client = None
@@ -84,7 +87,7 @@ def init_sender(sender, pipeline_parameters):
     sender.records=pipeline_parameters.get("records")
 
 def create_sender(output_stream_port, stop_event):
-    global sender
+    global sender, pid_buffer, pid_buffer_size
     sender = None
     pars = get_parameters()
     def no_client_action():
@@ -127,6 +130,9 @@ def create_sender(output_stream_port, stop_event):
     sender.open(no_client_action=no_client_action, no_client_timeout=pars["no_client_timeout"]
                 if pars["no_client_timeout"] > 0 else sys.maxsize)
     init_sender(sender, pars)
+    if pars.get("pid_buffer",0) > 1:
+        pid_buffer_size = pars.get("pid_buffer")
+        pid_buffer = {}
     return sender
 
 def get_sender():
@@ -408,8 +414,18 @@ def connect_to_source(cam_client):
     return source
 
 
+def send_data(processed_data, global_timestamp, pulse_id):
+    global pid_buffer, pid_buffer_size
+    if pid_buffer is not None:
+        pid_buffer[pulse_id] = (processed_data, global_timestamp, pulse_id)
+        while len(pid_buffer) >= pid_buffer_size:
+            pulse_id = min(pid_buffer.keys())
+            tx = pid_buffer.pop(pulse_id)
+            _send_data(*tx, _message_buffer)
+    else:
+        return _send_data(processed_data, global_timestamp, pulse_id, _message_buffer)
 
-def send_data(processed_data, global_timestamp, pulse_id, message_buffer = None):
+def _send_data(processed_data, global_timestamp, pulse_id, message_buffer = None):
     if processed_data is not None:
         pars = get_parameters()
         # Requesting subset of the data
@@ -424,7 +440,7 @@ def send_data(processed_data, global_timestamp, pulse_id, message_buffer = None)
             for field in exclude:
                 processed_data.pop(field, None)
 
-        if message_buffer:
+        if message_buffer is not None:
             message_buffer.append((processed_data, global_timestamp, pulse_id))
         else:
             send(sender, processed_data, global_timestamp, pulse_id)
@@ -545,11 +561,11 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
         return
     processed_data = processing_function(pulse_id, global_timestamp, function, *args)
     if processed_data is not None:
-        send_data(processed_data, global_timestamp, pulse_id, message_buffer)
+        _send_data(processed_data, global_timestamp, pulse_id, message_buffer)
 
 
 def setup_sender(output_port, stop_event, pipeline_processing_function=None, user_scripts_manager=None):
-    global number_processing_threads, multiprocessed, processing_thread_index, received_pids, processing_threads, message_buffer_send_thread, tx_lock, thread_buffers, message_buffer_size
+    global number_processing_threads, multiprocessed, processing_thread_index, received_pids, processing_threads, message_buffer_send_thread, tx_lock, thread_buffers, message_buffer_size, _message_buffer
     pars = get_parameters()
     number_processing_threads = pars.get("processing_threads", 0)
     thread_buffers = None if number_processing_threads == 0 else []
@@ -560,6 +576,8 @@ def setup_sender(output_port, stop_event, pipeline_processing_function=None, use
         message_buffer = deque(maxlen=message_buffer_size)
         message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, output_port, stop_event))
         message_buffer_send_thread.start()
+        _message_buffer = message_buffer
+
     else:
         if number_processing_threads > 0:
             processing_thread_index = 0
@@ -696,7 +714,7 @@ def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event)
                             pid = received_pids.popleft()
                             popped = True
             if tx is not None:
-                send_data(*tx)
+                _send_data(*tx)
             else:
                 if popped:
                     if debug:
@@ -801,7 +819,7 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
                                 if get_parameters().get("debug"):
                                     _logger.error("Timeout processing PID " + str(pid))
                         if tx is not None:
-                            send_data(processed_data, global_timestamp, pulse_id, message_buffer)
+                            _send_data(processed_data, global_timestamp, pulse_id, message_buffer)
                         else:
                             break
                 # When multiprocessed cannot access sender object from main process

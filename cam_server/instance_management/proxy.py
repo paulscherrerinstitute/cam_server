@@ -566,10 +566,9 @@ class ProxyBase:
     def set_permanent_instances(self, permanent_instances):
         _logger.info("Setting permanent instances: " + str(permanent_instances))
         instances = self.config_manager.config_provider.get_available_configs()
-        for instance in list(permanent_instances.keys()):
-            instance_name = instance[1:] if instance.startswith('#') else instance
-            if not instance_name in instances:
-                del permanent_instances[instance]
+        for name,instance in permanent_instances.items():
+            if not instance in instances:
+                del permanent_instances[name]
         # Check if can serialize first
         permanent_instances_str = json.dumps(permanent_instances, sort_keys=True, indent=4, )
 
@@ -580,7 +579,7 @@ class ProxyBase:
 
         if permanent_instances and not former:
             self.start_permanent_instances_manager()
-        for instance,name in former.items():
+        for name,instance in former.items():
             if not (instance,name) in permanent_instances.items():
                 try:
                     self.stop_permanent_instance(instance,name)
@@ -590,10 +589,10 @@ class ProxyBase:
             instances = self.get_info()['active_instances']
         except:
             instances = {}
-        for instance,name in permanent_instances.items():
-            if not instance.startswith('#'):
-                if not name:
-                    name = instance
+        for name,instance in permanent_instances.items():
+            if not name.startswith('#'):
+                if not instance:
+                    instance = name
                 if name in instances.keys():
                     _logger.info("Permanent instance " + instance + " is already running")
                 else:
@@ -622,10 +621,10 @@ class ProxyBase:
         try:
             info = self.get_info()
             instances = info['active_instances']
-            for instance, name in self.permanent_instances.items():
-                if not instance.startswith('#'):
-                    if not name:
-                        name = instance
+            for name, instance in self.permanent_instances.items():
+                if not name.startswith('#'):
+                    if not instance:
+                        instance = name
                     if not name in instances.keys():
                         try:
                             _logger.info("Instance not active: %s name: %s" % (instance, name))
@@ -656,9 +655,9 @@ class ProxyBase:
 
 
     def get_permanent_instance(self, name):
-        for instance, _name in self.permanent_instances.items():
+        for _name, instance in self.permanent_instances.items():
             if name == _name:
-                if not instance.startswith('#'):
+                if not _name.startswith('#'):
                     return instance
         return None
 

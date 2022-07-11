@@ -23,7 +23,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
         connect_to_source(cam_client)
         setup_sender(output_stream_port, stop_event)
         buffer_size = get_parameters().get("buffer_size",0)
-        message_buffer = {}
+        #message_buffer = {}
 
         _logger.debug("Transceiver started. %s" % log_tag)
 
@@ -41,14 +41,14 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                     _logger.error("Error parsing bsread message: " + str(e) + ". %s" % log_tag)
                     continue
 
-                if buffer_size > 1:
-                    message_buffer[pulse_id] = (stream_data, global_timestamp, pulse_id)
-                    while len(message_buffer)>=buffer_size:
-                        pulse_id = min(message_buffer.keys())
-                        tx = message_buffer.pop(pulse_id)
-                        send_data(*tx)
-                else:
-                    send_data(stream_data, global_timestamp, pulse_id)
+                #if buffer_size > 1:
+                #    message_buffer[pulse_id] = (stream_data, global_timestamp, pulse_id)
+                #    while len(message_buffer)>=buffer_size:
+                #        pulse_id = min(message_buffer.keys())
+                #        tx = message_buffer.pop(pulse_id)
+                #        send_data(*tx)
+                #else:
+                send_data(stream_data, global_timestamp, pulse_id)
             except Exception as e:
                 _logger.exception("Could not process message: " + str(e) + ". %s" % log_tag)
                 stop_event.set()
