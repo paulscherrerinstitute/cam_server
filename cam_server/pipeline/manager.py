@@ -177,6 +177,17 @@ class Manager(ProxyBase):
                 _, input_stream = self.create_pipeline( pipeline_name=input_pipeline, configuration=None, instance_id=input_pipeline)
                 cfg["input_stream"] = input_stream
 
+        output_pipeline=cfg.get("output_pipeline")
+        if output_pipeline:
+            try:
+                #check if running instance
+                output_stream = self.get_instance_info(output_pipeline)["config"]["input_stream"]
+                cfg["output_stream"] = output_stream
+            except:
+                self.create_pipeline( pipeline_name=output_pipeline, configuration=None, instance_id=output_pipeline)
+                output_stream = self.get_instance_info(output_pipeline)["config"]["input_stream"]
+                cfg["output_stream"] = output_stream
+
         self._check_type(server, cfg)
         self._check_background(server, cfg)
         self._check_script(server, cfg)

@@ -13,7 +13,7 @@ import numpy
 from bsread import source as bssource
 
 from bsread import Source, PUB, SUB, PUSH, PULL, DEFAULT_DISPATCHER_URL
-from bsread.sender import Sender
+from bsread.sender import Sender, BIND, CONNECT
 from cam_server import config
 from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
 from cam_server.utils import get_host_port_from_stream_address, on_message_sent, get_statistics, update_statistics, init_statistics, MaxLenDict, get_clients
@@ -109,7 +109,17 @@ def create_sender(output_stream_port, stop_event):
                               change=pars["change"],
                               attributes={})
     else:
+        output_stream = pars.get("output_stream", None)
+        address = "tcp://*"
+        connect_type = BIND
+        if output_stream:
+            connect_type = CONNECT
+            address, output_stream_port = get_host_port_from_stream_address(output_stream)
+            address = "tcp://" + address
+
         sender = Sender(port=output_stream_port,
+                        address=address,
+                        conn_type=connect_type,
                         mode=PUSH if (pars["mode"] == "PUSH") else PUB,
                         queue_size=pars["queue_size"],
                         block=pars["block"],
@@ -342,7 +352,6 @@ def has_stream():
 def connect_to_stream():
     global source
     pars = get_parameters()
-
     input_stream = pars.get("input_stream")
     if input_stream:
         bsread_address = input_stream
@@ -351,6 +360,10 @@ def connect_to_stream():
         bsread_address = pars.get("bsread_address")
         bsread_channels = pars.get("bsread_channels")
     bsread_mode = pars.get("input_mode", "SUB")
+
+    conn_type = CONNECT
+    if pars.get("pipeline_type","") in ["fanin",]:
+        conn_type = BIND
 
     _logger.debug("Connecting to stream %s. %s" % (str(bsread_address), str(bsread_channels)))
 
@@ -372,6 +385,7 @@ def connect_to_stream():
             bsread_channels = None
 
     ret = bssource(  host=bsread_host,
+                      conn_type=conn_type,
                       port=bsread_port,
                       mode=bsread_mode,
                       channels=bsread_channels,
