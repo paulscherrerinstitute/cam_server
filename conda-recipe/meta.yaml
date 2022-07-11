@@ -1,6 +1,6 @@
 package:
     name: cam_server
-    version: 5.3.1
+    version: 5.3.2
 
 source:
     path: ..
@@ -28,7 +28,6 @@ requirements:
       - scikit-image
 
 build:
-  noarch: python
   number: 0
   entry_points:
     - camera_server = cam_server.start_camera_server:main
