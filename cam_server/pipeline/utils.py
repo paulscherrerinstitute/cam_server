@@ -1,24 +1,26 @@
-from logging import getLogger
-from importlib import import_module
-from imp import load_source
-import time
-import sys
 import json
-import os
-from collections import deque
-import threading
-from threading import Thread, RLock
 import multiprocessing
-import numpy
-from bsread import source as bssource
+import os
+import sys
+import threading
+import time
+from collections import deque
+from imp import load_source
+from importlib import import_module
+from logging import getLogger
+from threading import Thread, RLock
 
+import numpy
 from bsread import Source, PUB, SUB, PUSH, PULL, DEFAULT_DISPATCHER_URL
+from bsread import source as bssource
 from bsread.sender import Sender, BIND, CONNECT
+
 from cam_server import config
-from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
-from cam_server.utils import get_host_port_from_stream_address, on_message_sent, get_statistics, update_statistics, init_statistics, MaxLenDict, get_clients
-from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
 from cam_server.ipc import IpcSource
+from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
+from cam_server.utils import get_host_port_from_stream_address, on_message_sent, get_statistics, update_statistics, \
+    MaxLenDict, get_clients
+from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
 
 _logger = getLogger(__name__)
 _parameters = {}
@@ -352,7 +354,9 @@ def connect_to_camera(_cam_client):
 
 def has_stream():
     pars = get_parameters()
-    return pars.get("input_stream") or pars.get("bsread_address") or (pars.get("bsread_channels") is not None)
+    if pars.get("bsread_address") or (pars.get("bsread_channels") is not None):
+        return True
+    return False
 
 
 def connect_to_stream():
