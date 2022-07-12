@@ -580,11 +580,11 @@ class ProxyBase:
         if permanent_instances and not former:
             self.start_permanent_instances_manager()
         for name,instance in former.items():
-            if not (instance,name) in permanent_instances.items():
+            if not (name,instance) in permanent_instances.items():
                 try:
                     self.stop_permanent_instance(instance,name)
                 except:
-                    _logger.warning("Error stopping permanent instance " + instance + ": " + str(sys.exc_info()[1]))
+                    _logger.warning("Error stopping permanent instance " + name + ": " + str(sys.exc_info()[1]))
         try:
             instances = self.get_info()['active_instances']
         except:
@@ -594,13 +594,13 @@ class ProxyBase:
                 if not instance:
                     instance = name
                 if name in instances.keys():
-                    _logger.info("Permanent instance " + instance + " is already running")
+                    _logger.info("Permanent instance " + name + " is already running")
                 else:
                     if not (instance,name) in former.items():
                         try:
                             self.start_permanent_instance(instance,name)
                         except:
-                            _logger.warning("Error starting permanent instance " + instance + ": " + str(sys.exc_info()[1]))
+                            _logger.warning("Error starting permanent instance " + name + ": " + str(sys.exc_info()[1]))
         if former and not permanent_instances:
             self.stop_permanent_instances_manager()
 
