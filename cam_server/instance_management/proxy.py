@@ -1,13 +1,15 @@
+import json
 import logging
 import os
-import json
 import socket
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from threading import Timer
+
+from bottle import static_file, request, response
+
 from cam_server import config, __VERSION__
 from cam_server.utils import get_host_port_from_stream_address
-from threading import Timer
-from bottle import static_file, request, response
 
 _logger = logging.getLogger(__name__)
 
@@ -566,8 +568,10 @@ class ProxyBase:
     def set_permanent_instances(self, permanent_instances):
         _logger.info("Setting permanent instances: " + str(permanent_instances))
         instances = self.config_manager.config_provider.get_available_configs()
-        for name,instance in permanent_instances.items():
+        for name in list(permanent_instances.keys()):
+            instance=permanent_instances[name]
             if not instance in instances:
+                _logger.warning("Deleting non-existent permanent pipeline: " + str(instance))
                 del permanent_instances[name]
         # Check if can serialize first
         permanent_instances_str = json.dumps(permanent_instances, sort_keys=True, indent=4, )
