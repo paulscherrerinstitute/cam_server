@@ -1,14 +1,14 @@
-import numpy
 import os
-
-from cam_server.ipc import IpcSender
-from bsread.sender import Sender, PUB
-from cam_server.camera.sender import *
 from logging import getLogger
-from cam_server import config
-from cam_server.camera.source.common import transform_image
-from cam_server.utils import update_statistics, on_message_sent, init_statistics
 
+import numpy
+from bsread.sender import Sender, PUB
+
+from cam_server import config
+from cam_server.camera.sender import *
+from cam_server.camera.source.common import transform_image
+from cam_server.ipc import IpcSender
+from cam_server.utils import update_statistics, on_message_sent, init_statistics
 
 _logger = getLogger(__name__)
 
@@ -21,7 +21,7 @@ def get_ipc_address(name):
 
 class Camera:
 
-    def __init__(self, camera_config, check_sender_data=False):
+    def __init__(self, camera_config):
         """
         Create EPICS camera source.
         :param camera_config: Config of the camera.
@@ -31,8 +31,10 @@ class Camera:
         # Width and height of the raw image
         self.width_raw = None
         self.height_raw = None
+        self.dtype = None
+
         self.simulate_pulse_id = self.camera_config.get_configuration().get("simulate_pulse_id", False)
-        self.check_sender_data = check_sender_data
+        self.check_data = self.camera_config.get_configuration().get("check_data", False)
         self.last_pid = 0
 
     def get_raw_geometry(self):
@@ -94,14 +96,16 @@ class Camera:
             _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (self.get_name(),))
         return 0.5
 
-    def get_dtype(camera):
-        dtype = camera.camera_config.get_configuration().get("dtype")
+    def get_dtype(self):
+        dtype = self.camera_config.get_configuration().get("dtype")
         if dtype is None:
-            return "uint16"
+            if self.dtype  is None:
+                return  "uint16"
+            return self.dtype
         return dtype
 
-    def get_debug(camera):
-        debug = camera.camera_config.get_configuration().get("debug")
+    def get_debug(self):
+        debug = self.camera_config.get_configuration().get("debug")
         try:
             return str(debug).lower() == "true"
         except:
@@ -265,21 +269,21 @@ class Camera:
         timestamp = time.time()
         return image, timestamp, self.get_pulse_id()
 
-    def register_channels(self, sender):
+    def register_channels(self):
         # Register the bsread channels - compress only the image.
         dtype = self.get_dtype()
         x_size, y_size = self.get_geometry()
-        sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "int64"})
-        sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "int64"})
-        sender.add_channel("timestamp",
+        self.sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "int64"})
+        self.sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "int64"})
+        self.sender.add_channel("timestamp",
                            metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "float64"})
-        sender.add_channel("image",
+        self.sender.add_channel("image",
                            metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION, "shape": [x_size, y_size],
                                      "type": dtype})
-        sender.add_channel("x_axis",
+        self.sender.add_channel("x_axis",
                            metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [x_size],
                                      "type": "float32"})
-        sender.add_channel("y_axis",
+        self.sender.add_channel("y_axis",
                            metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [y_size],
                                      "type": "float32"})
 
@@ -308,19 +312,19 @@ class Camera:
 
     def process(self, stop_event, statistics, parameter_queue, port):
         sender = None
-
+        dtype = None
         try:
             init_statistics(statistics)
-            sender = self.create_sender(stop_event, port)
+            self.sender = self.create_sender(stop_event, port)
             self.connect()
             camera_name = self.get_name()
-            x_axis, y_axis = self.get_x_y_axis()
             x_size, y_size = self.get_geometry()
+            x_axis, y_axis = self.get_x_y_axis()
             frame_rate = self.get_frame_rate()
             sample_interval = (1.0 / frame_rate) if frame_rate else None
 
-            if not self.check_sender_data:
-                self.register_channels(sender)
+            if not self.check_data:
+                self.register_channels()
 
 
             # This signals that the camera has suc cessfully started.
@@ -338,6 +342,19 @@ class Camera:
                 if image is None:
                     continue
 
+                change = False
+                x,y = self.get_geometry()
+                if x!=x_size or y!=y_size:
+                    x_size, y_size = self.get_geometry()
+                    x_axis, y_axis = self.get_x_y_axis()
+                    change = True
+                if (dtype is not None) and dtype!=image.dtype:
+                    change = True
+                dtype = image.dtype
+                if change and not self.check_data:
+                    self.register_channels()
+
+
                 default_channels = {"image": image,
                         "timestamp": timestamp,
                         "width": x_size,
@@ -347,7 +364,7 @@ class Camera:
                 data = self.get_send_channels(default_channels)
 
                 try:
-                    sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=self.check_sender_data)
+                    self.sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=self.check_data)
                     on_message_sent()
                 except Again:
                     _logger.warning(
@@ -371,8 +388,8 @@ class Camera:
             except:
                 pass
 
-            if sender:
+            if self.sender:
                 try:
-                    sender.close()
+                    self.sender.close()
                 except:
                     pass

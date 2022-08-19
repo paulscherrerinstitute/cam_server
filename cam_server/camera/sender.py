@@ -1,16 +1,15 @@
 
-import time
 import sys
+import time
 from logging import getLogger
+from threading import Thread, RLock
 
 from zmq import Again
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
-from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_as_float, synchronise_threads
-
-
-from threading import Thread, RLock, Lock
+from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_as_float, \
+    synchronise_threads
 
 _logger = getLogger(__name__)
 
@@ -522,12 +521,17 @@ def process_scripted_camera(stop_event, statistics, parameter_queue, camera, por
     camera.process(stop_event, statistics, parameter_queue, port)
 
 
+def process_stream_camera(stop_event, statistics, parameter_queue, camera, port):
+    camera.process(stop_event, statistics, parameter_queue, port)
+
+
 source_type_to_sender_function_mapping = {
     "epics": process_epics_camera,
     "simulation": process_epics_camera,
     "area_detector": process_epics_camera,
     "bsread": process_bsread_camera,
     "bsread_simulation": process_bsread_camera,
+    "stream": process_stream_camera,
     "script": process_scripted_camera
 }
 
