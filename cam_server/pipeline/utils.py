@@ -628,6 +628,7 @@ def setup_sender(output_port, stop_event, pipeline_processing_function=None, use
 
 #Message buffering
 def message_buffer_send_task(message_buffer, output_port, stop_event):
+    global sender
     pars = get_parameters()
     _logger.info("Start message buffer send thread")
     create_sender(output_port, stop_event)
@@ -648,6 +649,8 @@ def message_buffer_send_task(message_buffer, output_port, stop_event):
                 sender.close()
             except:
                 pass
+            finally:
+                sender = None
         _logger.info("Exit message buffer send thread")
 
 
@@ -848,11 +851,14 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
 
 
 def cleanup():
+    global source, sender
     if source:
         try:
             source.disconnect()
         except:
             pass
+        finally:
+            source = None
 
     if message_buffer_send_thread:
         try:
@@ -865,6 +871,8 @@ def cleanup():
                 sender.close()
             except:
                 pass
+            finally:
+                sender = None
     for t in processing_threads:
         if t:
             try:

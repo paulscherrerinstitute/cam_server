@@ -1,11 +1,12 @@
 import sys
-
 from logging import getLogger
+
+import epics
 
 from cam_server import config
 from cam_server.camera.source.camera import Camera
 from cam_server.camera.source.common import transform_image
-from cam_server.utils import create_pv, create_thread_pv
+from cam_server.utils import create_pv
 
 _logger = getLogger(__name__)
 
@@ -30,7 +31,8 @@ class AreaDetector(Camera):
         self.counter = -1
 
     def caget(self, channel_name, timeout=config.EPICS_TIMEOUT, as_string=True):
-        channel = create_thread_pv(channel_name)
+        #channel = create_thread_pv(channel_name)
+        channel = epics.PV(channel_name)
         try:
             ret = channel.get(timeout=timeout, as_string=as_string)
             if ret is None:
@@ -70,7 +72,6 @@ class AreaDetector(Camera):
     def update_size_raw(self):
         #If using channel.get without monitor there is an error creating the same channel in following processes
         #For every get with no cache the channel must be disconnected after access
-        import threading
         if self._has_cache(self.channel_width):
             value = self.channel_width.get(timeout=config.EPICS_TIMEOUT, use_monitor=True)
             if not value:

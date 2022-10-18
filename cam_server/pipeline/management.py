@@ -1,7 +1,7 @@
 import socket
 import uuid
-from logging import getLogger
 from imp import load_source
+from logging import getLogger
 
 from cam_server import config
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
@@ -32,7 +32,7 @@ class PipelineInstanceManager(InstanceManager):
         if pipeline_config.get_pipeline_type() in (config.PIPELINE_TYPE_PROCESSING, config.PIPELINE_TYPE_STORE):
             camera_name = pipeline_config.get_camera_name()
             if not self.cam_server_client.is_camera_online(camera_name):
-                raise ValueError("Camera %s is not online. Cannot start pipeline." % camera_name)
+                raise ValueError("Camera %s is not online. Cannot start pipeline." % (camera_name,))
         else:
             camera_name = None
 

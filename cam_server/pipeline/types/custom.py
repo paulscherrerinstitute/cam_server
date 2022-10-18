@@ -1,8 +1,8 @@
-from cam_server.pipeline.utils import *
-from logging import getLogger
-import time
 import sys
-from cam_server import config
+import time
+from logging import getLogger
+
+from cam_server.pipeline.utils import *
 from cam_server.utils import update_statistics, init_statistics
 
 _logger = getLogger(__name__)
@@ -14,7 +14,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     set_log_tag("custom_pipeline")
     exit_code = 0
 
-    init_pipeline_parameters(pipeline_config)
+    init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager)
     try:
         init_statistics(statistics)
         set_log_tag(" [" + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
