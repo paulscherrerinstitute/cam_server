@@ -57,6 +57,10 @@ downsampling_counter= None
 function = None
 message_buffer_size = None
 thread_exit_code=0
+thread_exit_code=0
+max_frame_rate=None
+last_sent_timestamp=0
+
 last_rcvd_timestamp = time.time()
 
 
@@ -187,7 +191,7 @@ def get_parameters():
 
 def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_scripts_manager=None, post_processsing_function=None):
     global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
-    global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout, stream_timeout
+    global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout, stream_timeout, max_frame_rate, last_sent_timestamp
 
     parameters = pipeline_config.get_configuration()
     if parameters.get("no_client_timeout") is None:
@@ -216,7 +220,10 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_script
     pause = parameters.get("pause", False)
     pid_range = parameters.get("pid_range", None)
     downsampling = parameters.get("downsampling", None)
+    max_frame_rate = parameters.get("max_frame_rate")
+    last_sent_timestamp = 0
     downsampling_counter = sys.maxsize  # The first is always sent
+
     stream_timeout = parameters.get("stream_timeout", 10.0)
     function = get_function(parameters, user_scripts_manager)
 
@@ -530,46 +537,52 @@ def get_next_thread_index():
 
 
 def process_data(processing_function, pulse_id, global_timestamp, *args):
-    global number_processing_threads, received_pids, tx_lock, thread_buffers, message_buffer, message_buffer_size, load_balancing
+    global number_processing_threads, received_pids, tx_lock, thread_buffers, message_buffer, message_buffer_size, max_frame_rate,  last_sent_timestamp
 
-    if (not message_buffer_size) and (number_processing_threads > 0):
-        if multiprocessed:
-            index = get_next_thread_index()
-            thread_buffer = thread_buffers[index]
-            received_pids.put(pulse_id)
-            thread_buffer.put((pulse_id, global_timestamp, message_buffer, get_parameters(), *args))
-        else:
-            lost_pid = None
-
-            with tx_lock:
-                load = [len(thread_buffer) for thread_buffer in thread_buffers]
-                # Gets the thread with lower load.
-                # If load ist he same, then gets next in order, in order to try to make homogenous lost of pids in case of thread buffer full.
-                min_load, max_load = min(load), max(load)
-                if min_load == max_load:
-                    index = get_next_thread_index()
-                else:
-                    index = load.index(min_load)
-
+    # Check maximum frame rate parameter
+    if max_frame_rate:
+        min_interval = 1.0 / max_frame_rate
+        if (time.time() - last_sent_timestamp) < min_interval:
+            return
+    try:
+        if (not message_buffer_size) and (number_processing_threads > 0):
+            if multiprocessed:
+                index = get_next_thread_index()
                 thread_buffer = thread_buffers[index]
-                if len(thread_buffer) >= thread_buffer.maxlen:
-                        lost = thread_buffer.popleft()
-                        lost_pid = lost[0]
-                        try:
-                            received_pids.remove(lost_pid)
-                        except:
-                            pass
-                thread_buffer.append((pulse_id, global_timestamp, message_buffer, *args))
-                received_pids.append(pulse_id)
-            if lost_pid is not None:
-                if debug:
-                    _logger.error("Thread %d buffer full: lost PID %d " % (index, lost_pid))
+                received_pids.put(pulse_id)
+                thread_buffer.put((pulse_id, global_timestamp, message_buffer, get_parameters(), *args))
+            else:
+                lost_pid = None
 
-        return
-    processed_data = processing_function(pulse_id, global_timestamp, function, *args)
-    if processed_data is not None:
-        _send_data(processed_data, global_timestamp, pulse_id, message_buffer)
+                with tx_lock:
+                    load = [len(thread_buffer) for thread_buffer in thread_buffers]
+                    # Gets the thread with lower load.
+                    # If load ist he same, then gets next in order, in order to try to make homogenous lost of pids in case of thread buffer full.
+                    min_load, max_load = min(load), max(load)
+                    if min_load == max_load:
+                        index = get_next_thread_index()
+                    else:
+                        index = load.index(min_load)
 
+                    thread_buffer = thread_buffers[index]
+                    if len(thread_buffer) >= thread_buffer.maxlen:
+                            lost = thread_buffer.popleft()
+                            lost_pid = lost[0]
+                            try:
+                                received_pids.remove(lost_pid)
+                            except:
+                                pass
+                    thread_buffer.append((pulse_id, global_timestamp, message_buffer, *args))
+                    received_pids.append(pulse_id)
+                if lost_pid is not None:
+                    if debug:
+                        _logger.error("Thread %d buffer full: lost PID %d " % (index, lost_pid))
+            return
+        processed_data = processing_function(pulse_id, global_timestamp, function, *args)
+        if processed_data is not None:
+            _send_data(processed_data, global_timestamp, pulse_id, message_buffer)
+    finally:
+        last_sent_timestamp = time.time()
 
 def setup_sender(output_port, stop_event, pipeline_processing_function=None, user_scripts_manager=None):
     global number_processing_threads, multiprocessed, processing_thread_index, received_pids, processing_threads, message_buffer_send_thread, tx_lock, thread_buffers, message_buffer_size, _message_buffer

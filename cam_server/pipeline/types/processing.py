@@ -1,19 +1,18 @@
-from cam_server.pipeline.utils import *
-from logging import getLogger
-import time
-import sys
 import os
-from collections import deque, OrderedDict
+import sys
 import threading
+from collections import deque, OrderedDict
+from logging import getLogger
 from threading import Thread
 
 import numpy
 
 from cam_server import config
+from cam_server.pipeline.data_processing.functions import is_number, binning, copy_image
 from cam_server.pipeline.data_processing.pre_processor import process_image as pre_process_image
+from cam_server.pipeline.utils import *
 from cam_server.utils import init_statistics
 from cam_server.writer import LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
-from cam_server.pipeline.data_processing.functions import is_number, binning, copy_image
 
 _logger = getLogger(__name__)
 
@@ -205,7 +204,6 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
             setup_sender(output_stream_port, stop_event, process_image, user_scripts_manager)
 
         _logger.debug("Transceiver started. %s" % (log_tag))
-        last_sent_timestamp = 0
 
         image_buffer = []
         while not stop_event.is_set():
@@ -262,13 +260,6 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                 if (not averaging) or (not continuous):
                     image_buffer = []
 
-                #Check maximum frame rate parameter
-                max_frame_rate = pipeline_parameters.get("max_frame_rate")
-                if max_frame_rate:
-                    min_interval = 1.0 / max_frame_rate
-                    if (time.time() - last_sent_timestamp) < min_interval:
-                        continue
-
                 additional_data = {}
                 if len(data) != len(config.CAMERA_STREAM_REQUIRED_FIELDS):
                     for key, value in data.items():
@@ -280,7 +271,6 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                     bs_img_buffer.append([pulse_id, pars])
                 else:
                     process_data(process_image, pulse_id, *pars)
-                last_sent_timestamp = time.time()
             except ProcessingCompleted:
                 break
             except Exception as e:
