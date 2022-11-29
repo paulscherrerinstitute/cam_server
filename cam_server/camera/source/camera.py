@@ -1,10 +1,8 @@
 import os
-from logging import getLogger
 
 import numpy
 from bsread.sender import Sender, PUB
 
-from cam_server import config
 from cam_server.camera.sender import *
 from cam_server.camera.source.common import transform_image
 from cam_server.ipc import IpcSender
@@ -36,6 +34,7 @@ class Camera:
         self.simulate_pulse_id = self.camera_config.get_configuration().get("simulate_pulse_id", False)
         self.check_data = self.camera_config.get_configuration().get("check_data", False)
         self.last_pid = 0
+        self.sender = None
 
     def get_raw_geometry(self):
         return self.width_raw, self.height_raw
@@ -311,7 +310,7 @@ class Camera:
 ####################################################################################################################
 
     def process(self, stop_event, statistics, parameter_queue, port):
-        sender = None
+        self.sender = None
         dtype = None
         try:
             init_statistics(statistics)
@@ -336,7 +335,7 @@ class Camera:
                 image, timestamp, pulse_id = self.get_data()
                 frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
                 frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
-                update_statistics(sender, -frame_size, 1 if (image is not None) else 0, frame_shape)
+                update_statistics(self.sender, -frame_size, 1 if (image is not None) else 0, frame_shape)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if image is None:
