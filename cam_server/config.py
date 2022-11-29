@@ -2,8 +2,6 @@
 # Interface parameters #
 ########################
 
-from cam_server_client.config import *
-
 # Default logging level.
 DEFAULT_LOGGING_LEVEL = "INFO"
 # How many seconds do we wait before disconnecting a stream without clients.
@@ -134,3 +132,15 @@ ZMQ_RECEIVE_TIMEOUT = 1000
 
 DEFAULT_SERVER_CLIENT_TIMEOUT = None
 DEFAULT_SERVER_INFO_TIMEOUT = 2000
+
+
+#########################
+# Telemetry #
+#########################
+
+TELEMETRY_ENABLED = False
+TELEMETRY_SERVICE = "CamServer"
+TELEMETRY_COLLECTOR = "http://localhost:5569"
+TELEMETRY_LOG_FORMAT = "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s] - %(message)s"
+TELEMETRY_LOG_LEVEL = "INFO"
+TELEMETRY_LOG_SPAN_ONLY = False

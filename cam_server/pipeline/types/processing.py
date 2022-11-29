@@ -1,13 +1,6 @@
-import os
-import sys
-import threading
-from collections import deque, OrderedDict
+from collections import OrderedDict
 from logging import getLogger
-from threading import Thread
 
-import numpy
-
-from cam_server import config
 from cam_server.pipeline.data_processing.functions import is_number, binning, copy_image
 from cam_server.pipeline.data_processing.pre_processor import process_image as pre_process_image
 from cam_server.pipeline.utils import *
@@ -20,8 +13,6 @@ _logger = getLogger(__name__)
 def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, output_stream_port,
         background_manager, user_scripts_manager=None):
 
-    camera_name = pipeline_config.get_camera_name()
-    set_log_tag(" [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
     exit_code = 0
 
     def process_bsbuffer(bs_buffer, bs_img_buffer):
@@ -176,13 +167,12 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
             if abort_on_error():
                 raise
 
-
     bs_buffer, bs_img_buffer, bs_send_thread = None, None, None
 
     try:
         init_statistics(statistics)
 
-        init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager, process_pipeline_parameters)
+        init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager, process_pipeline_parameters, port=output_stream_port)
         pipeline_parameters, image_background_array = process_pipeline_parameters()
         connect_to_camera(cam_client)
 
@@ -229,7 +219,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                 if pipeline_parameters.get("rotation"):
                     if pipeline_parameters["rotation"]["mode"] == "ortho":
                         rotation_angle = int(pipeline_parameters["rotation"]["angle"] / 90) % 4
-                        if rotation_angle==1:
+                        if rotation_angle == 1:
                             x_axis,y_axis = y_axis, numpy.flip(x_axis)
                         if rotation_angle == 2:
                             x_axis, y_axis = numpy.flip(x_axis), numpy.flip(y_axis)

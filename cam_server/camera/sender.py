@@ -9,11 +9,15 @@ from zmq import Again
 from cam_server import config
 from cam_server.camera.source.common import transform_image
 from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_as_float, \
-    synchronise_threads
+    synchronise_threads, otel_get_meter, otel_setup_logs
 
 _logger = getLogger(__name__)
 
-
+if config.TELEMETRY_ENABLED:
+    otel_setup_logs()
+    meter = otel_get_meter()
+    rx_counter = meter.create_counter("rx_counter", description="Frame receive counter")
+    error_counter = meter.create_counter("rx_counter", description="Frame receive counter")
 
 def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     """
@@ -63,6 +67,9 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
         process_parameters()
 
         def collect_and_send(image, timestamp, shape_changed = False):
+            if config.TELEMETRY_ENABLED:
+                rx_counter.add(1)
+
             nonlocal x_size, y_size, x_axis, y_axis
 
             if shape_changed:
@@ -331,6 +338,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
                         format_error = True #on_format_error()
                         return pulse_id, timestamp, None
                     else:
+                        if config.TELEMETRY_ENABLED:
+                            rx_counter.add(1)
                         # Rotate and mirror the image if needed - this is done in the epics:_get_image for epics cameras.
                         image = transform_image(image, camera.camera_config)
 

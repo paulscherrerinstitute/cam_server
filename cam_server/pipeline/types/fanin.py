@@ -1,8 +1,9 @@
-from cam_server.pipeline.utils import *
-from logging import getLogger
 import sys
 from collections import OrderedDict
-from cam_server.utils import  init_statistics
+from logging import getLogger
+
+from cam_server.pipeline.utils import *
+from cam_server.utils import init_statistics
 
 _logger = getLogger(__name__)
 
@@ -10,13 +11,11 @@ _logger = getLogger(__name__)
 def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, output_stream_port,
         background_manager, user_scripts_manager=None):
 
-    set_log_tag(str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
     exit_code = 0
-
 
     try:
         init_statistics(statistics)
-        init_pipeline_parameters(pipeline_config)
+        init_pipeline_parameters(pipeline_config, port=output_stream_port)
         # Indicate that the startup was successful.
         stop_event.clear()
 

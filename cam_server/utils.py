@@ -1,11 +1,10 @@
-from itertools import cycle
-import logging
-from logging import getLogger
-from mflow.tools import ConnectionCountMonitor
-from cam_server_client.utils import get_host_port_from_stream_address
-import os
 import collections
+import logging
+from itertools import cycle
+from logging import getLogger
+
 from bottle import response
+from mflow.tools import ConnectionCountMonitor
 
 try:
     import psutil
@@ -22,6 +21,9 @@ import threading
 import epics
 import sys
 import signal
+import config
+from cam_server import __VERSION__
+import socket
 
 
 _logger = getLogger(__name__)
@@ -93,10 +95,12 @@ def timestamp_as_float(timestamp):
     return timestamp
 
 def on_message_sent():
+    global msg_tx_counter
     if statistics is None:
         return
     statistics.tx_count = statistics.tx_count + 1
-
+    if config.TELEMETRY_ENABLED:
+        msg_tx_counter.add(1)
 
 statistics = None
 
@@ -107,8 +111,10 @@ def update_statistics(sender, total_bytes_or_increment=0, frame_count=0, frame_s
     timespan = now - statistics.timestamp
     statistics.update_timestamp = time.localtime()
     if total_bytes_or_increment<=0:
-        statistics.total_bytes = statistics.total_bytes+total_bytes_or_increment
+        increment = -total_bytes_or_increment
+        statistics.total_bytes = statistics.total_bytes+increment
     else:
+        increment = total_bytes_or_increment - statistics.total_bytes
         statistics.total_bytes = total_bytes_or_increment
     statistics.rx_count = statistics.rx_count + frame_count
     statistics._frame_count = statistics._frame_count + frame_count
@@ -132,6 +138,10 @@ def update_statistics(sender, total_bytes_or_increment=0, frame_count=0, frame_s
         else:
             statistics.cpu = None
             statistics.memory = None
+    if config.TELEMETRY_ENABLED:
+        global msg_rx_counter, total_byte_counter
+        msg_rx_counter.add(frame_count)
+        total_byte_counter.add(increment)
 
 def get_statistics():
     return statistics
@@ -157,6 +167,35 @@ def init_statistics(stats):
         statistics._process = psutil.Process(os.getpid())
     statistics._frame_count = 0
     statistics._last_proc_total_bytes = 0
+
+    if config.TELEMETRY_ENABLED:
+        from opentelemetry.metrics import Observation, CallbackOptions
+        from typing import Iterable
+        global otel_get_meter, total_byte_counter, msg_rx_counter, msg_tx_counter, connected_clients, rx_rate, tx_rate, process_cpu, process_memory
+        meter = otel_get_meter()
+        total_byte_counter = meter.create_counter("total_byte_counter", description="Counter of received bytes")
+        msg_rx_counter = meter.create_counter("msg_rx_count", description="Message rx counter")
+        msg_tx_counter = meter.create_counter("msg_tx_count", description="Message tx counter")
+
+        def connected_clients_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.num_clients, {})
+        connected_clients = meter.create_observable_gauge("connected_clients", description="Number of connected clients", callbacks=[connected_clients_func])
+
+        def rx_rate_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.throughput, {})
+        rx_rate = meter.create_observable_gauge("rx_rate", description="Message rx counter", callbacks=[rx_rate_func])
+
+        def tx_rate_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.throughput, {})
+        tx_rate = meter.create_observable_gauge("tx_rate", description="Message rx counter", callbacks=[tx_rate_func])
+
+        def process_cpu_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.cpu, {})
+        process_cpu = meter.create_observable_gauge("process_cpu", description="Process CPU usage", callbacks=[process_cpu_func])
+
+        def process_memory_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.cpu, {})
+        process_memory= meter.create_observable_gauge("process_memory", description="Process Memory Usage", callbacks=[process_memory_func])
 
 
 _api_logger = None
@@ -424,3 +463,152 @@ def synchronise_threads(number_of_threads):
         if _thread_count == number_of_threads:
             _thread_event.set()
     _thread_event.wait()
+
+
+# OpenTelemetry utilities
+# conda install -c conda-forge opentelemetry-api opentelemetry-sdk opentelemetry-instrumentation-elasticsearch opentelemetry-instrumentation-wsgi opentelemetry-instrumentation-requests opentelemetry-instrumentation opentelemetry-instrumentation-logging opentelemetry-exporter-otlp-proto-grpc
+
+otel_resources = {}
+def get_otel_resource(service_name=config.TELEMETRY_SERVICE):
+    global otel_resources
+    if not config.TELEMETRY_ENABLED:
+        return None
+
+    if not service_name in otel_resources.keys():
+        from opentelemetry.sdk.resources import Resource, SERVICE_NAME, SERVICE_INSTANCE_ID, SERVICE_VERSION, \
+            PROCESS_PID
+        otel_resources[service_name] = Resource(attributes={SERVICE_NAME: config.TELEMETRY_SERVICE, \
+                                                            SERVICE_INSTANCE_ID: socket.gethostname(), \
+                                                            SERVICE_VERSION: __VERSION__, \
+                                                            PROCESS_PID: os.getpid()})
+    return otel_resources[service_name];
+
+
+def otel_auto_instrument(app):
+    if not config.TELEMETRY_ENABLED:
+        return
+
+    from opentelemetry.instrumentation.wsgi import OpenTelemetryMiddleware
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import ConsoleMetricExporter, PeriodicExportingMetricReader
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+
+    resource = get_otel_resource()
+    if config.TELEMETRY_COLLECTOR is None:
+        tracer_exporter = ConsoleSpanExporter()
+        metric_exporter = ConsoleMetricExporter()
+    else:
+        tracer_exporter = OTLPSpanExporter(endpoint=config.TELEMETRY_COLLECTOR)
+        metric_exporter = OTLPMetricExporter(endpoint=config.TELEMETRY_COLLECTOR)
+
+    tracer_provider = TracerProvider(resource=resource)
+    processor = BatchSpanProcessor(tracer_exporter)
+    tracer_provider.add_span_processor(processor)
+    metric_reader = PeriodicExportingMetricReader(metric_exporter)
+    meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+
+    return OpenTelemetryMiddleware(app, tracer_provider=tracer_provider, meter_provider=meter_provider)
+
+
+otel_log_handler = None
+def otel_setup_logs():
+    global otel_log_handler
+
+    if not config.TELEMETRY_ENABLED:
+        return
+    from opentelemetry.sdk import _logs
+    from opentelemetry.instrumentation.logging import LoggingInstrumentor
+    from opentelemetry.sdk._logs import LogEmitterProvider, LoggingHandler
+    from opentelemetry.sdk._logs.export import BatchLogProcessor, ConsoleLogExporter
+    from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
+
+    resource = get_otel_resource()
+    if otel_log_handler in logging.getLogger().handlers:
+        return
+
+    if config.TELEMETRY_COLLECTOR is None:
+        log_exporter = ConsoleLogExporter()
+    else:
+        log_exporter = OTLPLogExporter(endpoint=config.TELEMETRY_COLLECTOR, insecure=True)
+    LoggingInstrumentor().instrument(set_logging_format=True, log_level=logging._checkLevel(config.TELEMETRY_LOG_LEVEL))
+    logging.getLogger().handlers.clear()
+    if len(logging.getLogger().handlers) == 1:
+        stream_handler =logging.getLogger().handlers[0]
+    else:
+        stream_handler = logging.StreamHandler()
+        logging.getLogger().addHandler(stream_handler)
+    stream_handler.setFormatter(logging.Formatter(logging.BASIC_FORMAT))
+    logger_emitter_provider = LogEmitterProvider(resource=resource)
+    _logs.set_log_emitter_provider(logger_emitter_provider)
+    log_processor = BatchLogProcessor(log_exporter)
+    logger_emitter_provider.add_log_processor(log_processor)
+    log_emitter = logger_emitter_provider.get_log_emitter(__name__, __VERSION__)
+    otel_log_handler = LoggingHandler(level=logging.INFO, log_emitter=log_emitter)
+    if config.TELEMETRY_LOG_SPAN_ONLY:
+        class LogsInSpansFilter(logging.Filter):
+            def filter(self, record):
+                return record.otelSpanID != "0"
+        otel_log_handler.addFilter(LogsInSpansFilter())
+    otel_log_handler.setFormatter(logging.Formatter(config.TELEMETRY_LOG_FORMAT))
+    logging.getLogger().addHandler(otel_log_handler)
+
+otel_tracers = {}
+def otel_get_tracer(name=config.TELEMETRY_SERVICE):
+    global otel_tracer
+
+    if not config.TELEMETRY_ENABLED:
+        return
+
+    if name in otel_tracers.keys():
+        return otel_tracers[name]
+    from opentelemetry import trace
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import BatchSpanProcessor, ConsoleSpanExporter
+    from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+
+    if len(otel_tracers) == 0:
+        resource = get_otel_resource ()
+        if config.TELEMETRY_COLLECTOR is None:
+            tracer_exporter = ConsoleSpanExporter()
+        else:
+            tracer_exporter = OTLPSpanExporter(endpoint=config.TELEMETRY_COLLECTOR)
+
+        tracer_provider = TracerProvider(resource=resource)
+        processor = BatchSpanProcessor(tracer_exporter)
+        tracer_provider.add_span_processor(processor)
+        trace.set_tracer_provider(tracer_provider)
+    tracer = trace.get_tracer(name)
+    otel_tracers[name] = tracer
+    return tracer
+
+
+otel_meters={}
+def otel_get_meter(name=config.TELEMETRY_SERVICE):
+    global otel_meters
+
+    if not config.TELEMETRY_ENABLED:
+        return
+
+    if name in otel_meters.keys():
+        return otel_meters[name]
+    from opentelemetry import metrics
+    from opentelemetry.sdk.metrics import MeterProvider
+    from opentelemetry.sdk.metrics.export import ConsoleMetricExporter, PeriodicExportingMetricReader
+    from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
+
+    if len(otel_tracers) == 0:
+        resource = get_otel_resource()
+        if config.TELEMETRY_COLLECTOR is None:
+            metric_exporter = ConsoleMetricExporter()
+        else:
+            metric_exporter = OTLPMetricExporter(endpoint=config.TELEMETRY_COLLECTOR)
+        metric_reader = PeriodicExportingMetricReader(metric_exporter)
+        meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+        metrics.set_meter_provider(meter_provider)
+
+    meter = metrics.get_meter(name)
+    otel_meters[name] = meter
+    return meter

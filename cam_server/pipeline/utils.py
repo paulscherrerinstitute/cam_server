@@ -1,4 +1,5 @@
 import json
+import logging
 import multiprocessing
 import os
 import sys
@@ -7,7 +8,6 @@ import time
 from collections import deque
 from imp import load_source
 from importlib import import_module
-from logging import getLogger
 from threading import Thread, RLock
 
 import numpy
@@ -19,10 +19,20 @@ from cam_server import config
 from cam_server.ipc import IpcSource
 from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
 from cam_server.utils import get_host_port_from_stream_address, on_message_sent, get_statistics, update_statistics, \
-    MaxLenDict, get_clients
+    MaxLenDict, get_clients, otel_get_tracer, otel_get_meter, otel_setup_logs
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
 
-_logger = getLogger(__name__)
+_logger = logging.getLogger(__name__)
+
+if config.TELEMETRY_ENABLED:
+    from opentelemetry.sdk.trace import Status, StatusCode
+    otel_setup_logs()
+    tracer = otel_get_tracer()
+    meter = otel_get_meter()
+
+    run_counter = meter.create_counter("run_counter", description="Number of runs of the pipeline by status")
+    run_timespan = meter.create_histogram(name="run_timespan", unit="seconds", description="Pipeline processing time")
+
 _parameters = {}
 _parameter_queue = None
 _user_scripts_manager = None
@@ -60,6 +70,10 @@ thread_exit_code=0
 thread_exit_code=0
 max_frame_rate=None
 last_sent_timestamp=0
+camera_name = None
+output_stream_port = 0
+pipeline_name = None
+
 
 last_rcvd_timestamp = time.time()
 
@@ -189,10 +203,19 @@ def send(sender, data, timestamp, pulse_id):
 def get_parameters():
     return _parameters
 
-def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_scripts_manager=None, post_processsing_function=None):
+
+def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_scripts_manager=None, post_processsing_function=None, port=-0):
     global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
     global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout, stream_timeout, max_frame_rate, last_sent_timestamp
+    global camera_name, output_stream_port, pipeline_name
+    camera_name = pipeline_config.get_camera_name()
+    pipeline_name = pipeline_config.get_name()
+    output_stream_port = port
 
+    if camera_name:
+        set_log_tag(" [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(port) + "]")
+    else:
+        set_log_tag(" [" + str(pipeline_config.get_name()) + ":" + str(port) + "]")
     parameters = pipeline_config.get_configuration()
     if parameters.get("no_client_timeout") is None:
         parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
@@ -298,11 +321,12 @@ def get_function(pipeline_parameters, user_scripts_manager):
                 _logger.info("Importing function: %s. %s" % (name, log_tag))
             else:
                 _logger.info("Reloading function: %s. %s" % (name, log_tag))
+            module_name = name # 'mod'
             if '/' in name:
-                mod = load_source('mod', name)
+                mod = load_source(module_name, name)
             else:
                 if user_scripts_manager and user_scripts_manager.exists(name):
-                    mod = load_source('mod', user_scripts_manager.get_path(name))
+                    mod = load_source(module_name, user_scripts_manager.get_path(name))
                 else:
                     mod = import_module("cam_server.pipeline.data_processing." + str(name))
             try:
@@ -578,11 +602,40 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
                     if debug:
                         _logger.error("Thread %d buffer full: lost PID %d " % (index, lost_pid))
             return
-        processed_data = processing_function(pulse_id, global_timestamp, function, *args)
+        processed_data = _process_data(processing_function, pulse_id, global_timestamp, function, *args)
         if processed_data is not None:
             _send_data(processed_data, global_timestamp, pulse_id, message_buffer)
     finally:
         last_sent_timestamp = time.time()
+
+
+def _process_data(processing_function, pulse_id, global_timestamp, function, *args):
+    if config.TELEMETRY_ENABLED:
+        global pipeline_name, camera_name, output_stream_port
+        with tracer.start_as_current_span("process") as process_span:
+            process_span.set_attribute("pipeline", pipeline_name)
+            process_span.set_attribute("camera", camera_name)
+            process_span.set_attribute("port", output_stream_port)
+            process_span.set_attribute("pulse_id", pulse_id)
+            process_span.set_attribute("thread_id", threading.get_ident())
+            process_span.set_attribute("timestamp", global_timestamp)
+            process_span.set_attribute("function", str(function.__name__))
+            start = time.time()
+            try:
+                processed_data = processing_function(pulse_id, global_timestamp, function, *args)
+                process_span.set_attribute("ex", "")
+                run_counter.add(1, {"success": True})
+                run_timespan.record(time.time()-start, {"success": True})
+                return processed_data
+            except Exception as e:
+                process_span.set_attribute("ex", str(e))
+                process_span.set_status(Status(StatusCode.ERROR))
+                run_counter.add(1, {"success": False})
+                run_timespan.record(time.time()-start, {"success": False})
+                raise
+    else:
+        return processing_function(pulse_id, global_timestamp, function, *args)
+
 
 def setup_sender(output_port, stop_event, pipeline_processing_function=None, user_scripts_manager=None):
     global number_processing_threads, multiprocessed, processing_thread_index, received_pids, processing_threads, message_buffer_send_thread, tx_lock, thread_buffers, message_buffer_size, _message_buffer
@@ -683,7 +736,7 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
             if msg is None:
                 time.sleep(0.001)
                 continue
-            processed_data = process_function(pulse_id, global_timestamp, function, *args)
+            processed_data = _process_data(process_function, pulse_id, global_timestamp, function, *args)
             if processed_data is None:
                 if debug:
                     _logger.info ("Error processing PID %d at thread %d" % (pulse_id, index))
@@ -772,7 +825,7 @@ def process_task(process_function, thread_buffer, tx_queue, stop_event, index, u
                 continue
             #check_parameters_changes()
             function = get_function(pars, user_scripts_manager)
-            processed_data = process_function(pulse_id, global_timestamp, function, *args)
+            processed_data = _process_data(process_function, pulse_id, global_timestamp, function, *args)
             try:
                 tx_queue.put((processed_data, global_timestamp, pulse_id, message_buffer), False)
             except Exception as e:

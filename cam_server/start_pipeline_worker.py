@@ -1,14 +1,16 @@
 import argparse
 import logging
 import os
+
 import bottle
 
+from cam_server import config, CamClient
+from cam_server.instance_management.configuration import TransientConfig, UserScriptsManager
 from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager
 from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
-from cam_server import config, CamClient
-from cam_server.instance_management.configuration import TransientConfig, UserScriptsManager
-from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server, cleanup
+from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server, cleanup, otel_auto_instrument, \
+    otel_setup_logs
 
 _logger = logging.getLogger(__name__)
 
@@ -38,6 +40,11 @@ def start_pipeline_worker(host, port, background_base, scripts_base, cam_server_
     app = bottle.Bottle()
 
     register_pipeline_rest_interface(app=app, instance_manager=pipeline_instance_manager)
+
+    if config.TELEMETRY_ENABLED:
+        config.TELEMETRY_SERVICE = "PipelineServer"
+        otel_setup_logs()
+        app = otel_auto_instrument(app)
 
     try:
         bottle.run(app=app, server=validate_web_server(web_server), host=host, port=port, **web_server_args)
