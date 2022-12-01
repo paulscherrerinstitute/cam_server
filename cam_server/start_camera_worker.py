@@ -8,8 +8,8 @@ from cam_server.camera.configuration import CameraConfigManager
 from cam_server.camera.management import CameraInstanceManager
 from cam_server.camera.rest_api.rest_server import register_rest_interface as register_camera_rest_interface
 from cam_server.instance_management.configuration import TransientConfig, UserScriptsManager
-from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server, otel_auto_instrument, \
-    otel_setup_logs
+from cam_server.otel import otel_auto_instrument, otel_setup_logs
+from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server
 
 _logger = logging.getLogger(__name__)
 

@@ -6,11 +6,11 @@ import bottle
 
 from cam_server import config, CamClient
 from cam_server.instance_management.configuration import TransientConfig, UserScriptsManager
+from cam_server.otel import otel_auto_instrument, otel_setup_logs
 from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager
 from cam_server.pipeline.management import PipelineInstanceManager
 from cam_server.pipeline.rest_api.rest_server import register_rest_interface as register_pipeline_rest_interface
-from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server, cleanup, otel_auto_instrument, \
-    otel_setup_logs
+from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server, cleanup
 
 _logger = logging.getLogger(__name__)
 

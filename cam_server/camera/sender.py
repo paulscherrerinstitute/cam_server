@@ -8,8 +8,9 @@ from zmq import Again
 
 from cam_server import config
 from cam_server.camera.source.common import transform_image
+from cam_server.otel import otel_get_meter, otel_setup_logs
 from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_as_float, \
-    synchronise_threads, otel_get_meter, otel_setup_logs
+    synchronise_threads
 
 _logger = getLogger(__name__)
 
