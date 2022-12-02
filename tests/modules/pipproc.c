@@ -6,14 +6,18 @@ PyObject *process(PyObject *self, PyObject *args)
 {
     PyArrayObject *image;
     long pulse_id;
-    double timestamp;
+    PyObject /*double*/ *timestamp;
+    long seconds, nanos;
     PyArrayObject *x_axis;
     PyArrayObject *y_axis;
     PyObject *pars;
     PyObject *bsdata;
 
-    if (!PyArg_ParseTuple(args, "OldOOO|O", &image, &pulse_id, &timestamp, &x_axis, &y_axis, &pars, &bsdata))
+    //if (!PyArg_ParseTuple(args, "OldOOO|O", &image, &pulse_id, &timestamp, &x_axis, &y_axis, &pars, &bsdata))
+    if ( !PyArg_ParseTuple(args, "OlOOOO|O", &image, &pulse_id, &timestamp, &x_axis, &y_axis, &pars, &bsdata) ||
+         !PyArg_ParseTuple(timestamp, "ll", &seconds, &nanos) )
         return NULL;
+
     if (pulse_id < 0) {
         PyErr_SetString(moduleErr, "Invalid Pulse ID");
         return NULL;
@@ -34,10 +38,10 @@ PyObject *process(PyObject *self, PyObject *args)
     unsigned int *pbinning = (unsigned int *)arr_binning->data;
     for (int x=0; x<bin_x; x++){
         for (int y=0; y<bin_y;y++){
-            long sum = img_data[(y*2)*bin_x +(x*2)] +
-                       img_data[(y*2+1)*bin_x +(x*2)] +
-                       img_data[(y*2)*bin_x +(x*2+1)] +
-                       img_data[(y*2+1)*bin_x +(x*2+1)];
+            long sum = img_data[(y*2)  *size_x +(x*2)] +
+                       img_data[(y*2+1)*size_x +(x*2)] +
+                       img_data[(y*2)  *size_x +(x*2+1)] +
+                       img_data[(y*2+1)*size_x +(x*2+1)];
             pbinning[y*bin_x + x] = sum;
         }
     }

@@ -5,11 +5,13 @@
 PyObject *process(PyObject *self, PyObject *args)
 {
     long pulse_id;
-    double timestamp;
     PyObject *pars;
     PyObject *data;
+    PyObject *timestamp;
+    long seconds, nanos;
 
-    if (!PyArg_ParseTuple(args, "OldO", &data, &pulse_id, &timestamp, &pars))
+    if ( !PyArg_ParseTuple(args, "OlOO", &data, &pulse_id, &timestamp, &pars) ||
+         !PyArg_ParseTuple(timestamp, "ll", &seconds, &nanos) )
         return NULL;
     if (pulse_id < 0) {
         PyErr_SetString(moduleErr, "Invalid Pulse ID");
