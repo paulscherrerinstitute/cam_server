@@ -1,15 +1,15 @@
-import time
 import unittest
 
 from cam_server.loader import *
 from cam_server.pipeline.configuration import PipelineConfig
+from cam_server.utils import *
 from tests import get_simulated_camera
 
 
 class LoaderTest(unittest.TestCase):
     def setUp(self):
         test_base_dir = os.path.split(os.path.abspath(__file__))[0]
-        self.mod_path = test_base_dir + "/modules"
+        self.mod_path = test_base_dir + "/user_scripts"
         self.simulated_camera = get_simulated_camera(path="../tests/camera_config/")
 
     def tearDown(self):
@@ -25,6 +25,7 @@ class LoaderTest(unittest.TestCase):
 
         pid = 23
         timestamp = time.time()
+        timestamp =  (int(timestamp), int((timestamp % 1) * 10e9))
         mod_name = "pipproc"
         pipproc = load_module(mod_name, self.mod_path)
         parameters["int"] = 3
@@ -32,7 +33,6 @@ class LoaderTest(unittest.TestCase):
         print(image[5][10])
         # def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata=None):
         result = pipproc.process(image, pid, timestamp, x_axis, y_axis, parameters, None)
-        print(result)
 
         mod_name = "pipstrm"
         pipstrm = load_module(mod_name, self.mod_path)
