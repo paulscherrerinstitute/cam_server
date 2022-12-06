@@ -1,21 +1,20 @@
+import multiprocessing
 import os
-import signal
 import unittest
-
-from multiprocessing import Process, Event
+from multiprocessing import Process
 from threading import Thread
 from time import sleep
 
-import multiprocessing
-
 import numpy
 from bsread import SUB, source, PULL
+
 from cam_server import CamClient, config
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server.pipeline.transceiver import processing_pipeline, store_pipeline
+from cam_server.pipeline.types.processing import run as processing_pipeline
+from cam_server.pipeline.types.store import run as store_pipeline
 from cam_server.start_camera_server import start_camera_server
-from tests.helpers.factory import MockBackgroundManager
 from tests import test_cleanup, get_simulated_camera
+from tests.helpers.factory import MockBackgroundManager
 
 
 class PipelineTransceiverTest(unittest.TestCase):
@@ -120,7 +119,6 @@ class PipelineTransceiverTest(unittest.TestCase):
         thread.start()
 
         with source(host="127.0.0.1", port=12001, mode=SUB, receive_timeout = 3000) as stream:
-            import time
             data = stream.receive()
             self.assertIsNotNone(data, "Received None message.")
             self.assertTrue(numpy.array_equal(data.data.data["image"].value, numpy.zeros(shape=simulated_camera_shape)))
