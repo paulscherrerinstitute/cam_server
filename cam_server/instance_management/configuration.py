@@ -178,26 +178,66 @@ class UserScriptsManager(object):
 
     def exists(self, script_name):
         if script_name and self.scripts_folder:
-            if not script_name.endswith(".py"):
-                script_name += ".py"
-            script_filename = os.path.join(self.scripts_folder, script_name)
+            script_filename = self._get_script_filename(script_name)
             return os.path.isfile(script_filename)
+        return False
+
+    def get_home(self):
+        return self.scripts_folder
 
     def get_path(self, script_name):
         if script_name and self.scripts_folder:
-            if not script_name.endswith(".py"):
-                script_name += ".py"
-            return os.path.join(self.scripts_folder, script_name)
+            return self._get_script_filename(script_name)
+        return None
+
+    def get_file_type(self, script_name):
+        try:
+            import os
+            ext = os.path.splitext(script_name)[1][1:]
+            if ext:
+                return ext
+        except:
+            pass
         return None
 
     def _get_script_filename(self, script_name):
         if not script_name or not self.scripts_folder:
             return None
+        file_type = self.get_file_type(script_name)
+        if not file_type:
+            file_list = glob.glob(self.scripts_folder + "/" + script_name + "*.so")
+            lib_name = "" if len(file_list) == 0 else file_list[0]
+            lib_exists = os.path.exists(lib_name)
 
-        if not script_name.endswith(".py"):
-            script_name += ".py"
-
+            if os.path.isfile(os.path.join(self.scripts_folder, script_name+".c")):
+                script_name += ".c"
+            elif os.path.exists(lib_name):
+                _, script_name = os.path.split(lib_name)
+            else:
+                script_name += ".py"
         return os.path.join(self.scripts_folder, script_name)
+
+    def get_script_type(self, script_name):
+        if not script_name or not self.scripts_folder:
+            return None
+        file_type = self.get_file_type(script_name)
+        if not file_type:
+            file_list = glob.glob(self.scripts_folder + "/" + script_name + "*.so")
+            lib_name = "" if len(file_list) == 0 else file_list[0]
+            lib_exists = os.path.exists(lib_name)
+
+            if os.path.isfile(os.path.join(self.scripts_folder, script_name + ".c")):
+                return "c"
+            elif os.path.exists(lib_name):
+                return "so"
+            return "py"
+        return file_type
+
+    def get_script_file_name(self, script_name):
+        if not self.get_file_type(script_name):
+            ext = self.get_script_type(script_name)
+            script_name = script_name + "." + ext
+        return script_name
 
     def get_script(self, script_name):
         script_filename = self._get_script_filename(script_name)
@@ -206,6 +246,11 @@ class UserScriptsManager(object):
 
         if not os.path.isfile(script_filename):
             raise ValueError("Requested script '%s' does not exist." % script_name)
+
+        if self.get_script_type(script_filename) == "so":
+            with open(script_filename, "rb") as data_file:
+                return data_file.read()
+
 
         with open(script_filename, "r") as data_file:
             return data_file.read()
@@ -216,12 +261,15 @@ class UserScriptsManager(object):
         if script_filename is None:
                 return
 
-        if type(script) != str:
-            #bytes = str.encode(bytes, 'utf-8')
-            script = script.decode("utf-8")
+        if self.get_script_type(script_name) == "so":
+            with open(script_filename, "wb") as data_file:
+                data_file.write(script)
+        else:
+            if type(script) != str:
+                script = script.decode("utf-8")
 
-        with open(script_filename, "w") as data_file:
-            data_file.write(script)
+            with open(script_filename, "w") as data_file:
+                data_file.write(script)
 
     def delete_script(self, script_name):
         """
@@ -237,7 +285,11 @@ class UserScriptsManager(object):
     def get_scripts(self):
         if not self.scripts_folder:
             return []
-        scripts = glob.glob(self.scripts_folder + '/*.py')
+        #scripts = glob.glob(self.scripts_folder + '/*.py')
+        scripts = []
+        for files in (self.scripts_folder + '/*.py', self.scripts_folder + '/*.c'):
+            scripts.extend(glob.glob(files))
+
         for i in range(len(scripts)):
             scripts[i] = basename(scripts[i])
         return scripts

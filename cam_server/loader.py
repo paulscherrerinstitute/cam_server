@@ -96,10 +96,27 @@ def load_from_library(file_name):
     mod = import_module(mod_name)
     return mod
 
+
+def get_file_extension(file):
+    try:
+        ext = os.path.splitext(file)[1][1:]
+        if ext: return ext
+    except:
+        pass
+    return None
 def load_module(name, path):
-    file_list = glob.glob(path + "/" + name + "*.so")
-    lib_name = "" if len(file_list) == 0 else file_list[0]
-    src_name = path + "/" + name + ".c"
+    path = os.path.abspath(path)
+    ext = get_file_extension(name)
+    if ext=="so":
+        lib_name = path + "/" + name
+        src_name = ""
+    elif ext=="c":
+        lib_name = ""
+        src_name = path + "/" + name
+    else:
+        file_list = glob.glob(path + "/" + name + "*.so")
+        lib_name = "" if len(file_list) == 0 else file_list[0]
+        src_name = path + "/" + name + ".c"
 
     lib_exists = os.path.exists(lib_name)
     src_exists = os.path.exists(src_name)

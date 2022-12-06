@@ -1,10 +1,10 @@
 import logging
 import socket
 
+from cam_server import PipelineClient
+from cam_server import config
 from cam_server.instance_management.proxy import ProxyBase
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server import config
-from cam_server import PipelineClient
 from cam_server.utils import get_host_port_from_stream_address, cleanup
 
 _logger = logging.getLogger(__name__)
@@ -302,7 +302,7 @@ class Manager(ProxyBase):
                     pass
         if function:
             if self.user_scripts_manager.exists(function):
-                server.set_user_script(function, self.user_scripts_manager.get_script(function))
+                server.set_user_script(self.user_scripts_manager.get_script_file_name(function), self.user_scripts_manager.get_script(function))
 
     def _check_type(self, server, configuration, instance_name=None):
         pipeline_type = configuration.get("pipeline_type", None)

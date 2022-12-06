@@ -17,10 +17,12 @@ from bsread.sender import Sender, BIND, CONNECT
 
 from cam_server import config
 from cam_server.ipc import IpcSource
+from cam_server.loader import load_module
+from cam_server.otel import otel_get_tracer, otel_get_meter, otel_setup_logs
 from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
-from cam_server.utils import get_host_port_from_stream_address, on_message_sent, get_statistics, update_statistics, \
-    MaxLenDict, get_clients, otel_get_tracer, otel_get_meter, otel_setup_logs
+from cam_server.utils import on_message_sent, get_statistics, update_statistics, MaxLenDict, get_clients
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
+from cam_server_client.utils import get_host_port_from_stream_address
 
 _logger = logging.getLogger(__name__)
 
@@ -325,21 +327,25 @@ def get_function(pipeline_parameters, user_scripts_manager):
             if '/' in name:
                 mod = load_source(module_name, name)
             else:
-                if user_scripts_manager and user_scripts_manager.exists(name):
-                    mod = load_source(module_name, user_scripts_manager.get_path(name))
-                else:
-                    mod = import_module("cam_server.pipeline.data_processing." + str(name))
+                try:
+                    if user_scripts_manager and user_scripts_manager.exists(name):
+                        mod = load_source(module_name, user_scripts_manager.get_path(name))
+                    else:
+                        mod = import_module("cam_server.pipeline.data_processing." + str(name))
+                except:
+                    #try loading C extension
+                    mod = load_module(name, user_scripts_manager.get_home())
             try:
                 functions[name] = f = mod.process_image
             except:
                 functions[name] = f = mod.process
             pipeline_parameters["reload"] = False
         return f
-    except:
-        #import traceback
-        #traceback.print_exc()
-        _logger.exception("Could not import function: %s. %s" % (str(name), log_tag))
-        return None
+    except Exception as e:
+            #import traceback
+            #traceback.print_exc()
+            _logger.exception("Could not import function %s: %s. %s" % (str(name), str(e), log_tag))
+            return None
 
 def create_source(camera_stream_address, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB):
     source_host, source_port = get_host_port_from_stream_address(camera_stream_address)
