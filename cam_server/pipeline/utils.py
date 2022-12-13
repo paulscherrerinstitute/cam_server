@@ -451,12 +451,13 @@ def receive_stream(camera=False):
         update_statistics(sender, 0, 0, None)
         if abort_on_timeout():
             raise SourceTimeout("Source Timeout")
-        if camera_timeout:
-            if (camera_timeout > 0) and (time.time() - last_rcvd_timestamp) > camera_timeout:
-                _logger.warning("Camera timeout. %s" % log_tag)
-                last_rcvd_timestamp = time.time()
-                # Try reconnecting to the camera. If fails raise exception and stops pipeline.
-                connect_to_camera(cam_client)
+        if camera:
+            if camera_timeout:
+                if (camera_timeout > 0) and (time.time() - last_rcvd_timestamp) > camera_timeout:
+                    _logger.warning("Camera timeout. %s" % log_tag)
+                    last_rcvd_timestamp = time.time()
+                    # Try reconnecting to the camera. If fails raise exception and stops pipeline.
+                    connect_to_camera(cam_client)
 
 
     return pulse_id, global_timestamp, data
