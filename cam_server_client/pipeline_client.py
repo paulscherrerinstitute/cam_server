@@ -3,6 +3,8 @@ import pickle
 import os
 import json
 import time
+import base64
+import numpy
 from bsread import source, SUB
 
 from cam_server_client import config
@@ -275,16 +277,33 @@ class PipelineClient(InstanceManagementClient):
 
     def set_background_image_bytes(self, background_name, image_bytes):
         """
-        Sets the bytes of a background file.
+        DEPRECATED: Replaced with set_background_image_array
+        """
+        self.set_background_image_array(background_name, image_bytes)
+
+    def set_background_image_array(self, background_name, image_array):
+        """
+        Sets the array of a background file.
         :param background_name: Background file name.
-        :param image_bytes: Contents of file
+        :param image_array: Numpy array
         :return:
         """
         rest_endpoint = "/background/%s/image_bytes" % background_name
-        data = pickle.dumps(image_bytes, protocol=0)
+        data = pickle.dumps(image_array, protocol=0)
         server_response = requests.put(self.api_address_format % rest_endpoint, data=data, timeout=self.timeout).json()
         self.validate_response(server_response)
 
+    def get_background_image_array(self, background_name):
+        """
+        Return a background file array
+        :param background_name: Background file name.
+        :return: 2d numpy array
+        """
+        image = self.get_background_image_bytes(background_name)
+        dtype = image["dtype"]
+        shape = image["shape"]
+        bytes = base64.b64decode(image["bytes"].encode())
+        return numpy.frombuffer(bytes, dtype=dtype).reshape(shape)
 
     def set_background(self, filename='', data=None):
         """

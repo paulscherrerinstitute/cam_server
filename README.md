@@ -616,11 +616,25 @@ class PipelineClient(builtins.object)
       :param instance_id: Name of the pipeline to stop.
 
   get_instance_message(self, instance_id):
-
       Get a single message from a stream instance.
       :param instance_id: Instance id of the stream.
       :return: Message from the stream.
 
+  def set_background_image_array(self, background_name, image_array):
+      Sets the array of a background file.
+      :param background_name: Background file name.
+      :param image_array: Numpy array
+      :return:
+
+  def get_background_image_array(self, background_name):
+      Return a background file array
+      :param background_name: Background file name.
+      :return: 2d numpy array
+      
+  def get_background_image_bytes(self, background_name):
+      Return a background image in PNG format.
+      :param background_name: Background file name.
+      :return: server_response content (PNG).        
 ```
 
 <a id="rest_api"></a>

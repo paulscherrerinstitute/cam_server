@@ -372,7 +372,7 @@ class PipelineClientTest(unittest.TestCase):
         self.assertIsNotNone(image_array)
 
         newbg = "new_"+bg
-        self.pipeline_client.set_background_image_bytes(newbg, image_array)
+        self.pipeline_client.set_background_image_array(newbg, image_array)
         image = self.pipeline_client.get_background_image_bytes(bg)
         dtype = image["dtype"]
         shape = image["shape"]

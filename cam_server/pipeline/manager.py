@@ -241,7 +241,7 @@ class Manager(ProxyBase):
         background_id = self.background_manager.collect_background(self.cam_server_client, camera_name, number_of_images)
         for server in self.get_current_servers_for_camera(camera_name):
             image_array = self.background_manager.get_background(background_id)
-            server.set_background_image_bytes(background_id, image_array)
+            server.set_background_image_array(background_id, image_array)
         return background_id
 
     def save_script(self, script_name, script):
@@ -271,7 +271,7 @@ class Manager(ProxyBase):
                 try:
                     # Check if the background can be loaded
                     image_array = self.background_manager.get_background(image_background)
-                    server.set_background_image_bytes(image_background, image_array)
+                    server.set_background_image_array(image_background, image_array)
                 except:
                     _logger.error("Bad background file for %s: %s" % (str(configuration.get("name")),str(image_background)))
 
