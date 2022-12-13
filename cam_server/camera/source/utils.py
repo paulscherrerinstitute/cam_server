@@ -1,10 +1,12 @@
+from imp import load_source
+from importlib import import_module
+from logging import getLogger
+
+from cam_server.camera.source.area_detector import AreaDetector
 from cam_server.camera.source.bsread import CameraBsread, CameraBsreadSim
 from cam_server.camera.source.epics import CameraEpics
-from cam_server.camera.source.area_detector import AreaDetector
 from cam_server.camera.source.simulation import CameraSimulation
-from logging import getLogger
-from importlib import import_module
-from imp import load_source
+from cam_server.camera.source.stream import CameraStream
 
 _logger = getLogger(__name__)
 
@@ -14,6 +16,7 @@ source_type_to_source_class_mapping = {
     "bsread": CameraBsread,
     "area_detector": AreaDetector,
     "bsread_simulation": CameraBsreadSim,
+    "stream": CameraStream,
     "script": None
 }
 

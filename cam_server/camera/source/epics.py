@@ -1,5 +1,4 @@
 import sys
-import threading
 
 from logging import getLogger
 
@@ -22,7 +21,6 @@ class CameraEpics(Camera):
         self.channel_image = None
         self.channel_width = None
         self.channel_height = None
-        self.channel_creation_lock = threading.Lock()
 
 
     def caget(self, channel_name, timeout=config.EPICS_TIMEOUT, as_string=True):

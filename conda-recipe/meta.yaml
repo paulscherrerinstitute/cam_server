@@ -1,6 +1,6 @@
 package:
     name: cam_server
-    version: 5.2.1
+    version: 5.3.3
 
 source:
     path: ..
@@ -11,22 +11,23 @@ requirements:
   run:
       - python
       - requests
-      - bsread >1.5.1
-      - bitshuffle >=0.3.6.1
       - bottle
-      - numpy
-      - scipy
-      - pyepics
-      - matplotlib
-      - pillow
       - psutil
-      - h5py
-      - numba
       - paste
       - cheroot
+      - numpy
+      - scipy
+      - numba
+      - bitshuffle >=0.3.6.1
+      - pyepics
+      - h5py
+      - jungfrau_utils
+      - bsread >1.5.1
+      - pillow
+      - matplotlib
+      - scikit-image
 
 build:
-  noarch: python
   number: 0
   entry_points:
     - camera_server = cam_server.start_camera_server:main

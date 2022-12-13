@@ -1,10 +1,10 @@
 import logging
 import socket
 
+from cam_server import PipelineClient
+from cam_server import config
 from cam_server.instance_management.proxy import ProxyBase
 from cam_server.pipeline.configuration import PipelineConfig
-from cam_server import config
-from cam_server import PipelineClient
 from cam_server.utils import get_host_port_from_stream_address, cleanup
 
 _logger = logging.getLogger(__name__)
@@ -165,11 +165,28 @@ class Manager(ProxyBase):
                 configuration["port"] = port
         input_pipeline=cfg.get("input_pipeline")
         if input_pipeline:
-            #server.save_pipeline_config(pipeline_name, cfg)
-            #camera_stream = server.get_instance_stream(cfg.get("camera_pipeline"))
-            #cfg["camera_stream"] = camera_stream
-            _, input_stream = self.create_pipeline( pipeline_name=input_pipeline, configuration=None, instance_id=input_pipeline)
-            cfg["input_stream"] = input_stream
+            try:
+                #check if running instance
+                input_stream = self.get_instance_info(input_pipeline)["stream_address"]
+                cfg["input_stream"] = input_stream
+            except:
+                #create new pipeline
+                #server.save_pipeline_config(pipeline_name, cfg)
+                #camera_stream = server.get_instance_stream(cfg.get("camera_pipeline"))
+                #cfg["camera_stream"] = camera_stream
+                _, input_stream = self.create_pipeline( pipeline_name=input_pipeline, configuration=None, instance_id=input_pipeline)
+                cfg["input_stream"] = input_stream
+
+        output_pipeline=cfg.get("output_pipeline")
+        if output_pipeline:
+            try:
+                #check if running instance
+                output_stream = self.get_instance_info(output_pipeline)["config"]["input_stream"]
+                cfg["output_stream"] = output_stream
+            except:
+                self.create_pipeline( pipeline_name=output_pipeline, configuration=None, instance_id=output_pipeline)
+                output_stream = self.get_instance_info(output_pipeline)["config"]["input_stream"]
+                cfg["output_stream"] = output_stream
 
         self._check_type(server, cfg)
         self._check_background(server, cfg)
@@ -285,7 +302,7 @@ class Manager(ProxyBase):
                     pass
         if function:
             if self.user_scripts_manager.exists(function):
-                server.set_user_script(function, self.user_scripts_manager.get_script(function))
+                server.set_user_script(self.user_scripts_manager.get_script_file_name(function), self.user_scripts_manager.get_script(function))
 
     def _check_type(self, server, configuration, instance_name=None):
         pipeline_type = configuration.get("pipeline_type", None)

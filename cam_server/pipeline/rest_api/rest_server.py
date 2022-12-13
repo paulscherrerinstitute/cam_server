@@ -2,11 +2,10 @@ import base64
 import json
 import logging
 import pickle
+
 import bottle
 import numpy
 from bottle import request, response
-from io import BytesIO
-from PIL import Image
 
 from cam_server import config
 from cam_server.instance_management import rest_api
@@ -343,12 +342,15 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     @app.put(api_root_address + '/script/<script_name>/script_bytes')
     def set_script(script_name):
         """
-        Return the bytes of aa a script file.
+        Set the bytes of a script file.
         :param background_name: script file name.
         :return:
         """
         data = request.body.read()
-        script = data.decode("utf-8")
+        try:
+            script = data.decode("utf-8")
+        except:
+            script = data
         instance_manager.save_script(script_name, script)
         return {"state": "ok",
                 "status": "Script file %s stored." % script_name,

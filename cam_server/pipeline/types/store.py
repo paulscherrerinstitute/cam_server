@@ -1,9 +1,11 @@
-from cam_server.pipeline.utils import *
-from logging import getLogger
 import sys
-from bsread import Source, PUB, SUB, PUSH, PULL
+from logging import getLogger
+
+from bsread import PUSH
 from bsread.sender import Sender
+
 from cam_server import config
+from cam_server.pipeline.utils import *
 from cam_server.utils import update_statistics, init_statistics
 
 _logger = getLogger(__name__)
@@ -20,10 +22,9 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
 
     source = None
     sender = None
-    set_log_tag("store_pipeline")
     exit_code = 0
 
-    parameters = init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager)
+    parameters = init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager, port=output_stream_port)
     if parameters.get("no_client_timeout") is None:
         parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
     modulo = parameters.get("modulo", None)
@@ -33,7 +34,6 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
 
         camera_name = pipeline_config.get_camera_name()
         stream_image_name = camera_name + config.EPICS_PV_SUFFIX_IMAGE
-        set_log_tag(" [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
 
         source = connect_to_camera(cam_client)
 

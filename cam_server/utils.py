@@ -1,11 +1,10 @@
-from itertools import cycle
-import logging
-from logging import getLogger
-from mflow.tools import ConnectionCountMonitor
-from cam_server_client.utils import get_host_port_from_stream_address
-import os
 import collections
+import logging
+from itertools import cycle
+from logging import getLogger
+
 from bottle import response
+from mflow.tools import ConnectionCountMonitor
 
 try:
     import psutil
@@ -22,7 +21,7 @@ import threading
 import epics
 import sys
 import signal
-
+from cam_server import config
 
 _logger = getLogger(__name__)
 
@@ -93,10 +92,12 @@ def timestamp_as_float(timestamp):
     return timestamp
 
 def on_message_sent():
+    global msg_tx_counter
     if statistics is None:
         return
     statistics.tx_count = statistics.tx_count + 1
-
+    if config.TELEMETRY_ENABLED:
+        msg_tx_counter.add(1)
 
 statistics = None
 
@@ -107,8 +108,10 @@ def update_statistics(sender, total_bytes_or_increment=0, frame_count=0, frame_s
     timespan = now - statistics.timestamp
     statistics.update_timestamp = time.localtime()
     if total_bytes_or_increment<=0:
-        statistics.total_bytes = statistics.total_bytes+total_bytes_or_increment
+        increment = -total_bytes_or_increment
+        statistics.total_bytes = statistics.total_bytes+increment
     else:
+        increment = total_bytes_or_increment - statistics.total_bytes
         statistics.total_bytes = total_bytes_or_increment
     statistics.rx_count = statistics.rx_count + frame_count
     statistics._frame_count = statistics._frame_count + frame_count
@@ -132,6 +135,10 @@ def update_statistics(sender, total_bytes_or_increment=0, frame_count=0, frame_s
         else:
             statistics.cpu = None
             statistics.memory = None
+    if config.TELEMETRY_ENABLED:
+        global msg_rx_counter, total_byte_counter
+        msg_rx_counter.add(frame_count)
+        total_byte_counter.add(increment)
 
 def get_statistics():
     return statistics
@@ -157,6 +164,35 @@ def init_statistics(stats):
         statistics._process = psutil.Process(os.getpid())
     statistics._frame_count = 0
     statistics._last_proc_total_bytes = 0
+
+    if config.TELEMETRY_ENABLED:
+        from opentelemetry.metrics import Observation, CallbackOptions
+        from typing import Iterable
+        global otel_get_meter, total_byte_counter, msg_rx_counter, msg_tx_counter, connected_clients, rx_rate, tx_rate, process_cpu, process_memory
+        meter = otel_get_meter()
+        total_byte_counter = meter.create_counter("total_byte_counter", description="Counter of received bytes")
+        msg_rx_counter = meter.create_counter("msg_rx_count", description="Message rx counter")
+        msg_tx_counter = meter.create_counter("msg_tx_count", description="Message tx counter")
+
+        def connected_clients_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.num_clients, {})
+        connected_clients = meter.create_observable_gauge("connected_clients", description="Number of connected clients", callbacks=[connected_clients_func])
+
+        def rx_rate_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.throughput, {})
+        rx_rate = meter.create_observable_gauge("rx_rate", description="Message rx counter", callbacks=[rx_rate_func])
+
+        def tx_rate_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.throughput, {})
+        tx_rate = meter.create_observable_gauge("tx_rate", description="Message rx counter", callbacks=[tx_rate_func])
+
+        def process_cpu_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.cpu, {})
+        process_cpu = meter.create_observable_gauge("process_cpu", description="Process CPU usage", callbacks=[process_cpu_func])
+
+        def process_memory_func(options: CallbackOptions) -> Iterable[Observation]:
+            yield Observation(statistics.cpu, {})
+        process_memory= meter.create_observable_gauge("process_memory", description="Process Memory Usage", callbacks=[process_memory_func])
 
 
 _api_logger = None
@@ -424,3 +460,5 @@ def synchronise_threads(number_of_threads):
         if _thread_count == number_of_threads:
             _thread_event.set()
     _thread_event.wait()
+
+

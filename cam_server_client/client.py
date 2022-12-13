@@ -1,6 +1,7 @@
-import requests
-import time
 import os
+import time
+
+import requests
 
 from cam_server_client import config
 
@@ -178,8 +179,10 @@ class InstanceManagementClient(Client):
         """
         script_name = os.path.basename(filename)
 
-        with open(filename, "r") as data_file:
+        mode = "rb" if script_name.endswith(".so") else "r"
+        with open(filename, mode) as data_file:
             script = data_file.read()
+
         return self.set_user_script(script_name, script)
 
     def download_user_script(self, filename):
@@ -191,7 +194,8 @@ class InstanceManagementClient(Client):
         script_name = os.path.basename(filename)
         script = self.get_user_script(script_name)
 
-        with open(filename, "w") as data_file:
+        mode = "wb" if script_name.endswith(".so") else "w"
+        with open(filename, mode) as data_file:
             data_file.write(script)
         return filename
 

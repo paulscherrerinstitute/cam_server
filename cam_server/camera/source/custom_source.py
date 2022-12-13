@@ -1,5 +1,3 @@
-import numpy
-
 from cam_server.camera.source.camera import *
 
 _logger = getLogger(__name__)
@@ -7,7 +5,7 @@ _logger = getLogger(__name__)
 
 class custom_source(Camera):
     def __init__(self, camera_config):
-        Camera.__init__(self, camera_config, check_sender_data=False)
+        Camera.__init__(self, camera_config)
         self.camera_config = camera_config
         # Width and height of the raw image
         self.width_raw = 80

@@ -1,12 +1,14 @@
 import argparse
 import logging
+
 import bottle
 
 from cam_server import config
-from cam_server.camera.management import CameraInstanceManager
 from cam_server.camera.configuration import CameraConfigManager
-from cam_server.instance_management.configuration import TransientConfig, UserScriptsManager
+from cam_server.camera.management import CameraInstanceManager
 from cam_server.camera.rest_api.rest_server import register_rest_interface as register_camera_rest_interface
+from cam_server.instance_management.configuration import TransientConfig, UserScriptsManager
+from cam_server.otel import otel_auto_instrument, otel_setup_logs
 from cam_server.utils import initialize_api_logger, string_to_dict, validate_web_server
 
 _logger = logging.getLogger(__name__)
@@ -25,6 +27,11 @@ def start_camera_worker(host, port, scripts_base, hostname=None, port_range=None
     app = bottle.Bottle()
 
     register_camera_rest_interface(app=app, instance_manager=camera_instance_manager)
+
+    if config.TELEMETRY_ENABLED:
+        config.TELEMETRY_SERVICE = "CameraServer"
+        otel_setup_logs()
+        app = otel_auto_instrument(app)
 
     try:
         bottle.run(app=app, server=validate_web_server(web_server), host=host, port=port, **web_server_args)

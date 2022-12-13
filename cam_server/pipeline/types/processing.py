@@ -1,19 +1,11 @@
-from cam_server.pipeline.utils import *
+from collections import OrderedDict
 from logging import getLogger
-import time
-import sys
-import os
-from collections import deque, OrderedDict
-import threading
-from threading import Thread
 
-import numpy
-
-from cam_server import config
+from cam_server.pipeline.data_processing.functions import is_number, binning, copy_image
 from cam_server.pipeline.data_processing.pre_processor import process_image as pre_process_image
+from cam_server.pipeline.utils import *
 from cam_server.utils import init_statistics
 from cam_server.writer import LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
-from cam_server.pipeline.data_processing.functions import is_number, binning, copy_image
 
 _logger = getLogger(__name__)
 
@@ -21,8 +13,6 @@ _logger = getLogger(__name__)
 def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, output_stream_port,
         background_manager, user_scripts_manager=None):
 
-    camera_name = pipeline_config.get_camera_name()
-    set_log_tag(" [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
     exit_code = 0
 
     def process_bsbuffer(bs_buffer, bs_img_buffer):
@@ -177,13 +167,12 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
             if abort_on_error():
                 raise
 
-
     bs_buffer, bs_img_buffer, bs_send_thread = None, None, None
 
     try:
         init_statistics(statistics)
 
-        init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager, process_pipeline_parameters)
+        init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager, process_pipeline_parameters, port=output_stream_port)
         pipeline_parameters, image_background_array = process_pipeline_parameters()
         connect_to_camera(cam_client)
 
@@ -205,7 +194,6 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
             setup_sender(output_stream_port, stop_event, process_image, user_scripts_manager)
 
         _logger.debug("Transceiver started. %s" % (log_tag))
-        last_sent_timestamp = 0
 
         image_buffer = []
         while not stop_event.is_set():
@@ -231,7 +219,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                 if pipeline_parameters.get("rotation"):
                     if pipeline_parameters["rotation"]["mode"] == "ortho":
                         rotation_angle = int(pipeline_parameters["rotation"]["angle"] / 90) % 4
-                        if rotation_angle==1:
+                        if rotation_angle == 1:
                             x_axis,y_axis = y_axis, numpy.flip(x_axis)
                         if rotation_angle == 2:
                             x_axis, y_axis = numpy.flip(x_axis), numpy.flip(y_axis)
@@ -262,13 +250,6 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                 if (not averaging) or (not continuous):
                     image_buffer = []
 
-                #Check maximum frame rate parameter
-                max_frame_rate = pipeline_parameters.get("max_frame_rate")
-                if max_frame_rate:
-                    min_interval = 1.0 / max_frame_rate
-                    if (time.time() - last_sent_timestamp) < min_interval:
-                        continue
-
                 additional_data = {}
                 if len(data) != len(config.CAMERA_STREAM_REQUIRED_FIELDS):
                     for key, value in data.items():
@@ -280,7 +261,6 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
                     bs_img_buffer.append([pulse_id, pars])
                 else:
                     process_data(process_image, pulse_id, *pars)
-                last_sent_timestamp = time.time()
             except ProcessingCompleted:
                 break
             except Exception as e:

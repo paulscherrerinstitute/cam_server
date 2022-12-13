@@ -38,5 +38,7 @@ fi
 
 conda build --py 3.7 --no-test conda-recipe
 conda build --py 3.8 --no-test conda-recipe
+conda build --py 3.9 --no-test conda-recipe
 conda build --py 3.7 --no-test conda-recipe_client
 conda build --py 3.8 --no-test conda-recipe_client
+conda build --py 3.9 --no-test conda-recipe_client
