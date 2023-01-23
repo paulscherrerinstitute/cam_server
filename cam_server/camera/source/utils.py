@@ -35,12 +35,12 @@ def get_source_class(camera_config):
         try:
             name = camera_config.parameters.get("class")
             _logger.info("Importing source: %s." % (name))
-
+            module_name = name  # 'mod'
             if '/' in name:
-                mod = load_source('mod', name)
+                mod = load_source(module_name, name)
             else:
                 if _user_scripts_manager and _user_scripts_manager.exists(name):
-                    mod = load_source('mod', _user_scripts_manager.get_path(name))
+                    mod = load_source(module_name, _user_scripts_manager.get_path(name))
                 else:
                     mod = import_module("cam_server.camera.source." + str(name))
             cls = getattr(mod, name)
