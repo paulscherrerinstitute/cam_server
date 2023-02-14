@@ -7,7 +7,9 @@ from threading import Thread
 
 from bsread import SUB, DEFAULT_DISPATCHER_URL
 from bsread import source as bssource
+from bsread.handlers.compact import Message as MessageData
 from bsread.sender import CONNECT
+from mflow import Statistics, Message
 
 from cam_server import config
 from cam_server_client.utils import get_host_port_from_stream_address
@@ -67,13 +69,15 @@ class StreamSource():
                 rx = self.source.receive()
                 if rx:
                     msg=rx.data
+                    stats=rx.statistics
+                    stats.total_bytes_received
                     pulse_id = msg.pulse_id
                     global_timestamp = (msg.global_timestamp, msg.global_timestamp_offset)
                     data = msg.data
-                    return pulse_id, global_timestamp, data
+                    return pulse_id, global_timestamp, data, stats
             except:
                 pass
-        return None, None, None
+        return None, None, None, None
 
 
 class DispatcherSource(StreamSource):
@@ -89,7 +93,6 @@ class DispatcherSource(StreamSource):
         self.queue_size = queue_size
         self.receive_timeout = 10
 
-
 class Merger():
     def __init__(self, stream1, stream2, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, message_buffer_size=100):
         self.stream1, self.stream2 = stream1, stream2
@@ -98,6 +101,7 @@ class Merger():
         self.processing_thread = None
         self.receive_timeout = receive_timeout
         self.message_buffer = deque(maxlen=message_buffer_size)
+        self.statistics = Statistics()
 
     def run(self):
         pulse_id1, pulse_id2= None, None
@@ -106,9 +110,11 @@ class Merger():
             self.connect_sources()
             while self.is_connected():
                 if (pulse_id1 is None) or ((pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id1<pulse_id2)):
-                    pulse_id1, global_timestamp1, data1 = self.stream1.receive()
+                    pulse_id1, global_timestamp1, data1, stats1 = self.stream1.receive()
+                    #if pulse_id1: print ("Rec 1 ", pulse_id1)
                 if (pulse_id2 is None) or ((pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id2<pulse_id1)):
-                    pulse_id2, global_timestamp2, data2 = self.stream2.receive()
+                    pulse_id2, global_timestamp2, data2, stats2 = self.stream2.receive()
+                    #if pulse_id2: print ("Rec 2 ", pulse_id2)
                 if (pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id1==pulse_id2):
                     pulse_id, global_timestamp = pulse_id1, global_timestamp1
                     pulse_id1, pulse_id2= None, None
@@ -118,10 +124,11 @@ class Merger():
                             data.update(data1)
                         if data2:
                             data.update(data2)
-                    except:
+                    except Exception as e:
                         _logger.warning("Cannot merge pulse id : " + pulse_id1 + " - " + str(e))
                         continue
-                    self.on_receive_data(pulse_id, global_timestamp, data)
+                    #print("Merge ", pulse_id)
+                    self.on_receive_data (pulse_id, global_timestamp, data, stats1, stats2)
         except Exception as e:
             _logger.exception("Error in merger: " + str(e))
             self.connected = False
@@ -146,16 +153,20 @@ class Merger():
             self.source2.disconnect()
             self.source2 = None
 
-    def on_receive_data(self, pulse_id, global_timestamp, data):
-        self.message_buffer.append((pulse_id, global_timestamp, data))
+    def on_receive_data(self, pulse_id, global_timestamp, data, stats1, stats2):
+        self.message_buffer.append((pulse_id, global_timestamp, data, stats1, stats2))
 
     #Source interface
     def receive(self):
         timeout = time.time() + (float(self.receive_timeout)/1000)
         while True:
             if len(self.message_buffer) > 0:
-                (pulse_id, global_timestamp, data) = self.message_buffer.popleft()
-                return (pulse_id, global_timestamp, data)
+                ret = (pulse_id, global_timestamp, data, stats1, stats2) = self.message_buffer.popleft()
+                data = MessageData( pulse_id, global_timestamp[0], global_timestamp[1],  data=data)
+                self.statistics.bytes_received = stats1.bytes_received + stats2.bytes_received
+                self.statistics.total_bytes_received = self.statistics.total_bytes_received + self.statistics.bytes_received
+                self.statistics.messages_received = self.statistics.messages_received + 1
+                return Message(self.statistics, data)
             if time.time()>timeout:
                 return None
 
@@ -186,15 +197,15 @@ class Merger():
 
 if __name__ == '__main__':
     st1 = StreamSource("tcp://localhost:5554")
-    st2 = StreamSource("tcp://localhost:5554")
-    with  Merger(st1, st2, 10) as m:
+    st2 = StreamSource("tcp://localhost:5552")
+    with Merger(st1, st2, 10) as m:
         m.connect()
         time.sleep(5.0)
         while True:
             r=m.receive()
             if not r:
                 break
-            print(r[0])
+            print(r.data.pulse_id)
         m.disconnect()
 
 

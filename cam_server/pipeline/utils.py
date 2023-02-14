@@ -15,7 +15,7 @@ from bsread import Source, PUB, SUB, PUSH, PULL, DEFAULT_DISPATCHER_URL
 from bsread import source as bssource
 from bsread.sender import Sender, BIND, CONNECT
 
-from cam_server import config
+from cam_server import config, merger
 from cam_server.ipc import IpcSource
 from cam_server.loader import load_module
 from cam_server.otel import otel_get_tracer, otel_get_meter, otel_setup_logs
@@ -433,6 +433,43 @@ def connect_to_stream():
             bsread_channels = json.loads(bsread_channels)
         if len(bsread_channels) == 0:
             bsread_channels = None
+
+    input_stream2 = pars.get("input_stream2")
+    if input_stream2:
+        bsread_address2 = input_stream2
+        bsread_channels2 = None
+    else:
+        bsread_address2 = pars.get("bsread_address2")
+        bsread_channels2 = pars.get("bsread_channels2")
+
+    # Stream merging
+    if bsread_address2 or bsread_channels2:
+        merge_queue_size = pars.get("merge_queue_size", 100)
+        bsread_mode2 = pars.get("input_mode2", default_input_mode)
+        _logger.debug("Connecting to second stream %s. %s" % (str(bsread_address2), str(bsread_channels2)))
+        if bsread_address2:
+            bsread_mode2 = SUB if bsread_mode2 == "SUB" else PULL
+        else:
+            bsread_mode2 = PULL if bsread_mode2 == "PULL" else SUB
+
+        if bsread_channels2 is not None:
+            if type(bsread_channels2) != list:
+                bsread_channels2 = json.loads(bsread_channels2)
+            if len(bsread_channels2) == 0:
+                bsread_channels2 = None
+        if bsread_address:
+            st1 = merger.StreamSource(bsread_address, bsread_mode, merge_queue_size)
+        else:
+            st1 = merger.DispatcherSource(bsread_channels, dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression, merge_queue_size)
+        if bsread_address2:
+            st2 = merger.StreamSource(bsread_address2, bsread_mode2, merge_queue_size)
+        else:
+            st2 = merger.DispatcherSource(bsread_channels2, dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression, merge_queue_size)
+
+        ret = merger.Merger(st1, st2, receive_timeout)
+        ret.connect()
+        source = ret
+        return ret
 
     ret = bssource(  host=bsread_host,
                       conn_type=conn_type,

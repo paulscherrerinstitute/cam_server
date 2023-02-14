@@ -397,6 +397,12 @@ pipeline is added to the output bsread stream in the
   Must be defined if bsread_address is not - in this case reading from the dispatcher.
 - **bsread_mode** (Default _None_): "PULL"(default if bsread_address is defined ) or "SUB" (default if bsread_address is not defined )
 
+##### Additional parameters for merging 2 streams in pipeline\_type = _'stream'_    
+- **bsread_address2** (Default _None_): Source of bsread data. 
+- **bsread_channels2** (Default _None_): Channel names of bsread data. 
+  Must be defined if bsread_address is not - in this case reading from the dispatcher.
+- **bsread_mode2** (Default _None_): "PULL"(default if bsread_address is defined ) or "SUB" (default if bsread_address is not defined )
+
 ##### Configuration parameters for pipeline\_type = _'fanin'_    
 - **pid_buffer** (Default _0_): Buffer size for reordering pulse ids received from different worker pipelines.
 
