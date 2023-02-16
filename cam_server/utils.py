@@ -22,6 +22,7 @@ import epics
 import sys
 import signal
 from cam_server import config
+from cam_server_client.utils import *
 
 _logger = getLogger(__name__)
 

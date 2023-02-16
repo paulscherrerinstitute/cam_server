@@ -7,9 +7,11 @@ from threading import Thread
 
 from bsread import SUB, DEFAULT_DISPATCHER_URL
 from bsread import source as bssource
-from bsread.handlers.compact import Message as MessageData
 from bsread.sender import CONNECT
+
 from mflow import Statistics, Message
+from bsread.handlers.compact import Message as MessageData
+
 
 from cam_server import config
 from cam_server_client.utils import get_host_port_from_stream_address

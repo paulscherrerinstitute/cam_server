@@ -1,3 +1,5 @@
+from cam_server_client.config import *
+
 ########################
 # Interface parameters #
 ########################
