@@ -171,6 +171,7 @@ class Merger():
                 return Message(self.statistics, data)
             if time.time()>timeout:
                 return None
+            time.sleep(0.001)
 
     def connect(self):
         self.disconnect()
