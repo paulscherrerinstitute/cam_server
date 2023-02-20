@@ -445,6 +445,7 @@ def connect_to_stream():
     # Stream merging
     if bsread_address2 or bsread_channels2:
         merge_queue_size = pars.get("merge_queue_size", 100)
+        merge_buffer_size = pars.get("merge_buffer_size", 100)
         bsread_mode2 = pars.get("input_mode2", default_input_mode)
         _logger.debug("Connecting to second stream %s. %s" % (str(bsread_address2), str(bsread_channels2)))
         if bsread_address2:
@@ -466,7 +467,7 @@ def connect_to_stream():
         else:
             st2 = merger.DispatcherSource(bsread_channels2, dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression, merge_queue_size)
 
-        ret = merger.Merger(st1, st2, receive_timeout)
+        ret = merger.Merger(st1, st2, receive_timeout, merge_buffer_size)
         ret.connect()
         source = ret
         return ret
