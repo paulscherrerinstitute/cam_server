@@ -20,7 +20,7 @@ _logger = getLogger(__name__)
 
 
 class StreamSource():
-    def __init__(self, address, mode=SUB, queue_size=100):
+    def __init__(self, address, mode=SUB, queue_size=100, receive_timeout=10):
         self.channel_list=None
         self.mode=mode
         self.address = address
@@ -29,7 +29,7 @@ class StreamSource():
         self.dispatcher_verify_request=True
         self.dispatcher_disable_compression = False
         self.queue_size = queue_size
-        self.receive_timeout = 10
+        self.receive_timeout = receive_timeout
 
     def connect(self):
         if self.address:
@@ -84,7 +84,7 @@ class StreamSource():
 
 class DispatcherSource(StreamSource):
     # dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression = get_dispatcher_parameters(self.pars)
-    def __init__(self, channel_list, dispatcher_url=DEFAULT_DISPATCHER_URL, dispatcher_verify_request=True, dispatcher_disable_compression=False, queue_size=100):
+    def __init__(self, channel_list, dispatcher_url=DEFAULT_DISPATCHER_URL, dispatcher_verify_request=True, dispatcher_disable_compression=False, queue_size=100, receive_timeout=10):
         self.channel_list=channel_list
         self.mode=SUB
         self.address = None
@@ -93,7 +93,7 @@ class DispatcherSource(StreamSource):
         self.dispatcher_verify_request=dispatcher_verify_request
         self.dispatcher_disable_compression = dispatcher_disable_compression
         self.queue_size = queue_size
-        self.receive_timeout = 10
+        self.receive_timeout = receive_timeout
 
 class Merger():
     def __init__(self, stream1, stream2, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, message_buffer_size=100):
@@ -113,13 +113,11 @@ class Merger():
             while self.is_connected():
                 if (pulse_id1 is None) or ((pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id1<pulse_id2)):
                     pulse_id1, global_timestamp1, data1, stats1 = self.stream1.receive()
-                    #if pulse_id1: print ("Rec 1 ", pulse_id1)
                 if (pulse_id2 is None) or ((pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id2<pulse_id1)):
                     pulse_id2, global_timestamp2, data2, stats2 = self.stream2.receive()
-                    #if pulse_id2: print ("Rec 2 ", pulse_id2)
-                if (pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id1==pulse_id2):
+                if (pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id1 == pulse_id2):
                     pulse_id, global_timestamp = pulse_id1, global_timestamp1
-                    pulse_id1, pulse_id2= None, None
+                    pulse_id1, pulse_id2 = None, None
                     try:
                         data = OrderedDict()
                         if data1:
@@ -129,8 +127,7 @@ class Merger():
                     except Exception as e:
                         _logger.warning("Cannot merge pulse id : " + pulse_id1 + " - " + str(e))
                         continue
-                    #print("Merge ", pulse_id)
-                    self.on_receive_data (pulse_id, global_timestamp, data, stats1, stats2)
+                    self.on_receive_data(pulse_id, global_timestamp, data, stats1, stats2)
         except Exception as e:
             _logger.exception("Error in merger: " + str(e))
             self.connected = False
@@ -143,7 +140,7 @@ class Merger():
             self.source1 = self.stream1.connect()
             self.source2 = self.stream2.connect()
         except:
-            self.stop()
+            self.disconnect_sources()
             raise
 
 
@@ -160,11 +157,12 @@ class Merger():
 
     #Source interface
     def receive(self):
+      try:
         timeout = time.time() + (float(self.receive_timeout)/1000)
         while True:
             if len(self.message_buffer) > 0:
                 ret = (pulse_id, global_timestamp, data, stats1, stats2) = self.message_buffer.popleft()
-                data = MessageData( pulse_id, global_timestamp[0], global_timestamp[1],  data=data)
+                data = MessageData(pulse_id, global_timestamp[0], global_timestamp[1],  data=data)
                 self.statistics.bytes_received = stats1.bytes_received + stats2.bytes_received
                 self.statistics.total_bytes_received = self.statistics.total_bytes_received + self.statistics.bytes_received
                 self.statistics.messages_received = self.statistics.messages_received + 1
@@ -172,6 +170,8 @@ class Merger():
             if time.time()>timeout:
                 return None
             time.sleep(0.001)
+      except Exception as e:
+          _logger.exception("Error in receive: " + str(e))
 
     def connect(self):
         self.disconnect()
@@ -210,5 +210,3 @@ if __name__ == '__main__':
                 break
             print(r.data.pulse_id)
         m.disconnect()
-
-
