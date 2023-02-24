@@ -33,6 +33,13 @@ class ProxyBase:
         except:
             _logger.warning("Error loading permanent instances: " + str(sys.exc_info()[1]))
 
+    def resolve_server(self, server_index_or_name):
+        for s in self.server_pool:
+            compact_name = s.address.replace("http", "").replace("/", "").replace(":", "")
+            if compact_name == server_index_or_name:
+                return s
+        return self.server_pool[int(server_index_or_name)]
+
     def register_rest_interface(self, app):
         api_root_address = config.API_PREFIX + config.PROXY_REST_INTERFACE_PREFIX
 
@@ -94,31 +101,25 @@ class ProxyBase:
             return {"state": "ok",
                     "status": "Instance '%s' stopped." % instance_name}
 
-        @app.delete(api_root_address + "/server/<server_index>")
-        def stop_all_server_instances(server_index):
+        @app.delete(api_root_address + "/server/<server_index_or_name>")
+        def stop_all_server_instances(server_index_or_name):
             """
             Stop a specific camera.
-            :param server_index
+            :param server_index_or_name
             """
-            server = None
-            for s in self.server_pool:
-                compact_name = s.address.replace("http", "").replace("/", "").replace(":", "")
-                if compact_name == server_index:
-                    server = s
-            if server is None:
-                server = self.server_pool[int(server_index)]
+            server = self.resolve_server(server_index_or_name)
             self.stop_all_server_instances(server)
             return {"state": "ok",
                     "status": "All instances stopped in '%s'." % server.get_address()}
 
-        @app.get(api_root_address + "/server/logs/<server_index>")
-        def get_server_logs(server_index):
+        @app.get(api_root_address + "/server/logs/<server_index_or_name>")
+        def get_server_logs(server_index_or_name):
             """
             Return the list of logs
-            :param server_index
+            :param server_index_or_name
             """
             response.content_type = 'application/json'
-            server = self.server_pool[int(server_index)]
+            server = self.resolve_server(server_index_or_name)
             logs = server.get_logs(txt=False)
             logs = list(logs) if logs else []
             return {"state": "ok",
@@ -126,14 +127,14 @@ class ProxyBase:
                     "logs": logs
                     }
 
-        @app.get(api_root_address + "/server/logs/<server_index>/txt")
-        def get_server_logs_txt(server_index):
+        @app.get(api_root_address + "/server/logs/<server_index_or_name>/txt")
+        def get_server_logs_txt(server_index_or_name):
             """
             Return the list of logs
             :param server_index
             """
             response.content_type = 'text/plain'
-            server = self.server_pool[int(server_index)]
+            server = self.resolve_server(server_index_or_name)
             logs = server.get_logs(txt=True)
             return logs
 

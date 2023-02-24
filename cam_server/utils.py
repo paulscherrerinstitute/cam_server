@@ -214,7 +214,7 @@ class MyHandler(logging.StreamHandler):
         _api_log_buffer.append([asctime, record.name, record.levelname, record.getMessage()])
 
 
-def initialize_api_logger(level = None, maxlen = 1000):
+def initialize_api_logger(level = None, maxlen=500):
     global _api_logger, _api_log_buffer
     _api_logger = logging.getLogger("cam_server")
     _api_logger.setLevel(level if level else "INFO")
@@ -227,7 +227,10 @@ def initialize_api_logger(level = None, maxlen = 1000):
 
 
 def get_api_logs():
-    return _api_log_buffer
+    global _api_logger, _api_log_buffer
+    if _api_log_buffer:
+        return list(_api_log_buffer)
+    return []
 
 
 def register_logs_rest_interface(app, api_root_address):
@@ -241,7 +244,6 @@ def register_logs_rest_interface(app, api_root_address):
         """
         response.content_type = 'application/json'
         logs = get_api_logs()
-        logs = list(logs) if logs else []
         return {"state": "ok",
                 "status": "Server logs.",
                 "logs": logs
@@ -255,7 +257,7 @@ def register_logs_rest_interface(app, api_root_address):
         """
         response.content_type = 'text/plain'
         logs = get_api_logs()
-        logs = ("\n".join([" - ".join(log) for log in get_api_logs()]) ) if logs else ""
+        logs = "\n".join([" - ".join(log) for log in logs])
         return logs
 
 
