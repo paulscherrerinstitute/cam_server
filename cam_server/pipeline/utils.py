@@ -445,6 +445,7 @@ def connect_to_stream():
     # Stream merging
     if bsread_address2 or bsread_channels2:
         merge_queue_size = pars.get("merge_queue_size", 100)
+        merge_buffer_size = pars.get("merge_buffer_size", 100)
         bsread_mode2 = pars.get("input_mode2", default_input_mode)
         _logger.debug("Connecting to second stream %s. %s" % (str(bsread_address2), str(bsread_channels2)))
         if bsread_address2:
@@ -457,16 +458,17 @@ def connect_to_stream():
                 bsread_channels2 = json.loads(bsread_channels2)
             if len(bsread_channels2) == 0:
                 bsread_channels2 = None
+        merge_receive_timeout = int(pars.get("receive_timeout", 10))
         if bsread_address:
-            st1 = merger.StreamSource(bsread_address, bsread_mode, merge_queue_size)
+            st1 = merger.StreamSource(bsread_address, bsread_mode, merge_queue_size, merge_receive_timeout)
         else:
-            st1 = merger.DispatcherSource(bsread_channels, dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression, merge_queue_size)
+            st1 = merger.DispatcherSource(bsread_channels, dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression, merge_queue_size, merge_receive_timeout)
         if bsread_address2:
-            st2 = merger.StreamSource(bsread_address2, bsread_mode2, merge_queue_size)
+            st2 = merger.StreamSource(bsread_address2, bsread_mode2, merge_queue_size, merge_receive_timeout)
         else:
-            st2 = merger.DispatcherSource(bsread_channels2, dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression, merge_queue_size)
+            st2 = merger.DispatcherSource(bsread_channels2, dispatcher_url, dispatcher_verify_request, dispatcher_disable_compression, merge_queue_size, merge_receive_timeout)
 
-        ret = merger.Merger(st1, st2, receive_timeout)
+        ret = merger.Merger(st1, st2, receive_timeout, merge_buffer_size)
         ret.connect()
         source = ret
         return ret
