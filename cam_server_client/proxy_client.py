@@ -93,3 +93,26 @@ class ProxyClient(Client):
 
         server_response = requests.post(self.api_address_format % rest_endpoint, json=permanent_instances).json()
         return self.validate_response(server_response)["permanent_instances"]
+
+    def get_server_logs(self, server_index_or_name, txt=False):
+        """
+        Set proxy configuration.
+        :param configuration: List of string, instance names
+        :return: List of string
+        """
+        if txt:
+            return requests.get(self.address.rstrip("/") + config.API_PREFIX + "/server" + config.LOGS_INTERFACE_PREFIX + "/" + str(server_index_or_name) + "/txt").text
+        else:
+            return self.validate_response(requests.get(self.address.rstrip("/") + config.API_PREFIX + "/server" + config.LOGS_INTERFACE_PREFIX + "/" + str(server_index_or_name)).json())["logs"]
+
+
+    def get_instance_logs(self, server_index_or_name, instance_name, txt=False):
+        """
+        Return the logs.
+        :param txt: If True return as text, otherwise as a list
+        :return: Version.
+        """
+        if txt:
+            return requests.get(self.address.rstrip("/") + config.API_PREFIX + "/server/instance" + config.LOGS_INTERFACE_PREFIX + "/" + str(server_index_or_name) +  "/" + instance_name + "/txt").text
+        else:
+            return self.validate_response(requests.get(self.address.rstrip("/") + config.API_PREFIX + "/server/instance" + config.LOGS_INTERFACE_PREFIX + "/" + str(server_index_or_name) +  "/" + instance_name).json())["logs"]

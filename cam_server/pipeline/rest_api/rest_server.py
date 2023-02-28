@@ -32,7 +32,7 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
     rest_api.register_rest_interface(app, instance_manager, api_root_address)
 
     # Register logs  API.
-    register_logs_rest_interface(app,config.API_PREFIX + config.LOGS_INTERFACE_PREFIX)
+    register_logs_rest_interface(app,config.API_PREFIX + config.LOGS_INTERFACE_PREFIX, instance_manager)
 
 
     @app.get(api_root_address)

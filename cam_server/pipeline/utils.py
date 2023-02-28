@@ -20,7 +20,7 @@ from cam_server.ipc import IpcSource
 from cam_server.loader import load_module
 from cam_server.otel import otel_get_tracer, otel_get_meter, otel_setup_logs
 from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
-from cam_server.utils import on_message_sent, get_statistics, update_statistics, MaxLenDict, get_clients
+from cam_server.utils import on_message_sent, get_statistics, update_statistics, MaxLenDict, get_clients, setup_instance_logs
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
 from cam_server_client.utils import get_host_port_from_stream_address
 
@@ -206,7 +206,7 @@ def get_parameters():
     return _parameters
 
 
-def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_scripts_manager=None, post_processsing_function=None, port=-0):
+def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=None, user_scripts_manager=None, post_processsing_function=None, port=-0):
     global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
     global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout, stream_timeout, max_frame_rate, last_sent_timestamp
     global camera_name, output_stream_port, pipeline_name
@@ -256,9 +256,10 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, user_script
     _parameters = parameters
     #_parameters.clear()
     #_parameters.update(parameters)
-    _user_scripts_manager=user_scripts_manager
+    _user_scripts_manager = user_scripts_manager
     _parameters_post_proc = post_processsing_function
     _pipeline_config = pipeline_config
+    setup_instance_logs(logs_queue)
     return parameters
 
 

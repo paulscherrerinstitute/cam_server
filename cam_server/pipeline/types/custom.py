@@ -5,13 +5,12 @@ from cam_server.utils import update_statistics, init_statistics
 
 _logger = getLogger(__name__)
 
-
-def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, output_stream_port,
+def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipeline_config, output_stream_port,
         background_manager, user_scripts_manager=None):
 
     exit_code = 0
 
-    init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager, port=output_stream_port)
+    init_pipeline_parameters(pipeline_config, parameter_queue,logs_queue, user_scripts_manager, port=output_stream_port)
     try:
         init_statistics(statistics)
         create_sender(output_stream_port, stop_event)

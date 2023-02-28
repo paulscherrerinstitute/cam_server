@@ -4,12 +4,27 @@ from cam_server_client.config import *
 # Interface parameters #
 ########################
 
-# Default logging level.
-DEFAULT_LOGGING_LEVEL = "INFO"
 # How many seconds do we wait before disconnecting a stream without clients.
 MFLOW_NO_CLIENTS_TIMEOUT = 10
 # Default web server used by Bottle
 DEFAULT_WEB_SERVER = "wsgiref"
+
+
+
+########################
+# Logging
+########################
+# Default logging level.
+DEFAULT_LOGGING_LEVEL = "INFO"
+
+APP_LOGGER = "cam_server"
+APP_LOGGER_LEVEL = "INFO"
+APP_LOG_BUFFER_SIZE = 500
+
+INSTANCE_LOGGER = None
+INSTANCE_LOGGER_LEVEL = "INFO"
+INSTANCE_LOG_BUFFER_SIZE = 100
+
 
 ###################
 # Camera settings #

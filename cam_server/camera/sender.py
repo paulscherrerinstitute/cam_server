@@ -10,7 +10,7 @@ from cam_server import config
 from cam_server.camera.source.common import transform_image
 from cam_server.otel import otel_get_meter, otel_setup_logs
 from cam_server.utils import update_statistics, on_message_sent, init_statistics, MaxLenDict, timestamp_as_float, \
-    synchronise_threads
+    synchronise_threads, setup_instance_logs
 
 _logger = getLogger(__name__)
 
@@ -20,7 +20,7 @@ if config.TELEMETRY_ENABLED:
     rx_counter = meter.create_counter("rx_counter", description="Frame receive counter")
     error_counter = meter.create_counter("rx_counter", description="Frame receive counter")
 
-def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
+def process_epics_camera(stop_event, statistics, parameter_queue, logs_queue, camera, port):
     """
     Start the camera stream and listen for image monitors. This function blocks until stop_event is set.
     :param stop_event: Event when to stop the process.
@@ -32,6 +32,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
     sender = None
     exit_code = 0
     try:
+        setup_instance_logs(logs_queue)
         init_statistics(statistics)
 
         def process_parameters():
@@ -122,7 +123,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, camera, port):
 
 
 
-def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port):
+def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, camera, port):
     """
     Start the camera stream and receive the incoming bsread streams. This function blocks until stop_event is set.
     :param stop_event: Event when to stop the process.
@@ -144,6 +145,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
     fail_counter = 0
 
     try:
+        setup_instance_logs(logs_queue)
         init_statistics(statistics)
 
 
@@ -527,12 +529,12 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, camera, port)
         sys.exit(exit_code)
 
 
-def process_scripted_camera(stop_event, statistics, parameter_queue, camera, port):
-    camera.process(stop_event, statistics, parameter_queue, port)
+def process_scripted_camera(stop_event, statistics, parameter_queue, logs_queue, camera, port):
+    camera.process(stop_event, statistics, parameter_queue, logs_queue, port)
 
 
-def process_stream_camera(stop_event, statistics, parameter_queue, camera, port):
-    camera.process(stop_event, statistics, parameter_queue, port)
+def process_stream_camera(stop_event, statistics, parameter_queue, logs_queue, camera, port):
+    camera.process(stop_event, statistics, parameter_queue, logs_queue, port)
 
 
 source_type_to_sender_function_mapping = {

@@ -214,15 +214,17 @@ class MyHandler(logging.StreamHandler):
         _api_log_buffer.append([asctime, record.name, record.levelname, record.getMessage()])
 
 
-def initialize_api_logger(level = None, maxlen=500):
+def initialize_api_logger(level=config.APP_LOGGER_LEVEL, maxlen=config.APP_LOG_BUFFER_SIZE):
     global _api_logger, _api_log_buffer
-    _api_logger = logging.getLogger("cam_server")
-    _api_logger.setLevel(level if level else "INFO")
+    if level is None:
+        level = config.APP_LOGGER_LEVEL
+    _api_logger = logging.getLogger(config.APP_LOGGER)
+    _api_logger.setLevel(level)
     _api_log_capture_string = None
     _api_log_buffer = collections.deque(maxlen=maxlen)
     handler = MyHandler()
-    handler.setLevel(level if level else "INFO")
-    handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    handler.setLevel(level)
+    #handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
     _api_logger.addHandler(handler)
 
 
@@ -233,8 +235,20 @@ def get_api_logs():
     return []
 
 
-def register_logs_rest_interface(app, api_root_address):
+
+
+
+def register_logs_rest_interface(app, api_root_address, instance_manager):
     _logger.warning("Start logging")
+
+    def get_instance_logs(instance_name):
+        try:
+            instance = instance_manager.get_instance(instance_name)
+            logs = list(instance.logs_queue)
+            return logs
+        except:
+            return []
+
 
     @app.get(api_root_address)
     def get_logs():
@@ -259,6 +273,60 @@ def register_logs_rest_interface(app, api_root_address):
         logs = get_api_logs()
         logs = "\n".join([" - ".join(log) for log in logs])
         return logs
+
+    @app.get(api_root_address + "/instance/<instance_name>")
+    def get_logs(instance_name):
+        """
+        Return the list of logs
+        :return:
+        """
+        response.content_type = 'application/json'
+        logs = get_instance_logs(instance_name)
+        return {"state": "ok",
+                "status": "Server logs.",
+                "logs": logs
+                }
+
+    @app.get(api_root_address + "/instance/<instance_name>/txt")
+    def get_logs_txt(instance_name):
+        """
+        Return the list of logs
+        :return:
+        """
+        response.content_type = 'text/plain'
+        logs = get_instance_logs(instance_name)
+        logs = "\n".join([" - ".join(log) for log in logs])
+        return logs
+
+
+
+_instance_logs = None
+_instance_logger = None
+def setup_instance_logs(instance_logs, level=config.INSTANCE_LOGGER_LEVEL, maxlen=config.INSTANCE_LOG_BUFFER_SIZE):
+    global _instance_logs, _instance_logger
+    _instance_logs = instance_logs
+    if _instance_logs is None:
+        return
+    if level is None:
+            level = config.INSTANCE_LOGGER_LEVEL
+    class MyHandler(logging.StreamHandler):
+        def __init__(self):
+            logging.StreamHandler.__init__(self)
+
+        def emit(self, record):
+            global _instance_logs
+            asctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
+            if len(_instance_logs) >= maxlen:
+                del _instance_logs[0]
+            _instance_logs.append([asctime, record.name, record.levelname, record.getMessage()])
+
+    _instance_logger = logging.getLogger()
+    _instance_logger.setLevel(level)
+    handler = MyHandler()
+    handler.setLevel(level)
+    #handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+    _instance_logger.addHandler(handler)
+
 
 
 def remove(path, simulated=False):

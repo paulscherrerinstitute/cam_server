@@ -48,6 +48,20 @@ class Client(object):
         else:
             return self.validate_response(requests.get(self.address.rstrip("/") + config.API_PREFIX + config.LOGS_INTERFACE_PREFIX).json())["logs"]
 
+
+    def get_instance_logs(self, instance_name, txt=False):
+        """
+        Return the logs.
+        :param txt: If True return as text, otherwise as a list
+        :return: Version.
+        """
+        if txt:
+            return requests.get(self.address.rstrip("/") + config.API_PREFIX + config.LOGS_INTERFACE_PREFIX + "/instance/" + instance_name  + "/txt").text
+        else:
+            return self.validate_response(requests.get(self.address.rstrip("/") + config.API_PREFIX + config.LOGS_INTERFACE_PREFIX + "/instance/" + instance_name).json())["logs"]
+
+
+
     def get_server_info(self, timeout = None):
         """
         Return the info of the cam server instance.

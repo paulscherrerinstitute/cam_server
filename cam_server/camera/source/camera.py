@@ -6,7 +6,7 @@ from bsread.sender import Sender, PUB
 from cam_server.camera.sender import *
 from cam_server.camera.source.common import transform_image
 from cam_server.ipc import IpcSender
-from cam_server.utils import update_statistics, on_message_sent, init_statistics
+from cam_server.utils import update_statistics, on_message_sent, init_statistics, setup_instance_logs
 
 _logger = getLogger(__name__)
 
@@ -309,11 +309,12 @@ class Camera:
 # PROCESSING FUNCTION
 ####################################################################################################################
 
-    def process(self, stop_event, statistics, parameter_queue, port):
+    def process(self, stop_event, statistics, parameter_queue, logs_queue, port):
         self.sender = None
         dtype = None
         try:
             init_statistics(statistics)
+            setup_instance_logs(logs_queue)
             self.sender = self.create_sender(stop_event, port)
             self.connect()
             camera_name = self.get_name()

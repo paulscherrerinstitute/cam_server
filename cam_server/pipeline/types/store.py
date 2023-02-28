@@ -10,7 +10,7 @@ from cam_server.utils import update_statistics, init_statistics
 
 _logger = getLogger(__name__)
 
-def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, output_stream_port,
+def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipeline_config, output_stream_port,
         background_manager, user_scripts_manager=None):
 
     def no_client_action():
@@ -24,7 +24,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     sender = None
     exit_code = 0
 
-    parameters = init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager, port=output_stream_port)
+    parameters = init_pipeline_parameters(pipeline_config, parameter_queue, logs_queue, user_scripts_manager, port=output_stream_port)
     if parameters.get("no_client_timeout") is None:
         parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
     modulo = parameters.get("modulo", None)

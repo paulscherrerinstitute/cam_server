@@ -110,11 +110,15 @@ class Merger():
         try:
             _logger.info("Entering merger thread")
             self.connect_sources()
+            #start = time.time()
+            #self.lastpid=0
             while self.is_connected():
                 if (pulse_id1 is None) or ((pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id1<pulse_id2)):
                     pulse_id1, global_timestamp1, data1, stats1 = self.stream1.receive()
+                    #if pulse_id1: print ("Rec 1 ", pulse_id1, time.time()-start)
                 if (pulse_id2 is None) or ((pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id2<pulse_id1)):
                     pulse_id2, global_timestamp2, data2, stats2 = self.stream2.receive()
+                    #if pulse_id2: print ("Rec 2 ", pulse_id2, time.time()-start)
                 if (pulse_id1 is not None) and (pulse_id2 is not None) and (pulse_id1 == pulse_id2):
                     pulse_id, global_timestamp = pulse_id1, global_timestamp1
                     pulse_id1, pulse_id2 = None, None
@@ -127,6 +131,11 @@ class Merger():
                     except Exception as e:
                         _logger.warning("Cannot merge pulse id : " + pulse_id1 + " - " + str(e))
                         continue
+                    #print("Merge ", pulse_id, time.time()-start)
+                    #if self.lastpid:
+                    #    if(self.lastpid+1) != pulse_id:
+                    #            print ("Expecting  ", (self.lastpid+1), " sent ", pulse_id)
+                    #self.lastpid = pulse_id
                     self.on_receive_data(pulse_id, global_timestamp, data, stats1, stats2)
         except Exception as e:
             _logger.exception("Error in merger: " + str(e))

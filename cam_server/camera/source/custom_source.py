@@ -27,5 +27,5 @@ class custom_source(Camera):
         width, height = self.get_raw_geometry()
         return numpy.random.randint(1, 101,  width * height, "uint16").reshape((height, width))
 
-    def process(self, stop_event, statistics, parameter_queue, port):
-        return Camera.process(self, stop_event, statistics, parameter_queue, port)
+    def process(self, stop_event, statistics, parameter_queue, logs_queue, port):
+        return Camera.process(self, stop_event, statistics, parameter_queue, logs_queue, port)

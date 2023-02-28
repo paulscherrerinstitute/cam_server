@@ -138,6 +138,33 @@ class ProxyBase:
             logs = server.get_logs(txt=True)
             return logs
 
+        @app.get(api_root_address + "/server/instance/logs/<server_index_or_name>/<instance_name>")
+        def get_instance_logs(server_index_or_name, instance_name):
+            """
+            Return the list of logs
+            :param server_index_or_name
+            """
+            response.content_type = 'application/json'
+            server = self.resolve_server(server_index_or_name)
+            logs = server.get_instance_logs(instance_name, txt=False)
+            logs = list(logs) if logs else []
+            return {"state": "ok",
+                    "status": "Server logs.",
+                    "logs": logs
+                    }
+
+        @app.get(api_root_address + "/server/instance/logs/<server_index_or_name>/<instance_name>/txt")
+        def get_instance_logs_txt(server_index_or_name, instance_name):
+            """
+            Return the list of logs
+            :param server_index
+            """
+            response.content_type = 'text/plain'
+            server = self.resolve_server(server_index_or_name)
+            logs = server.get_instance_logs(instance_name, txt=True)
+            return logs
+
+
         @app.get(api_root_address + '/config')
         def get_config():
             """

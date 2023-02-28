@@ -248,6 +248,9 @@ class InstanceWrapper:
 
 
         self.parameter_queue = multiprocessing.Queue()
+        #self.logs_queue = multiprocessing.Queue()
+        self.manager=multiprocessing.Manager()
+        self.logs_queue=self.manager.list()
 
         self.last_start_time = None
 
@@ -259,7 +262,7 @@ class InstanceWrapper:
         self.stop_event.set()
 
         self.process = Process(target=self.process_function,
-                               args=(self.stop_event, self.statistics, self.parameter_queue,
+                               args=(self.stop_event, self.statistics, self.parameter_queue, self.logs_queue,
                                      *self.args))
         self.process.start()
 

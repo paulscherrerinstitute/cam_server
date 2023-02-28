@@ -10,7 +10,7 @@ from cam_server.writer import LAYOUT_DEFAULT, LOCALTIME_DEFAULT, CHANGE_DEFAULT
 _logger = getLogger(__name__)
 
 
-def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, output_stream_port,
+def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline_config, output_stream_port,
         background_manager, user_scripts_manager=None):
 
     exit_code = 0
@@ -172,7 +172,7 @@ def run(stop_event, statistics, parameter_queue, cam_client, pipeline_config, ou
     try:
         init_statistics(statistics)
 
-        init_pipeline_parameters(pipeline_config, parameter_queue, user_scripts_manager, process_pipeline_parameters, port=output_stream_port)
+        init_pipeline_parameters(pipeline_config, parameter_queue, logs_queue, user_scripts_manager, process_pipeline_parameters, port=output_stream_port)
         pipeline_parameters, image_background_array = process_pipeline_parameters()
         connect_to_camera(cam_client)
 

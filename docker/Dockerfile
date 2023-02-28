@@ -1,4 +1,4 @@
-FROM paulscherrerinstitute/cam_server:5.2.0
+FROM paulscherrerinstitute/cam_server:5.4.0
     RUN conda install -c paulscherrerinstitute -c conda-forge cam_server=5.4.0 lmfit jungfrau_utils=3.12.1
 
 
