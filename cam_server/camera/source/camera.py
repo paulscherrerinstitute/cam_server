@@ -1,7 +1,7 @@
 import os
 
 import numpy
-from bsread.sender import Sender, PUB
+from bsread.sender import Sender, PUB, PUSH
 
 from cam_server.camera.sender import *
 from cam_server.camera.source.common import transform_image
@@ -35,6 +35,13 @@ class Camera:
         self.check_data = self.camera_config.get_configuration().get("check_data", False)
         self.last_pid = 0
         self.sender = None
+        self.forwarder = None
+        try:
+            self.forwarder_port = int(self.camera_config.get_configuration().get("forwarder_port", None))
+            if self.forwarder_port<=0:
+                self.forwarder_port = None
+        except:
+            self.forwarder_port = None
 
     def get_raw_geometry(self):
         return self.width_raw, self.height_raw
@@ -136,6 +143,38 @@ class Camera:
             sender = Sender(queue_size=self.get_queue_size(), port=port, mode=PUB, start_pulse_id=self.get_start_pulse_id(), data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
         sender.open(no_client_action=self.no_client_timeout, no_client_timeout=self.get_client_timeout())
         return sender
+
+    def create_forwarder(self):
+        if self.forwarder_port and self.forwarder_port>0:
+            self.forwarder = Sender(port=self.forwarder_port, mode=PUSH, data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
+            #self.forwarder.open(no_client_action=None, no_client_timeout=None)
+            #Define no_client_action to get client count
+            def no_client_action():
+                _logger.warning("No clients in forwarder of " + str(self.get_name()))
+            self.forwarder.open(no_client_action=no_client_action, no_client_timeout=sys.maxsize)
+            self.forwarder_stream_image_name = self.get_name() + config.EPICS_PV_SUFFIX_IMAGE
+            self.forwarder_data_format=None
+        else:
+            self.forwarder=None
+
+
+    def forward(self, image, pulse_id, timestamp):
+        if self.forwarder is not None:
+            if image is not None:
+                forward_data = {self.forwarder_stream_image_name: image}
+                data_format = (image.shape, image.dtype) if isinstance(image, numpy.ndarray) else None
+                check_data = (self.forwarder_data_format is None ) or (self.forwarder_data_format != data_format)
+                if check_data:
+                    _logger.info("Setting up forward stream with data format: %s at port %d for camera %s" % (str(data_format), self.forwarder_port, self.get_name()))
+                self.forwarder.send(data=forward_data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_data)
+                self.forwarder_data_format = data_format
+
+    def close_forwarder(self):
+        if self.forwarder:
+            try:
+                self.forwarder.close()
+            except:
+                pass
 
     def abort_on_error(self):
         return self.camera_config.get_configuration().get("abort_on_error", config.ABORT_ON_ERROR)
@@ -316,6 +355,7 @@ class Camera:
             init_statistics(statistics)
             setup_instance_logs(logs_queue)
             self.sender = self.create_sender(stop_event, port)
+            self.create_forwarder()
             self.connect()
             camera_name = self.get_name()
             x_size, y_size = self.get_geometry()
@@ -336,7 +376,7 @@ class Camera:
                 image, timestamp, pulse_id = self.get_data()
                 frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
                 frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
-                update_statistics(self.sender, -frame_size, 1 if (image is not None) else 0, frame_shape)
+                update_statistics(self.sender, -frame_size, 1 if (image is not None) else 0, frame_shape, self.forwarder)
 
                 # In case of receiving error or timeout, the returned data is None.
                 if image is None:
@@ -364,6 +404,7 @@ class Camera:
                 data = self.get_send_channels(default_channels)
 
                 try:
+                    self.forward(image, pulse_id, timestamp)
                     self.sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=self.check_data)
                     on_message_sent()
                 except Again:
@@ -393,3 +434,5 @@ class Camera:
                     self.sender.close()
                 except:
                     pass
+
+            self.close_forwarder()
