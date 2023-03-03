@@ -109,6 +109,16 @@ class InstanceManagementClient(Client):
 
         self.validate_response(server_response)
 
+    def delete_instance(self, instance_id):
+        """
+        Stop and deletes the instance.
+        :param instance_id: Name of the instance to stop.
+        """
+        rest_endpoint = "/%s/del" % instance_id
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        self.validate_response(server_response)
+
+
     def set_config(self, name, configuration):
         """
         Set config of the pipeline.

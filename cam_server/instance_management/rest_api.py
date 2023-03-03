@@ -46,11 +46,23 @@ def register_rest_interface(app, instance_manager, api_root_address):
     @app.delete(api_root_address + "/<instance_name>")
     def stop_instance(instance_name):
         """
-        Stop a specific camera.
-        :param instance_name: Name of the camera.
+        Stop a specific instance.
+        :param instance_name: Name of the instance.
         """
         instance_manager.stop_instance(instance_name)
 
+        return {"state": "ok",
+                "status": "Instance '%s' stopped." % instance_name}
+
+    @app.delete(api_root_address + "/<instance_name>/del")
+    def delete_instance(instance_name):
+        """
+        Stops and deletes the process of  a specific instance.
+        If auto_delete_stopped=True this method is identical to stop_instance.
+        Next time the instance starts it may not have the same port.
+        :param instance_name: Name of the instance.
+        """
+        instance_manager.stop_instance(instance_name, delete_instance=True)
         return {"state": "ok",
                 "status": "Instance '%s' stopped." % instance_name}
 

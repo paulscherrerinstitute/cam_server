@@ -93,8 +93,8 @@ class ProxyBase:
         @app.delete(api_root_address + "/<instance_name>")
         def stop_instance(instance_name):
             """
-            Stop a specific camera.
-            :param instance_name: Name of the camera.
+            Stop a specific instance.
+            :param instance_name: Name of the instance.
             """
             self.stop_instance(instance_name)
 
@@ -111,6 +111,17 @@ class ProxyBase:
             self.stop_all_server_instances(server)
             return {"state": "ok",
                     "status": "All instances stopped in '%s'." % server.get_address()}
+
+        @app.delete(api_root_address + "/<instance_name>/del")
+        def delete_instance(instance_name):
+            """
+            Stop and delete a specific instance.
+            :param instance_name: Name of the camera.
+            """
+            self.stop_instance(instance_name, delete_instance=True)
+
+            return {"state": "ok",
+                    "status": "Instance '%s' stopped." % instance_name}
 
         @app.get(api_root_address + "/server/logs/<server_index_or_name>")
         def get_server_logs(server_index_or_name):
@@ -546,12 +557,15 @@ class ProxyBase:
         except:
             pass
 
-    def stop_instance(self, instance_name):
+    def stop_instance(self, instance_name, delete_instance=False):
         status = self.get_status()
         server = self.get_server(instance_name, status)
         if server is not None:
             _logger.info("Stopping %s at %s" % (instance_name, server.get_address()))
-            server.stop_instance(instance_name)
+            if delete_instance:
+                server.delete_instance(instance_name)
+            else:
+                server.stop_instance(instance_name)
 
     def get_config_provider(self):
         return self.config_manager.config_provider

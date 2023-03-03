@@ -182,16 +182,19 @@ class InstanceManager(object):
         else:
             raise ValueError("Instance '%s' does not exist." % instance_name)
 
-    def stop_instance(self, instance_name):
+    def stop_instance(self, instance_name, delete_instance=False):
         """
         Terminate the instance of the specified name.
         :param instance_name: Name of the instance to stop.
         """
-        _logger.info("Stopping instance '%s'." % instance_name)
+        if delete_instance:
+            _logger.warning("Deleting instance '%s'." % instance_name)
+        else:
+            _logger.info("Stopping instance '%s'." % instance_name)
         instance = self.instances.get(instance_name)
         if instance is not None:
             instance.stop()
-        if self.auto_delete_stopped:
+        if self.auto_delete_stopped or delete_instance:
             self.delete_stopped_instance(instance_name)
 
     def stop_all_instances(self):
