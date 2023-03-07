@@ -37,6 +37,7 @@ if config.TELEMETRY_ENABLED:
 
 _parameters = {}
 _parameter_queue = None
+_logs_queue = None
 _user_scripts_manager = None
 _parameters_post_proc = None
 _pipeline_config = None
@@ -259,19 +260,20 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=
     _user_scripts_manager = user_scripts_manager
     _parameters_post_proc = post_processsing_function
     _pipeline_config = pipeline_config
+    _logs_queue = logs_queue
     setup_instance_logs(logs_queue)
     return parameters
 
 
 def check_parameters_changes():
-    global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
+    global _parameters, _parameter_queue, _logs_queue,_user_scripts_manager, _parameters_post_proc, _pipeline_config
     changed = False
     while not _parameter_queue.empty():
         new_parameters = _parameter_queue.get()
         _pipeline_config.set_configuration(new_parameters)
         changed = True
     if changed:
-        init_pipeline_parameters(_pipeline_config, _parameter_queue, _user_scripts_manager, _parameters_post_proc)
+        init_pipeline_parameters(_pipeline_config, _parameter_queue, _logs_queue, _user_scripts_manager, _parameters_post_proc)
         if _parameters_post_proc:
             return _parameters_post_proc()
         return get_parameters()
