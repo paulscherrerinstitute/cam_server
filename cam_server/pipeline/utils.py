@@ -98,8 +98,9 @@ def get_log_tag(tag):
 def init_sender(sender, pipeline_parameters):
     sender.record_count = 0
     sender.enforce_pid = pipeline_parameters.get("enforce_pid")
-    sender.last_pid=-1
+    sender.last_pid = -1
     sender.data_format = None
+    sender.header_changes = 0
     create_header = pipeline_parameters.get("create_header")
     if create_header in (True,"always"):
         sender.create_header = True
@@ -195,6 +196,8 @@ def send(sender, data, timestamp, pulse_id):
             if check_header:
                 sender.data_format = data_format
         sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_header)
+        if check_header:
+            sender.header_changes=sender.header_changes+1
         on_message_sent()
         if sender.records:
             check_records(sender)

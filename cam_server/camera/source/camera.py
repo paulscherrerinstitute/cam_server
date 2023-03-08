@@ -102,6 +102,9 @@ class Camera:
             _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (self.get_name(),))
         return 0.5
 
+    def is_threaded(self):
+        return self.camera_config.get_configuration().get("threaded", False)
+
     def get_dtype(self):
         dtype = self.camera_config.get_configuration().get("dtype")
         if dtype is None:
@@ -142,6 +145,7 @@ class Camera:
         else:
             sender = Sender(queue_size=self.get_queue_size(), port=port, mode=PUB, start_pulse_id=self.get_start_pulse_id(), data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
         sender.open(no_client_action=self.no_client_timeout, no_client_timeout=self.get_client_timeout())
+        sender.header_changes = 0
         return sender
 
     def create_forwarder(self):
@@ -153,21 +157,18 @@ class Camera:
                 _logger.warning("No clients in forwarder of " + str(self.get_name()))
             self.forwarder.open(no_client_action=no_client_action, no_client_timeout=sys.maxsize)
             self.forwarder_stream_image_name = self.get_name() + config.EPICS_PV_SUFFIX_IMAGE
-            self.forwarder_data_format=None
         else:
             self.forwarder=None
 
 
-    def forward(self, image, pulse_id, timestamp):
+    def forward(self, image, pulse_id, timestamp, check_data=False):
         if self.forwarder is not None:
             if image is not None:
                 forward_data = {self.forwarder_stream_image_name: image}
-                data_format = (image.shape, image.dtype) if isinstance(image, numpy.ndarray) else None
-                check_data = (self.forwarder_data_format is None ) or (self.forwarder_data_format != data_format)
                 if check_data:
+                    data_format = (image.shape, image.dtype) if isinstance(image, numpy.ndarray) else None
                     _logger.info("Setting up forward stream with data format: %s at port %d for camera %s" % (str(data_format), self.forwarder_port, self.get_name()))
                 self.forwarder.send(data=forward_data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_data)
-                self.forwarder_data_format = data_format
 
     def close_forwarder(self):
         if self.forwarder:
@@ -404,8 +405,10 @@ class Camera:
                 data = self.get_send_channels(default_channels)
 
                 try:
-                    self.forward(image, pulse_id, timestamp)
+                    self.forward(image, pulse_id, timestamp, check_data=self.check_data)
                     self.sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=self.check_data)
+                    if self.check_data:
+                        self.sender.header_changes = self.sender.header_changes + 1
                     on_message_sent()
                 except Again:
                     _logger.warning(

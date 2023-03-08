@@ -1,8 +1,9 @@
-
 import sys
 import time
 from logging import getLogger
 from threading import Thread, RLock
+from collections import deque
+import numpy
 
 from zmq import Again
 
@@ -141,11 +142,11 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
     camera_streams = []
     receive_threads = []
     threaded = False
+    buffered = False
     message_buffer, message_buffer_send_thread, message_buffer_lock = None, None, None
     data_changed = False
     format_error = False
     exit_code = 0
-    data_format_changed = True
     fail_counter = 0
 
     try:
@@ -154,17 +155,43 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
 
 
         def process_parameters():
-            nonlocal x_size, y_size, x_axis, y_axis, data_format_changed
+            nonlocal x_size, y_size, x_axis, y_axis
             x_axis, y_axis = camera.get_x_y_axis()
             x_size, y_size = camera.get_geometry()
-            data_format_changed = True
 
         def data_change_callback(channels):
             nonlocal data_changed
             data_changed = True
 
+        def send_task(message_buffer, stop_event):
+            nonlocal sender, exit_code
+            _logger.info("Start send thread [%s]" % (camera.get_name(),))
+            sender = camera.create_sender(stop_event, port)
+            camera.create_forwarder()
+            debug = camera.get_debug()
+            try:
+                while not stop_event.is_set():
+                    if len(message_buffer) == 0:
+                        time.sleep(0.001)
+                    else:
+                        (data, pulse_id, timestamp) = message_buffer.popleft()
+                        send_data(data, pulse_id, timestamp)
+                _logger.info("stop_event set to send thread [%s]" % (camera.get_name(),))
+            except Exception as e:
+                exit_code = 2
+                _logger.exception("Error on send thread: %s [%s]" % (str(e), camera.get_name()))
+            finally:
+                stop_event.set()
+                if sender:
+                    try:
+                        sender.close()
+                    except:
+                        pass
+                camera.close_forwarder()
+                _logger.info("Exit send thread [%s]" % (camera.get_name(),))
+
         def message_buffer_send_task(message_buffer, connections, stop_event, message_buffer_lock):
-            nonlocal sender, data_format_changed, exit_code
+            nonlocal sender, exit_code
             _logger.info("Start message buffer send thread [%s]" % (camera.get_name(),))
             sender = camera.create_sender(stop_event, port)
             camera.create_forwarder()
@@ -195,11 +222,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                                         tx = message_buffer.pop(pulse_id)
                     if tx is not None:
                         (data, timestamp) = tx
-                        camera.forward(data["image"], pulse_id, timestamp)
-                        sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
-                        data_format_changed = False
-                        #_logger.info("TX %d" % (pulse_id,))
-                        on_message_sent()
+                        send_data(data, pulse_id, timestamp)
                         if last_tx_pid>0:
                             expected = (last_tx_pid + interval)
                             if pulse_id != expected:
@@ -233,6 +256,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                         pass
                 camera.close_forwarder()
                 _logger.info("Exit message buffer send thread [%s]" % (camera.get_name(),))
+
 
         def flush_stream(camera_stream):
                 while camera_stream.stream.receive(handler=camera_stream.handler.receive, block=False) is not None:
@@ -296,7 +320,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
 
         connections = camera.get_connections()
         buffer_size = camera.get_buffer_size()
-        threaded = buffer_size > 0
+        buffered = buffer_size > 0
+        threaded = camera.is_threaded()
 
         process_parameters()
         # register_image_channel(x_size, y_size, dtype)
@@ -305,10 +330,14 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
         stop_event.clear()
 
         stats_lock = RLock()
-        if threaded:
+        if buffered:
             message_buffer_lock = RLock()
             message_buffer = MaxLenDict(maxlen=buffer_size)
             message_buffer_send_thread = Thread(target=message_buffer_send_task, args=(message_buffer, connections, stop_event, message_buffer_lock))
+            message_buffer_send_thread.start()
+        elif threaded:
+            message_buffer=deque(maxlen=10)
+            message_buffer_send_thread = Thread(target=send_task,args=(message_buffer, stop_event))
             message_buffer_send_thread.start()
         else:
             sender = camera.create_sender(stop_event, port)
@@ -321,7 +350,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
             _logger.info("Connecting to camera '%s' over bsread (buffer size = %d)" % (camera_name, buffer_size))
 
 
-        if not threaded:
+        if not buffered:
             for i in range(connections):
                 stream = camera.get_stream(data_change_callback=data_change_callback)
                 #stream.format_error_counter = 0
@@ -331,6 +360,22 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
         last_tx_pid = None
         total_bytes = [0] * connections
         frame_shape = None
+
+        camera.data_format = None
+
+
+        def send_data(data, pulse_id, timestamp):
+            image = data.get("image", None)
+            if isinstance(image, numpy.ndarray):
+                fmt = (image.shape, image.dtype)
+                check_data = fmt != camera.data_format
+                camera.forward(image, pulse_id, timestamp, check_data=check_data)
+                sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=check_data)
+                if check_data:
+                    sender.header_changes = sender.header_changes + 1
+                camera.data_format = fmt
+                on_message_sent()
+
 
         def process_stream(camera_stream, index):
             nonlocal total_bytes, last_tx_pid, frame_shape, format_error, fail_counter
@@ -370,7 +415,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
 
                 # In case of receiving error or timeout, the returned data is None.
                 if data is None:
-                    if threaded and camera.get_debug():
+                    if buffered and camera.get_debug():
                         _logger.info("Null data [%s]" % (camera.get_name(),))
                     return None
 
@@ -386,7 +431,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                     "y_axis": y_axis,
                     "timestamp": timestamp_as_float(timestamp)
                 }
-                if threaded:
+                if buffered:
                     with message_buffer_lock:
                         last_pid = message_buffer.last_pid
                         if pulse_id > last_pid:
@@ -427,7 +472,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                         pass
                 _logger.info("Exit receive thread %d [%s]" % (index, camera.get_name()))
 
-        if threaded:
+        if buffered:
             for i in range(connections):
                 camera_stream = camera.get_stream(data_change_callback=data_change_callback)
                 receive_thread = Thread(target=receive_task, args=(i, message_buffer, stop_event, message_buffer_lock, camera_stream, connections))
@@ -451,8 +496,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                 camera.update_size_raw()
                 process_parameters()
                 _logger.warning("Image shape changed: %dx%d [%s]." % (x_size, y_size, camera.get_name()))
-                if threaded:
-                    time.sleep(0.25) #If threaded give some time to other threads report the change
+                if buffered:
+                    time.sleep(0.25) #If buffered give some time to other threads report the change
                 data_changed = False
 
             if format_error:
@@ -471,7 +516,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                     _logger.info("Image format ok [%s]" % (camera.get_name()))
                 start_error = 0
 
-            if threaded:
+            if buffered:
                 if camera.abort_on_error():
                     assert_streams_aligned(1000)
                 time.sleep(0.01)
@@ -492,10 +537,10 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                         stream_buffers[i] = None
                         if pulse_id > last_pid:
                             if data is not None:
-                                camera.forward(data["image"], pulse_id, timestamp)
-                                sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=data_format_changed)
-                                data_format_changed = False
-                                on_message_sent()
+                                if threaded:
+                                    message_buffer.append((data, pulse_id, timestamp))
+                                else:
+                                    send_data(data, pulse_id, timestamp)
                             last_pid = pulse_id
                         else:
                             if camera.get_debug():
@@ -516,18 +561,19 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
             except:
                 pass
 
-        if not threaded:
+        if not buffered:
             for stream in camera_streams:
                 try:
                     stream.disconnect()
                 except:
                     pass
-            if sender:
-                try:
-                    sender.close()
-                except:
-                    pass
-            camera.close_forwarder()
+            if not threaded:
+                if sender:
+                    try:
+                        sender.close()
+                    except:
+                        pass
+                camera.close_forwarder()
         else:
             for t in receive_threads + [message_buffer_send_thread]:
                 if t:

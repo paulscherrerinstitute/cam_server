@@ -239,6 +239,7 @@ class InstanceWrapper:
         self.statistics.frame_rate = 0
         self.statistics.rx_count = 0
         self.statistics.tx_count = 0
+        self.statistics.header_changes = 0
         self.statistics.tx_rate = 0
         self.statistics.frame_shape = None
         self.statistics.timestamp = 0
@@ -329,6 +330,7 @@ class InstanceWrapper:
                 "pid": str(self.statistics.pid),
                 "cpu": self.statistics.cpu,
                 "memory": self.statistics.memory,
+                "header_changes": self.statistics.header_changes
                 }
         if self.statistics.frame_shape:
             ret["frame_shape"] = self.statistics.frame_shape

@@ -107,6 +107,10 @@ def update_statistics(sender, total_bytes_or_increment=0, frame_count=0, frame_s
         return
     now = time.time()
     timespan = now - statistics.timestamp
+    try:
+        statistics.header_changes = sender.header_changes
+    except:
+        statistics.header_changes = -1
     statistics.update_timestamp = time.localtime()
     if total_bytes_or_increment<=0:
         increment = -total_bytes_or_increment
@@ -157,6 +161,7 @@ def init_statistics(stats):
     statistics.frame_rate = 0
     statistics.rx_count = 0
     statistics.tx_count = 0
+    statistics.header_changes = 0
     statistics._tx_count = 0
     statistics.frame_shape = None
     statistics.pid = os.getpid()
