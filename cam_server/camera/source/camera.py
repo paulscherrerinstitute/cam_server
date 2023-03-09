@@ -138,7 +138,7 @@ class Camera:
                          (client_timeout, self.get_name()))
             self.stop_event.set()
 
-    def create_sender(self, stop_event, port):
+    def create_sender(self, stop_event, port, create_forwarder=False):
         self.stop_event = stop_event
         if self.camera_config.get_configuration().get("protocol", "tcp") == "ipc":
             sender = IpcSender(address=get_ipc_address(self.get_name()), mode=PUB, start_pulse_id=self.get_start_pulse_id(), queue_size=self.get_queue_size(),
@@ -148,7 +148,8 @@ class Camera:
         sender.open(no_client_action=self.no_client_timeout, no_client_timeout=self.get_client_timeout())
         sender.header_changes = 0
         self.sender = sender
-        self._create_forwarder()
+        if create_forwarder:
+            self._create_forwarder()
         return sender
 
     def send(self, data, pulse_id, timestamp):
@@ -352,6 +353,10 @@ class Camera:
         self.sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION, "shape": [x_size, y_size],"type": dtype})
         self.sender.add_channel("x_axis",metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [x_size],"type": "float32"})
         self.sender.add_channel("y_axis",metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [y_size],"type": "float32"})
+
+        if self.forwarder is not None:
+            self.forwarder.add_channel(self.forwarder_stream_image_name, metadata={"compression": None, "shape": [x_size, y_size], "type": dtype})
+
         self.sender.header_changes = self.sender.header_changes + 1
 
 

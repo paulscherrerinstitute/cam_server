@@ -139,7 +139,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
         def send_task(message_buffer, stop_event):
             nonlocal sender, exit_code
             _logger.info("Start send thread [%s]" % (camera.get_name(),))
-            sender = camera.create_sender(stop_event, port)
+            sender = camera.create_sender(stop_event, port, True)
             debug = camera.get_debug()
             try:
                 while not stop_event.is_set():
@@ -160,7 +160,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
         def message_buffer_send_task(message_buffer, connections, stop_event, message_buffer_lock):
             nonlocal sender, exit_code
             _logger.info("Start message buffer send thread [%s]" % (camera.get_name(),))
-            sender = camera.create_sender(stop_event, port)
+            sender = camera.create_sender(stop_event, port, True)
             message_buffer.last_pid = -1
             last_tx_pid = -1
             interval = 1
@@ -298,7 +298,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
             message_buffer_send_thread = Thread(target=send_task, args=(message_buffer, stop_event))
             message_buffer_send_thread.start()
         else:
-            sender = camera.create_sender(stop_event, port)
+            sender = camera.create_sender(stop_event, port, True)
 
 
         if connections > 1:
