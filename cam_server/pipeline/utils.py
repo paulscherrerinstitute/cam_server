@@ -118,8 +118,7 @@ def create_sender(output_stream_port, stop_event):
         global sender
         nonlocal pars
         if pars["no_client_timeout"] > 0:
-            _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s",
-                            pars["no_client_timeout"], log_tag)
+            _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s" %(pars["no_client_timeout"], log_tag))
             stop_event.set()
             if sender:
                 if pars["mode"] == "PUSH" and pars["block"]:

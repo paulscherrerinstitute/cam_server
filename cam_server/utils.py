@@ -321,12 +321,15 @@ def setup_instance_logs(instance_logs, level=config.INSTANCE_LOGGER_LEVEL, maxle
             logging.StreamHandler.__init__(self)
 
         def emit(self, record):
-            global _instance_logs
-            asctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
-            if len(_instance_logs) >= maxlen:
-                del _instance_logs[0]
-            _instance_logs.append([asctime, record.name, record.levelname, record.getMessage()])
-
+            try:
+                global _instance_logs
+                if _instance_logs is not None:
+                    asctime = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(record.created))
+                    if len(_instance_logs) >= maxlen:
+                        del _instance_logs[0]
+                    _instance_logs.append([asctime, record.name, record.levelname, record.getMessage()])
+            except:
+                pass
     _instance_logger = logging.getLogger()
     _instance_logger.setLevel(level)
     handler = MyHandler()
