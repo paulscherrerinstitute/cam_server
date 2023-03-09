@@ -38,35 +38,17 @@ def process_epics_camera(stop_event, statistics, parameter_queue, logs_queue, ca
 
         def process_parameters():
             nonlocal x_size, y_size, x_axis, y_axis
-            x_size, y_size = camera.get_geometry()
+            x_size, y_size = shape = camera.get_geometry()
             x_axis, y_axis = camera.get_x_y_axis()
             dtype = camera.get_dtype()
-            sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
-                                                  "shape": [x_size, y_size],
-                                                  "type": dtype})
-            sender.add_channel("x_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                                   "shape": [x_size],
-                                                   "type": "float32"})
-
-            sender.add_channel("y_axis", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                                   "shape": [y_size],
-                                                   "type": "float32"})
+            camera.register_channels_change_type_shape(dtype, shape)
 
         x_size = y_size = x_axis = y_axis = None
         camera.connect()
-
         sender = camera.create_sender(stop_event, port)
-        camera.create_forwarder()
 
         # Register the bsread channels - compress only the image.
-        sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                              "type": "int64"})
-
-        sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                               "type": "int64"})
-
-        sender.add_channel("timestamp", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION,
-                                                  "type": "float64"})
+        camera.register_channels(False)
 
         process_parameters()
 
@@ -91,9 +73,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, logs_queue, ca
 
             try:
                 pulse_id = camera.get_pulse_id()
-                camera.forward(image, pulse_id, timestamp)
-                sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=False)
-                on_message_sent()
+                camera.send(data, pulse_id, timestamp)
             except Again:
                 _logger.warning("Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera.get_name()))
 
@@ -115,15 +95,8 @@ def process_epics_camera(stop_event, statistics, parameter_queue, logs_queue, ca
 
         # Wait for termination / update configuration / etc.
         stop_event.wait()
-
         camera.disconnect()
-
-        if sender:
-            try:
-                sender.close()
-            except:
-                pass
-        camera.close_forwarder()
+        camera.close_sender()
         sys.exit(exit_code)
 
 
@@ -167,7 +140,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
             nonlocal sender, exit_code
             _logger.info("Start send thread [%s]" % (camera.get_name(),))
             sender = camera.create_sender(stop_event, port)
-            camera.create_forwarder()
             debug = camera.get_debug()
             try:
                 while not stop_event.is_set():
@@ -175,26 +147,20 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                         time.sleep(0.001)
                     else:
                         (data, pulse_id, timestamp) = message_buffer.popleft()
-                        send_data(data, pulse_id, timestamp)
+                        camera.send(data, pulse_id, timestamp)
                 _logger.info("stop_event set to send thread [%s]" % (camera.get_name(),))
             except Exception as e:
                 exit_code = 2
                 _logger.exception("Error on send thread: %s [%s]" % (str(e), camera.get_name()))
             finally:
                 stop_event.set()
-                if sender:
-                    try:
-                        sender.close()
-                    except:
-                        pass
-                camera.close_forwarder()
+                camera.close_sender()
                 _logger.info("Exit send thread [%s]" % (camera.get_name(),))
 
         def message_buffer_send_task(message_buffer, connections, stop_event, message_buffer_lock):
             nonlocal sender, exit_code
             _logger.info("Start message buffer send thread [%s]" % (camera.get_name(),))
             sender = camera.create_sender(stop_event, port)
-            camera.create_forwarder()
             message_buffer.last_pid = -1
             last_tx_pid = -1
             interval = 1
@@ -222,7 +188,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                                         tx = message_buffer.pop(pulse_id)
                     if tx is not None:
                         (data, timestamp) = tx
-                        send_data(data, pulse_id, timestamp)
+                        camera.send(data, pulse_id, timestamp)
                         if last_tx_pid>0:
                             expected = (last_tx_pid + interval)
                             if pulse_id != expected:
@@ -249,12 +215,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                 _logger.exception("Error on message buffer send thread: %s [%s]" % (str(e), camera.get_name()))
             finally:
                 stop_event.set()
-                if sender:
-                    try:
-                        sender.close()
-                    except:
-                        pass
-                camera.close_forwarder()
+                camera.close_sender()
                 _logger.info("Exit message buffer send thread [%s]" % (camera.get_name(),))
 
 
@@ -308,13 +269,10 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                 if fail_counter > max_fail_count:
                     raise Exception("Streams misaligned - aborting")
 
-        # TODO: Use to register proper channels. But be aware that the size and dtype can change during the running.
-        # def register_image_channel(size_x, size_y, dtype):
-        #     sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION,
-        #                                           "shape": [size_x, size_y],
-        #                                           "type": dtype})
 
         x_size = y_size = x_axis = y_axis = None
+
+        camera.check_data = True
         camera.connect()
         camera_name = camera.get_name()
 
@@ -337,11 +295,10 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
             message_buffer_send_thread.start()
         elif threaded:
             message_buffer=deque(maxlen=10)
-            message_buffer_send_thread = Thread(target=send_task,args=(message_buffer, stop_event))
+            message_buffer_send_thread = Thread(target=send_task, args=(message_buffer, stop_event))
             message_buffer_send_thread.start()
         else:
             sender = camera.create_sender(stop_event, port)
-            camera.create_forwarder()
 
 
         if connections > 1:
@@ -360,22 +317,6 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
         last_tx_pid = None
         total_bytes = [0] * connections
         frame_shape = None
-
-        camera.data_format = None
-
-
-        def send_data(data, pulse_id, timestamp):
-            image = data.get("image", None)
-            if isinstance(image, numpy.ndarray):
-                fmt = (image.shape, image.dtype)
-                check_data = fmt != camera.data_format
-                camera.forward(image, pulse_id, timestamp, check_data=check_data)
-                sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=check_data)
-                if check_data:
-                    sender.header_changes = sender.header_changes + 1
-                camera.data_format = fmt
-                on_message_sent()
-
 
         def process_stream(camera_stream, index):
             nonlocal total_bytes, last_tx_pid, frame_shape, format_error, fail_counter
@@ -540,7 +481,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                                 if threaded:
                                     message_buffer.append((data, pulse_id, timestamp))
                                 else:
-                                    send_data(data, pulse_id, timestamp)
+                                    camera.send(data, pulse_id, timestamp)
                             last_pid = pulse_id
                         else:
                             if camera.get_debug():
@@ -568,12 +509,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                 except:
                     pass
             if not threaded:
-                if sender:
-                    try:
-                        sender.close()
-                    except:
-                        pass
-                camera.close_forwarder()
+                camera.close_sender()
         else:
             for t in receive_threads + [message_buffer_send_thread]:
                 if t:

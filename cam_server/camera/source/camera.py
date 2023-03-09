@@ -35,6 +35,7 @@ class Camera:
         self.check_data = self.camera_config.get_configuration().get("check_data", False)
         self.last_pid = 0
         self.sender = None
+        self.data_format = None
         self.forwarder = None
         try:
             self.forwarder_port = int(self.camera_config.get_configuration().get("forwarder_port", None))
@@ -146,9 +147,32 @@ class Camera:
             sender = Sender(queue_size=self.get_queue_size(), port=port, mode=PUB, start_pulse_id=self.get_start_pulse_id(), data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
         sender.open(no_client_action=self.no_client_timeout, no_client_timeout=self.get_client_timeout())
         sender.header_changes = 0
+        self.sender = sender
+        self._create_forwarder()
         return sender
 
-    def create_forwarder(self):
+    def send(self, data, pulse_id, timestamp):
+        image = data.get("image", None)
+        if isinstance(image, numpy.ndarray):
+            fmt = (image.shape, image.dtype)
+            check_data = (self.check_data) and (fmt != self.data_format)
+            self._forward(image, pulse_id, timestamp, check_data=check_data)
+            self.sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=check_data)
+            if check_data:
+                self.sender.header_changes = self.sender.header_changes + 1
+            self.data_format = fmt
+            on_message_sent()
+
+
+    def close_sender(self):
+        if self.sender:
+            try:
+                self.sender.close()
+            except:
+                pass
+        self._close_forwarder()
+
+    def _create_forwarder(self):
         if self.forwarder_port and self.forwarder_port>0:
             self.forwarder = Sender(port=self.forwarder_port, mode=PUSH, data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
             #self.forwarder.open(no_client_action=None, no_client_timeout=None)
@@ -159,9 +183,10 @@ class Camera:
             self.forwarder_stream_image_name = self.get_name() + config.EPICS_PV_SUFFIX_IMAGE
         else:
             self.forwarder=None
+        return self.forwarder
 
 
-    def forward(self, image, pulse_id, timestamp, check_data=False):
+    def _forward(self, image, pulse_id, timestamp, check_data=False):
         if self.forwarder is not None:
             if image is not None:
                 forward_data = {self.forwarder_stream_image_name: image}
@@ -170,7 +195,7 @@ class Camera:
                     _logger.info("Setting up forward stream with data format: %s at port %d for camera %s" % (str(data_format), self.forwarder_port, self.get_name()))
                 self.forwarder.send(data=forward_data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_data)
 
-    def close_forwarder(self):
+    def _close_forwarder(self):
         if self.forwarder:
             try:
                 self.forwarder.close()
@@ -308,23 +333,27 @@ class Camera:
         timestamp = time.time()
         return image, timestamp, self.get_pulse_id()
 
-    def register_channels(self):
+    def register_channels(self, register_type_shape=True):
         # Register the bsread channels - compress only the image.
-        dtype = self.get_dtype()
-        x_size, y_size = self.get_geometry()
         self.sender.add_channel("width", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "int64"})
         self.sender.add_channel("height", metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "int64"})
-        self.sender.add_channel("timestamp",
-                           metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "float64"})
-        self.sender.add_channel("image",
-                           metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION, "shape": [x_size, y_size],
-                                     "type": dtype})
-        self.sender.add_channel("x_axis",
-                           metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [x_size],
-                                     "type": "float32"})
-        self.sender.add_channel("y_axis",
-                           metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [y_size],
-                                     "type": "float32"})
+        self.sender.add_channel("timestamp",metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "type": "float64"})
+        if register_type_shape:
+            self.register_channels_change_type_shape()
+
+
+    def register_channels_change_type_shape(self, dtype=None, shape=None):
+        if dtype is None:
+            dtype = self.get_dtype()
+        if shape is None:
+            dtype = self.get_dtype()
+            shape = self.get_geometry()
+        x_size, y_size =shape
+        self.sender.add_channel("image", metadata={"compression": config.CAMERA_BSREAD_IMAGE_COMPRESSION, "shape": [x_size, y_size],"type": dtype})
+        self.sender.add_channel("x_axis",metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [x_size],"type": "float32"})
+        self.sender.add_channel("y_axis",metadata={"compression": config.CAMERA_BSREAD_SCALAR_COMPRESSION, "shape": [y_size],"type": "float32"})
+        self.sender.header_changes = self.sender.header_changes + 1
+
 
     def get_send_channels(self, default_channels):
         return default_channels
@@ -355,8 +384,7 @@ class Camera:
         try:
             init_statistics(statistics)
             setup_instance_logs(logs_queue)
-            self.sender = self.create_sender(stop_event, port)
-            self.create_forwarder()
+            self.create_sender(stop_event, port)
             self.connect()
             camera_name = self.get_name()
             x_size, y_size = self.get_geometry()
@@ -405,11 +433,7 @@ class Camera:
                 data = self.get_send_channels(default_channels)
 
                 try:
-                    self.forward(image, pulse_id, timestamp, check_data=self.check_data)
-                    self.sender.send(data=data, pulse_id=pulse_id, timestamp=timestamp, check_data=self.check_data)
-                    if self.check_data:
-                        self.sender.header_changes = self.sender.header_changes + 1
-                    on_message_sent()
+                    self.send(data, pulse_id, timestamp)
                 except Again:
                     _logger.warning(
                         "Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera_name))
@@ -432,10 +456,4 @@ class Camera:
             except:
                 pass
 
-            if self.sender:
-                try:
-                    self.sender.close()
-                except:
-                    pass
-
-            self.close_forwarder()
+            self.close_sender()
