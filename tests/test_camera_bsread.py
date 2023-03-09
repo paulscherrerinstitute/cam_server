@@ -17,6 +17,7 @@ class CameraBsreadTransceiverTest(unittest.TestCase):
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
+        logs_queue = multiprocessing.Queue()
 
         expected_width = 659
         expected_height = 494
@@ -26,7 +27,7 @@ class CameraBsreadTransceiverTest(unittest.TestCase):
                                        "tcp://0.0.0.0:9999")
 
         def transceiver():
-            process_bsread_camera(stop_event, statistics, parameter_queue, mock_camera, 12000)
+            process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, mock_camera, 12000)
 
         thread1 = Thread(target=transceiver)
         thread1.start()

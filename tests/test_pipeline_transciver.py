@@ -43,11 +43,12 @@ class PipelineTransceiverTest(unittest.TestCase):
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
+        logs_queue = multiprocessing.Queue()
 
         pipeline_config = PipelineConfig("test_pipeline")
 
         def send():
-            processing_pipeline(stop_event, statistics, parameter_queue, self.client,
+            processing_pipeline(stop_event, statistics, parameter_queue, logs_queue, self.client,
                                 pipeline_config, 12000, MockBackgroundManager())
 
         thread = Thread(target=send)
@@ -75,6 +76,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
+        logs_queue = multiprocessing.Queue()
         pipeline_config = PipelineConfig("test_pipeline", parameters={
             "camera_name": "simulation",
             "image_background": "full_background",
@@ -85,7 +87,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         background_manager = MockBackgroundManager()
 
         with self.assertRaises(SystemExit):
-            processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
+            processing_pipeline(stop_event, statistics, parameter_queue, logs_queue, self.client, pipeline_config,
                                 12001, background_manager)
 
     def test_pipeline_background_manager(self):
@@ -93,6 +95,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
+        logs_queue = multiprocessing.Queue()
 
         pipeline_config = PipelineConfig("test_pipeline", parameters={
             "camera_name": "simulation",
@@ -112,7 +115,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         background_manager.save_background("full_background", background_array, append_timestamp=False)
 
         def send():
-            processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
+            processing_pipeline(stop_event, statistics, parameter_queue, logs_queue, self.client, pipeline_config,
                                 12001, background_manager)
 
         thread = Thread(target=send)
@@ -131,6 +134,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
+        logs_queue = multiprocessing.Queue()
 
         self.client.set_camera_config("simulation_temp", self.client.get_camera_config("simulation"))
 
@@ -144,7 +148,7 @@ class PipelineTransceiverTest(unittest.TestCase):
         simulated_camera_shape = (y_size, x_size)
 
         def send():
-            processing_pipeline(stop_event, statistics, parameter_queue, self.client, pipeline_config,
+            processing_pipeline(stop_event, statistics, parameter_queue, logs_queue, self.client, pipeline_config,
                                 12002, background_manager)
 
         thread = Thread(target=send)
@@ -204,13 +208,14 @@ class PipelineTransceiverTest(unittest.TestCase):
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
+        logs_queue = multiprocessing.Queue()
 
         self.client.stop_all_instances()
 
         pipeline_config = PipelineConfig("test_pipeline")
 
         def send():
-            store_pipeline(stop_event, statistics, parameter_queue, self.client,
+            store_pipeline(stop_event, statistics, parameter_queue, logs_queue, self.client,
                            pipeline_config, 12003, MockBackgroundManager())
 
         thread = Thread(target=send)
@@ -236,12 +241,13 @@ class PipelineTransceiverTest(unittest.TestCase):
         stop_event = multiprocessing.Event()
         statistics = manager.Namespace()
         parameter_queue = multiprocessing.Queue()
+        logs_queue = multiprocessing.Queue()
 
         pipeline_config = PipelineConfig("test_pipeline", parameters={"camera_name": "simulation",
                                                                       "function":"transparent"})
 
         def send():
-            processing_pipeline(stop_event, statistics, parameter_queue, self.client,
+            processing_pipeline(stop_event, statistics, parameter_queue, logs_queue, self.client,
                                 pipeline_config, 12004, MockBackgroundManager())
 
         thread = Thread(target=send)

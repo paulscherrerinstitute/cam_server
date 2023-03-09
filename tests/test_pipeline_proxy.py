@@ -243,11 +243,10 @@ class CameraClientProxyTest(unittest.TestCase):
 
     def test_permanent_pipelines(self):
         pp =  self.pipeline_proxy_client.get_permanent_instances()
-        pp["cxx"] = "yyy"
-        pp["simulation_sp"] = "pp"
+        pp["pp"] = "simulation_sp"
         self.pipeline_proxy_client.set_permanent_instances(pp)
         pp =  self.pipeline_proxy_client.get_permanent_instances()
-        self.assertIn(("simulation_sp","pp"), pp.items())
+        self.assertIn(("pp","simulation_sp"), pp.items())
         self.pipeline_proxy_client.set_permanent_instances({})
 
     def test_file_dump_pipeline(self):
