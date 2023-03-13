@@ -20,7 +20,7 @@ from cam_server.ipc import IpcSource
 from cam_server.loader import load_module
 from cam_server.otel import otel_get_tracer, otel_get_meter, otel_setup_logs
 from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
-from cam_server.utils import on_message_sent, get_statistics, update_statistics, MaxLenDict, get_clients, setup_instance_logs
+from cam_server.utils import on_message_sent, get_statistics, update_statistics, MaxLenDict, get_clients, setup_instance_logs, timestamp_as_float
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
 from cam_server_client.utils import get_host_port_from_stream_address
 
@@ -98,7 +98,11 @@ def get_log_tag(tag):
 def init_sender(sender, pipeline_parameters):
     sender.record_count = 0
     sender.enforce_pid = pipeline_parameters.get("enforce_pid")
+    sender.enforce_timestamp = pipeline_parameters.get("enforce_timestamp")
+    sender.check_timestamp = pipeline_parameters.get("check_timestamp")
     sender.last_pid = -1
+    sender.last_timestamp_float = -1
+    sender.last_timestamp = None
     sender.data_format = None
     sender.header_changes = 0
     create_header = pipeline_parameters.get("create_header")
@@ -173,11 +177,22 @@ def send(sender, data, timestamp, pulse_id):
     if sender is None:
         sender = get_sender()
     try:
+        if sender.check_timestamp:
+            if (pulse_id % 1000000) != (timestamp[1] % 1000000):
+                _logger.info("Received incompatible Timestamp: %s  PID: %d  %s" % (str(timestamp), pulse_id, log_tag))
+                return
         if sender.enforce_pid:
             if pulse_id <= sender.last_pid:
-                _logger.warning("Sending invalid PID: %d - last: %d" ". %s" % (pulse_id, sender.last_pid, log_tag))
+                _logger.warning("Sending invalid PID: %d - last: %d . %s" % (pulse_id, sender.last_pid, log_tag))
                 return
-            sender.last_pid = pulse_id
+        if sender.enforce_timestamp:
+            timestamp_float = timestamp_as_float(timestamp)
+            if timestamp_float <= sender.last_timestamp_float:
+                _logger.warning("Sending invalid Timestamp: %s %f - last: %s %f PID: %d - last: %d . %s" % (str(timestamp), timestamp_float, str(sender.last_timestamp), sender.last_timestamp_float, pulse_id, sender.last_pid, log_tag))
+                return
+            sender.last_timestamp = timestamp
+            sender.last_timestamp_float = timestamp_float
+        sender.last_pid = pulse_id
         if sender.create_header == True:
             check_header = True
         elif sender.create_header == False:

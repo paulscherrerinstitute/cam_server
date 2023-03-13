@@ -121,16 +121,21 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
     format_error = False
     exit_code = 0
     fail_counter = 0
-
+    enforce_pid = True
+    enforce_timestamp = True
+    check_timestamp = True
     try:
         setup_instance_logs(logs_queue)
         init_statistics(statistics)
 
 
         def process_parameters():
-            nonlocal x_size, y_size, x_axis, y_axis
+            nonlocal x_size, y_size, x_axis, y_axis, enforce_pid, enforce_timestamp, check_timestamp
             x_axis, y_axis = camera.get_x_y_axis()
             x_size, y_size = camera.get_geometry()
+            enforce_pid = camera.camera_config.parameters.get("enforce_pid", True)
+            enforce_timestamp = camera.camera_config.parameters.get("enforce_pid", True)
+            check_timestamp = camera.camera_config.parameters.get("check_timestamp", True)
 
         def data_change_callback(channels):
             nonlocal data_changed
@@ -426,6 +431,8 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
         start_error = 0
         stream_buffers = [None,] * len(camera_streams)
         last_pid = -1
+        last_timestamp_float = -1
+        last_timestamp = None
         while not stop_event.is_set():
             while not parameter_queue.empty():
                 new_parameters = parameter_queue.get()
@@ -474,20 +481,31 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                     pid = min(pids)
                     i = pids.index(pid)
                     pulse_id, timestamp, data = stream_buffers[i]
-                    if pulse_id is not None:
-                        stream_buffers[i] = None
-                        if pulse_id > last_pid:
-                            if data is not None:
-                                if threaded:
-                                    message_buffer.append((data, pulse_id, timestamp))
+                    stream_buffers[i] = None
+
+                    if (pulse_id is not None) and (timestamp is not None):
+                        if (not check_timestamp) or ((pulse_id % 1000000) == (timestamp[1] % 1000000)):
+                            if (pulse_id > last_pid) or (not enforce_pid):
+                                timestamp_float = timestamp_as_float(timestamp)
+                                if (timestamp_float > last_timestamp_float) or (not enforce_timestamp):
+                                        if data is not None:
+                                            if threaded:
+                                                message_buffer.append((data, pulse_id, timestamp))
+                                            else:
+                                                camera.send(data, pulse_id, timestamp)
+                                        last_pid = pulse_id
+                                        last_timestamp = timestamp
+                                        last_timestamp_float = timestamp_float
                                 else:
-                                    camera.send(data, pulse_id, timestamp)
-                            last_pid = pulse_id
+                                    if camera.get_debug():
+                                        _logger.warning("Received invalid Timestamp: %s %f - last: %s %f PID: %d - last: %d . %s" % (str(timestamp), timestamp_float, str(last_timestamp),last_timestamp_float, pulse_id, last_pid, camera.get_name()))
+                            else:
+                                if camera.get_debug():
+                                    _logger.info("Received old Pulse ID on stream %d: %d - last: %d [%s]" % (i, pulse_id, last_pid,camera.get_name()))
+                                flush_stream(camera_streams[i])
                         else:
                             if camera.get_debug():
-                                _logger.info("Received old Pulse ID on stream %d: %d - last: %d [%s]" % (i, pulse_id, last_pid,camera.get_name()))
-                            flush_stream(camera_streams[i])
-
+                                _logger.info("Received incompatible Timestamp: %s  PID: %d  %s" % (str(timestamp), pulse_id, camera.get_name()))
     except Exception as e:
         _logger.exception("Error while processing camera stream: %s [%s]" % (str(e), camera.get_name()))
         exit_code = 1
