@@ -200,8 +200,20 @@ def send(sender, data, timestamp, pulse_id):
             sender.data_format = True
         else:
             try:
-                data_format = {k: ((v.shape, v.dtype) if isinstance(v, numpy.ndarray) else
-                                (len(v) if isinstance(v, list) else type(v))) for k, v in data.items()}
+                #data_format = {k: ((v.shape, v.dtype) if isinstance(v, numpy.ndarray) else
+                #                (len(v) if isinstance(v, list) else type(v))) for k, v in data.items()}
+                def get_desc(v):
+                    if isinstance(v, list):  # Reason lists
+                        v = numpy.array(v)
+                    if isinstance(v, numpy.ndarray):
+                        return v.shape, v.dtype
+                    if isinstance(v, numpy.floating):  # Different scalar float types don't change header
+                        return float
+                    if isinstance(v, numpy.integer):  # Different scalar int types don't change header
+                        return int
+                    return type(v)
+
+                data_format = {k: get_desc(v) for k, v in data.items()}
                 check_header = data_format != sender.data_format
             except Exception as ex:
                 _logger.warning("Exception checking header change: " + str(ex) + ". %s" % log_tag)
