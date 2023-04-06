@@ -78,6 +78,8 @@ setup (name = '""" + mod_name + """',
 
     try:
         sandbox.run_setup(setuppy_file, ['build_ext', '-b', mod_path])
+    except Exception as e:
+        _logger.exception("Error compiling module: " + mod_name + ": " + str(e))
     finally:
         os.remove(module_src_file)
         os.remove(setuppy_file)
@@ -85,7 +87,10 @@ setup (name = '""" + mod_name + """',
 
     if mod_path not in sys.path:
         sys.path.append(mod_path)
-    mod = import_module(mod_name)
+    try:
+        mod = import_module(mod_name)
+    except Exception as e:
+        _logger.exception("Error importing  module: " + mod_name + ": " + str(e))
     return mod
 
 def load_from_library(file_name):
@@ -93,7 +98,10 @@ def load_from_library(file_name):
     mod_path = os.path.dirname(file_name)
     if mod_path not in sys.path:
         sys.path.append(mod_path)
-    mod = import_module(mod_name)
+    try:
+        mod = import_module(mod_name)
+    except Exception as e:
+        _logger.exception("Error loading module: " + mod_name + ": " + str(e))
     return mod
 
 
@@ -104,13 +112,14 @@ def get_file_extension(file):
     except:
         pass
     return None
+
 def load_module(name, path):
     path = os.path.abspath(path)
     ext = get_file_extension(name)
-    if ext=="so":
+    if ext == "so":
         lib_name = path + "/" + name
         src_name = ""
-    elif ext=="c":
+    elif ext == "c":
         lib_name = ""
         src_name = path + "/" + name
     else:

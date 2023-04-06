@@ -1,7 +1,9 @@
 FROM paulscherrerinstitute/cam_server:5.4.0
-    RUN conda install -c paulscherrerinstitute -c conda-forge cam_server=5.5.4
+    RUN conda install -c paulscherrerinstitute -c conda-forge cam_server=5.5.5 && conda clean --all && apt-get update --allow-releaseinfo-change && apt-get -y install make gcc
 
-    #lmfit jungfrau_utils=3.12.1
+#OR:
+#    FROM paulscherrerinstitute/cam_server:5.2.0
+#    RUN conda install -c paulscherrerinstitute -c conda-forge cam_server=5.4.0 lmfit jungfrau_utils=3.12.1
 
 
 #FROM continuumio/miniconda3:4.6.14
