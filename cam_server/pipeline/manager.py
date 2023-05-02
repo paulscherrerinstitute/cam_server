@@ -279,6 +279,24 @@ class Manager(ProxyBase):
                 except:
                     _logger.error("Error deleting user script %s on %s" % (script_name, server.get_address()))
 
+    def save_lib(self, lib_name, lib):
+            if lib_name and lib:
+                self.user_scripts_manager.save_lib(lib_name, lib)
+                for server in self.server_pool:
+                    try:
+                        server.set_user_script( lib_name, lib)
+                    except:
+                        _logger.error("Error setting lib %s on %s" % (lib_name, server.get_address()))
+
+    def delete_lib(self, lib_name):
+        if lib_name:
+            self.user_scripts_manager.delete_lib(lib_name)
+            for server in self.server_pool:
+                try:
+                    server.delete_lib(lib_name)
+                except:
+                    _logger.error("Error deleting lib %s on %s" % (lib_name, server.get_address()))
+
     def _check_background(self, server, configuration, instance_name=None):
         if configuration.get("image_background_enable"):
             image_background = configuration.get("image_background")
@@ -303,6 +321,14 @@ class Manager(ProxyBase):
         if function:
             if self.user_scripts_manager.exists(function):
                 server.set_user_script(self.user_scripts_manager.get_script_file_name(function), self.user_scripts_manager.get_script(function))
+
+        libs = configuration.get("libs")
+        if libs is not None:
+            if not isinstance(libs, list):
+                libs = [libs,]
+            for lib in libs:
+                if self.user_scripts_manager.exists_lib(lib):
+                    server.set_lib(lib, self.user_scripts_manager.get_lib(lib))
 
     def _check_type(self, server, configuration, instance_name=None):
         pipeline_type = configuration.get("pipeline_type", None)

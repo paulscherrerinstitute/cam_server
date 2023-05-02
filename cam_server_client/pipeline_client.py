@@ -341,3 +341,46 @@ class PipelineClient(InstanceManagementClient):
         self.set_instance_config(instance_id, configuration)
 
         return script_name
+
+
+    def set_lib(self, lib_name, lib_bytes):
+        """
+        Set user lib file on the server.
+        :param filename: Lib file name
+        :param lib_bytes: Lib contents.
+        :return:
+        """
+        rest_endpoint = "/lib/%s/lib_bytes" % lib_name
+        server_response = requests.put(self.api_address_format % rest_endpoint, data=lib_bytes,
+                                       timeout=self.timeout).json()
+        self.validate_response(server_response)
+
+    def get_user_lib(self, lib_name):
+        """
+        Read user lib file bytes.
+        :param filename: Lib name on the server.
+        :return: file bytes
+        """
+        rest_endpoint = "/lib/%s/lib_bytes" % lib_name
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        return self.validate_response(server_response)["lib"]
+
+    def delete_lib(self, lib_name):
+        """
+        Delete user lib file bytes.
+        :param filename: Lib name on the server.
+        """
+        rest_endpoint = "/lib/%s/lib_bytes" % lib_name
+        server_response = requests.delete(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        self.validate_response(server_response)
+
+
+    def get_libs(self):
+        """
+        List libs.
+        :return: List of names of libs on server
+        """
+        rest_endpoint = "/lib"
+        server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
+        return self.validate_response(server_response)["libs"]
+

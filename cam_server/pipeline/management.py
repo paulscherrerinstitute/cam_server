@@ -180,6 +180,12 @@ class PipelineInstanceManager(InstanceManager):
     def delete_script(self, script_name):
         return self.user_scripts_manager.delete_script(script_name)
 
+    def save_lib(self, lib_name, lib):
+        return self.user_scripts_manager.save_lib(lib_name, lib)
+
+    def delete_lib(self, lib_name):
+        return self.user_scripts_manager.delete_lib(lib_name)
+
 class PipelineInstance(InstanceWrapper):
     def __init__(self, instance_id, process_function, pipeline_config, stream_port, cam_client,
                  background_manager, user_scripts_manager, hostname=None, read_only_config=False):

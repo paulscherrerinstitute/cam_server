@@ -13,6 +13,9 @@
     - name: Creates user scripts directory
       file: path=/cam_server_configuration/configuration/user_scripts state=directory
 
+    - name: Creates user lib directory
+      file: path=/cam_server_configuration/configuration/user_scripts/lib state=directory
+
     - name: Creates bg config directory
       file: path=/cam_server_configuration/configuration/background_config state=directory
 

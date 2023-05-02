@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import re
+import sys
 from os.path import basename
 
 from cam_server import config
@@ -176,6 +177,9 @@ class UserScriptsManager(object):
 
         self.scripts_folder = scripts_folder
 
+        if not os.path.exists(self.get_lib_home()):
+            os.makedirs(self.get_lib_home())
+
     def exists(self, script_name):
         if script_name and self.scripts_folder:
             script_filename = self._get_script_filename(script_name)
@@ -293,3 +297,83 @@ class UserScriptsManager(object):
         for i in range(len(scripts)):
             scripts[i] = basename(scripts[i])
         return scripts
+
+
+    def get_lib_home(self):
+        if not self.scripts_folder:
+            return None
+
+        return self.scripts_folder + "/lib"
+
+    def get_lib_path(self, lib_name):
+        if lib_name:
+            if os.path.exists(lib_name):
+                return lib_name
+            lib_home = self.get_lib_home()
+            if lib_home:
+                return os.path.join(lib_home, lib_name)
+        return None
+
+
+    def get_lib(self, lib_name):
+        lib_filename = self.get_lib_path(lib_name)
+        if lib_filename is None:
+            return
+
+        if not os.path.isfile(lib_filename):
+            raise ValueError("Requested lib '%s' does not exist." % lib_name)
+
+        if self.get_file_type(lib_filename) in ["py", "c", "txt", "csv"]:
+            with open(lib_filename, "r") as data_file:
+                return data_file.read()
+
+        with open(lib_filename, "rb") as data_file:
+            return data_file.read()
+
+
+    def save_lib(self, lib_name, lib):
+
+        lib_filename = self.get_lib_path(lib_name)
+        if lib_filename is None:
+                return
+
+        if self.get_file_type(lib_filename) in ["py", "c", "txt", "csv"]:
+            if type(lib) != str:
+                script = lib.decode("utf-8")
+
+            with open(lib_filename, "w") as data_file:
+                data_file.write(lib)
+
+        else:
+            with open(lib_filename, "wb") as data_file:
+                data_file.write(lib)
+
+
+    def delete_lib(self, lib_name):
+        """
+        Delete the provided library.
+        :param script_name: Library name to delete.
+        """
+        lib_filename = self.get_lib_path(lib_name)
+        if lib_filename is None:
+                return
+        os.remove(lib_filename)
+
+
+    def get_libs(self):
+        lib_home = self.get_lib_home()
+        if not lib_home:
+            return []
+        libs = []
+        for files in (self.lib_home + '/*.*',):
+            libs.extend(glob.glob(files))
+
+        for i in range(len(libs)):
+            libs[i] = basename(libs[i])
+        return libs
+
+    def exists_lib(self, lib):
+        lib_filename = self.get_lib_path(lib)
+        if lib_filename:
+            return os.path.isfile(lib_filename)
+        return False

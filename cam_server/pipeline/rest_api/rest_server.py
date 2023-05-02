@@ -367,6 +367,52 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "status": "Script %s configuration deleted." % script_name}
 
 
+    @app.get(api_root_address + '/lib')
+    def get_lib_list():
+        return {"state": "ok",
+                "status": "List of libraries.",
+                "libs": instance_manager.user_scripts_manager.get_libs()}
+
+    @app.get(api_root_address + '/lib/<lib_name>/lib_bytes')
+    def get_lib(lib_name):
+        """
+        Return the bytes of a a lib file.
+        :param lib_name: lib file name.
+        :return: JSON with details and byte stream.
+        """
+        lib = instance_manager.user_scripts_manager.get_lib(lib_name)
+        return {"state": "ok",
+                "status": "Lib file '%s'." % lib_name,
+                "lib": lib,
+            }
+
+
+    @app.put(api_root_address + '/lib/<lib_name>/lib_bytes')
+    def set_lib(lib_name):
+        """
+        Set the bytes of a lib file.
+        :param lib_name: lib file name.
+        :return:
+        """
+        data = request.body.read()
+        try:
+            lib = data.decode("utf-8")
+        except:
+            lib = data
+        instance_manager.save_lib(lib_name, lib)
+        return {"state": "ok",
+                "status": "Lib file %s stored." % lib_name,
+                }
+
+    @app.delete(api_root_address + '/lib/<lib_name>/lib_bytes')
+    def delete_lib(lib_name):
+        instance_manager.delete_lib(lib_name)
+
+        return {"state": "ok",
+                "status": "Lib %s configuration deleted." % lib_name}
+
+
+
     @app.error(405)
     def method_not_allowed(res):
         if request.method == 'OPTIONS':

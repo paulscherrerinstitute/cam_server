@@ -280,7 +280,6 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=
     downsampling_counter = sys.maxsize  # The first is always sent
 
     stream_timeout = parameters.get("stream_timeout", 10.0)
-    function = get_function(parameters, user_scripts_manager)
 
     _parameter_queue = parameter_queue
     _parameters = parameters
@@ -290,6 +289,10 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=
     _parameters_post_proc = post_processsing_function
     _pipeline_config = pipeline_config
     _logs_queue = logs_queue
+    if user_scripts_manager and user_scripts_manager.get_lib_home():
+        sys.path.append(os.path.abspath(user_scripts_manager.get_lib_home()))
+
+    function = get_function(parameters, user_scripts_manager)
     setup_instance_logs(logs_queue)
     return parameters
 
@@ -991,6 +994,18 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
                 pass
         _logger.info("Exit send process")
         sys.exit(0)
+
+
+def get_lib_file(name):
+    return _user_scripts_manager.get_lib_path(name)
+
+
+def import_egg(egg_name):
+    egg_path = get_lib_file(egg_name)
+    if (egg_path):
+        import pkg_resources
+        sys.path.append(egg_path)
+        pkg_resources.working_set.add_entry(egg_path)
 
 
 def cleanup():
