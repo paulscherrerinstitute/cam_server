@@ -290,7 +290,8 @@ pipeline is added to the output bsread stream in the
 - **camera\_name** : Name of the camera to use as a pipeline source.
 - **function** (Default _None_):
     - Redefine processing script (function name or file name implementing processing function).     
-    - If pipeline_type = 'processing', set function = _'transparent'_ for no calculations.
+    - For pipeline_type = _'processing'_, set function = _'transparent'_ for no calculations.
+    - For pipeline\_type = _'stream'_, set function = _'propagate_stream'_ for forwarding with no calculations.
     - If pipeline\_type = _'processing'_, the processing script must implement the function:
         - def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata):
     - If pipeline\_type = _'stream'_, the processing script must implement the function:
@@ -351,7 +352,7 @@ pipeline is added to the output bsread stream in the
 - **abort_on_timeout** (Default _False_): If true the pipeline stops in source timeout.
 - **stream_timeout** (Default _10_): Timeout of the source stream, defined in seconds.
 - **enforce_pid** (Default _False_): If true pulse id is monotonic (excluding messages having smaller pulse id  than the last one send).
-
+- **libs** (Default _None_): List of libraries used by the pipeline (.py, .egg or data files).
   
 ##### Configuration parameters for pipeline\_type = _'processing'_  
 - **image\_background** (Default _None_): Background to subtract from the original image.
