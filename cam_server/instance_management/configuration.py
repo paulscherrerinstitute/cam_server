@@ -308,7 +308,8 @@ class UserScriptsManager(object):
     def get_lib_path(self, lib_name):
         if lib_name:
             if os.path.exists(lib_name):
-                return lib_name
+                if os.path.abspath(lib_name) == lib_name:
+                    return lib_name
             lib_home = self.get_lib_home()
             if lib_home:
                 return os.path.join(lib_home, lib_name)
@@ -337,17 +338,12 @@ class UserScriptsManager(object):
         if lib_filename is None:
                 return
 
-        if self.get_file_type(lib_filename) in ["py", "c", "txt", "csv"]:
-            if type(lib) != str:
-                script = lib.decode("utf-8")
-
+        if type(lib) == str:
             with open(lib_filename, "w") as data_file:
                 data_file.write(lib)
-
         else:
             with open(lib_filename, "wb") as data_file:
                 data_file.write(lib)
-
 
     def delete_lib(self, lib_name):
         """
@@ -365,7 +361,7 @@ class UserScriptsManager(object):
         if not lib_home:
             return []
         libs = []
-        for files in (self.lib_home + '/*.*',):
+        for files in (lib_home + '/*.*',):
             libs.extend(glob.glob(files))
 
         for i in range(len(libs)):

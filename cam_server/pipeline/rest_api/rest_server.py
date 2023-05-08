@@ -380,8 +380,15 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         :param lib_name: lib file name.
         :return: JSON with details and byte stream.
         """
+        b64 = False
         lib = instance_manager.user_scripts_manager.get_lib(lib_name)
+        if type(lib) == bytes:
+            #raise Exception("Cannot get binary data files")
+            base64_bytes = base64.b64encode(lib)
+            lib= base64_bytes.decode("utf-8")
+            b64 = True
         return {"state": "ok",
+                "base64": b64,
                 "status": "Lib file '%s'." % lib_name,
                 "lib": lib,
             }

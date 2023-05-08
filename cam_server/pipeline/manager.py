@@ -280,13 +280,13 @@ class Manager(ProxyBase):
                     _logger.error("Error deleting user script %s on %s" % (script_name, server.get_address()))
 
     def save_lib(self, lib_name, lib):
-            if lib_name and lib:
-                self.user_scripts_manager.save_lib(lib_name, lib)
-                for server in self.server_pool:
-                    try:
-                        server.set_user_script( lib_name, lib)
-                    except:
-                        _logger.error("Error setting lib %s on %s" % (lib_name, server.get_address()))
+        if lib_name and lib:
+            self.user_scripts_manager.save_lib(lib_name, lib)
+            for server in self.server_pool:
+                try:
+                    server.set_lib(lib_name, lib)
+                except:
+                    _logger.error("Error setting lib %s on %s" % (lib_name, server.get_address()))
 
     def delete_lib(self, lib_name):
         if lib_name:

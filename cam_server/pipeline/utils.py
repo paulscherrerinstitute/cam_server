@@ -997,7 +997,7 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
 
 
 def get_lib_file(name):
-    return _user_scripts_manager.get_lib_path(name)
+    return os.path.abspath(_user_scripts_manager.get_lib_path(name))
 
 
 def import_egg(egg_name):
