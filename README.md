@@ -360,6 +360,9 @@ pipeline is added to the output bsread stream in the
    If set to _"passive"_ then the background is fetched and, instead of being applied to the image, is sent to the processing
    function, within the parameters, with the key name "background_data". 
 - **image\_threshold** (Default _None_): Minimum value of each pixel. Pixels below the threshold are converted to 0.
+- **image\_averaging** (Default _None_): Frame averaging after background subtraction and thresholding.
+- **image\_scale** (Default _None_): Value multiplied to all pixel values.
+- **image\_offset** (Default _None_): Value added to all pixel values.
 - **image\_region\_of\_interest** (Default _None_): Crop the image before processing.
 - **image\_good\_region** (Default _None_): Good region to use for fits and slices.
     - threshold (Default _0.3_): Threshold to apply on each pixel.
@@ -377,7 +380,7 @@ pipeline is added to the output bsread stream in the
               _reflect_, _nearest_, _mirror_, _wrap_, or a constant.                            
             - _ortho_: orthogonal mode, preserve image pixels and adapt axis scaling. The angle must be a multiple of 90:                            
 - **averaging** (Default _None_):
-    - If defined specifies the size of the image buffer to be averaged.
+    - If defined specifies the size of the image buffer to be averaged before pre-processing.
         If number is positive, generates only one output when the buffer is full and clears it  (frame rate is reduced).
         If number is negative, generates outputs continuously, averaging the last images  (frame rate is sustained).
 - **max_frame_rate** (Default _None_):
