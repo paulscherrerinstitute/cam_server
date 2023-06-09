@@ -53,7 +53,7 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_
 
     #Apply late averaging
     averaging = parameters.get("image_averaging")
-    if averaging>1:
+    if averaging and (averaging>1):
         while len(averaging_buffer) >= averaging:
             averaging_buffer.pop(0)
         averaging_buffer.append(image)
