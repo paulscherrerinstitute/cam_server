@@ -1,0 +1,28 @@
+- hosts: cam_workers
+  become: true
+  tasks:
+   - name: Download file using curl
+      get_url:
+        url: https://data-api.psi.ch/distri/bsrep-0.4.1-amd64-rhel7.tgz
+        dest: /cam_server_configuration/bsrep-0.4.1-amd64-rhel7.tgz
+
+    - name: Unzip tar file
+      unarchive:
+        src: /cam_server_configuration/bsrep-0.4.1-amd64-rhel7.tgz
+        dest: /cam_server_configuration/bsrep  # Specify the destination path with the same name as the tar file
+        remote_src: yes
+      with_fileglob:
+        - /cam_server_configuration/*.tgz
+
+    - name: Create server_tuning systemd config file
+      template: src=../docker/repeater.service dest=/etc/systemd/system/repeater.service owner=root group=root mode=0644
+
+    - name: Reload systemd Config
+      shell: |
+        systemctl daemon-reload
+
+    - name: enable repeater service
+      systemd:
+        name: repeater
+        enabled: yes
+        daemon_reload: yes

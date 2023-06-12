@@ -1,0 +1,10 @@
+[Unit]
+Description=bs repeater
+After=network.target
+
+[Install]
+WantedBy=default.target
+
+[Service]
+ExecStart=/cam_server_configuration/bsrep/bsrep tcp://127.0.0.1:9900 /cam_server_configuration/bsrep/config.json
+Restart=always
