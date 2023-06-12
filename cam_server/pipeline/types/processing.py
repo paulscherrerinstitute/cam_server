@@ -158,7 +158,10 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
     def process_image(pulse_id, global_timestamp, function, image, x_axis, y_axis, bsdata):
         pars = get_parameters()
         try:
-            image, x_axis, y_axis = pre_process_image(image, pulse_id, global_timestamp, x_axis, y_axis, pars, image_background_array)
+            ret = pre_process_image(image, pulse_id, global_timestamp, x_axis, y_axis, pars, image_background_array)
+            if ret is None:
+                return
+            image, x_axis, y_axis = ret
             processed_data = function(image, pulse_id, global_timestamp, x_axis, y_axis, pars, bsdata)
             #print("Processing PID %d  at proc %d thread %d" % (pulse_id, os.getpid(), threading.get_ident()))
             return processed_data
