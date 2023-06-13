@@ -20,14 +20,23 @@
        src: /cam_server_configuration/{{bsrep}}.tgz
        dest: /cam_server_configuration
        remote_src: yes
+       owner: root
+       group: root
+       mode: 0644
 
-   - name: Delete bsrep folder
-     command: rm -r /cam_server_configuration/bsrep
+   - name: Create bsrep folder if does not exist
+     command: mkdir -p /cam_server_configuration/bsrep
 
-   - name: Rename the folder
-     command: mv /cam_server_configuration/{{bsrep}} /cam_server_configuration/bsrep
+   - name: Copy new files
+     shell: cp /cam_server_configuration/{{bsrep}}/* /cam_server_configuration/bsrep/
 
-   - name: Create server_tuning systemd config file
+   - name: Delete zip folder
+     command: rm -r /cam_server_configuration/{{bsrep}}
+
+   - name: Delete zip file
+     command: rm -r /cam_server_configuration/{{bsrep}}.tgz
+
+   - name: Create systemd config file
      template: src=../docker/repeater.service dest=/etc/systemd/system/repeater.service owner=root group=root mode=0644
 
    - name: Reload systemd Config
