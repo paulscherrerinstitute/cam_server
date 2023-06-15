@@ -5,9 +5,9 @@ import json
 _logger = getLogger(__name__)
 
 
-class array10(Camera):
+class Array10(Camera):
     def __init__(self, camera_config):
-        super(array10, self).__init__(camera_config)
+        super(Array10, self).__init__(camera_config)
         self.camera_config = camera_config
         self.input_stream_address = None
         self.mode = None
