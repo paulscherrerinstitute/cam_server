@@ -2,7 +2,7 @@
   become: true
 
   vars:
-    bsrep: bsrep-0.4.1-amd64-rhel7
+    bsrep: bsrep-0.4.2-amd64-rhel7
   tasks:
    - name: Download file using curl
      get_url:
