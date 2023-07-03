@@ -223,9 +223,9 @@ def send(sender, data, timestamp, pulse_id):
                     cur_fmt = sender.data_format.get(k)
                     if v is None:
                         if not cur_fmt:
-                            sender.data_format[k] = float  #If never resolved the type sets to default bsread type floaf64.
-                            check_header = True
-                            #data.pop(k)  #Should not transmit instead?
+                            #sender.data_format[k] = float  #If never resolved the type sets to default bsread type float64.
+                            #check_header = True
+                            data.pop(k)  #Only include channel after type is known
                     else:
                         fmt = get_desc(v)
                         sender.data_format[k] = fmt
@@ -236,13 +236,13 @@ def send(sender, data, timestamp, pulse_id):
                 _logger.warning("Exception checking header change: " + str(ex) + ". %s" % log_tag)
                 sender.data_format = None
                 check_header = True
-
-        sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_header)
-        if check_header:
-            sender.header_changes=sender.header_changes+1
-        on_message_sent()
-        if sender.records:
-            check_records(sender)
+        if data:
+            sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_header)
+            if check_header:
+                sender.header_changes=sender.header_changes+1
+            on_message_sent()
+            if sender.records:
+                check_records(sender)
     except Exception as ex:
         _logger.exception("Exception in the sender: " + str(ex) + ". %s" % log_tag)
         raise
