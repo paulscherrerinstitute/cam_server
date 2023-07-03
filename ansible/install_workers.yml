@@ -1,0 +1,54 @@
+- hosts: cam_workers
+  become: true
+  tasks:
+    - name: Creates config directory
+      file: path=/cam_server_configuration/configuration state=directory
+
+    - name: Creates camera config directory
+      file: path=/cam_server_configuration/configuration/camera_config state=directory
+
+    - name: Creates pipeline config directory
+      file: path=/cam_server_configuration/configuration/pipeline_config state=directory
+
+    - name: Creates user scripts directory
+      file: path=/cam_server_configuration/configuration/user_scripts state=directory
+
+    - name: Creates bg config directory
+      file: path=/cam_server_configuration/configuration/background_config state=directory
+
+    - name: Creates tmp directory
+      file: path=/tmp/cam_server state=directory
+
+    - name: Create camera_worker  systemd config file
+      template: src=../docker/camera_worker.service dest=/etc/systemd/system/camera_worker.service owner=root group=root mode=0644
+
+    - name: Create pipeline_worker systemd config file
+      template: src=../docker/pipeline_worker.service dest=/etc/systemd/system/pipeline_worker.service owner=root group=root mode=0644
+
+    - name: Create server_tuning systemd config file
+      template: src=../docker/server_tuning.service dest=/etc/systemd/system/server_tuning.service owner=root group=root mode=0644
+
+    - name: Create epics environment file
+      template: src=./templates/camera_environment dest=/cam_server_configuration/camera_environment owner=root group=root mode=0644
+
+    - name: Reload systemd Config
+      shell: |
+        systemctl daemon-reload
+
+    - name: enable camera_worker service
+      systemd:
+        name: camera_worker
+        enabled: yes
+        daemon_reload: yes
+
+    - name: enable pipeline_worker service
+      systemd:
+        name: pipeline_worker
+        enabled: yes
+        daemon_reload: yes
+
+    - name: enable server_tuning service
+      systemd:
+        name: server_tuning
+        enabled: yes
+        daemon_reload: yes

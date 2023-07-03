@@ -1,0 +1,10 @@
+- hosts: cam_workers
+  become: true
+  tasks:
+    - name: Reload systemd Config
+      shell: |  
+        systemctl daemon-reload
+
+    - name: Restart services
+      shell: |
+        systemctl restart camera_worker pipeline_worker server_tuning
