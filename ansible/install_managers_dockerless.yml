@@ -1,0 +1,13 @@
+- hosts: cam_manager
+  become: true
+
+  tasks:
+    - name: Copy script to remote machine
+      copy:
+        src: install_managers_dockerless.sh
+        dest: /tmp/install_managers_dockerless.sh
+        mode: 0755
+
+    - name: Run script on remote machine
+      script: /tmp/install_managers_dockerless.sh
+
