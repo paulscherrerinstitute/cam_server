@@ -219,23 +219,25 @@ def send(sender, data, timestamp, pulse_id):
 
                 if sender.data_format is None:
                     sender.data_format = {}
+                keys_to_remove = []
                 for k, v in data.items():
                     cur_fmt = sender.data_format.get(k)
                     if v is None:
                         if not cur_fmt:
                             #sender.data_format[k] = float  #If never resolved the type sets to default bsread type float64.
                             #check_header = True
-                            data.pop(k)  #Only include channel after type is known
+                            keys_to_remove.append(k)  #Only include channel after type is known
                     else:
                         fmt = get_desc(v)
                         sender.data_format[k] = fmt
                         if fmt != cur_fmt:
                             check_header = True
-
+                for k in keys_to_remove:
+                    del data[k]
             except Exception as ex:
                 _logger.warning("Exception checking header change: " + str(ex) + ". %s" % log_tag)
                 sender.data_format = None
-                check_header = True
+                data = None
         if data:
             sender.send(data=data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_header)
             if check_header:
