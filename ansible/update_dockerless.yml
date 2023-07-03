@@ -1,0 +1,18 @@
+- hosts: cam_workers
+  become: true
+
+  tasks:
+    - name: Update Repo
+      git:
+        repo: https://github.com/paulscherrerinstitute/cam_server.git
+        dest: /opt/python/cam_server
+        version: HEAD
+        update: yes
+
+    - name: Reload systemd Config
+      shell: |  
+        systemctl daemon-reload
+
+    - name: Restart services
+      shell: |
+        systemctl restart camera_worker pipeline_worker
