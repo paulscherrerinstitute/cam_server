@@ -1,6 +1,51 @@
 #include "module.c"
 #include <unistd.h>
 
+const char *THRESHOLD_FILE = "/Users/gobbo_a/dev/cam_server/tests/user_scripts/lib/threshold_2d_start600_800.txt";
+float *threshold= NULL;
+const int MAX_LINE_LENGTH = 50000;
+int initialized=0;
+
+int initialize(int size_x, int size_y, PyObject *pars){
+    threshold = (float *)malloc(size_x*size_y*sizeof(float));
+    int ret = 1;
+    if (THRESHOLD_FILE!=NULL){
+        FILE *file = fopen(THRESHOLD_FILE, "rb");
+        if (file == NULL) {
+            printf("Failed to open file.\n");
+            return -1;
+        }
+        char line[MAX_LINE_LENGTH];
+        int x = 0;
+        int y = 0;
+        while (fgets(line, sizeof(line), file) != NULL) {
+            char* token = strtok(line, " ");
+            while (token != NULL) {
+                threshold[y * size_x + x] = atof(token);
+                token = strtok(NULL, " ");
+                x++;
+            }
+            y++;
+            if (x != size_x){
+                printf("Invalid threshold file: wrong number of columns\n");
+                ret = -2;
+                break;
+            }
+            x = 0;
+        }
+        if (y != size_y){
+            printf("Invalid threshold file: wrong number of rows\n");
+            ret = -3;
+        }
+        fclose(file);
+        if (ret<0){
+            free(threshold); threshold = NULL;
+        }
+    }
+    return ret;
+}
+
+
 //def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata=None):
 PyObject *process(PyObject *self, PyObject *args)
 {
@@ -29,6 +74,12 @@ PyObject *process(PyObject *self, PyObject *args)
     int size_x = image->dimensions[1];
     int size_y = image->dimensions[0];
     unsigned short* img_data = (unsigned short*)image->data;
+
+   //Initialization
+    if (initialized==0){
+        initialized = initialize(1800, 800, pars);
+    }
+
 
     //Generating binned image
     int bin_x = size_x/2;
@@ -62,6 +113,7 @@ PyObject *process(PyObject *self, PyObject *args)
     const char * camera_name_str = PyUnicode_AsUTF8(camera_name);
 
     PyObject *ret = PyDict_New();
+    PyDict_SetItemString(ret, "initialized", PyLong_FromLong(initialized));
     PyDict_SetItemString(ret, "camera_name", camera_name);
     PyDict_SetItemString(ret, "camera_name_str", PyUnicode_FromString(camera_name_str));
     PyDict_SetItemString(ret, "first_image_val", PyLong_FromLong(img_data[0]));

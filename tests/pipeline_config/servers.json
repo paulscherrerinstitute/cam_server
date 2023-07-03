@@ -6,8 +6,10 @@
         "enabled": true,
         "expanding": true,
         "instances": [
-            "simulation2_sp:5555",
+            "simulation:5552",
+            "simulation2_sp:5555 ",
             "simulation_sp:5554",
+            "fanin:5551",
             "arrival_time_proc:5556",
             "SLG-LCAM-C102_data:5557",
             "SLG-LCAM-C102_img:5558",

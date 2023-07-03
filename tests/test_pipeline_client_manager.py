@@ -71,6 +71,7 @@ class PipelineClientTest(unittest.TestCase):
         self.pipeline_proxy_process.start()
         self.cam_client = CamClient(cam_server_proxy_address)
         self.pipeline_client = PipelineClient(pipeline_server_proxy_address)
+        self.pipeline_client.set_function_script(instance_id, filename)
 
         # Give it some time to start.
         sleep(1.0)  # Give it some time to start.

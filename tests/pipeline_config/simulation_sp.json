@@ -1,6 +1,7 @@
 {
+ "_create_header": "once",
  "image_background_enable": false,
- "image_background": null,
+ "image_background": "simulation_20230524_162902_414848",
  "image_threshold": null,
  "image_region_of_interest": null,
  "image_good_region": null,
@@ -10,6 +11,31 @@
  "_input_stream": "tcp://localhost:5559",
  "_input_pipeline": "pre_processor",
  "name": "simulation_sp",
- "create_header": "on_change",
- "group":["simulation", "sp"]
+ "_max_frame_rate": 2.1,
+ "processing_threads": 0,
+ "thread_buffer_size": 3,
+ "send_buffer_size": 2,
+ "_multiprocessing": false,
+ "_spawn_send_thread": true,
+ "_buffer_size": 5,
+ "_bsread_address": "tcp://localhost:9999",
+ "_bsread_channels": [],
+ "_bsread_image_buf": 100,
+ "_bsread_data_buf": 100,
+ "_function": "mylib.cpython-39-darwin.so",
+ "function": "write_epics.py",
+ "pv_fit_x": "TESTIOC:TESTCALCOUT:Input",
+ "pv_fit_y": "TESTIOC:TESTCALCOUT:Output",
+ "debug": false,
+ "group": [
+  "simulation",
+  "sp"
+ ],
+ "libs": [
+  "tell_client-0.1-py3.9.egg",
+  "test.py",
+  "linux.zip"
+ ],
+ "no_client_timeout": 0,
+ "reload": true
 }

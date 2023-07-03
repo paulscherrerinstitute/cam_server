@@ -1,4 +1,15 @@
 {
-    "SLG-LCAM-C102_sp": "SLG-LCAM-C102_sp1",
-    "custom_example": "custom_example"
+    "#camera_worker1": "camera_worker",
+    "#custom_example": "custom_example",
+    "#fanin_camera": "fanin_camera",
+    "#fanin_pipeline": "fanin_pipeline",
+    "#fanout_camera": "fanout_camera",
+    "#fanout_pipeline": "fanout_pipeline",
+    "#merge": "merge",
+    "#simulation": "simulation",
+    "#simulation2_sp": "simulation2_sp",
+    "#source_test_sp": "source_test_sp",
+    "#stream_example": "stream_example",
+    "#stream_source_sp1": "stream_source_sp",
+    "simulation_sp1": "simulation_sp"
 }

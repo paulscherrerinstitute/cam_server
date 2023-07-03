@@ -7,6 +7,8 @@ from cam_server.camera.source.bsread import CameraBsread, CameraBsreadSim
 from cam_server.camera.source.epics import CameraEpics
 from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.camera.source.stream import CameraStream
+from cam_server.camera.source.hdf5 import Hdf5
+from cam_server.camera.source.array10 import Array10
 
 _logger = getLogger(__name__)
 
@@ -17,6 +19,8 @@ source_type_to_source_class_mapping = {
     "area_detector": AreaDetector,
     "bsread_simulation": CameraBsreadSim,
     "stream": CameraStream,
+    "hdf5": Hdf5,
+    "array10": Array10,
     "script": None
 }
 

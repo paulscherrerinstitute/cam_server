@@ -7,4 +7,5 @@ WantedBy=default.target
 
 [Service]
 ExecStart=/cam_server_configuration/bsrep/bsrep tcp://127.0.0.1:9900 /cam_server_configuration/bsrep/config.json
+WatchdogSec=3600
 Restart=always

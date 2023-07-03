@@ -12,9 +12,6 @@
        group: root
        mode: 0644
 
-   - name: Creates bsrep folder
-     file: path=/cam_server_configuration/bsrep state=directory
-
    - name: Unzip tar file
      unarchive:
        src: /cam_server_configuration/{{bsrep}}.tgz
@@ -24,8 +21,10 @@
        group: root
        mode: 0755
 
-   - name: Create bsrep folder if does not exist
-     command: mkdir -p /cam_server_configuration/bsrep
+   - name: stop repeater
+     systemd:
+       name: repeater
+       state: stopped
 
    - name: Copy new files
      shell: cp /cam_server_configuration/{{bsrep}}/* /cam_server_configuration/bsrep/
@@ -36,15 +35,9 @@
    - name: Delete zip file
      command: rm -r /cam_server_configuration/{{bsrep}}.tgz
 
-   - name: Create systemd config file
-     template: src=../docker/repeater.service dest=/etc/systemd/system/repeater.service owner=root group=root mode=0644
 
-   - name: Reload systemd Config
-     shell: |
-       systemctl daemon-reload
-
-   - name: enable repeater service
+   - name: start repeater
      systemd:
-       name: repeater
-       enabled: yes
-       daemon_reload: yes
+        name: repeater
+        state: started
+
