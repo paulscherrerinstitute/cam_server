@@ -10,6 +10,15 @@ export PY_VER="${PY_MAJOR}.${PY_MINOR}.${PY_PATCH}"
 export PY_MIN="${PY_MAJOR}.${PY_MINOR}"
 
 
+#Default folders
+mkdir -p /cam_server_configuration
+mkdir -p /cam_server_configuration/configuration
+mkdir -p /cam_server_configuration/configuration/tmp
+mkdir -p /cam_server_configuration/configuration/tmp/user_scripts
+mkdir -p /cam_server_configuration/configuration/tmp/background_config
+mkdir -p /tmp/cam_server
+
+
 #Python Dependencies
 yum install -y gcc openssl-devel bzip2-devel libffi-devel zlib-devel
 mkdir -p /opt/python
@@ -65,8 +74,8 @@ cat > /opt/python/bin/start_pipeline_worker << EOF
 #!/bin/bash
 
 /opt/python/bin/python /opt/python/cam_server/cam_server/start_pipeline_worker.py \
-        -g /cam_server_configuration/configuration/background_config \
-        -u /cam_server_configuration/configuration/user_scripts \
+        -g /cam_server_configuration/configuration/tmp/background_config \
+        -u /cam_server_configuration/configuration/tmp/user_scripts \
         -c http://sf-daqsync-01.psi.ch:8888 \
         --log_level=INFO \
         --web_server=cherrypy \
@@ -78,7 +87,7 @@ cat > /opt/python/bin/start_camera_worker << EOF
 #!/bin/bash
 
 /opt/python/bin/python /opt/python/cam_server/cam_server/start_camera_worker.py \
-        -u /cam_server_configuration/configuration/user_scripts \
+        -u /cam_server_configuration/configuration/tmp/user_scripts \
         --log_level=INFO \
         --web_server=cherrypy \
         --ipc_feed_folder=/tmp/cam_server \

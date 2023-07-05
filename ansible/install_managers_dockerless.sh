@@ -1,5 +1,15 @@
 #!/bin/bash
 
+#Default folders
+mkdir -p /cam_server_configuration
+mkdir -p /cam_server_configuration/configuration
+mkdir -p /cam_server_configuration/configuration/camera_config
+mkdir -p /cam_server_configuration/configuration/pipeline_config
+mkdir -p /cam_server_configuration/configuration/user_scripts
+mkdir -p /cam_server_configuration/configuration/background_config
+mkdir -p /tmp/cam_server
+
+
 # Create bin files
 
 cat > /opt/python/bin/start_pipeline_manager << EOF
