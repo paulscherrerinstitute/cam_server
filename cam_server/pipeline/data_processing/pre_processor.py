@@ -27,6 +27,12 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_
             image = subtract_background(image, image_background_array)
 
     # Check for rotation parameter
+    if parameters.get("mirror_x"):
+        image = numpy.fliplr(image)
+
+    if parameters.get("mirror_y"):
+        image = numpy.flipud(image)
+
     rotation = parameters.get("rotation")
     if rotation:
         image = rotate(image, rotation["angle"], rotation["order"], rotation["mode"])

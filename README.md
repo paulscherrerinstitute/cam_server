@@ -371,6 +371,8 @@ pipeline is added to the output bsread stream in the
     - number_of_slices (Default _1_): Desired number of slices.
     - scale (Default _2.0_): Good region scale in for slicing purposes.
     - orientation (Default _vertical_): Orientation of the slices. Can be 'vertical' or 'horizontal'.
+- **mirror\_x**: Mirror image over X axis.
+- **mirror\_y**: Mirror image over Y axis.
 - **rotation** (Default _None_):
     - Rotation to be applied to image prior to running the pipeline:
         - angle (Default 0.0): Rotation angle in degrees.

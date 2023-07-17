@@ -219,6 +219,12 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
                 x_axis = data["x_axis"].value
                 y_axis = data["y_axis"].value
 
+                if pipeline_parameters.get("mirror_x"):
+                    x_axis = numpy.flip(x_axis)
+
+                if pipeline_parameters.get("mirror_y"):
+                    y_axis = numpy.flip(y_axis)
+
                 if pipeline_parameters.get("rotation"):
                     if pipeline_parameters["rotation"]["mode"] == "ortho":
                         rotation_angle = int(pipeline_parameters["rotation"]["angle"] / 90) % 4
