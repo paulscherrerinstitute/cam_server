@@ -211,29 +211,42 @@ def send(sender, data, timestamp, pulse_id):
                         return int
                     return type(v)
 
+
+                check_header = False
                 #data_format = {k: get_desc(v) for k, v in data.items()}
                 #check_header = data_format != sender.data_format
                 #sender.data_format = data_format
 
-                check_header = False
-
                 if sender.data_format is None:
                     sender.data_format = {}
-                keys_to_remove = []
+
+                msg_keys_to_remove = []
                 for k, v in data.items():
                     cur_fmt = sender.data_format.get(k)
                     if v is None:
+                        #Value of channel is None: does not recreate header
                         if not cur_fmt:
-                            #sender.data_format[k] = float  #If never resolved the type sets to default bsread type float64.
-                            #check_header = True
-                            keys_to_remove.append(k)  #Only include channel after type is known
+                            # Only include channel in message type is known
+                            msg_keys_to_remove.append(k)
                     else:
+                        #Type of channel changed: recreate header
                         fmt = get_desc(v)
                         sender.data_format[k] = fmt
                         if fmt != cur_fmt:
                             check_header = True
-                for k in keys_to_remove:
+                for k in msg_keys_to_remove:
                     del data[k]
+
+                #Channels have been removed from the message: recreate the header.
+                sender_keys_to_remove = []
+                for k in sender.data_format.keys():
+                    if not k in data:
+                        check_header = True
+                        sender_keys_to_remove.append(k)
+                for k in sender_keys_to_remove:
+                    del sender.data_format[k]
+
+
             except Exception as ex:
                 _logger.warning("Exception checking header change: " + str(ex) + ". %s" % log_tag)
                 sender.data_format = None
