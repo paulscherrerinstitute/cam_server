@@ -92,6 +92,8 @@ class PipelineInstanceManager(InstanceManager):
         if (not pipeline_name) and (not configuration):
             raise ValueError("You must specify either the pipeline name or the configuration for the pipeline.")
 
+        read_only_pipeline = False if configuration is None else configuration.get("read_only", False)
+
         if pipeline_name:
             pipeline_config = self.config_manager.load_pipeline(pipeline_name)
             if configuration is not None:
@@ -99,7 +101,7 @@ class PipelineInstanceManager(InstanceManager):
         else:
             pipeline_config = PipelineConfig(instance_id, configuration)
 
-        self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=False)
+        self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=read_only_pipeline)
 
         pipeline_instance = self.get_instance(instance_id)
 
@@ -115,7 +117,7 @@ class PipelineInstanceManager(InstanceManager):
             raise ValueError("Instance '%s' is not present on server and it is not a saved pipeline name." %
                              instance_id)
 
-        self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=True)
+        self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=False)
 
         return self.get_instance(instance_id).get_stream_address()
 
@@ -140,7 +142,7 @@ class PipelineInstanceManager(InstanceManager):
         if instance_id is None:
             instance_id = str(uuid.uuid4())
 
-        self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=True)
+        self._create_and_start_pipeline(instance_id, pipeline_config, read_only_pipeline=False)
 
         return instance_id, self.get_instance(instance_id).get_stream_address()
 
