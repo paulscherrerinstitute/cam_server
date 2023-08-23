@@ -59,11 +59,17 @@ class Camera:
             return None
         return ret
 
+    def get_data_header_compression(self):
+        return self._get_compression("data_header_compression", config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+
     def get_image_compression(self):
         return self._get_compression("image_compression", config.CAMERA_BSREAD_IMAGE_COMPRESSION)
 
     def get_scalar_compression(self):
         return self._get_compression("scalar_compression", config.CAMERA_BSREAD_SCALAR_COMPRESSION)
+
+    def get_forwarder_data_header_compression(self):
+        return self._get_compression("forwarder_data_header_compression", config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
 
     def get_forwarder_compression(self):
         return self._get_compression("forwarder_compression", config.CAMERA_BSREAD_IMAGE_COMPRESSION)
@@ -161,9 +167,16 @@ class Camera:
         self.stop_event = stop_event
         if self.camera_config.get_configuration().get("protocol", "tcp") == "ipc":
             sender = IpcSender(address=get_ipc_address(self.get_name()), mode=PUB, start_pulse_id=self.get_start_pulse_id(), queue_size=self.get_queue_size(),
-                             data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+                             data_header_compression=self.get_data_header_compression())
         else:
-            sender = Sender(queue_size=self.get_queue_size(), port=port, mode=PUB, start_pulse_id=self.get_start_pulse_id(), data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+            sender = Sender(queue_size=self.get_queue_size(), port=port, mode=PUB, start_pulse_id=self.get_start_pulse_id(), data_header_compression=self.get_data_header_compression())
+        if self.get_data_header_compression():
+            _logger.info("Created sender with data header compression: %s. %s" %( self.get_data_header_compression(), self.get_name()))
+        if self.get_image_compression():
+            _logger.info("Created sender with image compression: %s. %s" %( self.get_image_compression(), self.get_name()))
+        if self.get_scalar_compression():
+            _logger.info("Created sender with scalar compression: %s. %s" %( self.get_scalar_compression(), self.get_name()))
+
         sender.open(no_client_action=self.no_client_timeout, no_client_timeout=self.get_client_timeout())
         sender.header_changes = 0
         self.sender = sender
@@ -194,7 +207,10 @@ class Camera:
 
     def _create_forwarder(self):
         if self.forwarder_port and self.forwarder_port>0:
-            self.forwarder = Sender(port=self.forwarder_port, mode=PUSH, data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False, data_compression=self.get_forwarder_compression())
+            self.forwarder = Sender(port=self.forwarder_port, mode=PUSH,  block=False, data_header_compression=self.get_forwarder_data_header_compression(), data_compression=self.get_forwarder_compression())
+            if self.get_forwarder_data_header_compression():
+                _logger.info(
+                    "Created forwarder with data header compression: %s. %s" % (self.get_forwarder_data_header_compression(), self.get_name()))
             if self.get_forwarder_compression():
                 _logger.info(
                     "Created forwarder with image compression: %s. %s" % (self.get_forwarder_compression(), self.get_name()))
@@ -373,10 +389,6 @@ class Camera:
             dtype = self.get_dtype()
             shape = self.get_geometry()
         x_size, y_size =shape
-        if self.get_image_compression():
-            _logger.info("Created sender with image compression: %s. %s" %( self.get_image_compression(), self.get_name()))
-        if self.get_scalar_compression():
-            _logger.info("Created sender with scalar compression: %s. %s" %( self.get_scalar_compression(), self.get_name()))
         self.sender.add_channel("image", metadata={"compression": self.get_image_compression() , "shape": [x_size, y_size],"type": dtype})
         self.sender.add_channel("x_axis",metadata={"compression": self.get_scalar_compression(), "shape": [x_size],"type": "float32"})
         self.sender.add_channel("y_axis",metadata={"compression": self.get_scalar_compression(), "shape": [y_size],"type": "float32"})
