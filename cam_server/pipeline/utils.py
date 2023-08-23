@@ -153,7 +153,11 @@ def create_sender(output_stream_port, stop_event):
                         mode=PUSH if (pars["mode"] == "PUSH") else PUB,
                         queue_size=pars["queue_size"],
                         block=pars["block"],
-                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION)
+                        data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION,
+                        data_compression=pars["data_compression"]
+                        )
+        if pars["data_compression"]:
+            _logger.info("Created sender with data compression: %s. %s" %(pars["data_compression"], log_tag))
     sender.open(no_client_action=no_client_action, no_client_timeout=pars["no_client_timeout"]
                 if pars["no_client_timeout"] > 0 else sys.maxsize)
     init_sender(sender, pars)
@@ -311,6 +315,13 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=
     downsampling_counter = sys.maxsize  # The first is always sent
 
     stream_timeout = parameters.get("stream_timeout", 10.0)
+
+    if parameters.get("data_compression", None):
+        if parameters.get("data_compression")  == True:
+            parameters["data_compression"] = "bitshuffle_lz4"
+    else:
+        parameters["data_compression"] = None
+
 
     _parameter_queue = parameter_queue
     _parameters = parameters
