@@ -539,11 +539,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
         sys.exit(exit_code)
 
 
-def process_scripted_camera(stop_event, statistics, parameter_queue, logs_queue, camera, port):
-    camera.process(stop_event, statistics, parameter_queue, logs_queue, port)
-
-
-def process_stream_camera(stop_event, statistics, parameter_queue, logs_queue, camera, port):
+def process_standard_camera(stop_event, statistics, parameter_queue, logs_queue, camera, port):
     camera.process(stop_event, statistics, parameter_queue, logs_queue, port)
 
 
@@ -553,8 +549,10 @@ source_type_to_sender_function_mapping = {
     "area_detector": process_epics_camera,
     "bsread": process_bsread_camera,
     "bsread_simulation": process_bsread_camera,
-    "stream": process_stream_camera,
-    "script": process_scripted_camera
+    "stream": process_standard_camera,
+    "hdf5": process_standard_camera,
+    "array10": process_standard_camera,
+    "script": process_standard_camera
 }
 
 
