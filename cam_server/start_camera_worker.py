@@ -50,6 +50,7 @@ def main():
     parser.add_argument('-a', '--web_server_args', default="")
     parser.add_argument('-e', '--epics_timeout', default=None)
     parser.add_argument('-f', '--ipc_feed_folder', default="/tmp")
+    parser.add_argument('-r', '--port_range', default=None)
     parser.add_argument('-x', '--abort_on_error', default=None)
     parser.add_argument('-q', '--default_queue_size', default=None)
     parser.add_argument("--log_level", default=config.DEFAULT_LOGGING_LEVEL,
@@ -66,9 +67,12 @@ def main():
         config.EPICS_TIMEOUT = float(arguments.epics_timeout)
     if arguments.ipc_feed_folder is not None:
         config.IPC_FEEDS_FOLDER = str(arguments.ipc_feed_folder)
+    if arguments.port_range is not None:
+        [range_from, range_to] = arguments.port_range.split(":")
+        arguments.port_range = [int(range_from), int(range_to)]
     if arguments.default_queue_size is not None:
         config.CAMERA_DEFAULT_QUEUE_SIZE = int(arguments.default_queue_size)
-    start_camera_worker(arguments.interface, arguments.port, arguments.scripts_base, arguments.hostname, None,
+    start_camera_worker(arguments.interface, arguments.port, arguments.scripts_base, arguments.hostname, arguments.port_range,
                           int(arguments.mode), arguments.web_server, string_to_dict(arguments.web_server_args))
 
 

@@ -61,6 +61,7 @@ def main():
     parser.add_argument('-g', '--background_base', default=config.DEFAULT_TEMP_BACKGROUND_CONFIG_FOLDER)
     parser.add_argument('-u', '--scripts_base', default=config.DEFAULT_USER_SCRIPT_FOLDER)
     parser.add_argument('-n', '--hostname', default=None, help="Hostname to use when returning the stream address.")
+    parser.add_argument('-r', '--port_range', default=None)
     parser.add_argument('-w', '--web_server', default=config.DEFAULT_WEB_SERVER)
     parser.add_argument('-a', '--web_server_args', default="")
     parser.add_argument('-x', '--abort_on_error', default=None)
@@ -83,13 +84,17 @@ def main():
         config.PIPELINE_DEFAULT_QUEUE_SIZE = int(arguments.default_queue_size)
     if arguments.default_block is not None:
         config.PIPELINE_DEFAULT_BLOCK = bool(arguments.default_queue_size)
+    if arguments.port_range is not None:
+        [range_from, range_to] = arguments.port_range.split(":")
+        arguments.port_range = [int(range_from), int(range_to)]
+
 
     start_pipeline_worker(arguments.interface, arguments.port,
                           arguments.background_base,
                           arguments.scripts_base,
                           arguments.cam_server,
                           arguments.hostname,
-                          None,
+                          arguments.port_range,
                           arguments.web_server ,
                           string_to_dict(arguments.web_server_args))
 
