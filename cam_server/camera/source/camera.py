@@ -481,6 +481,11 @@ class Camera:
                 except Again:
                     _logger.warning(
                         "Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera_name))
+
+                while not parameter_queue.empty():
+                    new_parameters = parameter_queue.get()
+                    self.camera_config.set_configuration(new_parameters)
+
                 if sample_interval:
                     sleep = sample_interval - (time.time()-start)
                     if (sleep>0):
