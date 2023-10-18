@@ -36,7 +36,7 @@ make altinstall
 
 #Install Python packages
 /usr/local/bin/python${PY_MIN} -m pip install --upgrade pip
-/usr/local/bin/pip${PY_MIN} install numpy scipy numba requests bottle psutil paste cheroot pyepics pyepics h5py pillow matplotlib scikit-image lmfit click pyzmq
+/usr/local/bin/pip${PY_MIN} install numpy scipy numba requests bottle psutil paste cheroot pyepics h5py pillow matplotlib scikit-image lmfit click pyzmq
 /usr/local/bin/python${PY_MIN} -m pip install urllib3==1.26.6
 
 

@@ -56,10 +56,6 @@ class CameraSimulation(CameraEpics):
         self.callback_functions = []
         self.simulation_thread = None
         self.simulation_stop_event = None
-        self.image_type =  camera_config.get_configuration().get("image_type")
-        self.raw = self.image_type in ["raw", "static_raw"]
-        self.static = self.image_type in ["static_beam", "static_raw"]
-
 
     def _generate_dead_pixels(self, number_of_dead_pixel):
         dead_pixels = numpy.zeros((self.height_raw, self.width_raw))
@@ -118,6 +114,10 @@ class CameraSimulation(CameraEpics):
             interval = 1.0/self.frame_rate
             while not stop_event.is_set():
                 try:
+                    self.image_type = self.camera_config.parameters.get("image_type")
+                    self.raw = self.image_type in ["raw", "static_raw"]
+                    self.static = self.image_type in ["static_beam", "static_raw"]
+
                     # Same timestamp as used by PyEpics.
                     timestamp = time.time()
                     if timestamp>=next_img_timestamp:

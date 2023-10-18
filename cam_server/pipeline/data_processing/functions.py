@@ -250,7 +250,7 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
         list_slices_indexes.append(end_index)
 
         # The slice length is the difference in axis value from the start to the end of the axis.
-        slice_length = abs(axis[start_index] - axis[end_index])
+        slice_length = float(abs(axis[start_index] - axis[end_index]))
 
         # We subtract 1 because we already added the middle slice.
         counter_slices = number_of_slices - 1
@@ -279,7 +279,7 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
 
     list_slices, n_pixel_half_slice, slice_length = calculate_slices(x_axis, x_center, x_standard_deviation, scaling,
                                                                      number_of_slices)
-
+    slice_length = float(slice_length)
     slice_data = []
 
     for i in range(len(list_slices) - 1):
@@ -288,12 +288,12 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
             slice_n = image[:, list_slices[i]:list_slices[i + 1]]
 
             slice_y_profile = slice_n.sum(1)
-            pixel_intensity = slice_n.sum()
+            pixel_intensity = float(slice_n.sum())
 
             # Does x need to be the middle of slice? - currently it is
-            center_x = x_axis[list_slices[i] + n_pixel_half_slice]
-
             gauss_function, offset, amplitude, center_y, standard_deviation, _, _ = gauss_fit(slice_y_profile, y_axis)
+            center_x = float(x_axis[list_slices[i] + n_pixel_half_slice])
+            center_y = float(center_y)
             slice_data.append(([center_x, center_y], standard_deviation, pixel_intensity))
         else:
             _logging.info('Drop slice')
@@ -318,12 +318,13 @@ def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, sca
             slice_n = image[list_slices[i]:list_slices[i + 1], :]
 
             slice_x_profile = slice_n.sum(0)
-            pixel_intensity = slice_n.sum()
+            pixel_intensity = float(slice_n.sum())
 
             gauss_function, offset, amplitude, center_x, standard_deviation, _, _ = gauss_fit(slice_x_profile, x_axis)
-
+            center_x = float(center_x)
+            center_y = float(y_axis[list_slices[i] + n_pixel_half_slice])
             # Does x need to be the middle of slice? - currently it is
-            slice_data.append(([center_x, y_axis[list_slices[i] + n_pixel_half_slice]], standard_deviation,
+            slice_data.append(([center_x, center_y], standard_deviation,
                                pixel_intensity))
         else:
             _logging.info('Drop slice')

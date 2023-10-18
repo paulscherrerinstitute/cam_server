@@ -40,8 +40,8 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     return_value["x_profile"] = x_profile
     return_value["y_profile"] = y_profile
     return_value["intensity"] = intensity
-    return_value["x_fwhm"] = x_fwhm
-    return_value["y_fwhm"] = y_fwhm
+    return_value["x_fwhm"] = float(x_fwhm)
+    return_value["y_fwhm"] = float(y_fwhm)
 
     # If set in background subtraction passive mode, it cannot be serialized
     background_data = parameters.pop("background_data", None)
