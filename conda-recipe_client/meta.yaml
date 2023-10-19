@@ -1,6 +1,6 @@
 package:
     name: cam_server_client
-    version: 5.6.5
+    version: 5.6.6
 
 source:
     path: ..

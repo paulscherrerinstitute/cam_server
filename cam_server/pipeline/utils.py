@@ -112,6 +112,8 @@ def init_sender(sender, pipeline_parameters):
         sender.create_header = False
     else:
         sender.create_header = None
+    sender.allow_type_changes=pipeline_parameters.get("allow_type_changes", False)
+    sender.allow_shape_changes = pipeline_parameters.get("allow_shape_changes", True)
     sender.records=pipeline_parameters.get("records")
 
 def create_sender(output_stream_port, stop_event):
@@ -237,11 +239,25 @@ def send(sender, data, timestamp, pulse_id):
                     else:
                         #Type of channel changed: recreate header
                         fmt = get_desc(v)
-                        sender.data_format[k] = fmt
                         if fmt != cur_fmt:
+                            if cur_fmt:
+                                old_shape = cur_fmt[0] if type(cur_fmt) is tuple else 0
+                                old_type = cur_fmt[1] if type(cur_fmt) is tuple else cur_fmt
+                                new_shape = fmt[0] if type(fmt) is tuple else 0
+                                new_type = fmt[1] if type(fmt) is tuple else fmt
+                                if not sender.allow_type_changes and old_type!=new_type:
+                                    _logger.warning("Invalid channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type),  log_tag))
+                                    data[k] = None
+                                if not sender.allow_shape_changes and old_shape!=new_shape:
+                                    _logger.warning("Invalid channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  log_tag))
+                                    data[k] = None
                             check_header = True
+                        sender.data_format[k] = fmt
                 for k in msg_keys_to_remove:
-                    del data[k]
+                    try:
+                        del data[k]
+                    except:
+                        pass
 
                 #Channels have been removed from the message: recreate the header.
                 sender_keys_to_remove = []
@@ -337,12 +353,15 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=
     _user_scripts_manager = user_scripts_manager
     _parameters_post_proc = post_processsing_function
     _pipeline_config = pipeline_config
-    _logs_queue = logs_queue
+
     if user_scripts_manager and user_scripts_manager.get_lib_home():
         sys.path.append(os.path.abspath(user_scripts_manager.get_lib_home()))
 
     function = get_function(parameters, user_scripts_manager)
-    setup_instance_logs(logs_queue)
+    global _logs_queue
+    if _logs_queue is None:
+        _logs_queue = logs_queue
+        setup_instance_logs(logs_queue)
     return parameters
 
 
