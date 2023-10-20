@@ -112,9 +112,9 @@ def init_sender(sender, pipeline_parameters):
         sender.create_header = False
     else:
         sender.create_header = None
-    sender.allow_type_changes=pipeline_parameters.get("allow_type_changes", False)
+    sender.allow_type_changes = pipeline_parameters.get("allow_type_changes", True)
     sender.allow_shape_changes = pipeline_parameters.get("allow_shape_changes", True)
-    sender.records=pipeline_parameters.get("records")
+    sender.records = pipeline_parameters.get("records")
 
 def create_sender(output_stream_port, stop_event):
     global sender, pid_buffer, pid_buffer_size
@@ -245,14 +245,20 @@ def send(sender, data, timestamp, pulse_id):
                                 old_type = cur_fmt[1] if type(cur_fmt) is tuple else cur_fmt
                                 new_shape = fmt[0] if type(fmt) is tuple else 0
                                 new_type = fmt[1] if type(fmt) is tuple else fmt
-                                if not sender.allow_type_changes and old_type!=new_type:
-                                    _logger.warning("Invalid channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type),  log_tag))
-                                    data[k] = None
-                                    fmt = cur_fmt
-                                if not sender.allow_shape_changes and old_shape!=new_shape:
-                                    _logger.warning("Invalid channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  log_tag))
-                                    data[k] = None
-                                    fmt = cur_fmt
+                                if old_type != new_type:
+                                    if sender.allow_type_changes:
+                                        _logger.debug("Channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type), log_tag))
+                                    else:
+                                        _logger.warning("Invalid channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type),  log_tag))
+                                        data[k] = None
+                                        fmt = cur_fmt
+                                if old_shape != new_shape:
+                                    if sender.allow_shape_changes:
+                                        _logger.debug("Channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  log_tag))
+                                    else:
+                                        _logger.warning("Invalid channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  log_tag))
+                                        data[k] = None
+                                        fmt = cur_fmt
                             check_header = True
                         sender.data_format[k] = fmt
                 for k in msg_keys_to_remove:

@@ -315,8 +315,8 @@ pipeline is added to the output bsread stream in the
     - **always**: Creates header for each message. It is the most flexible, as the message is always consistent with 
       the header. Suited for pipelines with changing channels. There is a cost of regenerating the header each time.      
     - **on_change**: A compromise of the options above. Inspect channels types and shapes and recreate the header only if there is any change.
-- **allow_type_changes** (Default _False_):  If create_header==on_change, this will remove a channel from message if its type changes. 
-- **allow_shape_changes** (Default _True_):  If create_header==on_change, this will remove a channel from message if its shape changes.
+- **allow_type_changes** (Default _True_):  If False and create_header==on_change, this will remove a channel from message if its type changes. 
+- **allow_shape_changes** (Default _True_):  If False and create_header==on_change, this will remove a channel from message if its shape changes.
 - **mode** (Default _PUB_, but  _PUSH_ for __fanout__ pipelines): Output type ('PUB', 'PUSH' or 'FILE').
     - For stream modes (PUB or PUSH), the following parameters are valid:
         - **queue_size** (Default _10_): stream High Water Mark.
