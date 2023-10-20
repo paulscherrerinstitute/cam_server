@@ -248,9 +248,11 @@ def send(sender, data, timestamp, pulse_id):
                                 if not sender.allow_type_changes and old_type!=new_type:
                                     _logger.warning("Invalid channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type),  log_tag))
                                     data[k] = None
+                                    fmt = cur_fmt
                                 if not sender.allow_shape_changes and old_shape!=new_shape:
                                     _logger.warning("Invalid channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  log_tag))
                                     data[k] = None
+                                    fmt = cur_fmt
                             check_header = True
                         sender.data_format[k] = fmt
                 for k in msg_keys_to_remove:
