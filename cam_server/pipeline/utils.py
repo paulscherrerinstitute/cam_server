@@ -240,8 +240,8 @@ def send(sender, data, timestamp, pulse_id):
                         #Type of channel changed: recreate header
                         fmt = get_desc(v)
                         if fmt != cur_fmt:
+                            check_header = True
                             if cur_fmt:
-                                check_header = True
                                 old_shape = cur_fmt[0] if type(cur_fmt) is tuple else 0
                                 old_type = cur_fmt[1] if type(cur_fmt) is tuple else cur_fmt
                                 new_shape = fmt[0] if type(fmt) is tuple else 0

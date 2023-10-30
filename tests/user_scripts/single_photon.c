@@ -20,7 +20,8 @@ double evt_p[EVENT_CHANNELS][MAX_NUM_EVENTS];
 int func_ph_1d_double( double *frame, int i_dim, int j_dim,  double *th_m);
 
 void setArrayToValue(double array[], int size, double value) {
-    for (int i = 0; i < size; i++) {
+    int i;
+    for (i = 0; i < size; i++) {
         array[i] = value;
     }
 }
@@ -84,7 +85,7 @@ int initialize(int size_x, int size_y, PyObject *pars){
     int ret = 1;
 
     threshold = (double *)malloc(size_x*size_y*sizeof(double));
-    double threshold_val = getParDouble(pars, "threshold", 60000.0);
+    double threshold_val = getParDouble(pars, "threshold", 1000.0);
     PyObject* threshold_file = PyDict_GetItemString(pars, "threshold_file");
     if (threshold_file!=NULL){
         const char * threshold_file_str = PyUnicode_AsUTF8(threshold_file);
@@ -174,7 +175,7 @@ PyObject *process(PyObject *self, PyObject *args)
 
 //PyDict_SetItemString(ret,"T0", PyFloat_FromDouble(threshold[0]));
 //PyDict_SetItemString(ret, "Init", PyLong_FromLong(initialized));
-    for (int i=0; i<EVENT_CHANNELS; i++){
+    for (i=0; i<EVENT_CHANNELS; i++){
         sprintf(channel_name, "%s:%s",camera_name_str,  CHANNEL_NAMES[i+1]);
         npy_intp arr_dims[1] = {MAX_NUM_EVENTS};
         //setArrayToValue(evt_p[i],MAX_NUM_EVENTS, i+10.0);
@@ -224,7 +225,7 @@ PyObject *process(PyObject *self, PyObject *args)
           charge = frame[i*j_dim+j]+frame[(i+1)*j_dim+j] + frame[i*j_dim+(j+1)]+frame[(i+1)*j_dim+j+1];
 
           //pixel by pixel threshold
-          th = th_m[i*j_dim +j];
+          th = 3*th_m[i*j_dim +j];
 
           //check if charge above threshold
           if(charge>th) {
@@ -291,5 +292,6 @@ PyObject *process(PyObject *self, PyObject *args)
       }
     }
     return evt_i;
+    //return th_m[0];
  }
 

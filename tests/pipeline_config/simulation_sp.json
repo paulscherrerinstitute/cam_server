@@ -1,5 +1,4 @@
 {
- "_create_header": "once",
  "image_background_enable": false,
  "image_background": "simulation_20230524_162902_414848",
  "image_threshold": null,
@@ -7,6 +6,10 @@
  "image_good_region": null,
  "image_slices": null,
  "pipeline_type": "processing",
+ "allow_type_changes": false,
+ "allow_shape_changes": true,
+ "function": "user_function",
+ "_create_header": "once",
  "camera_name": "simulation",
  "_input_stream": "tcp://localhost:5559",
  "_input_pipeline": "pre_processor",
@@ -22,8 +25,7 @@
  "_bsread_channels": [],
  "_bsread_image_buf": 100,
  "_bsread_data_buf": 100,
- "_function": "mylib.cpython-39-darwin.so",
- "function": "write_epics.py",
+ "_function": "write_epics.py",
  "pv_fit_x": "TESTIOC:TESTCALCOUT:Input",
  "pv_fit_y": "TESTIOC:TESTCALCOUT:Output",
  "debug": false,
@@ -31,11 +33,19 @@
   "simulation",
   "sp"
  ],
- "libs": [
+ "_libs": [
   "tell_client-0.1-py3.9.egg",
   "test.py",
   "linux.zip"
  ],
  "no_client_timeout": 0,
- "reload": true
+ "Marker": [
+  201,
+  99
+ ],
+ "rotation": {
+  "mode": "0.0",
+  "angle": 0.0,
+  "order": 1
+ }
 }
