@@ -249,18 +249,18 @@ def send(sender, data, timestamp, pulse_id):
                                     if sender.allow_type_changes:
                                         _logger.debug("Channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type), log_tag))
                                         check_header = True
-                                        fmt = cur_fmt
                                     else:
                                         _logger.warning("Invalid channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type),  log_tag))
                                         data[k] = None
+                                        fmt = cur_fmt
                                 if old_shape != new_shape:
                                     if sender.allow_shape_changes:
                                         _logger.debug("Channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  log_tag))
                                         check_header = True
-                                        fmt = cur_fmt
                                     else:
                                         _logger.warning("Invalid channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  log_tag))
                                         data[k] = None
+                                        fmt = cur_fmt
                             else:
                                 check_header = True
                         sender.data_format[k] = fmt
