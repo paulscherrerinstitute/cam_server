@@ -240,7 +240,6 @@ def send(sender, data, timestamp, pulse_id):
                         #Type of channel changed: recreate header
                         fmt = get_desc(v)
                         if fmt != cur_fmt:
-                            check_header = True
                             if cur_fmt:
                                 old_shape = cur_fmt[0] if type(cur_fmt) is tuple else 0
                                 old_type = cur_fmt[1] if type(cur_fmt) is tuple else cur_fmt
@@ -249,19 +248,21 @@ def send(sender, data, timestamp, pulse_id):
                                 if old_type != new_type:
                                     if sender.allow_type_changes:
                                         _logger.debug("Channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type), log_tag))
+                                        check_header = True
                                     else:
                                         _logger.warning("Invalid channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type),  log_tag))
                                         data[k] = None
                                         fmt = cur_fmt
-                                        check_header = False
                                 if old_shape != new_shape:
                                     if sender.allow_shape_changes:
                                         _logger.debug("Channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  log_tag))
+                                        check_header = True
                                     else:
                                         _logger.warning("Invalid channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  log_tag))
                                         data[k] = None
                                         fmt = cur_fmt
-                                        check_header = False
+                            else:
+                                check_header = True
                         sender.data_format[k] = fmt
                 for k in msg_keys_to_remove:
                     try:
