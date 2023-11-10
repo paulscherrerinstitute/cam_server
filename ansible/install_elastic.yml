@@ -1,0 +1,38 @@
+- hosts: cam_workers
+  become: true
+
+  tasks:
+   - name: Install filebeat
+     command: sudo yum install filebeat
+
+   - name: Install metric filebeat
+     command: sudo yum install metricbeat
+
+   - name: Copy cert file
+     command: wget http://elkmgt01.psi.ch/psi-elk-ca-cert.pem -P /etc/pki/CA/certs/
+
+    - name: Create filebeat configuration file
+      template: src=./templates/filebeat.yml dest=/etc/filebeat/filebeat.yml owner=root group=root mode=0644
+
+    - name: Create metricbeat configuration file
+      template: src=./templates/metricbeat.yml dest=/etc/metricbeat/metricbeat.yml owner=root group=root mode=0644
+
+
+    - name: Create epics environment file
+      template: src=./templates/camera_environment dest=/cam_server_configuration/camera_environment owner=root group=root mode=0644
+
+    - name: start filebeat service
+      systemd:
+        name: filebeat
+        enabled: yes
+        state: reloaded
+        daemon_reload: yes
+
+    - name: start metricbeat service
+      systemd:
+        name: metricbeat
+        enabled: yes
+        state: reloaded
+        daemon_reload: yes
+
+
