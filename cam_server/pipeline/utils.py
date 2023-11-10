@@ -63,6 +63,7 @@ debug = False
 current_pid, former_pid = None, None
 camera_timeout = None
 stream_timeout = None
+stream_failed= False
 pause = False
 pid_range = None
 downsampling = None
@@ -344,6 +345,7 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=
     downsampling_counter = sys.maxsize  # The first is always sent
 
     stream_timeout = parameters.get("stream_timeout", 10.0)
+    stream_failed = False
 
     if parameters.get("data_compression", config.PIPELINE_BSREAD_DATA_COMPRESSION):
         if parameters.get("data_compression")  == True:
@@ -645,11 +647,12 @@ def _send_data(processed_data, global_timestamp, pulse_id, message_buffer = None
 
 
 def receive_stream(camera=False):
-    global last_rcvd_timestamp, pause, pid_range, downsampling, downsampling_counter, camera_timeout, stream_timeout
+    global last_rcvd_timestamp, pause, pid_range, downsampling, downsampling_counter, camera_timeout, stream_timeout, stream_failed
     pulse_id = global_timestamp = data = None
     rx = source.receive()
 
     if rx:
+        stream_failed = False
         msg=rx.data
         pulse_id = msg.pulse_id
         global_timestamp = (msg.global_timestamp, msg.global_timestamp_offset)
@@ -696,9 +699,11 @@ def receive_stream(camera=False):
                 return pulse_id, global_timestamp, None
     else:
         update_statistics(sender, 0, 0, None)
+        stream_failed = True
         if abort_on_timeout():
             if (stream_timeout > 0) and (time.time() - last_rcvd_timestamp) > stream_timeout:
-                 raise SourceTimeout("Stream Timeout")
+                _logger.warning("Stream timeout. %s" % log_tag)
+                raise SourceTimeout("Stream Timeout")
         if camera:
             if camera_timeout:
                 if (camera_timeout > 0) and (time.time() - last_rcvd_timestamp) > camera_timeout:
@@ -1087,34 +1092,52 @@ def import_egg(egg_name):
         pkg_resources.working_set.add_entry(egg_path)
 
 
-def cleanup():
+def cleanup(exit_code=0):
+    _logger.info("Stopping transceiver. %s" % log_tag)
     global source, sender
+
     if source:
         try:
-            source.disconnect()
+            if stream_failed:
+                _logger.info("Source timeout")
+            else:
+                _logger.info("Disconnecting source")
+                source.disconnect()
         except:
             pass
         finally:
+            _logger.info("Source disconnected")
             source = None
 
     if message_buffer_send_thread:
         try:
+            _logger.info("Joining message buffer send thread")
             message_buffer_send_thread.join(0.1)
         except:
             pass
+        finally:
+            _logger.info("Joined message buffer send thread")
     else:
         if sender:
             try:
+                _logger.info("Closing sender")
                 sender.close()
             except:
                 pass
             finally:
+                _logger.info("Closed sender")
                 sender = None
+    i = 1
     for t in processing_threads:
         if t:
             try:
+                _logger.info("Joinging procecissing thread " + str(i))
                 t.join(0.1)
             except:
                 pass
+            finally:
+                _logger.info("Joingned procecissing thread " + str(i))
     if thread_exit_code!=0:
-        sys.exit(thread_exit_code)
+        exit_code = thread_exit_code
+    _logger.info("Exiting process with exit_code %d. %s" % (exit_code, log_tag))
+    sys.exit(exit_code)

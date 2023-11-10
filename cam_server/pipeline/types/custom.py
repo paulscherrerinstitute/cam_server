@@ -56,8 +56,6 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
         _logger.exception("Exception while trying to start the receive and process thread. %s" % log_tag)
         exit_code = 1
         raise
-
     finally:
-        _logger.info("Stopping transceiver. %s" % log_tag)
-        cleanup()
-        sys.exit(exit_code)
+        stop_event.set()
+        cleanup(exit_code)

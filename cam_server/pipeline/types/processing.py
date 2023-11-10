@@ -290,6 +290,4 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
                 bs_send_thread.join(0.1)
             except:
                 pass
-        cleanup()
-        _logger.debug("Exiting process. %s" % log_tag)
-        sys.exit(exit_code)
+        cleanup(exit_code)

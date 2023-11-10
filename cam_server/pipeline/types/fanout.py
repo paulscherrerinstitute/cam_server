@@ -53,8 +53,5 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
         raise
 
     finally:
-        _logger.info("Stopping transceiver. %s" % log_tag)
         stop_event.set()
-        cleanup()
-        _logger.debug("Exiting process. %s" % log_tag)
-        sys.exit(exit_code)
+        cleanup(exit_code)

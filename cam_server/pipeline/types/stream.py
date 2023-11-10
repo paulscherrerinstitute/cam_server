@@ -60,6 +60,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
                     process_data(process_stream, pulse_id, global_timestamp, stream_data)
 
                 except Exception as e:
+                    _logger.error("Error receiving bsread message: " + str(e) + ". %s" % log_tag)
                     _logger.exception("Could not process message: " + str(e) + ". %s" % log_tag)
                     stop_event.set()
 
@@ -69,8 +70,5 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
         raise
 
     finally:
-        _logger.info("Stopping transceiver. %s" % log_tag)
         stop_event.set()
-        cleanup()
-        _logger.debug("Exiting process. %s" % log_tag)
-        sys.exit(exit_code)
+        cleanup(exit_code)
