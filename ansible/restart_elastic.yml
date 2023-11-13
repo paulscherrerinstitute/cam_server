@@ -1,0 +1,23 @@
+- hosts: cam_workers
+  become: true
+
+  tasks:
+    - name: Reload systemd Config
+      shell: |  
+        systemctl daemon-reload
+
+    - name: Restart services
+      shell: |
+        systemctl restart heartbeat-elastic
+
+- hosts: cam_manager
+  become: true
+
+  tasks:
+    - name: Reload systemd Config
+      shell: |  
+        systemctl daemon-reload
+
+    - name: Restart services
+      shell: |
+        systemctl restart heartbeat-elastic
