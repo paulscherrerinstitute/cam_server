@@ -1,23 +1,102 @@
-###################### Metricbeat Configuration Example #######################
+################### Heartbeat Configuration Example #########################
 
-# This file is an example configuration file highlighting only the most common
-# options. The metricbeat.reference.yml file from the same directory contains all the
-# supported options with more comments. You can use it as a reference.
+# This file is an example configuration file highlighting only some common options.
+# The heartbeat.reference.yml file in the same directory contains all the supported options
+# with detailed comments. You can use it for reference.
 #
 # You can find the full configuration reference here:
-# https://www.elastic.co/guide/en/beats/metricbeat/index.html
+# https://www.elastic.co/guide/en/beats/heartbeat/index.html
 
-# =========================== Modules configuration ============================
+############################# Heartbeat ######################################
 
-metricbeat.config.modules:
-  # Glob pattern for configuration loading
-  path: ${path.config}/modules.d/*.yml
-
-  # Set to true to enable config reloading
+# Define a directory to load monitor definitions from. Definitions take the form
+# of individual yaml files.
+heartbeat.config.monitors:
+  # Directory + glob pattern to search for configuration files
+  path: ${path.config}/monitors.d/*.yml
+  # If enabled, heartbeat will periodically check the config.monitors path for changes
   reload.enabled: false
+  # How often to check for changes
+  reload.period: 5s
 
-  # Period on which files under path should be checked for changes
-  #reload.period: 10s
+# Configure monitors inline
+heartbeat.monitors:
+- type: http
+  # Set enabled to true (or delete the following line) to enable this example monitor
+  enabled: true
+  # ID used to uniquely identify this monitor in elasticsearch even if the config changes
+  id: pipeline_worker-monitor
+  # Human readable display name for this service in Uptime UI and elsewhere
+  name: Pipeline Worker Monitor
+  # List or urls to query
+  urls: [ "http://sf-daqsync-01:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-03:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-08:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-09:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-10:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-11:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-12:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-13:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-14:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-15:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-16:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-17:8881/api/v1/pipeline/info",
+          "http://sf-daqsync-18:8881/api/v1/pipeline/info", ]
+  # Configure task schedule
+  schedule: '@every 10s'
+  # Total test connection and data exchange timeout
+  #timeout: 16s
+  # Name of corresponding APM service, if Elastic APM is in use for the monitored service.
+  #service.name: my-apm-service-namei
+  #response: always
+  check.request:
+    method: GET
+  check.response:
+    status: [200]
+  response.include_body: always
+  response.include_header: false
+
+- type: http
+  # Set enabled to true (or delete the following line) to enable this example monitor
+  enabled: true
+  # ID used to uniquely identify this monitor in elasticsearch even if the config changes
+  id: camera_worker-monitor
+  # Human readable display name for this service in Uptime UI and elsewhere
+  name: Camera Worker Monitor
+  # List or urls to query
+  urls: [ "http://sf-daqsync-01:8880/api/v1/cam/info",
+          "http://sf-daqsync-03:8880/api/v1/cam/info",
+          "http://sf-daqsync-08:8880/api/v1/cam/info",
+          "http://sf-daqsync-09:8880/api/v1/cam/info",
+          "http://sf-daqsync-10:8880/api/v1/cam/info",
+          "http://sf-daqsync-11:8880/api/v1/cam/info",
+          "http://sf-daqsync-12:8880/api/v1/cam/info",
+          "http://sf-daqsync-13:8880/api/v1/cam/info",
+          "http://sf-daqsync-14:8880/api/v1/cam/info",
+          "http://sf-daqsync-15:8880/api/v1/cam/info",
+          "http://sf-daqsync-16:8880/api/v1/cam/info",
+          "http://sf-daqsync-17:8880/api/v1/cam/info",
+          "http://sf-daqsync-18:8880/api/v1/cam/info", ]
+
+  # Configure task schedule
+  schedule: '@every 10s'
+  # Total test connection and data exchange timeout
+  #timeout: 16s
+  # Name of corresponding APM service, if Elastic APM is in use for the monitored service.
+  #service.name: my-apm-service-name
+  #response: always
+  check.request:
+    method: GET
+  check.response:
+    status: [200]
+  response.include_body: always
+  response.include_header: false
+
+
+
+# Experimental: Set this to true to run heartbeat monitors exactly once at startup
+
+#heartbeat.run_once: true
 
 # ======================= Elasticsearch template setting =======================
 
@@ -25,7 +104,6 @@ setup.template.settings:
   index.number_of_shards: 1
   index.codec: best_compression
   #_source.enabled: false
-
 
 # ================================== General ===================================
 
@@ -42,17 +120,6 @@ setup.template.settings:
 #fields:
 #  env: staging
 
-# ================================= Dashboards =================================
-# These settings control loading the sample dashboards to the Kibana index. Loading
-# the dashboards is disabled by default and can be enabled either by setting the
-# options here or by using the `setup` command.
-#setup.dashboards.enabled: false
-
-# The URL from where to download the dashboards archive. By default this URL
-# has a value which is computed based on the Beat name and version. For released
-# versions, this URL points to the dashboard archive on the artifacts.elastic.co
-# website.
-#setup.dashboards.url:
 
 # =================================== Kibana ===================================
 
@@ -73,7 +140,7 @@ setup.kibana:
 
 # =============================== Elastic Cloud ================================
 
-# These settings simplify using Metricbeat with the Elastic Cloud (https://cloud.elastic.co/).
+# These settings simplify using Heartbeat with the Elastic Cloud (https://cloud.elastic.co/).
 
 # The cloud.id setting overwrites the `output.elasticsearch.hosts` and
 # `setup.kibana.host` options.
@@ -126,20 +193,21 @@ output.elasticsearch:
 
 # ================================= Processors =================================
 
-# Configure processors to enhance or manipulate events generated by the beat.
-
 processors:
-  - add_host_metadata: ~
-  - add_cloud_metadata: ~
-  - add_docker_metadata: ~
-  - add_kubernetes_metadata: ~
+  - add_observer_metadata:
+      # Optional, but recommended geo settings for the location Heartbeat is running in
+      #geo:
+        # Token describing this location
+        #name: us-east-1a
+        # Lat, Lon "
+        #location: "37.926868, -78.024902"
 
 
 # ================================== Logging ===================================
 
 # Sets log level. The default log level is info.
 # Available log levels are: error, warning, info, debug
-#logging.level: debug
+logging.level: debug
 
 # At debug level, you can selectively enable logging only for some components.
 # To enable all selectors use ["*"]. Examples of other selectors are "beat",
@@ -147,7 +215,7 @@ processors:
 #logging.selectors: ["*"]
 
 # ============================= X-Pack Monitoring ==============================
-# Metricbeat can export internal metrics to a central Elasticsearch monitoring
+# Heartbeat can export internal metrics to a central Elasticsearch monitoring
 # cluster.  This requires xpack monitoring to be enabled in Elasticsearch.  The
 # reporting is disabled by default.
 
@@ -155,7 +223,7 @@ processors:
 #monitoring.enabled: false
 
 # Sets the UUID of the Elasticsearch cluster under which monitoring data for this
-# Metricbeat instance will appear in the Stack Monitoring UI. If output.elasticsearch
+# Heartbeat instance will appear in the Stack Monitoring UI. If output.elasticsearch
 # is enabled, the UUID is derived from the Elasticsearch cluster referenced by output.elasticsearch.
 #monitoring.cluster_uuid:
 
@@ -170,12 +238,12 @@ processors:
 
 # ============================== Instrumentation ===============================
 
-# Instrumentation support for the metricbeat.
+# Instrumentation support for the heartbeat.
 #instrumentation:
-    # Set to true to enable instrumentation of metricbeat.
+    # Set to true to enable instrumentation of heartbeat.
     #enabled: false
 
-    # Environment in which metricbeat is running on (eg: staging, production, etc.)
+    # Environment in which heartbeat is running on (eg: staging, production, etc.)
     #environment: ""
 
     # APM Server hosts to report instrumentation results to.
@@ -199,8 +267,8 @@ processors:
 #==================== Elasticsearch template setting ==========================
 #This one is imported to create index, otherwise it will use default index
 setup.ilm.enabled: true
-setup.ilm.rollover_alias: "metricbeat-camserver_7.17.5"
-setup.ilm.policy_name: "metricbeat-camserver"
+setup.ilm.rollover_alias: "heartbeat-camserver_7.17.5"
+setup.ilm.policy_name: "heartbeat-camserver"
 setup.template.enabled: false
 #============================== Dashboards =====================================
 setup.dashboards.enabled: false
