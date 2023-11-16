@@ -1,5 +1,6 @@
 import multiprocessing
 import time
+import json
 from logging import getLogger
 from cam_server import __VERSION__
 
@@ -7,7 +8,8 @@ from epics.multiproc import CAProcess as Process
 
 from cam_server import config
 from cam_server.utils import get_port_generator
-from threading import RLock
+from threading import RLock, Timer
+from collections import OrderedDict
 
 try:
     import psutil
@@ -28,6 +30,28 @@ class InstanceManager(object):
         self._used_ports = {}
         self._last_ports = {}
         self.auto_delete_stopped = auto_delete_stopped
+        self.timer = None
+        if config.LOG_NODE_INFO:
+            self.schedule_timer()
+
+    def schedule_timer(self):
+        if self.timer:
+            self.timer.cancel()
+        self.timer = Timer(10, self.timer_callback)
+        self.timer.daemon = True
+        self.timer.start()
+
+    def timer_callback(self):
+        try:
+            info=self.get_info(compact=True)
+            info["type"] = "NODE_INFO"
+            log = json.dumps(info)
+            _logger.info(log)
+        except Exception as e:
+            print (e)
+            pass
+        finally:
+            self.schedule_timer()
 
     def get_next_available_port(self, instance_id, prefer_same_port = False):
         if self.auto_delete_stopped:
@@ -87,7 +111,7 @@ class InstanceManager(object):
             return list(self.instances.keys())
 
 
-    def get_info(self):
+    def get_info(self, compact=False):
         """
         Return the instance manager info.
         :return: Dictionary with the info.
@@ -95,29 +119,50 @@ class InstanceManager(object):
         info = { "version": __VERSION__,
                  "active_instances": dict((instance.get_instance_id(), instance.get_info())
                                          for instance in self.get_instances_values() if instance.is_running())}
-        if psutil:
-            info["cpu"] = psutil.cpu_percent()
-            info["memory"] = psutil.virtual_memory().used
-            net = psutil.net_io_counters()
-            tx = net.bytes_sent
-            rx = net.bytes_recv
-            now = time.time()
-            info["tx"] = None
-            info["rx"] = None
-            if self._info_timestamp:
-                timespan = now - self._info_timestamp
-                if timespan > 0:
-                    info["tx"] = (tx - self._tx) / timespan
-                    info["rx"] = (rx - self._rx) / timespan
-            self._info_timestamp = now
-            self._tx = tx
-            self._rx = rx
-
+        if compact:
+            instances = OrderedDict()
+            active_instances = info.pop("active_instances")
+            names = sorted(active_instances.keys())
+            for instane_name in names:
+                instance_info = active_instances[instane_name]
+                instance = {}
+                for key in ['stream_address', 'camera_name', 'simulation', 'last_start_time','read_only', 'geometry']:
+                    instance[key] = instance_info.get(key)
+                if "statistics" in instance_info.keys():
+                    for key in ['total_bytes', 'clients', 'throughput', 'time', 'pid', 'cpu', 'memory', 'header_changes', 'frame_shape']:
+                        instance[key] = instance_info["statistics"].get(key)
+                    try:
+                        instance["rx"] = float(instance_info["statistics"].get("rx").split("Hz - ")[0])
+                        instance["tx"] = float(instance_info["statistics"].get("tx").split("Hz - ")[0])
+                    except:
+                        instance["rx"] = float("NaN")
+                        instance["tx"] = float("NaN")
+                instances[instane_name] = instance
+            info["instances"] = instances
         else:
-            info["cpu"] = None
-            info["memory"] = None
-            info["tx"] = None
-            info["rx"] = None
+            if psutil:
+                info["cpu"] = psutil.cpu_percent()
+                info["memory"] = psutil.virtual_memory().used
+                net = psutil.net_io_counters()
+                tx = net.bytes_sent
+                rx = net.bytes_recv
+                now = time.time()
+                info["tx"] = None
+                info["rx"] = None
+                if self._info_timestamp:
+                    timespan = now - self._info_timestamp
+                    if timespan > 0:
+                        info["tx"] = (tx - self._tx) / timespan
+                        info["rx"] = (rx - self._rx) / timespan
+                self._info_timestamp = now
+                self._tx = tx
+                self._rx = rx
+
+            else:
+                info["cpu"] = None
+                info["memory"] = None
+                info["tx"] = None
+                info["rx"] = None
         return info
 
     def add_instance(self, instance_name, instance_wrapper):

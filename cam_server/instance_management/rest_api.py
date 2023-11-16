@@ -37,11 +37,19 @@ def register_rest_interface(app, instance_manager, api_root_address):
     @app.get(api_root_address + "/info")
     def get_instance_manager_info():
         """
-        Return the current camera server instance info.
+        Return the current  server instance info.
         """
         return {"state": "ok",
                 "status": "Instance manager info retrieved.",
                 "info": instance_manager.get_info()}
+
+    @app.get(api_root_address + "/heartbeat")
+    def get_heartbeat_info():
+        """
+        Return the node heartbeat info.
+        """
+        return instance_manager.get_info(True)
+
 
     @app.delete(api_root_address + "/<instance_name>")
     def stop_instance(instance_name):

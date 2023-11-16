@@ -25,6 +25,7 @@ INSTANCE_LOGGER = None
 INSTANCE_LOGGER_LEVEL = "INFO"
 INSTANCE_LOG_BUFFER_SIZE = 100
 
+LOG_NODE_INFO = False
 
 ###################
 # Camera settings #

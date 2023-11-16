@@ -29,19 +29,19 @@ heartbeat.monitors:
   # Human readable display name for this service in Uptime UI and elsewhere
   name: Pipeline Worker Monitor
   # List or urls to query
-  urls: [ "http://sf-daqsync-01:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-03:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-08:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-09:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-10:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-11:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-12:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-13:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-14:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-15:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-16:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-17:8881/api/v1/pipeline/info",
-          "http://sf-daqsync-18:8881/api/v1/pipeline/info", ]
+  urls: [ "http://sf-daqsync-01:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-03:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-08:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-09:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-10:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-11:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-12:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-13:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-14:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-15:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-16:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-17:8881/api/v1/pipeline/heartbeat",
+          "http://sf-daqsync-18:8881/api/v1/pipeline/heartbeat", ]
   # Configure task schedule
   schedule: '@every 10s'
   # Total test connection and data exchange timeout
@@ -55,6 +55,7 @@ heartbeat.monitors:
     status: [200]
   response.include_body: always
   response.include_header: false
+  response.include_body_max_bytes: 4096
 
 - type: http
   # Set enabled to true (or delete the following line) to enable this example monitor
@@ -64,20 +65,67 @@ heartbeat.monitors:
   # Human readable display name for this service in Uptime UI and elsewhere
   name: Camera Worker Monitor
   # List or urls to query
-  urls: [ "http://sf-daqsync-01:8880/api/v1/cam/info",
-          "http://sf-daqsync-03:8880/api/v1/cam/info",
-          "http://sf-daqsync-08:8880/api/v1/cam/info",
-          "http://sf-daqsync-09:8880/api/v1/cam/info",
-          "http://sf-daqsync-10:8880/api/v1/cam/info",
-          "http://sf-daqsync-11:8880/api/v1/cam/info",
-          "http://sf-daqsync-12:8880/api/v1/cam/info",
-          "http://sf-daqsync-13:8880/api/v1/cam/info",
-          "http://sf-daqsync-14:8880/api/v1/cam/info",
-          "http://sf-daqsync-15:8880/api/v1/cam/info",
-          "http://sf-daqsync-16:8880/api/v1/cam/info",
-          "http://sf-daqsync-17:8880/api/v1/cam/info",
-          "http://sf-daqsync-18:8880/api/v1/cam/info", ]
+  urls: [ "http://sf-daqsync-01:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-03:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-08:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-09:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-10:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-11:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-12:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-13:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-14:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-15:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-16:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-17:8880/api/v1/cam/heartbeat",
+          "http://sf-daqsync-18:8880/api/v1/cam/heartbeat", ]
 
+  # Configure task schedule
+  schedule: '@every 10s'
+  # Total test connection and data exchange timeout
+  #timeout: 16s
+  # Name of corresponding APM service, if Elastic APM is in use for the monitored service.
+  #service.name: my-apm-service-name
+  #response: always
+  check.request:
+    method: GET
+  check.response:
+    status: [200]
+  response.include_body: always
+  response.include_header: false
+  response.include_body_max_bytes: 4096
+
+- type: http
+  # Set enabled to true (or delete the following line) to enable this example monitor
+  enabled: true
+  # ID used to uniquely identify this monitor in elasticsearch even if the config changes
+  id: pipeline_manager-monitor
+  # Human readable display name for this service in Uptime UI and elsewhere
+  name: Pipeline Manager Monitor
+  # List or urls to query
+  urls: [ "http://sf-daqsync-01:8889/api/v1/pipeline/heartbeat" ]
+  # Configure task schedule
+  schedule: '@every 10s'
+  # Total test connection and data exchange timeout
+  #timeout: 16s
+  # Name of corresponding APM service, if Elastic APM is in use for the monitored service.
+  #service.name: my-apm-service-name
+  #response: always
+  check.request:
+    method: GET
+  check.response:
+    status: [200]
+  response.include_body: always
+  response.include_header: false
+
+- type: http
+  # Set enabled to true (or delete the following line) to enable this example monitor
+  enabled: true
+  # ID used to uniquely identify this monitor in elasticsearch even if the config changes
+  id: camera_manager-monitor
+  # Human readable display name for this service in Uptime UI and elsewhere
+  name: Camera Manager Monitor
+  # List or urls to query
+  urls: [ "http://sf-daqsync-01:8888/api/v1/cam/heartbeat" ]
   # Configure task schedule
   schedule: '@every 10s'
   # Total test connection and data exchange timeout
@@ -93,9 +141,7 @@ heartbeat.monitors:
   response.include_header: false
 
 
-
 # Experimental: Set this to true to run heartbeat monitors exactly once at startup
-
 #heartbeat.run_once: true
 
 # ======================= Elasticsearch template setting =======================
@@ -136,7 +182,7 @@ setup.kibana:
   # Kibana Space ID
   # ID of the Kibana Space into which the dashboards should be loaded. By default,
   # the Default Space will be used.
-  #space.id:
+  space.id: "camserver"
 
 # =============================== Elastic Cloud ================================
 
@@ -165,6 +211,7 @@ output.elasticsearch:
     - esprde02.psi.ch
     - esprde04.psi.ch
 
+  pipeline: camserver_manager_info
   # Protocol - either `http` (default) or `https`.
   protocol: "https"
 
@@ -196,18 +243,18 @@ output.elasticsearch:
 processors:
   - add_observer_metadata:
       # Optional, but recommended geo settings for the location Heartbeat is running in
-      #geo:
+      geo:
         # Token describing this location
-        #name: us-east-1a
+        name: camserver-proxy
         # Lat, Lon "
-        #location: "37.926868, -78.024902"
+        location: "47.535726, 8.2197052"
 
 
 # ================================== Logging ===================================
 
 # Sets log level. The default log level is info.
 # Available log levels are: error, warning, info, debug
-logging.level: debug
+#logging.level: debug
 
 # At debug level, you can selectively enable logging only for some components.
 # To enable all selectors use ["*"]. Examples of other selectors are "beat",
@@ -272,4 +319,3 @@ setup.ilm.policy_name: "heartbeat-camserver"
 setup.template.enabled: false
 #============================== Dashboards =====================================
 setup.dashboards.enabled: false
-

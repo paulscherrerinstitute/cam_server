@@ -283,13 +283,20 @@ class ProxyBase:
         @app.get(api_root_address + '/version')
         def get_version():
             """
-            Get proxy config.
-            :return: Configuration.
+            Get proxy versiom.
+            :return: Version.
             """
 
             return {"state": "ok",
                     "status": "Version",
                     "version":  __VERSION__}
+
+        @app.get(api_root_address + "/heartbeat")
+        def get_heartbeat_info():
+            """
+            Return the proxy heartbeat info.
+            """
+            return {"version":  __VERSION__}
 
 
     def _exists_file(self, folder, file):

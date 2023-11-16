@@ -1,5 +1,5 @@
 FROM paulscherrerinstitute/cam_server:5.5.5
-    RUN conda install -c paulscherrerinstitute -c conda-forge cam_server=5.6.8 && conda clean --all
+    RUN conda install -c paulscherrerinstitute -c conda-forge cam_server=5.6.9 && conda clean --all
 
 #FROM paulscherrerinstitute/cam_server:5.4.0
 #    RUN conda install -c paulscherrerinstitute -c conda-forge cam_server=5.6.0 && conda clean --all && apt-get update --allow-releaseinfo-change && apt-get -y install make gcc
