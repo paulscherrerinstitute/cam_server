@@ -46,7 +46,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
     def bs_send_task(bs_buffer, bs_img_buffer, stop_event):
         global sender
         if number_processing_threads <= 0:
-            _logger.info("Start bs send thread")
+            _logger.info("Start bs send thread. %s" % get_log_tag())
             sender = create_sender(output_stream_port, stop_event)
         try:
             with connect_to_stream() as stream:
@@ -60,10 +60,10 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
                     try:
                         process_bsbuffer(bs_buffer, bs_img_buffer)
                     except Exception as e:
-                        _logger.error("Error processing bs buffer: " + str(e))
+                        _logger.error("Error processing bs buffer: %s. %s" % (str(e), get_log_tag()))
 
         except Exception as e:
-            _logger.error("Error on bs_send_task: " + str(e))
+            _logger.error("Error on bs_send_task: %s. %s" % (str(e), get_log_tag()))
         finally:
             stop_event.set()
             if sender:
@@ -71,23 +71,23 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
                     sender.close()
                 except:
                     pass
-            _logger.info("Exit bs send thread")
+            _logger.info("Exit bs send thread. %s" % get_log_tag())
 
 
     def process_pipeline_parameters():
         parameters = get_parameters()
-        _logger.debug("Processing pipeline parameters %s. %s" % (parameters, log_tag))
+        _logger.debug("Processing pipeline parameters %s. %s" % (parameters, get_log_tag()))
 
         background_array = None
         if parameters.get("image_background_enable"):
             background_id = pipeline_config.get_background_id()
-            _logger.debug("Image background enabled. Using background_id %s. %s" %(background_id, log_tag))
+            _logger.debug("Image background enabled. Using background_id %s. %s" %(background_id, get_log_tag()))
 
             try:
                 background_array = background_manager.get_background(background_id)
                 parameters["image_background_ok"] = True
             except:
-                _logger.warning("Invalid background_id: %s. %s" % (background_id, log_tag))
+                _logger.warning("Invalid background_id: %s. %s" % (background_id, get_log_tag()))
                 #if abort_on_error():
                 #    raise
                 parameters["image_background_ok"] = False
@@ -103,14 +103,14 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
             if background_array is not None:
                 background_array, _, _ = binning(background_array, None, None, bx, by, bm)
                 if background_array.shape != (size_y, size_x):
-                    _logger.warning("Bad background shape: %s instead of %s. %s" % (image_background_array.shape, (size_y, size_x), log_tag))
+                    _logger.warning("Bad background shape: %s instead of %s. %s" % (image_background_array.shape, (size_y, size_x), get_log_tag()))
 
         image_region_of_interest = parameters.get("image_region_of_interest")
         if image_region_of_interest:
             _, size_x, _, size_y = image_region_of_interest
 
         if size_x and size_y:
-            _logger.debug("Image width %d and height %d. %s" % (size_x, size_y, log_tag))
+            _logger.debug("Image width %d and height %d. %s" % (size_x, size_y, get_log_tag()))
 
 
         if parameters.get("rotation"):
@@ -166,7 +166,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
             #print("Processing PID %d  at proc %d thread %d" % (pulse_id, os.getpid(), threading.get_ident()))
             return processed_data
         except Exception as e:
-            _logger.warning("Error processing PID %d at proc %d thread %d: %s" % (pulse_id, os.getpid(), threading.get_ident(), str(e)))
+            _logger.warning("Error processing PID %d at proc %d thread %d: %s. %s" % (pulse_id, os.getpid(), threading.get_ident(), str(e), get_log_tag()))
             if abort_on_error():
                 raise
 
@@ -179,7 +179,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
         pipeline_parameters, image_background_array = process_pipeline_parameters()
         connect_to_camera(cam_client)
 
-        _logger.debug("Opening output stream on port %d. %s" % (output_stream_port, log_tag))
+        _logger.info("Opening output stream on port %d. %s" % (output_stream_port, get_log_tag()))
 
         # Indicate that the startup was successful.
         stop_event.clear()
@@ -196,7 +196,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
         else:
             setup_sender(output_stream_port, stop_event, process_image, user_scripts_manager)
 
-        _logger.debug("Transceiver started. %s" % (log_tag))
+        _logger.info("Transceiver started. %s" % (get_log_tag()))
 
         image_buffer = []
         while not stop_event.is_set():
@@ -274,16 +274,16 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
                 break
             except Exception as e:
                 exit_code = 2
-                _logger.exception("Could not process message %s: %s" % (log_tag, str(e)))
+                _logger.exception("Error in pipeline processing: %s. %s" % (str(e), get_log_tag()))
                 break
 
     except Exception as e:
         exit_code = 1
-        _logger.exception("Exception while trying to start the receive and process thread %s: %s" % (log_tag, str(e)))
+        _logger.exception("Exception trying to start the receive thread: %s. %s" % (str(e), get_log_tag()))
         raise
 
     finally:
-        _logger.info("Stopping transceiver. %s" % log_tag)
+        _logger.info("Stopping transceiver. %s" % get_log_tag())
         stop_event.set()
         if bs_send_thread:
             try:

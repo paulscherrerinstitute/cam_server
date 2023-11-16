@@ -22,7 +22,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
         except Exception as e:
             #import traceback
             #traceback.print_exc()
-            _logger.warning("Error processing PID %d at proc %d thread %d: %s" % (pulse_id, os.getpid(), threading.get_ident(), str(e)))
+            _logger.warning("Error processing PID %d at proc %d thread %d: %s. %s" % (pulse_id, os.getpid(), threading.get_ident(), str(e), get_log_tag()))
             if abort_on_error():
                 raise
 
@@ -36,7 +36,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
         setup_sender(output_stream_port, stop_event, process_stream, user_scripts_manager)
 
 
-        _logger.debug("Transceiver started. %s" % log_tag)
+        _logger.info("Transceiver started. %s" % get_log_tag())
 
         with connect_to_stream():
             while not stop_event.is_set():
@@ -54,18 +54,17 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
                         for key, value in data.items():
                             stream_data[key] = value.value
                     except Exception as e:
-                        _logger.error("Error parsing bsread message: " + str(e) + ". %s" % log_tag)
+                        _logger.error("Error parsing bsread message: %s. %s" % (str(e), get_log_tag()))
                         continue
 
                     process_data(process_stream, pulse_id, global_timestamp, stream_data)
 
                 except Exception as e:
-                    _logger.error("Error receiving bsread message: " + str(e) + ". %s" % log_tag)
-                    _logger.exception("Could not process message: " + str(e) + ". %s" % log_tag)
+                    _logger.exception("Error in pipeline processing: %s. %s" % (str(e), get_log_tag()))
                     stop_event.set()
 
     except Exception as e:
-        _logger.exception("Exception starting the receive thread: " + str(e) + ". %s" % log_tag)
+        _logger.exception("Exception trying to start the receive thread: %s. %s" % (str(e), get_log_tag()))
         exit_code = 1
         raise
 
