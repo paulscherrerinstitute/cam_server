@@ -296,7 +296,7 @@ class ProxyBase:
             """
             Return the proxy heartbeat info.
             """
-            return {"version":  __VERSION__}
+            return {"state": "ok", "status": "Heartbeat", "version":  __VERSION__}
 
 
     def _exists_file(self, folder, file):

@@ -48,7 +48,10 @@ def register_rest_interface(app, instance_manager, api_root_address):
         """
         Return the node heartbeat info.
         """
-        return instance_manager.get_info(True)
+        return {"state": "ok",
+                "status": "Heartbeat",
+                "version":  __VERSION__ ,
+                "instances":  instance_manager.get_info(True)}
 
 
     @app.delete(api_root_address + "/<instance_name>")

@@ -31,7 +31,7 @@ class InstanceManager(object):
         self._last_ports = {}
         self.auto_delete_stopped = auto_delete_stopped
         self.timer = None
-        if config.LOG_NODE_INFO:
+        if config.LOG_INSTANCES_INFO:
             self.schedule_timer()
 
     def schedule_timer(self):
@@ -43,8 +43,7 @@ class InstanceManager(object):
 
     def timer_callback(self):
         try:
-            info=self.get_info(compact=True)
-            info["type"] = "NODE_INFO"
+            info={"instances": self.get_info(True)}
             log = json.dumps(info)
             _logger.info(log)
         except Exception as e:
@@ -111,7 +110,7 @@ class InstanceManager(object):
             return list(self.instances.keys())
 
 
-    def get_info(self, compact=False):
+    def get_info(self, instances_only=False):
         """
         Return the instance manager info.
         :return: Dictionary with the info.
@@ -119,7 +118,7 @@ class InstanceManager(object):
         info = { "version": __VERSION__,
                  "active_instances": dict((instance.get_instance_id(), instance.get_info())
                                          for instance in self.get_instances_values() if instance.is_running())}
-        if compact:
+        if instances_only:
             instances = OrderedDict()
             active_instances = info.pop("active_instances")
             names = sorted(active_instances.keys())
@@ -138,7 +137,7 @@ class InstanceManager(object):
                         instance["rx"] = float("NaN")
                         instance["tx"] = float("NaN")
                 instances[instane_name] = instance
-            info["instances"] = instances
+            return instances
         else:
             if psutil:
                 info["cpu"] = psutil.cpu_percent()
