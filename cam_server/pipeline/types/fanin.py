@@ -21,8 +21,6 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
 
         connect_to_source(cam_client)
         setup_sender(output_stream_port, stop_event)
-        buffer_size = get_parameters().get("buffer_size",0)
-        #message_buffer = {}
 
         _logger.info("Transceiver started. %s" % get_log_tag())
 
@@ -40,13 +38,6 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
                     _logger.error("Error parsing bsread message: %s. %s" % (str(e), get_log_tag()))
                     continue
 
-                #if buffer_size > 1:
-                #    message_buffer[pulse_id] = (stream_data, global_timestamp, pulse_id)
-                #    while len(message_buffer)>=buffer_size:
-                #        pulse_id = min(message_buffer.keys())
-                #        tx = message_buffer.pop(pulse_id)
-                #        send_data(*tx)
-                #else:
                 send_data(stream_data, global_timestamp, pulse_id)
             except Exception as e:
                 _logger.exception("Exception trying to start the receive thread: %s. %s" % (str(e), get_log_tag()))

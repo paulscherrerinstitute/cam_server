@@ -385,6 +385,7 @@ def check_parameters_changes():
     while not _parameter_queue.empty():
         new_parameters = _parameter_queue.get()
         _pipeline_config.set_configuration(new_parameters)
+        _logger.info("Configuration update: %s. %s" % (str(new_parameters), get_log_tag()))
         changed = True
     if changed:
         init_pipeline_parameters(_pipeline_config, _parameter_queue, _logs_queue, _user_scripts_manager, _parameters_post_proc)
