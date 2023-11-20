@@ -32,7 +32,7 @@ class CustomLogFormatter(logging.Formatter):
     def format(self, record):
         global log_suffix
         original = record.msg
-        record.msg += log_suffix
+        record.msg = str(record.msg) + str(log_suffix)
         ret = super().format(record)
         record.msg = original
         return ret
