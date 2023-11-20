@@ -136,6 +136,13 @@ class InstanceManager(object):
                     except:
                         instance["rx"] = float("NaN")
                         instance["tx"] = float("NaN")
+                    try:
+                        if " + " in instance["clients"]:
+                            aux = instance["clients"].split(" + ")
+                            instance["clients"],  instance["forwards"] = int(aux[0]), int(aux[1])
+                    except:
+                        pass
+
                 instances[instane_name] = instance
             return instances
         else:
