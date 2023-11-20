@@ -21,7 +21,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
         max_frame_rate = get_parameters().get("max_frame_rate")
         sample_interval = (1.0 / max_frame_rate) if max_frame_rate else None
 
-        _logger.info("Transceiver started. %s" % get_log_tag())
+        _logger.info("Transceiver started.%s" % get_log_tag())
         # Indicate that the startup was successful.
         stop_event.clear()
         init=True
@@ -46,14 +46,14 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
                         time.sleep(sleep)
 
             except Exception as e:
-                _logger.exception("Error in pipeline processing: %s. %s" % (str(e), get_log_tag()))
+                _logger.exception("Error in pipeline processing: %s.%s" % (str(e), get_log_tag()))
                 if abort_on_error():
                     stop_event.set()
 
-        _logger.info("Stopping transceiver. %s" % log_tag)
+        _logger.info("Stopping transceiver.%s" % log_tag)
 
     except:
-        _logger.exception("Exception trying to start the receive thread: %s. %s" % (str(e), get_log_tag()))
+        _logger.exception("Exception trying to start the receive thread: %s.%s" % (str(e), get_log_tag()))
         exit_code = 1
         raise
     finally:

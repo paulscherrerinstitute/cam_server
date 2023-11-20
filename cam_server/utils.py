@@ -1,7 +1,6 @@
 import collections
 import logging
 from itertools import cycle
-from logging import getLogger
 
 from bottle import response
 from mflow.tools import ConnectionCountMonitor
@@ -24,6 +23,55 @@ import signal
 from cam_server import config
 from cam_server_client.utils import *
 
+
+#Management of log sufixes
+log_suffix = None
+original_get_logger = logging.getLogger
+
+class CustomLogFormatter(logging.Formatter):
+    def format(self, record):
+        global log_suffix
+        original = record.msg
+        record.msg += log_suffix
+        ret = super().format(record)
+        record.msg = original
+        return ret
+
+custom_log_formatter = CustomLogFormatter()
+def set_log_suffix(suffix):
+    global log_suffix, custom_log_formatter
+    log_suffix = suffix
+    for name,logger in logging.Logger.manager.loggerDict.items():
+        config_logger(name, logger)
+
+def get_log_suffix():
+    return log_suffix
+
+def config_logger(name, logger):
+    if log_suffix is not None:
+        if logger is not logging.root:
+            try:
+                if not logger.handlers:
+                    if name and not name.startswith(config.APP_LOGGER):
+                        logger.propagate = False
+                    handler = logging.StreamHandler()
+                    handler.setFormatter(custom_log_formatter)
+                    logger.addHandler(handler)
+                else:
+                    for handler in logger.handlers:
+                        handler.setFormatter(custom_log_formatter)
+            except:
+                pass
+
+def getLogger(name=None):
+    global original_get_logger, log_suffix, custom_log_formatter
+    logger = original_get_logger(name)
+    config_logger(name, logger)
+    return logger
+
+#logging._defaultFormatter = custom_log_formatter
+#logging._handlerList = []
+logging.getLogger = getLogger
 _logger = getLogger(__name__)
 
 
@@ -541,5 +589,3 @@ def synchronise_threads(number_of_threads):
         if _thread_count == number_of_threads:
             _thread_event.set()
     _thread_event.wait()
-
-

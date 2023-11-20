@@ -21,7 +21,7 @@ from cam_server.ipc import IpcSource
 from cam_server.loader import load_module
 from cam_server.otel import otel_get_tracer, otel_get_meter, otel_setup_logs
 from cam_server.pipeline.data_processing.processor import process_image as default_image_process_function
-from cam_server.utils import on_message_sent, get_statistics, update_statistics, MaxLenDict, get_clients, setup_instance_logs, timestamp_as_float
+from cam_server.utils import on_message_sent, get_statistics, update_statistics, MaxLenDict, get_clients, setup_instance_logs, timestamp_as_float, set_log_suffix, get_log_suffix
 from cam_server.writer import WriterSender, UNDEFINED_NUMBER_OF_RECORDS
 from cam_server_client.utils import get_host_port_from_stream_address
 
@@ -126,11 +126,11 @@ def create_sender(output_stream_port, stop_event):
         global sender
         nonlocal pars
         if pars["no_client_timeout"] > 0:
-            _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s" %(pars["no_client_timeout"], get_log_tag()))
+            _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance.%s" %(pars["no_client_timeout"], get_log_tag()))
             stop_event.set()
             if sender:
                 if pars["mode"] == "PUSH" and pars["block"]:
-                    _logger.warning("Killing the process: cannot stop gracefully if sender is blocking. %s" % get_log_tag())
+                    _logger.warning("Killing the process: cannot stop gracefully if sender is blocking.%s" % get_log_tag())
                     os._exit(0)
 
     if pars["mode"] == "FILE":
@@ -161,9 +161,9 @@ def create_sender(output_stream_port, stop_event):
                         data_compression=pars["data_compression"]
                         )
         if pars["data_compression"]:
-            _logger.info("Created sender with data compression: %s. %s" %(str(pars["data_compression"]), get_log_tag()))
+            _logger.info("Created sender with data compression: %s.%s" %(str(pars["data_compression"]), get_log_tag()))
         if pars["data_header_compression"]:
-            _logger.info("Created sender with header compression: %s. %s" % (str(pars["data_header_compression"]), get_log_tag()))
+            _logger.info("Created sender with header compression: %s.%s" % (str(pars["data_header_compression"]), get_log_tag()))
     sender.open(no_client_action=no_client_action, no_client_timeout=pars["no_client_timeout"]
                 if pars["no_client_timeout"] > 0 else sys.maxsize)
     init_sender(sender, pars)
@@ -189,16 +189,16 @@ def send(sender, data, timestamp, pulse_id):
     try:
         if sender.check_timestamp:
             if (pulse_id % 1000000) != (timestamp[1] % 1000000):
-                _logger.info("Received incompatible Timestamp: %s  PID: %d  %s" % (str(timestamp), pulse_id, get_log_tag()))
+                _logger.info("Received incompatible Timestamp: %s  PID: %d %s" % (str(timestamp), pulse_id, get_log_tag()))
                 return
         if sender.enforce_pid:
             if pulse_id <= sender.last_pid:
-                _logger.warning("Sending invalid PID: %d - last: %d . %s" % (pulse_id, sender.last_pid, get_log_tag()))
+                _logger.warning("Sending invalid PID: %d - last: %d %s" % (pulse_id, sender.last_pid, get_log_tag()))
                 return
         if sender.enforce_timestamp:
             timestamp_float = timestamp_as_float(timestamp)
             if timestamp_float <= sender.last_timestamp_float:
-                _logger.warning("Sending invalid Timestamp: %s %f - last: %s %f PID: %d - last: %d . %s" % (str(timestamp), timestamp_float, str(sender.last_timestamp), sender.last_timestamp_float, pulse_id, sender.last_pid, get_log_tag()))
+                _logger.warning("Sending invalid Timestamp: %s %f - last: %s %f PID: %d - last: %d %s" % (str(timestamp), timestamp_float, str(sender.last_timestamp), sender.last_timestamp_float, pulse_id, sender.last_pid, get_log_tag()))
                 return
             sender.last_timestamp = timestamp
             sender.last_timestamp_float = timestamp_float
@@ -249,18 +249,18 @@ def send(sender, data, timestamp, pulse_id):
                                 new_type = fmt[1] if type(fmt) is tuple else fmt
                                 if old_type != new_type:
                                     if sender.allow_type_changes:
-                                        _logger.debug("Channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type), get_log_tag()))
+                                        _logger.debug("Channel %s type change: %s to %s.%s" % (k, str(old_type), str(new_type), get_log_tag()))
                                         check_header = True
                                     else:
-                                        _logger.warning("Invalid channel %s type change: %s to %s. %s" % (k, str(old_type), str(new_type),  get_log_tag()))
+                                        _logger.warning("Invalid channel %s type change: %s to %s.%s" % (k, str(old_type), str(new_type),  get_log_tag()))
                                         data[k] = None
                                         fmt = cur_fmt
                                 if old_shape != new_shape:
                                     if sender.allow_shape_changes:
-                                        _logger.debug("Channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  get_log_tag()))
+                                        _logger.debug("Channel %s shape change: %s to %s.%s" % (k, str(old_shape), str(new_shape),  get_log_tag()))
                                         check_header = True
                                     else:
-                                        _logger.warning("Invalid channel %s shape change: %s to %s. %s" % (k, str(old_shape), str(new_shape),  get_log_tag()))
+                                        _logger.warning("Invalid channel %s shape change: %s to %s.%s" % (k, str(old_shape), str(new_shape),  get_log_tag()))
                                         data[k] = None
                                         fmt = cur_fmt
                             else:
@@ -283,7 +283,7 @@ def send(sender, data, timestamp, pulse_id):
 
 
             except Exception as ex:
-                _logger.warning("Exception checking header change: " + str(ex) + ". %s" % get_log_tag())
+                _logger.warning("Exception checking header change: " + str(ex) + ".%s" % get_log_tag())
                 sender.data_format = None
                 data = None
         if data:
@@ -294,7 +294,7 @@ def send(sender, data, timestamp, pulse_id):
             if sender.records:
                 check_records(sender)
     except Exception as ex:
-        _logger.exception("Exception in the sender: " + str(ex) + ". %s" % get_log_tag())
+        _logger.exception("Exception in the sender: " + str(ex) + ".%s" % get_log_tag())
         raise
 
 
@@ -302,18 +302,20 @@ def get_parameters():
     return _parameters
 
 
-def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=None, user_scripts_manager=None, post_processsing_function=None, port=-0):
+def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=None, user_scripts_manager=None, post_processsing_function=None, port=None):
     global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
     global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout, stream_timeout, max_frame_rate, last_sent_timestamp
     global camera_name, output_stream_port, pipeline_name
     camera_name = pipeline_config.get_camera_name()
     pipeline_name = pipeline_config.get_name()
-    output_stream_port = port
+    if port is not None:
+        output_stream_port = port
 
-    if camera_name:
-        set_log_tag(" [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(port) + "]")
-    else:
-        set_log_tag(" [" + str(pipeline_config.get_name()) + ":" + str(port) + "]")
+    #if camera_name:
+    #    set_log_tag(" [" + str(camera_name) + " | " + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
+    #else:
+    #    set_log_tag(" [" + str(pipeline_config.get_name()) + ":" + str(output_stream_port) + "]")
+    set_log_suffix(" [name:%s]" % (str(pipeline_config.get_name())))
     parameters = pipeline_config.get_configuration()
     if parameters.get("no_client_timeout") is None:
         parameters["no_client_timeout"] = config.MFLOW_NO_CLIENTS_TIMEOUT
@@ -360,12 +362,15 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=
     else:
         parameters["data_header_compression"] = None
 
-    _parameter_queue = parameter_queue
+    if parameter_queue is not None:
+        _parameter_queue = parameter_queue
     _parameters = parameters
     #_parameters.clear()
     #_parameters.update(parameters)
-    _user_scripts_manager = user_scripts_manager
-    _parameters_post_proc = post_processsing_function
+    if user_scripts_manager is not None:
+        _user_scripts_manager = user_scripts_manager
+    if post_processsing_function is not None:
+        _parameters_post_proc = post_processsing_function
     _pipeline_config = pipeline_config
 
     if user_scripts_manager and user_scripts_manager.get_lib_home():
@@ -385,7 +390,7 @@ def check_parameters_changes():
     while not _parameter_queue.empty():
         new_parameters = _parameter_queue.get()
         _pipeline_config.set_configuration(new_parameters)
-        _logger.info("Configuration update: %s. %s" % (str(new_parameters), get_log_tag()))
+        _logger.info("Configuration update: %s.%s" % (str(new_parameters), get_log_tag()))
         changed = True
     if changed:
         init_pipeline_parameters(_pipeline_config, _parameter_queue, _logs_queue, _user_scripts_manager, _parameters_post_proc)
@@ -438,9 +443,9 @@ def get_function(pipeline_parameters, user_scripts_manager):
         reload = pipeline_parameters.get("reload")
         if (not f) or reload:
             if (not f):
-                _logger.info("Importing function: %s. %s" % (name, get_log_tag()))
+                _logger.info("Importing function: %s.%s" % (name, get_log_tag()))
             else:
-                _logger.info("Reloading function: %s. %s" % (name, get_log_tag()))
+                _logger.info("Reloading function: %s.%s" % (name, get_log_tag()))
             module_name = name # 'mod'
             if '/' in name:
                 mod = load_source(module_name, name)
@@ -462,7 +467,7 @@ def get_function(pipeline_parameters, user_scripts_manager):
     except Exception as e:
             #import traceback
             #traceback.print_exc()
-            _logger.exception("Could not import function %s: %s. %s" % (str(name), str(e), get_log_tag()))
+            _logger.exception("Could not import function %s: %s.%s" % (str(name), str(e), get_log_tag()))
             return None
 
 def create_source(camera_stream_address, receive_timeout=config.PIPELINE_RECEIVE_TIMEOUT, mode=SUB):
@@ -494,7 +499,7 @@ def connect_to_camera(_cam_client):
     cam_client=_cam_client
     current_pid, former_pid = None, None
     camera_stream_address, source_host, source_port, source_mode = resolve_camera_source(cam_client)
-    _logger.warning("Connecting to camera stream address %s. %s" % (camera_stream_address, get_log_tag()))
+    _logger.warning("Connecting to camera stream address %s.%s" % (camera_stream_address, get_log_tag()))
     if (source is None) or (source_host != camera_host) or (source_port != camera_port):
         if source:
             try:
@@ -674,9 +679,9 @@ def receive_stream(camera=False):
                 if pulse_id != expected:
                     lost = int((pulse_id - expected)/modulo)
                     if lost > 0:
-                        _logger.warning("Unexpected PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", cur:" + str(current_pid) + ", lost:" + str(lost) + ". " + get_log_tag())
+                        _logger.warning("Unexpected PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", cur:" + str(current_pid) + ", lost:" + str(lost) + "." + get_log_tag())
                     else:
-                        _logger.debug("Newer PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", cur:" + str(current_pid) + ". " + get_log_tag())
+                        _logger.debug("Newer PID: " + str(pulse_id) + " -  last: " + str(former_pid) + ", cur:" + str(current_pid) + "." + get_log_tag())
                     current_pid, former_pid = None, None
             former_pid = current_pid
             current_pid = pulse_id
@@ -689,7 +694,7 @@ def receive_stream(camera=False):
             if (pid_range[0] <= 0) or (pulse_id < pid_range[0]):
                 return pulse_id, global_timestamp, None
             elif (pid_range[1] > 0) and (pulse_id > pid_range[1]):
-                _logger.warning("Reached end of pid range: stopping pipeline. %s" % get_log_tag())
+                _logger.warning("Reached end of pid range: stopping pipeline.%s" % get_log_tag())
                 raise ProcessingCompleted("End of pid range")
 
         # Check downsampling parameter
@@ -704,12 +709,12 @@ def receive_stream(camera=False):
         stream_failed = True
         if abort_on_timeout():
             if (stream_timeout > 0) and (time.time() - last_rcvd_timestamp) > stream_timeout:
-                _logger.warning("Stream timeout. %s" % get_log_tag())
+                _logger.warning("Stream timeout.%s" % get_log_tag())
                 raise SourceTimeout("Stream Timeout")
         if camera:
             if camera_timeout:
                 if (camera_timeout > 0) and (time.time() - last_rcvd_timestamp) > camera_timeout:
-                    _logger.warning("Camera timeout. %s" % get_log_tag())
+                    _logger.warning("Camera timeout.%s" % get_log_tag())
                     last_rcvd_timestamp = time.time()
                     # Try reconnecting to the camera. If fails raise exception and stops pipeline.
                     connect_to_camera(cam_client)
@@ -766,7 +771,7 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
                     received_pids.append(pulse_id)
                 if lost_pid is not None:
                     if debug:
-                        _logger.error("Thread %d buffer full: lost PID %d. %s" % (index, lost_pid, get_log_tag()))
+                        _logger.error("Thread %d buffer full: lost PID %d.%s" % (index, lost_pid, get_log_tag()))
             return
         processed_data = _process_data(processing_function, pulse_id, global_timestamp, function, *args)
         if processed_data is not None:
@@ -832,13 +837,13 @@ def setup_sender(output_port, stop_event, pipeline_processing_function=None, use
                     received_pids = multiprocessing.Queue()
                     tx_queue = multiprocessing.Queue(send_buffer_size)
                 spawn_send_thread = pars.get("spawn_send_thread", True)
-                message_buffer_send_thread = multiprocessing.Process(target=process_send_task, args=(output_port, tx_queue, received_pids, spawn_send_thread, stop_event, pars, log_tag))
+                message_buffer_send_thread = multiprocessing.Process(target=process_send_task, args=(output_port, tx_queue, received_pids, spawn_send_thread, stop_event, pars, get_log_suffix()))
                 message_buffer_send_thread.start()
                 for i in range(number_processing_threads):
                     thread_buffer = multiprocessing.Queue(thread_buffer_size)
                     thread_buffers.append(thread_buffer)
                     processing_thread = multiprocessing.Process(target=process_task, args=( #TODO change config in processes
-                    pipeline_processing_function, thread_buffer, tx_queue, stop_event, i, user_scripts_manager, pars, log_tag))
+                    pipeline_processing_function, thread_buffer, tx_queue, stop_event, i, user_scripts_manager, pars, get_log_suffix()))
                     processing_threads.append(processing_thread)
                     processing_thread.start()
             else:
@@ -862,7 +867,7 @@ def setup_sender(output_port, stop_event, pipeline_processing_function=None, use
 def message_buffer_send_task(message_buffer, output_port, stop_event):
     global sender
     pars = get_parameters()
-    _logger.info("Start message buffer send thread. %s" % get_log_tag())
+    _logger.info("Start message buffer send thread.%s" % get_log_tag())
     create_sender(output_port, stop_event)
     try:
         while not stop_event.is_set():
@@ -873,7 +878,7 @@ def message_buffer_send_task(message_buffer, output_port, stop_event):
                 send(sender, processed_data, timestamp, pulse_id)
 
     except Exception as e:
-        _logger.error("Error on message buffer send thread: %s. %s" % (str(e), get_log_tag()))
+        _logger.error("Error on message buffer send thread: %s.%s" % (str(e), get_log_tag()))
     finally:
         stop_event.set()
         if sender:
@@ -883,13 +888,13 @@ def message_buffer_send_task(message_buffer, output_port, stop_event):
                 pass
             finally:
                 sender = None
-        _logger.info("Exit message buffer send thread. %s" % get_log_tag())
+        _logger.info("Exit message buffer send thread.%s" % get_log_tag())
 
 
 #Multi-threading
 def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pids, stop_event, index):
     global thread_exit_code, debug
-    _logger.info("Start processing thread %d: %d. %s" % (index,threading.get_ident(), get_log_tag()))
+    _logger.info("Start processing thread %d: %d.%s" % (index,threading.get_ident(), get_log_tag()))
     try:
         while not stop_event.is_set():
             with tx_lock:
@@ -905,12 +910,12 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
             processed_data = _process_data(process_function, pulse_id, global_timestamp, function, *args)
             if processed_data is None:
                 if debug:
-                    _logger.info ("Error processing PID %d at thread %d. %s" % (pulse_id, index, get_log_tag()))
+                    _logger.info ("Error processing PID %d at thread %d.%s" % (pulse_id, index, get_log_tag()))
                 try:
                     with tx_lock:
                         received_pids.remove(pulse_id)
                 except:
-                    _logger.warning("Error removing PID %d at thread %d. %s" % (pulse_id, index, get_log_tag()))
+                    _logger.warning("Error removing PID %d at thread %d.%s" % (pulse_id, index, get_log_tag()))
             else:
                 lost_pid = None
                 with tx_lock:
@@ -925,18 +930,18 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
                         tx_buffer[pulse_id] = (processed_data, global_timestamp, pulse_id, message_buffer)
                 if lost_pid:
                     if debug:
-                        _logger.info("Send buffer full - removing oldest PID: %d at thread %d. %s" % (pulse_id, index, get_log_tag()))
+                        _logger.info("Send buffer full - removing oldest PID: %d at thread %d.%s" % (pulse_id, index, get_log_tag()))
 
     except Exception as e:
         thread_exit_code = 2
-        _logger.error("Error on processing thread %d: %s" % (index, str(e), get_log_tag() ))
+        _logger.error("Error on processing thread %d:%s" % (index, str(e), get_log_tag() ))
     finally:
         stop_event.set()
-        _logger.info("Exit processing thread %d. %s" % (index, get_log_tag()))
+        _logger.info("Exit processing thread %d.%s" % (index, get_log_tag()))
 
 
 def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event):
-    _logger.info("Start threaded processing send thread. %s" % get_log_tag())
+    _logger.info("Start threaded processing send thread.%s" % get_log_tag())
     sender = create_sender(output_port, stop_event)
     pid = None
     try:
@@ -960,10 +965,10 @@ def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event)
             else:
                 if popped:
                     if debug:
-                        _logger.error("Removed timed-out processing -  Pulse ID: %s. %s" % (str(pid),  get_log_tag()))
+                        _logger.error("Removed timed-out processing -  Pulse ID: %s.%s" % (str(pid),  get_log_tag()))
                 time.sleep(0.01)
     except Exception as e:
-        _logger.error("Error on threaded processing send thread: %s. %s" % (str(e), get_log_tag()))
+        _logger.error("Error on threaded processing send thread: %s.%s" % (str(e), get_log_tag()))
     finally:
         stop_event.set()
         if sender:
@@ -971,15 +976,16 @@ def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event)
                 sender.close()
             except:
                 pass
-        _logger.info("Exit threaded processing send thread. %s" % get_log_tag())
+        _logger.info("Exit threaded processing send thread.%s" % get_log_tag())
 
 
 # Multi-processing
 def process_task(process_function, thread_buffer, tx_queue, stop_event, index, user_scripts_manager, pipeline_config, ltag):
-    global log_tag
+    #global log_tag
     global _parameters
-    log_tag = ltag
-    _logger.info("Start process %d: %d. %s" % (index, os.getpid(), get_log_tag()))
+    #log_tag = ltag
+    set_log_suffix(ltag)
+    _logger.info("Start process %d: %d.%s" % (index, os.getpid(), get_log_tag()))
 
     try:
         while not stop_event.is_set():
@@ -995,17 +1001,17 @@ def process_task(process_function, thread_buffer, tx_queue, stop_event, index, u
             try:
                 tx_queue.put((processed_data, global_timestamp, pulse_id, message_buffer), False)
             except Exception as e:
-                _logger.error("Error adding to tx buffer %d: %s. %s" % (index, str(e), get_log_tag()))
+                _logger.error("Error adding to tx buffer %d: %s.%s" % (index, str(e), get_log_tag()))
             #_logger.info("Processed message %d in process %d" % (pulse_id, index))
 
 
     except Exception as e:
-        _logger.error("Error on process %d: %s. %s" % (index, str(e), get_log_tag()))
+        _logger.error("Error on process %d: %s.%s" % (index, str(e), get_log_tag()))
         #import traceback
         #traceback.print_exc()
     finally:
         stop_event.set()
-        _logger.info("Exit process  %d. %s" % (index, get_log_tag()))
+        _logger.info("Exit process  %d.%s" % (index, get_log_tag()))
         sys.exit(0)
 
 
@@ -1015,7 +1021,7 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
 
     sender = None
     _parameters = pars
-    _logger.info("Start send process. %s" % get_log_tag())
+    _logger.info("Start send process.%s" % get_log_tag())
     received_pids = deque()
     tx_buffer = MaxLenDict(maxlen=(tx_queue._maxsize))
 
@@ -1059,7 +1065,7 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
                             if size >= tx_buffer.maxlen:
                                 pid = received_pids.popleft()
                                 if get_parameters().get("debug"):
-                                    _logger.error("Timeout processing PID %s. %s" % (str(pid), get_log_tag()))
+                                    _logger.error("Timeout processing PID %s.%s" % (str(pid), get_log_tag()))
                         if tx is not None:
                             _send_data(processed_data, global_timestamp, pulse_id, message_buffer)
                         else:
@@ -1070,7 +1076,7 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
                     last_msg_timestamp = time.time()
 
     except Exception as e:
-        _logger.error("Error send process %s. %s" % (str(e), get_log_tag()))
+        _logger.error("Error send process %s.%s" % (str(e), get_log_tag()))
     finally:
         stop_event.set()
         if sender:
@@ -1078,7 +1084,7 @@ def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thr
                 sender.close()
             except:
                 pass
-        _logger.info("Exit send process. %s" % get_log_tag())
+        _logger.info("Exit send process.%s" % get_log_tag())
         sys.exit(0)
 
 
@@ -1095,57 +1101,57 @@ def import_egg(egg_name):
 
 
 def cleanup(exit_code=0):
-    _logger.info("Stopping transceiver. %s" % get_log_tag())
+    _logger.info("Stopping transceiver.%s" % get_log_tag())
     global source, sender
 
     if source:
         try:
             if stream_failed:
-                _logger.info("Source timeout. %s" % get_log_tag())
+                _logger.info("Source timeout.%s" % get_log_tag())
             else:
-                _logger.info("Disconnecting source. %s" % get_log_tag())
+                _logger.info("Disconnecting source.%s" % get_log_tag())
             source.disconnect()
         except:
             pass
         finally:
-            _logger.info("Source disconnected. %s" % get_log_tag())
+            _logger.info("Source disconnected.%s" % get_log_tag())
             source = None
 
     if message_buffer_send_thread:
         try:
-            _logger.info("Joining message buffer send thread. %s" % get_log_tag())
+            _logger.info("Joining message buffer send thread.%s" % get_log_tag())
             message_buffer_send_thread.join(0.1)
         except:
             pass
         finally:
-            _logger.info("Joined message buffer send thread. %s" % get_log_tag())
+            _logger.info("Joined message buffer send thread.%s" % get_log_tag())
     else:
         if sender:
             try:
-                _logger.info("Closing sender. %s" % get_log_tag())
+                _logger.info("Closing sender.%s" % get_log_tag())
                 sender.close()
             except:
                 pass
             finally:
-                _logger.info("Closed sender. %s" % get_log_tag())
+                _logger.info("Closed sender.%s" % get_log_tag())
                 sender = None
     i = 1
     for t in processing_threads:
         if t:
             try:
-                _logger.info("Joining processing thread %s. %s" % (str(i), get_log_tag()))
+                _logger.info("Joining processing thread %s.%s" % (str(i), get_log_tag()))
                 i = i+1
                 t.join(0.1)
             except:
                 pass
             finally:
-                _logger.info("Joined processing thread %s. %s" % (str(i), get_log_tag()))
+                _logger.info("Joined processing thread %s.%s" % (str(i), get_log_tag()))
     if thread_exit_code != 0:
         exit_code = thread_exit_code
-    _logger.info("Exiting process with exit_code %d. %s" % (exit_code, get_log_tag()))
-    #sys.exit sometimes leave the process defunct, so the pipeline  cannot restart
+    _logger.info("Exiting process with exit_code %d.%s" % (exit_code, get_log_tag()))
+    #sys.exit sometimes leave defunct process, so the pipeline  cannot restart
     os.kill(os.getpid(), signal.SIGTERM)
-    _logger.warning("Passed by kill. %s" % get_log_tag())
+    _logger.warning("Passed by kill %s" % get_log_tag())
     sys.exit(exit_code)
-    _logger.warning("Passed by exit. %s" % get_log_tag())
+    _logger.warning("Passed by exit.%s" % get_log_tag())
 

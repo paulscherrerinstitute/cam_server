@@ -6,7 +6,7 @@ from bsread.sender import Sender, PUB, PUSH
 from cam_server.camera.sender import *
 from cam_server.camera.source.common import transform_image
 from cam_server.ipc import IpcSender
-from cam_server.utils import update_statistics, on_message_sent, init_statistics, setup_instance_logs
+from cam_server.utils import update_statistics, on_message_sent, init_statistics, setup_instance_logs, set_log_suffix
 
 _logger = getLogger(__name__)
 
@@ -107,7 +107,7 @@ class Camera:
             if connections is not None:
                 return max(int(connections), 1)
         except:
-            _logger.warning("Invalid number of connections (using 1) [%s]" % (self.get_name(),))
+            _logger.warning("Invalid number of connections (using 1)")
         return 1
 
     def get_buffer_size(self):
@@ -116,7 +116,7 @@ class Camera:
             if buffer_size is not None:
                 return max(int(buffer_size), 0)
         except:
-            _logger.warning("Invalid buffer size (using default: " + str(0) + ") [%s]" % (self.get_name(),))
+            _logger.warning("Invalid buffer size (using default: " + str(0) + ")")
         return 0
 
     def get_buffer_threshold(self):
@@ -125,7 +125,7 @@ class Camera:
             if buffer_threshold is not None:
                 return min(max(float(buffer_threshold), 0.0), 1.0)
         except:
-            _logger.warning("Invalid buffer threshold (using 0.5) [%s]" % (self.get_name(),))
+            _logger.warning("Invalid buffer threshold (using 0.5)")
         return 0.5
 
     def is_threaded(self):
@@ -153,14 +153,13 @@ class Camera:
             if queue_size is not None:
                 return max(int(queue_size), 1)
         except:
-            _logger.warning("Invalid number of queue_size (using %d) [%s]" % (config.CAMERA_DEFAULT_QUEUE_SIZE, self.get_name(),))
+            _logger.warning("Invalid number of queue_size (using %d)" % (config.CAMERA_DEFAULT_QUEUE_SIZE))
         return config.CAMERA_DEFAULT_QUEUE_SIZE
 
     def no_client_timeout(self):
         client_timeout = self.get_client_timeout()
         if client_timeout > 0:
-            _logger.info("No client connected to the stream for %d seconds. Closing instance [%s]." %
-                         (client_timeout, self.get_name()))
+            _logger.info("No client connected to the stream for %d seconds. Closing instance." % (client_timeout))
             self.stop_event.set()
 
     def create_sender(self, stop_event, port, create_forwarder=False):
@@ -171,11 +170,11 @@ class Camera:
         else:
             sender = Sender(queue_size=self.get_queue_size(), port=port, mode=PUB, start_pulse_id=self.get_start_pulse_id(), data_header_compression=self.get_data_header_compression())
         if self.get_data_header_compression():
-            _logger.info("Created sender with data header compression: %s. %s" %( self.get_data_header_compression(), self.get_name()))
+            _logger.info("Created sender with data header compression: %s." %( self.get_data_header_compression()))
         if self.get_image_compression():
-            _logger.info("Created sender with image compression: %s. %s" %( self.get_image_compression(), self.get_name()))
+            _logger.info("Created sender with image compression: %s." %( self.get_image_compression()))
         if self.get_scalar_compression():
-            _logger.info("Created sender with scalar compression: %s. %s" %( self.get_scalar_compression(), self.get_name()))
+            _logger.info("Created sender with scalar compression: %s." %( self.get_scalar_compression()))
 
         sender.open(no_client_action=self.no_client_timeout, no_client_timeout=self.get_client_timeout())
         sender.header_changes = 0
@@ -210,15 +209,15 @@ class Camera:
             self.forwarder = Sender(port=self.forwarder_port, mode=PUSH,  block=False, data_header_compression=self.get_forwarder_data_header_compression(), data_compression=self.get_forwarder_compression())
             if self.get_forwarder_data_header_compression():
                 _logger.info(
-                    "Created forwarder with data header compression: %s. %s" % (self.get_forwarder_data_header_compression(), self.get_name()))
+                    "Created forwarder with data header compression: %s." % (self.get_forwarder_data_header_compression()))
             if self.get_forwarder_compression():
                 _logger.info(
-                    "Created forwarder with image compression: %s. %s" % (self.get_forwarder_compression(), self.get_name()))
+                    "Created forwarder with image compression: %s." % (self.get_forwarder_compression()))
 
             #self.forwarder.open(no_client_action=None, no_client_timeout=None)
             #Define no_client_action to get client count
             def no_client_action():
-                _logger.warning("No clients in forwarder of " + str(self.get_name()))
+                _logger.warning("No clients in forwarder")
             self.forwarder.open(no_client_action=no_client_action, no_client_timeout=sys.maxsize)
             self.forwarder_stream_image_name = self.get_name() + config.EPICS_PV_SUFFIX_IMAGE
         else:
@@ -232,7 +231,7 @@ class Camera:
                 forward_data = {self.forwarder_stream_image_name: image}
                 if check_data:
                     data_format = (image.shape, image.dtype) if isinstance(image, numpy.ndarray) else None
-                    _logger.info("Setting up forward stream with data format: %s at port %d for camera %s" % (str(data_format), self.forwarder_port, self.get_name()))
+                    _logger.info("Setting up forward stream with data format: %s at port %d." % (str(data_format), self.forwarder_port))
                 self.forwarder.send(data=forward_data, timestamp=timestamp, pulse_id=pulse_id, check_data=check_data)
 
     def _close_forwarder(self):
@@ -426,11 +425,12 @@ class Camera:
         self.sender = None
         dtype = None
         try:
+            camera_name = self.get_name()
+            set_log_suffix(" [camerea:%s]" % camera_name)
             init_statistics(statistics)
             setup_instance_logs(logs_queue)
             self.create_sender(stop_event, port)
             self.connect()
-            camera_name = self.get_name()
             x_size, y_size = self.get_geometry()
             x_axis, y_axis = self.get_x_y_axis()
             frame_rate = self.get_frame_rate()
@@ -442,6 +442,7 @@ class Camera:
 
             # This signals that the camera has suc cessfully started.
             stop_event.clear()
+            _logger.info("Camera started")
 
             while not stop_event.is_set():
                 if sample_interval:
@@ -480,7 +481,7 @@ class Camera:
                     self.send(data, pulse_id, timestamp)
                 except Again:
                     _logger.warning(
-                        "Send timeout. Lost image with timestamp '%s' [%s]." % (str(timestamp), camera_name))
+                        "Send timeout. Lost image with timestamp '%s'." % (str(timestamp)))
 
                 while not parameter_queue.empty():
                     new_parameters = parameter_queue.get()

@@ -25,7 +25,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
         setup_sender(output_stream_port, stop_event)
 
 
-        _logger.info("Transceiver started. %s" % get_log_tag())
+        _logger.info("Transceiver started. %s"% get_log_tag())
 
         while not stop_event.is_set():
             try:
@@ -39,16 +39,16 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
                     for key, value in data.items():
                         stream_data[key] = value.value
                 except Exception as e:
-                    _logger.error("Error parsing bsread message: %s. %s" % (str(e), get_log_tag()))
+                    _logger.error("Error parsing bsread message: %s.%s" % (str(e), get_log_tag()))
                     continue
 
                 send_data(stream_data, global_timestamp, pulse_id)
             except Exception as e:
-                _logger.exception("Error in pipeline processing: %s. %s" % (str(e), get_log_tag()))
+                _logger.exception("Error in pipeline processing: %s.%s" % (str(e), get_log_tag()))
                 stop_event.set()
 
     except Exception as e:
-        _logger.exception("Exception trying to start the receive thread: %s. %s" % (str(e), get_log_tag()))
+        _logger.exception("Exception trying to start the receive thread: %s.%s" % (str(e), get_log_tag()))
         exit_code = 1
         raise
 

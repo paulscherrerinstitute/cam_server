@@ -16,7 +16,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
     def no_client_action():
         nonlocal  parameters
         if parameters["no_client_timeout"] > 0:
-            _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance. %s" %
+            _logger.warning("No client connected to the pipeline stream for %d seconds. Closing instance.%s" %
                         (config.MFLOW_NO_CLIENTS_TIMEOUT, get_log_tag()))
             stop_event.set()
 
@@ -37,7 +37,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
 
         source = connect_to_camera(cam_client)
 
-        _logger.debug("Opening output stream on port %d. %s", output_stream_port,  get_log_tag())
+        _logger.debug("Opening output stream on port %d.%s", output_stream_port,  get_log_tag())
 
         sender = Sender(port=output_stream_port, mode=PUSH,
                         data_header_compression=config.CAMERA_BSREAD_DATA_HEADER_COMPRESSION, block=False)
@@ -49,7 +49,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
         # Indicate that the startup was successful.
         stop_event.clear()
 
-        _logger.info("Transceiver started. %s" % get_log_tag())
+        _logger.info("Transceiver started.%s" % get_log_tag())
         counter = 1
 
         while not stop_event.is_set():
@@ -76,18 +76,18 @@ def run(stop_event, statistics, parameter_queue, logs_queue, cam_client, pipelin
                 send(sender, forward_data, timestamp, pulse_id)
 
             except:
-                _logger.exception("Error in pipeline processing: %s. %s" % (str(e), get_log_tag()))
+                _logger.exception("Error in pipeline processing: %s.%s" % (str(e), get_log_tag()))
                 stop_event.set()
 
-        _logger.info("Stopping transceiver. %s" % get_log_tag())
+        _logger.info("Stopping transceiver.%s" % get_log_tag())
 
     except Exception as e:
-        _logger.exception("Exception trying to start the receive thread: %s. %s" % (str(e), get_log_tag()))
+        _logger.exception("Exception trying to start the receive thread: %s.%s" % (str(e), get_log_tag()))
         exit_code = 1
         raise
 
     finally:
-        _logger.info("Stopping transceiver. %s" % get_log_tag())
+        _logger.info("Stopping transceiver.%s" % get_log_tag())
         if source:
             source.disconnect()
 
