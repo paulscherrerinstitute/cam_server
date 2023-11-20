@@ -52,8 +52,8 @@ def config_logger(name, logger):
         if logger is not logging.root:
             try:
                 if not logger.handlers:
-                    if name and not name.startswith(config.APP_LOGGER):
-                        logger.propagate = False
+                    #if name and not name.startswith(config.APP_LOGGER):
+                    #    logger.propagate = False
                     handler = logging.StreamHandler()
                     handler.setFormatter(custom_log_formatter)
                     logger.addHandler(handler)
