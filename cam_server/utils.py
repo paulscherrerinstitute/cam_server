@@ -31,10 +31,8 @@ original_get_logger = logging.getLogger
 class CustomLogFormatter(logging.Formatter):
     def format(self, record):
         global log_suffix
-        original = record.msg
-        record.msg = str(record.msg) + str(log_suffix)
-        ret = super().format(record)
-        record.msg = original
+        ret = str(super().format(record))
+        ret += str(log_suffix)
         return ret
 
 custom_log_formatter = CustomLogFormatter()

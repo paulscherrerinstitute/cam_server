@@ -981,8 +981,8 @@ def thread_send_task(output_port, tx_buffer, tx_lock, received_pids, stop_event)
 
 # Multi-processing
 def process_task(process_function, thread_buffer, tx_queue, stop_event, index, user_scripts_manager, pipeline_config, ltag):
-    #global log_tag
     global _parameters
+    #global log_tag
     #log_tag = ltag
     set_log_suffix(ltag)
     _logger.info("Start process %d: %d.%s" % (index, os.getpid(), get_log_tag()))
@@ -1016,9 +1016,10 @@ def process_task(process_function, thread_buffer, tx_queue, stop_event, index, u
 
 
 def process_send_task(output_port, tx_queue, received_pids_queue, spawn_send_thread, stop_event, pars, ltag):
-    global log_tag
-    log_tag = ltag
-
+    global _parameters
+    #global log_tag
+    #log_tag = ltag
+    set_log_suffix(ltag)
     sender = None
     _parameters = pars
     _logger.info("Start send process.%s" % get_log_tag())
