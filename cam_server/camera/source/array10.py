@@ -48,10 +48,10 @@ class Array10(Camera):
             header = self.receiver.recv()
             self.header = json.loads(''.join(chr(i) for i in header))
             self.height_raw, self.width_raw = self.header.get("shape")
-            dtype = self.header.get("type", "int8")
+            self.dtype = self.header.get("type", "int8")
             data = self.receiver.recv()
             if data is not None:
-                array = numpy.frombuffer(data, dtype=dtype)
+                array = numpy.frombuffer(data, dtype=self.dtype)
                 self.pid = self.pid + 1
                 return array
         except Exception as e:

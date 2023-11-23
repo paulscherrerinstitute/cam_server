@@ -48,9 +48,6 @@ class Camera:
     def get_raw_geometry(self):
         return self.width_raw, self.height_raw
 
-    def get_image(self, raw=False):
-        return
-
     def _get_compression(self, key, default):
         ret = self.camera_config.get_configuration().get(key, default)
         if ret == True:
@@ -135,7 +132,7 @@ class Camera:
         dtype = self.camera_config.get_configuration().get("dtype")
         if dtype is None:
             if self.dtype  is None:
-                return  "uint16"
+                return "uint16"
             return self.dtype
         return dtype
 
@@ -385,7 +382,6 @@ class Camera:
         if dtype is None:
             dtype = self.get_dtype()
         if shape is None:
-            dtype = self.get_dtype()
             shape = self.get_geometry()
         x_size, y_size =shape
         self.sender.add_channel("image", metadata={"compression": self.get_image_compression() , "shape": [x_size, y_size],"type": dtype})
@@ -426,7 +422,7 @@ class Camera:
         dtype = None
         try:
             camera_name = self.get_name()
-            set_log_suffix(" [camerea:%s]" % camera_name)
+            set_log_suffix(" [camera:%s]" % camera_name)
             init_statistics(statistics)
             setup_instance_logs(logs_queue)
             self.create_sender(stop_event, port)
