@@ -32,7 +32,12 @@ class CustomLogFormatter(logging.Formatter):
     def format(self, record):
         global log_suffix
         ret = str(super().format(record))
-        ret += str(log_suffix)
+        if ret.endswith('\n'):
+            aux = ret.rstrip('\n')
+            newlines = len(ret) - len(ret.rstrip('\n'))
+            ret = aux + log_suffix + '\n' * newlines
+        else:
+            ret += str(log_suffix)
         return ret
 
 custom_log_formatter = CustomLogFormatter()
