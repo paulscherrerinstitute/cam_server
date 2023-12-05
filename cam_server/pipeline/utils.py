@@ -934,7 +934,7 @@ def thread_task(process_function, thread_buffer, tx_buffer, tx_lock, received_pi
 
     except Exception as e:
         thread_exit_code = 2
-        _logger.error("Error on processing thread %d:%s" % (index, str(e), get_log_tag() ))
+        _logger.error("Error on processing thread %d:%s.%s" % (index, str(e), get_log_tag() ))
     finally:
         stop_event.set()
         _logger.info("Exit processing thread %d.%s" % (index, get_log_tag()))
