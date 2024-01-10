@@ -150,20 +150,32 @@ def get_good_region_profile(profile, threshold=0.3, gfscale=1.8):
 
     return int(index_start), int(index_end)  # Start and end index of the good region
 
-
-def gauss_fit(profile, axis):
+def gauss_fit(profile, axis, remove_outliers=True):
     if axis.shape[0] != profile.shape[0]:
         raise RuntimeError("Invalid axis passed %d %d" % (axis.shape[0], profile.shape[0]))
 
-    center_of_mass = (axis * profile).sum() / profile.sum()
-    center_of_mass_2 = (axis * axis * profile).sum() / profile.sum()
-    rms = numpy.sqrt(numpy.abs(center_of_mass_2 - center_of_mass * center_of_mass))
-
     offset, amplitude, center, standard_deviation = _gauss_fit(axis, profile)
+    standard_deviation = abs(standard_deviation)
     gauss_function = _gauss_function(axis, offset, amplitude, center, standard_deviation)
 
-    return gauss_function, offset, amplitude, center, abs(standard_deviation), center_of_mass, rms
+    if remove_outliers:
+        profile = profile - offset  # remove offset
+        sum_axis = sum(profile)
+        # normalise to 1
+        profile = (profile/sum_axis) if sum_axis != 0 else profile
+        # remove outliers
+        condition = numpy.abs(axis - center) > 5 * standard_deviation
+        profile[condition] = 0.0
 
+        center_of_mass = sum(axis * profile)
+        axis = axis - center_of_mass
+        rms = numpy.sqrt(abs(sum(axis ** 2 * profile)))
+    else:
+        center_of_mass = (axis * profile).sum() / profile.sum()
+        center_of_mass_2 = (axis * axis * profile).sum() / profile.sum()
+        rms = numpy.sqrt(numpy.abs(center_of_mass_2 - center_of_mass * center_of_mass))
+
+    return gauss_function, offset, amplitude, center, abs(standard_deviation), center_of_mass, rms
 
 def _gauss_function(x, offset, amplitude, center, standard_deviation):
     # return offset + amplitude * numpy.exp(-(numpy.power((x - center), 2) / (2 * numpy.power(standard_deviation, 2))))
@@ -180,8 +192,7 @@ def _gauss_fit(axis, profile, center_of_mass=None):
         center = axis[profile.argmax()]
 
     surface = numpy.trapz((profile - offset), x=axis)
-    # standard_deviation = surface / ((amplitude - offset) * numpy.sqrt(2 * numpy.pi))
-    standard_deviation = surface / (amplitude * numpy.sqrt(2 * numpy.pi))
+    standard_deviation = (surface / (amplitude * numpy.sqrt(2 * numpy.pi))) if amplitude != 0 else 1
 
     try:
         # It shows up that fastest fitting is when sampling period is around sigma value
@@ -229,7 +240,7 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
     n_pixel_half_slice = abs(index_half_slice - index_center)
 
     if n_pixel_half_slice < 1:
-        _logging.info('Calculated number of pixel of a slice size [%d] is less than 1 - default to 1',
+        _logging.debug('Calculated number of pixel of a slice size [%d] is less than 1 - default to 1',
                       n_pixel_half_slice)
         n_pixel_half_slice = 1
 
@@ -260,7 +271,7 @@ def calculate_slices(axis, center, standard_deviation, scaling=2, number_of_slic
             start_index -= n_pixel_slice
             end_index += n_pixel_slice
             if start_index < 0 or end_index >= number_of_elements_axis:
-                _logging.info('Stopping slice calculation as they are out of range ...')
+                _logging.debug('Stopping slice calculation as they are out of range ...')
                 # Start index cannot be smaller than 0 and end index cannot e larger than len(axis)
                 break
             list_slices_indexes.insert(0, start_index)
@@ -296,7 +307,7 @@ def get_x_slices_data(image, x_axis, y_axis, x_center, x_standard_deviation, sca
             center_y = float(center_y)
             slice_data.append(([center_x, center_y], standard_deviation, pixel_intensity))
         else:
-            _logging.info('Drop slice')
+            _logging.debug('Drop slice')
 
     return slice_data, slice_length
 
@@ -327,7 +338,7 @@ def get_y_slices_data(image, x_axis, y_axis, y_center, y_standard_deviation, sca
             slice_data.append(([center_x, center_y], standard_deviation,
                                pixel_intensity))
         else:
-            _logging.info('Drop slice')
+            _logging.debug('Drop slice')
 
     return slice_data, slice_length
 
@@ -425,7 +436,7 @@ def get_fwhm(x, y):
     return get_fw(x, y, 0.5)
 
 
-def get_fw(x, y, threshold=0.5):
+def get_fw(x, y, threshold=0.5, interpolate=True):
     try:
         ymax, ymin =  numpy.amax(y),  numpy.amin(y)
         hm =  (ymax - ymin) * threshold
@@ -439,11 +450,18 @@ def get_fw(x, y, threshold=0.5):
             if (y[i] - ymin) <= hm:
                 r_index = i
                 break
-        fwhm = abs(x[l_index] - x[r_index])
+        if interpolate:
+            i1, i2 = l_index, r_index
+            slope1 = (y[i1 + 1] - y[i1]) / (x[i1 + 1] - x[i1])
+            slope2 = (y[i2] - y[i2 - 1]) / (x[i2] - x[i2 - 1])
+            dx1 = (ymin + hm - y[i1]) / slope1
+            dx2 = (ymin + hm - y[i2]) / slope2
+            fwhm = abs((x[i2] + dx2) - (x[i1] + dx1))
+        else:
+            fwhm = abs(x[l_index] - x[r_index])
         return fwhm
     except:
         return 0.0
-
 
 def _gauss_deriv(x, offset, amplitude, center, standard_deviation):
     fac = numpy.exp(-(x - center) ** 2 / (2 * standard_deviation ** 2))

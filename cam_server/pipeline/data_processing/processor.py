@@ -22,8 +22,14 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     x_fit_gauss_function, x_fit_offset, x_fit_amplitude, x_fit_mean, x_fit_standard_deviation, x_center_of_mass, x_rms = x_fit
     y_fit_gauss_function, y_fit_offset, y_fit_amplitude, y_fit_mean, y_fit_standard_deviation, y_center_of_mass, y_rms = y_fit
 
+
     x_fwhm = functions.get_fwhm(x_axis, x_profile)
     y_fwhm = functions.get_fwhm(y_axis, y_profile)
+    fw_threshold =  parameters.get("fw_threshold", None)
+    if fw_threshold is not None:
+        fw_threshold = parameters.get("fw_threshold", 0.5)
+        x_fw = functions.get_fw(x_axis, x_profile, fw_threshold)
+        y_fw = functions.get_fw(y_axis, y_profile, fw_threshold)
 
     # Could be also y_profile.sum() -> it should give the same result.
     intensity = x_profile.sum()
@@ -42,6 +48,9 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     return_value["intensity"] = intensity
     return_value["x_fwhm"] = float(x_fwhm)
     return_value["y_fwhm"] = float(y_fwhm)
+    if fw_threshold is not None:
+        return_value["x_fw"] = float(x_fw)
+        return_value["y_fw"] = float(y_fw)
 
     # If set in background subtraction passive mode, it cannot be serialized
     background_data = parameters.pop("background_data", None)
@@ -173,7 +182,7 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
                 # Adjust the number of slices to be odd.
                 if slice_number % 2 == 0:
                     # Add a middle slice if number of slices is even - as middle slice is half/half on center
-                    _logger.info('Add additional middle slice')
+                    _logger.debug('Add additional middle slice')
                     slice_number += 1
                     initialize_slices_values(slice_number)
 
