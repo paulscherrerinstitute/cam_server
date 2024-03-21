@@ -19,7 +19,7 @@
  "source_type": "simulation",
  "name": "simulation",
  "source": "",
- "size_x": 400,
+ "size_x": 300,
  "size_y": 300,
  "dtype": "uint16",
  "image_type": "beam",
@@ -34,5 +34,6 @@
  ],
  "simulate_pulse_id": true,
  "protocol": "tcp",
- "_image_background": "../tests/background_config/simulation_20220217_172655_914633.npy"
+ "_image_background": "../tests/background_config/simulation_20220217_172655_914633.npy",
+ "no_client_timeout": 0
 }

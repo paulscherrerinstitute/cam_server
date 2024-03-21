@@ -1,18 +1,13 @@
 {
- "image_background_enable": false,
- "image_background": "simulation_20230524_162902_414848",
- "image_threshold": 0.0,
+ "image_background_enable": true,
+ "image_background": "simulation_20240320_144334_156830",
+ "image_threshold": null,
  "image_region_of_interest": null,
- "image_good_region": {
-  "threshold": 1.0,
-  "gfscale": 18.0
- },
- "image_slices": {
-  "number_of_slices": 3,
-  "scale": 3.0,
-  "orientation": "horizontal"
- },
+ "image_good_region": null,
+ "image_slices": null,
  "pipeline_type": "processing",
+ "notify_on_error": true,
+ "abort_on_error": false,
  "allow_type_changes": true,
  "allow_shape_changes": true,
  "_create_header": "once",
@@ -22,8 +17,8 @@
  "name": "simulation_sp",
  "_max_frame_rate": 2.1,
  "_processing_threads": 2,
- "thread_buffer_size": 3,
- "send_buffer_size": 2,
+ "_thread_buffer_size": 3,
+ "_send_buffer_size": 2,
  "_multiprocessing": true,
  "_spawn_send_thread": true,
  "_buffer_size": 5,
