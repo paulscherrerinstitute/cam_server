@@ -6,8 +6,6 @@
  "image_good_region": null,
  "image_slices": null,
  "pipeline_type": "processing",
- "notify_on_error": true,
- "abort_on_error": false,
  "allow_type_changes": true,
  "allow_shape_changes": true,
  "_create_header": "once",

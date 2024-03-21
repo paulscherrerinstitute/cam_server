@@ -15,7 +15,7 @@ import numpy
 from bsread import Source, PUB, SUB, PUSH, PULL, DEFAULT_DISPATCHER_URL
 from bsread import source as bssource
 from bsread.sender import Sender, BIND, CONNECT
-from cam_server.config import PIPELINE_PROCESSING_ERROR
+from cam_server.config import PIPELINE_PROCESSING_ERROR, NOTIFY_ON_ERROR
 
 from cam_server import config, merger
 from cam_server.ipc import IpcSource
@@ -411,7 +411,14 @@ def abort_on_error():
 
 def notify_on_error():
     pars = get_parameters()
-    return pars.get("notify_on_error", False)
+    default_value = False
+    if type(NOTIFY_ON_ERROR) is list:
+        for suffix in NOTIFY_ON_ERROR:
+            if pars.get("name", "").endswith(suffix):
+                default_value=True
+    elif type(NOTIFY_ON_ERROR) is bool:
+        default_value = NOTIFY_ON_ERROR
+    return pars.get("notify_on_error", default_value)
 
 def is_invalid_data():
     pars = get_parameters()

@@ -352,6 +352,9 @@ pipeline is added to the output bsread stream in the
 - **processing_threads** (Default _None_): Number of  processing threads. If greater than 0 then the processing is parallelized.
 - **abort_on_error** (Default _True_): If true (default) the pipeline stops upon errors during processing.
 - **abort_on_timeout** (Default _False_): If true the pipeline stops in source timeout.
+- **notify_on_error** (Default _True_ for _sp pipelines, _False_ otherwise): If true the pipeline continue streaming 
+  in the case of certain processing errors (e.g. invalid background images). Information of processing errors is available in
+  the field "processing_error" of the parameters dictionary. 
 - **stream_timeout** (Default _10_): Timeout of the source stream, defined in seconds.
 - **enforce_pid** (Default _False_): If true pulse id is monotonic (excluding messages having smaller pulse id  than the last one send).
 - **libs** (Default _None_): List of libraries used by the pipeline (.py, .egg or data files).
