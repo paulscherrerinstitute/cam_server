@@ -15,6 +15,7 @@ import numpy
 from bsread import Source, PUB, SUB, PUSH, PULL, DEFAULT_DISPATCHER_URL
 from bsread import source as bssource
 from bsread.sender import Sender, BIND, CONNECT
+from cam_server.config import PIPELINE_PROCESSING_ERROR
 
 from cam_server import config, merger
 from cam_server.ipc import IpcSource
@@ -383,6 +384,11 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=
         setup_instance_logs(logs_queue)
     return parameters
 
+def notify_processing_error(error):
+    if notify_on_error():
+        get_parameters()[PIPELINE_PROCESSING_ERROR] = error
+    else:
+        raise RuntimeError(error)
 
 def check_parameters_changes():
     global _parameters, _parameter_queue, _logs_queue,_user_scripts_manager, _parameters_post_proc, _pipeline_config
@@ -402,6 +408,14 @@ def check_parameters_changes():
 def abort_on_error():
     pars = get_parameters()
     return pars.get("abort_on_error", config.ABORT_ON_ERROR)
+
+def notify_on_error():
+    pars = get_parameters()
+    return pars.get("notify_on_error", False)
+
+def is_invalid_data():
+    pars = get_parameters()
+    return pars.get("notify_on_error", False) and pars.get(PIPELINE_PROCESSING_ERROR, None)
 
 def abort_on_timeout():
     pars = get_parameters()
@@ -781,6 +795,8 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
 
 
 def _process_data(processing_function, pulse_id, global_timestamp, function, *args):
+    if notify_on_error():
+        get_parameters().pop(PIPELINE_PROCESSING_ERROR, None)
     if config.TELEMETRY_ENABLED:
         global pipeline_name, camera_name, output_stream_port
         with tracer.start_as_current_span("process") as process_span:

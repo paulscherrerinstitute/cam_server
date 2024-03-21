@@ -112,6 +112,8 @@ ABORT_ON_ERROR = True
 ABORT_ON_TIMEOUT = False
 TIMEOUT_COUNT = 10
 
+PIPELINE_PROCESSING_ERROR = "processing_error"
+
 ################
 # IPC settings #
 ################

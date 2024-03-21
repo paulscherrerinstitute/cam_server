@@ -127,6 +127,40 @@ def sum_images(image, accumulator_image, dtype="uint64"):
     return accumulator_image
 
 
+def set_invalid_image(array):
+    if len(array.shape) != 2:
+        raise ValueError("Input array must be 2D")
+    """
+    mask = numpy.zeros_like(array, dtype=bool)
+    rows, cols = array.shape
+    for i in range(rows):
+        for j in range(cols):
+            if (i % 2 == 0 and j % 2 == 0) or (i % 2 != 0 and j % 2 != 0):
+                mask[i, j] = True
+    masked_array = numpy.ma.masked_array(array, mask=mask)
+    """
+    """
+    mask = numpy.zeros_like(array)
+    max_val = 1
+    try:
+        if array.dtype in (numpy.float32, numpy.float64):
+            max_val = numpy.finfo(array.dtype).max
+        else:
+            max_val = numpy.iinfo(array.dtype).max
+    except:
+        pass
+    rows, cols = array.shape
+    for i in range(rows):
+        for j in range(cols):
+            if (i % 2 == 0 and j % 2 == 0) or (i % 2 != 0 and j % 2 != 0):
+                mask[i, j] = max_val
+    masked_array = array * mask
+    """
+    #Just return an empty image, it is clearer
+    masked_array = numpy.zeros_like(array)
+    return masked_array
+
+
 def get_clients(sender):
     if sender and sender.stream:
         for m in sender.stream._socket_monitors:

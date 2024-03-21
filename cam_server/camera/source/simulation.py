@@ -34,21 +34,17 @@ class CameraSimulation(CameraEpics):
         """
         super(CameraSimulation, self).__init__(camera_config)
 
-        if "frame_rate" in camera_config.get_configuration():
-            frame_rate = camera_config.get_configuration()["frame_rate"]
-        if "size_x" in camera_config.get_configuration():
-            size_x = camera_config.get_configuration()["size_x"]
-        if "size_y" in camera_config.get_configuration():
-            size_y = camera_config.get_configuration()["size_y"]
-        if "dtype" in camera_config.get_configuration():
-            dtype = camera_config.get_configuration()["dtype"]
+        if "frame_rate" not in camera_config.get_configuration():
+            camera_config.get_configuration()["frame_rate"] = frame_rate
+        if "size_x" not in camera_config.get_configuration():
+            camera_config.get_configuration()["size_x"] = size_x
+        if "size_y" not in camera_config.get_configuration():
+            camera_config.get_configuration()["size_y"] = size_y
+        if "dtype" not in camera_config.get_configuration():
+            camera_config.get_configuration()["dtype"] = dtype
 
-        self.frame_rate = frame_rate
-        self.dtype = dtype
-        self.width_raw = size_x
-        self.height_raw = size_y
-        self.noise = noise  # double {0,1} noise amplification factor
-        self.dead_pixels = self._generate_dead_pixels(number_of_dead_pixels)
+        self.noise = noise
+        self.number_of_dead_pixels = number_of_dead_pixels
         self.beam_size_x = beam_size_x
         self.beam_size_y = beam_size_y
 
@@ -58,14 +54,19 @@ class CameraSimulation(CameraEpics):
         self.simulation_stop_event = None
 
     def _generate_dead_pixels(self, number_of_dead_pixel):
-        dead_pixels = numpy.zeros((self.height_raw, self.width_raw))
+        width_raw, height_raw = self.get_raw_geometry()
+        dead_pixels = numpy.zeros((height_raw, width_raw))
 
         for _ in range(number_of_dead_pixel):
-            x = numpy.random.randint(0, self.height_raw)
-            y = numpy.random.randint(0, self.width_raw)
+            x = numpy.random.randint(0, height_raw)
+            y = numpy.random.randint(0, width_raw)
             dead_pixels[x, y] = 1
 
         return dead_pixels
+
+    def get_raw_geometry(self):
+        return self.camera_config.parameters.get("size_x"), self.camera_config.parameters.get("size_y")
+
 
     def get_image(self, raw=False):
         """
@@ -73,22 +74,23 @@ class CameraSimulation(CameraEpics):
         :param raw: If true, return a simulated camera wihtout the beam (just noise).
         :return: Camera image.
         """
+        width_raw, height_raw = self.get_raw_geometry()
 
         if raw:
-            image = numpy.zeros((self.height_raw, self.width_raw))
+            image = numpy.zeros((height_raw, width_raw))
         else:
             beam_x = numpy.linspace(-self.beam_size_x + numpy.random.rand(),
                                     self.beam_size_x + numpy.random.rand(),
-                                    self.height_raw)
+                                    height_raw)
             beam_y = numpy.linspace(-self.beam_size_y + numpy.random.rand(),
                                     self.beam_size_y + numpy.random.rand(),
-                                    self.width_raw)
+                                    width_raw)
             x, y = numpy.meshgrid(beam_y, beam_x)
             image = numpy.exp(-(x ** 2 + y ** 2))
 
         # Add some noise
         if self.noise:
-            image += numpy.random.random((self.height_raw, self.width_raw)) * self.noise
+            image += numpy.random.random((height_raw, width_raw)) * self.noise
 
         # Add dead pixels
         image += self.dead_pixels
@@ -108,17 +110,27 @@ class CameraSimulation(CameraEpics):
             self.simulation_stop_event = Event()
         self.simulation_stop_event.clear()
 
+        self.shape = None
+
         def call_callbacks(stop_event):
             image = None
             next_img_timestamp=time.time()
-            interval = 1.0/self.frame_rate
+
             while not stop_event.is_set():
                 try:
                     self.image_type = self.camera_config.parameters.get("image_type")
                     self.raw = self.image_type in ["raw", "static_raw"]
                     self.static = self.image_type in ["static_beam", "static_raw"]
+                    self.frame_rate = self.camera_config.parameters.get("frame_rate")
+                    size_x = self.camera_config.parameters.get("size_x")
+                    size_y = self.camera_config.parameters.get("size_y")
+                    if self.shape != (size_y, size_x):
+                        self.shape = (size_y, size_x)
+                        self.dead_pixels = self._generate_dead_pixels(self.number_of_dead_pixels)
+                    self.dtype = self.camera_config.parameters.get("dtype")
+                    interval = 1.0 / self.frame_rate
 
-                    # Same timestamp as used by PyEpics.
+                        # Same timestamp as used by PyEpics.
                     timestamp = time.time()
                     if timestamp>=next_img_timestamp:
                         if (image is None) or (not self.static):
