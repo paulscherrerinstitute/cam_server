@@ -34,15 +34,10 @@ class CameraSimulation(CameraEpics):
         """
         super(CameraSimulation, self).__init__(camera_config)
 
-        if "frame_rate" not in camera_config.get_configuration():
-            camera_config.get_configuration()["frame_rate"] = frame_rate
-        if "size_x" not in camera_config.get_configuration():
-            camera_config.get_configuration()["size_x"] = size_x
-        if "size_y" not in camera_config.get_configuration():
-            camera_config.get_configuration()["size_y"] = size_y
-        if "dtype" not in camera_config.get_configuration():
-            camera_config.get_configuration()["dtype"] = dtype
-
+        self.frame_rate = frame_rate
+        self.size_x = size_x
+        self.size_y = size_y
+        self.dtype = dtype
         self.noise = noise
         self.number_of_dead_pixels = number_of_dead_pixels
         self.beam_size_x = beam_size_x
@@ -65,7 +60,7 @@ class CameraSimulation(CameraEpics):
         return dead_pixels
 
     def get_raw_geometry(self):
-        return self.camera_config.parameters.get("size_x"), self.camera_config.parameters.get("size_y")
+        return self.camera_config.parameters.get("size_x", self.size_x), self.camera_config.parameters.get("size_y", self.size_y)
 
 
     def get_image(self, raw=False):
@@ -98,7 +93,8 @@ class CameraSimulation(CameraEpics):
         image.clip(0, 0.9, out=image)
         image *= (numpy.power(2, 16) - 1)
 
-        image = image.astype(self.dtype)
+        dtype = self.camera_config.parameters.get("dtype", self.dtype)
+        image = image.astype(dtype)
 
         return self._get_image(image, raw=raw)
 
@@ -121,13 +117,12 @@ class CameraSimulation(CameraEpics):
                     self.image_type = self.camera_config.parameters.get("image_type")
                     self.raw = self.image_type in ["raw", "static_raw"]
                     self.static = self.image_type in ["static_beam", "static_raw"]
-                    self.frame_rate = self.camera_config.parameters.get("frame_rate")
-                    size_x = self.camera_config.parameters.get("size_x")
-                    size_y = self.camera_config.parameters.get("size_y")
+                    size_x = self.camera_config.parameters.get("size_x", self.size_x)
+                    size_y = self.camera_config.parameters.get("size_y", self.size_y)
                     if self.shape != (size_y, size_x):
                         self.shape = (size_y, size_x)
                         self.dead_pixels = self._generate_dead_pixels(self.number_of_dead_pixels)
-                    self.dtype = self.camera_config.parameters.get("dtype")
+                    frame_rate = self.camera_config.parameters.get("frame_rate", self.frame_rate)
                     interval = 1.0 / self.frame_rate
 
                         # Same timestamp as used by PyEpics.
