@@ -41,17 +41,16 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     return_value["image"] = image
     return_value["width"] = image.shape[1]
     return_value["height"] = image.shape[0]
+    return_value["timestamp"] = timestamp_as_float(timestamp)
 
     # If set in background subtraction passive mode, it cannot be serialized
     background_data = parameters.pop("background_data", None)
     # Needed for config traceability.
     return_value["processing_parameters"] = json.dumps(parameters)
-
     if parameters.get(PIPELINE_PROCESSING_ERROR, None):
         return_value["image"] = set_invalid_image(return_value["image"])
         return return_value
 
-    return_value["timestamp"] = timestamp_as_float(timestamp)
     return_value["min_value"] = min_value
     return_value["max_value"] = max_value
     return_value["x_profile"] = x_profile
