@@ -49,7 +49,7 @@ class PipelineInstanceManager(InstanceManager):
         if pipeline_type == config.PIPELINE_TYPE_SCRIPT:
             pipeline_script = pipeline_config.get_configuration().get("pipeline_script")
             if self.user_scripts_manager and self.user_scripts_manager.exists(pipeline_script):
-                mod = load_source('mod', self.user_scripts_manager.get_path(pipeline_script))
+                mod = load_source(pipeline_script, self.user_scripts_manager.get_path(pipeline_script))
                 process_function = mod.run
             else:
                 raise ValueError("Invalid pipeline script: %s" % pipeline_script)

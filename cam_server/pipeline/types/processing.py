@@ -101,8 +101,9 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
             size_x, size_y = int(size_x / bx), int(size_y / by)
             if background_array is not None:
                 background_array, _, _ = binning(background_array, None, None, bx, by, bm)
-                if background_array.shape != (size_y, size_x):
-                    _logger.warning("Bad background shape: %s instead of %s.%s" % (image_background_array.shape, (size_y, size_x), get_log_tag()))
+        if background_array is not None:
+            if background_array.shape != (size_y, size_x):
+                _logger.warning("Bad background shape: %s instead of %s.%s" % (background_array.shape, (size_y, size_x), get_log_tag()))
 
         image_region_of_interest = parameters.get("image_region_of_interest")
         if image_region_of_interest:

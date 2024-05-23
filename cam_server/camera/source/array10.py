@@ -29,10 +29,12 @@ class Array10(Camera):
     def disconnect(self):
         try:
             self.receiver.close()
-        finally:
+        except:
             pass
         try:
             self.ctx.term()
+        except:
+            pass
         finally:
             self.ctx = None
 

@@ -2,7 +2,8 @@ import json
 from logging import getLogger
 
 from cam_server.pipeline.data_processing import functions
-from cam_server.utils import timestamp_as_float
+from cam_server.utils import timestamp_as_float, set_invalid_image
+from cam_server.config import PIPELINE_PROCESSING_ERROR
 
 _logger = getLogger(__name__)
 
@@ -22,8 +23,14 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     x_fit_gauss_function, x_fit_offset, x_fit_amplitude, x_fit_mean, x_fit_standard_deviation, x_center_of_mass, x_rms = x_fit
     y_fit_gauss_function, y_fit_offset, y_fit_amplitude, y_fit_mean, y_fit_standard_deviation, y_center_of_mass, y_rms = y_fit
 
+
     x_fwhm = functions.get_fwhm(x_axis, x_profile)
     y_fwhm = functions.get_fwhm(y_axis, y_profile)
+    fw_threshold =  parameters.get("fw_threshold", None)
+    if fw_threshold is not None:
+        fw_threshold = parameters.get("fw_threshold", 0.5)
+        x_fw = functions.get_fw(x_axis, x_profile, fw_threshold)
+        y_fw = functions.get_fw(y_axis, y_profile, fw_threshold)
 
     # Could be also y_profile.sum() -> it should give the same result.
     intensity = x_profile.sum()
@@ -34,6 +41,15 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     return_value["image"] = image
     return_value["width"] = image.shape[1]
     return_value["height"] = image.shape[0]
+
+    # If set in background subtraction passive mode, it cannot be serialized
+    background_data = parameters.pop("background_data", None)
+    # Needed for config traceability.
+    return_value["processing_parameters"] = json.dumps(parameters)
+    if parameters.get(PIPELINE_PROCESSING_ERROR, None):
+        return_value["image"] = set_invalid_image(return_value["image"])
+        return return_value
+
     return_value["timestamp"] = timestamp_as_float(timestamp)
     return_value["min_value"] = min_value
     return_value["max_value"] = max_value
@@ -42,11 +58,9 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     return_value["intensity"] = intensity
     return_value["x_fwhm"] = float(x_fwhm)
     return_value["y_fwhm"] = float(y_fwhm)
-
-    # If set in background subtraction passive mode, it cannot be serialized
-    background_data = parameters.pop("background_data", None)
-    # Needed for config traceability.
-    return_value["processing_parameters"] = json.dumps(parameters)
+    if fw_threshold is not None:
+        return_value["x_fw"] = float(x_fw)
+        return_value["y_fw"] = float(y_fw)
 
     # TODO Provide - Center of mass of profile
     # TODO Provide - RMS of profile
@@ -173,7 +187,7 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
                 # Adjust the number of slices to be odd.
                 if slice_number % 2 == 0:
                     # Add a middle slice if number of slices is even - as middle slice is half/half on center
-                    _logger.info('Add additional middle slice')
+                    _logger.debug('Add additional middle slice')
                     slice_number += 1
                     initialize_slices_values(slice_number)
 

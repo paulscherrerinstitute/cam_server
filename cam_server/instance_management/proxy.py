@@ -515,7 +515,7 @@ class ProxyBase:
             _logger.warning('Failed to identify request origin: '+ str(e))
         return None
 
-    def get_info(self):
+    def get_info(self, instances_only=False):
         info = self.get_servers_info()
         urls = info.keys()
         ret = {'active_instances': {}}
@@ -531,6 +531,12 @@ class ProxyBase:
 
             status = {server: (info[server]['active_instances'] if info[server] else None) for server in info}
             load = self.get_load(status)
+            if instances_only:
+                instances = []
+                for server, status in status.items():
+                    if status:
+                        instances.extend(list(status.keys()))
+                return instances
             i=0
             for server in urls:
                 server_info = {}

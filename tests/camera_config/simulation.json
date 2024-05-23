@@ -1,26 +1,28 @@
 {
  "camera_calibration": {
   "reference_marker": [
-   211,
-   173,
-   1063,
-   793
+   0,
+   0,
+   399,
+   199
   ],
-  "reference_marker_width": 30000.0,
-  "reference_marker_height": 30000.0,
+  "reference_marker_width": 3000.0,
+  "reference_marker_height": 1700.0,
   "angle_horizontal": 0.0,
   "angle_vertical": 0.0
  },
  "mirror_x": false,
  "mirror_y": false,
  "rotate": 0,
+ "roi": null,
+ "image_background": null,
  "source_type": "simulation",
  "name": "simulation",
  "source": "",
- "size_x": 400,
- "size_y": 200,
+ "size_x": 300,
+ "size_y": 300,
  "dtype": "uint16",
- "image_type": "static",
+ "image_type": "beam",
  "frame_rate": 2.0,
  "group": [
   "Electrons",
@@ -32,5 +34,6 @@
  ],
  "simulate_pulse_id": true,
  "protocol": "tcp",
- "_image_background": "../tests/background_config/simulation_20220217_172655_914633.npy"
+ "_image_background": "../tests/background_config/simulation_20220217_172655_914633.npy",
+ "no_client_timeout": 0
 }

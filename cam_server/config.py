@@ -110,7 +110,11 @@ PIPELINE_BSREAD_DATA_COMPRESSION = None
 
 ABORT_ON_ERROR = True
 ABORT_ON_TIMEOUT = False
+NOTIFY_ON_ERROR = ["_sp"]   #Bool or pipeline sufixes
+
 TIMEOUT_COUNT = 10
+
+PIPELINE_PROCESSING_ERROR = "processing_error"
 
 ################
 # IPC settings #

@@ -2,7 +2,7 @@ import numpy
 from logging import getLogger
 from cam_server.pipeline.data_processing.functions import rotate, subtract_background, subtract_background_signed, \
     get_region_of_interest, apply_threshold, binning
-
+from cam_server.pipeline.utils import notify_processing_error
 _logger = getLogger(__name__)
 
 averaging_buffer = []
@@ -16,15 +16,16 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_
 
     if image_background_array is not None:
         if image.shape != image_background_array.shape:
-            _logger.debug(
-                "Bad background shape: %s instead of %s - %s" % (image_background_array.shape, image.shape, str(parameters.get("name"))))
-            raise RuntimeError("Invalid background_image size")
-        if parameters.get("image_background_enable") == "passive":
-            parameters["background_data"] = image_background_array
-        elif parameters.get("image_background_enable") == "signed":
-            image = subtract_background_signed(image, image_background_array)
+            error = "Bad background image size: %s instead of %s" % (str(image_background_array.shape), str(image.shape))
+            _logger.debug("%s - %s" % (error, str(parameters.get("name"))))
+            notify_processing_error("Bad background image size")
         else:
-            image = subtract_background(image, image_background_array)
+            if parameters.get("image_background_enable") == "passive":
+                parameters["background_data"] = image_background_array
+            elif parameters.get("image_background_enable") == "signed":
+                image = subtract_background_signed(image, image_background_array)
+            else:
+                image = subtract_background(image, image_background_array)
 
     # Check for rotation parameter
     if parameters.get("mirror_x"):

@@ -1,7 +1,6 @@
 import os
-
 from setuptools import setup
-
+import pathlib
 
 # Utility function to read the README file.
 # Used for the long_description.  It's nice, because now 1) we have a top level
@@ -10,9 +9,15 @@ from setuptools import setup
 def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
+def version():
+    p = pathlib.Path(__file__).parent.joinpath("cam_server_client").joinpath("package_version.txt")
+    with open(p, "r") as f1:
+        return f1.read()
+
+print (version())
 
 setup(name="cam_server",
-      version="5.6.9",
+      version=version(),
       maintainer="Paul Scherrer Institute",
       maintainer_email="daq@psi.ch",
       author="Paul Scherrer Institute",
