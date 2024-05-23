@@ -321,7 +321,7 @@ class ProxyBase:
             """
             Return the proxy heartbeat info.
             """
-            return {"state": "ok", "status": "Heartbeat", "version":  __VERSION__, "nodes":self.get_status()}
+            return {"state": "ok", "status": "Heartbeat", "version":  __VERSION__ } #, "nodes":self.get_status()}
 
 
     def _exists_file(self, folder, file):
