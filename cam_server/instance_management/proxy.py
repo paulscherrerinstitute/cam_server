@@ -90,6 +90,31 @@ class ProxyBase:
                     "status": "Running instances information.",
                     "info":  self.get_info()}
 
+        @app.get(api_root_address + "/info/<params:re:.*>")
+        def get_nested_info(params):
+            info = self.get_info()
+            param_list = params.split('/')
+            for p in param_list:
+                try:
+                    if p == 'keys':
+                        info = list(info.keys())
+                    elif p == 'values':
+                        info = list(info.values())
+                    else:
+                        index = int(p)
+                        if type(info) is list:
+                            info = info[index]
+                        elif type(info) is dict:
+                            info = info[list(info.keys())[index]]
+                        else:
+                            raise Exception()
+                except:
+                    info = info[p]
+            return {"state": "ok",
+                    "status": "Nested information.",
+                    "path": params,
+                    "ret": info}
+
         @app.delete(api_root_address + "/<instance_name>")
         def stop_instance(instance_name):
             """
@@ -296,7 +321,7 @@ class ProxyBase:
             """
             Return the proxy heartbeat info.
             """
-            return {"state": "ok", "status": "Heartbeat", "version":  __VERSION__}
+            return {"state": "ok", "status": "Heartbeat", "version":  __VERSION__, "nodes":self.get_status()}
 
 
     def _exists_file(self, folder, file):
