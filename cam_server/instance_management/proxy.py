@@ -308,6 +308,23 @@ class ProxyBase:
                     "status": "Proxy configuration  saved.",
                     "permanent_instances": self.permanent_instances}
 
+
+        @app.get(api_root_address + '/diag/<name>')
+        def get_diag(name):
+            """
+            Get instance  configuration.
+            :param name: Name of the instance to retrieve the config for.
+            :return: Config.
+            """
+            try:
+                diag = self.get_diag(name)
+                status = "%s diag retrieved." % name
+            except Exception as ex:
+                diag = None
+                status = "Invalid name: %s." % name
+            return {"state": "ok",
+                    "status": status,
+                    "diag": diag }
         @app.get(api_root_address + '/version')
         def get_version():
             """
@@ -579,6 +596,37 @@ class ProxyBase:
         else:
             _logger.info("Connecting to stream %s at %s" % (instance_name, server.get_address()))
         return server.get_instance_stream(instance_name)
+
+    def get_diag(self, name):
+        ret={}
+        try:
+            instances = self.get_info()['active_instances']
+            stats = instances[name]["statistics"]
+            ret["status"] = "active"
+            if type(stats["clients"]) is str:
+                aux = stats["clients"].split(" + ")
+                ret["clients"], ret["forwards"] = int(aux[0]), int(aux[1])
+            else:
+                ret["clients"], ret["forwards"] = int(stats["clients"]), None
+            ret["rx"] = stats["rx"].split("Hz")[0]
+            ret["tx"] = stats["tx"].split("Hz")[0]
+            ret["cpu"] = stats["cpu"]
+            ret["memory"] = stats["memory"]
+            ret["header_changes"] = stats["header_changes"]
+            ret["frame_shape"] = stats.get("frame_sape", None)
+            config = instances[name].get("config", None)
+            if config is not None:
+                ret["mode"] = config.get("mode", self.get_default_mode(config))
+        except:
+            if name in self.get_config_names():
+                ret["status"] = "inactive"
+            else:
+                ret["status"] = "invalid"
+        ret["permanent"] = self.is_permanent_instance(name)
+        return ret
+
+    def get_default_mode(self, config):
+        return "PUB"
 
     def on_creating_server_stream(self, server, instance_name, port):
         pass
