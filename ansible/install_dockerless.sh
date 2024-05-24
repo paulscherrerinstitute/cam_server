@@ -52,7 +52,7 @@ git clone https://github.com/paulscherrerinstitute/jungfrau_utils.git
 wget -O bitshuffle.tar.bz2 https://anaconda.org/paulscherrerinstitute/bitshuffle/0.3.6.2/download/linux-64/bitshuffle-0.3.6.2-py${PY_MAJOR}${PY_MINOR}h6bb024c_0.tar.bz2
 tar xvf ./bitshuffle.tar.bz2
 cp -r ./lib/python${PY_MIN}/site-packages/bitshuffle /usr/local/lib/python${PY_MIN}/site-packages/
-cp -r ./lib/python${PY_MIN}/site-packages/bitshuffle-0.3.6.dev1-py${PY_MIN}.egg-info /usr/local/lib/python${PY_MIN}/site-packages/i
+cp -r ./lib/python${PY_MIN}/site-packages/bitshuffle-0.3.6.dev1-py${PY_MIN}.egg-info /usr/local/lib/python${PY_MIN}/site-packages/
 rm bitshuffle.tar.bz2
 rm -r ./lib
 rm -r ./info
