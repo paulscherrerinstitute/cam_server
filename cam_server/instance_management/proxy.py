@@ -96,10 +96,13 @@ class ProxyBase:
             param_list = params.split('/')
             for p in param_list:
                 try:
-                    if p == 'keys':
+                    if p == '_keys':
                         info = list(info.keys())
-                    elif p == 'values':
+                    elif p == '_values':
                         info = list(info.values())
+                    elif p.startswith('_split_'):
+                        sep = p[7:]
+                        info = str(info).split(sep)
                     else:
                         index = int(p)
                         if type(info) is list:
