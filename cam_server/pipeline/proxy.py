@@ -65,14 +65,6 @@ class Proxy(ProxyBase):
     def collect_background(self, camera_name, number_of_images):
         return self.background_manager.collect_background(self.cam_server_client, camera_name, number_of_images)
 
-    def get_diag(self, name):
-        diag  = ProxyBase.get_diag(self, name)
-        if diag["status"] != "invalid":
-            pass
-        if diag["status"] == "active":
-            pass
-        return diag
-
     def get_default_mode(self, config):
         ptype = config.get("pipeline_type", None)
         if ptype in ("store", "fanout"):

@@ -26,14 +26,6 @@ class Proxy(ProxyBase):
             except:
                 pass
 
-    def get_diag(self, name):
-        diag  = ProxyBase.get_diag(self, name)
-        if diag["status"] != "invalid":
-            pass
-        if diag["status"] == "active":
-            pass
-        return diag
-
     # TODO: get_camera_image and get_camera_image_bytes connect diretly to the camera.
     #      What should do if there is a connected server to that camera?
 

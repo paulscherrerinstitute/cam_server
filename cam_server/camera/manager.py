@@ -65,3 +65,15 @@ class Manager(ProxyBase):
                     server.delete_script(script_name)
                 except:
                     _logger.error("Error deleting user script %s on %s" % (script_name, server.get_address()))
+
+    def get_diag(self, name, info=None):
+        diag = ProxyBase.get_diag(self, name, info)
+        diag["databuffer"] = "invalid"
+        if diag["status"] == "active":
+            if diag.get("permanent"):
+                if diag.get("forwards", None) is not None:
+                    if int(diag.get("forwards")) > 0:
+                        diag["databuffer"] = "active"
+                    else:
+                        diag["databuffer"] = "inactive"
+        return diag

@@ -365,6 +365,44 @@ class Manager(ProxyBase):
 
     def start_permanent_instance(self, pipeline, name):
         _logger.info("Starting permanent instance of %s: %s" % (pipeline,name))
-
         self.create_pipeline(pipeline, {"no_client_timeout": 0}, name)
 
+    def get_diag(self, name, info=None):
+        if name.startswith("camera:"):
+            name=name[7:]
+            instances = self.cache_info['active_instances']
+            ret = {}
+            pipelines = {}
+            databuffer = "invalid"
+            for pipeline_name, pipeline in instances.items():
+                if pipeline['camera_name'] == name:
+                    diag =self.get_diag(pipeline_name, self.cache_info)
+                    pipelines[pipeline_name] = diag
+                    if diag['databuffer']=="inactive":
+                        if databuffer == "invalid":
+                            databuffer = "inactive"
+                        elif databuffer == "all_active":
+                            databuffer = "active"
+                    elif diag['databuffer'] == "active":
+                        if databuffer == "invalid":
+                            databuffer = "all_active"
+                        elif databuffer == "inactive":
+                            databuffer = "active"
+            ret["pipelines"]=pipelines
+            ret["databuffer"] = databuffer
+            return ret
+
+        diag = ProxyBase.get_diag(self, name, info)
+        if diag["status"] == "invalid":
+            pass
+
+        diag["databuffer"] = "invalid"
+        if diag["status"] == "active":
+            if diag.get("permanent",False) and diag.get("mode","PUB") == "PUSH":
+                if diag.get("forwards", None) is not None:
+                    if int(diag.get("clients",0)) > 4:
+                        diag["databuffer"] = "active"
+                    else:
+                        diag["databuffer"] = "inactive"
+
+        return diag

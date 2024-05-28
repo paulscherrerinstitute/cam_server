@@ -18,6 +18,7 @@ class ProxyBase:
     def __init__(self, config_manager, config_str, client_class, server_timeout = None, update_timeout = None):
         self.config_manager = config_manager
         self.config_file = None
+        self.cache_info = None
         self.update_timeout = update_timeout
         self.configuration, self.enabled_servers = self._parse_proxy_config(config_str)
         self.server_pool = [client_class(server, server_timeout) for server in self.get_enabled_servers()]
@@ -318,7 +319,7 @@ class ProxyBase:
             """
             try:
                 diag = self.get_diag(name)
-                status = "%s diag retrieved." % name
+                status = "Diag: %s." % name
             except Exception as ex:
                 diag = None
                 status = "Invalid name: %s." % name
@@ -575,6 +576,7 @@ class ProxyBase:
         except Exception as e:
             _logger.warning("Error getting proxy info: " + str(sys.exc_info()[1]))
         ret['servers'] = servers_info
+        self.cache_info = ret
         return ret
 
     def get_instance_stream(self, instance_name):
@@ -597,10 +599,12 @@ class ProxyBase:
             _logger.info("Connecting to stream %s at %s" % (instance_name, server.get_address()))
         return server.get_instance_stream(instance_name)
 
-    def get_diag(self, name):
+    def get_diag(self, name, info=None):
         ret={}
         try:
-            instances = self.get_info()['active_instances']
+            if info is None:
+                info = self.get_info()
+            instances = info['active_instances']
             stats = instances[name]["statistics"]
             ret["status"] = "active"
             if type(stats["clients"]) is str:
