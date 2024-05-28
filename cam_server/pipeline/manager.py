@@ -398,11 +398,9 @@ class Manager(ProxyBase):
 
         diag["databuffer"] = "invalid"
         if diag["status"] == "active":
-            if diag.get("permanent",False) and diag.get("mode","PUB") == "PUSH":
-                if diag.get("forwards", None) is not None:
-                    if int(diag.get("clients",0)) > 4:
-                        diag["databuffer"] = "active"
-                    else:
-                        diag["databuffer"] = "inactive"
-
+            if diag.get("permanent", False) and diag.get("mode", "PUB") == "PUSH":
+                if int(diag.get("clients",0)) > 4:
+                    diag["databuffer"] = "active"
+                else:
+                    diag["databuffer"] = "inactive"
         return diag
