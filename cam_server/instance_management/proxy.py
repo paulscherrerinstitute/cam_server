@@ -326,6 +326,36 @@ class ProxyBase:
             return {"state": "ok",
                     "status": status,
                     "diag": diag }
+
+        @app.get(api_root_address + "/diag/<name>/<params:re:.*>")
+        def get_nested_diag(name, params):
+            diag = self.get_diag(name)
+            param_list = params.split('/')
+            for p in param_list:
+                try:
+                    if p == '_keys':
+                        diag = list(diag.keys())
+                    elif p == '_values':
+                        diag = list(diag.values())
+                    elif p.startswith('_split_'):
+                        sep = p[7:]
+                        diag = str(diag).split(sep)
+                    else:
+                        index = int(p)
+                        if type(diag) is list:
+                            diag = diag[index]
+                        elif type(diag) is dict:
+                            diag = diag[list(diag.keys())[index]]
+                        else:
+                            raise Exception()
+                except:
+                    diag = diag[p]
+            return {"state": "ok",
+                    "status": "Nested diag.",
+                    "name": name,
+                    "path": params,
+                    "ret": diag}
+
         @app.get(api_root_address + '/version')
         def get_version():
             """
