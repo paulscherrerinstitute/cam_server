@@ -27,15 +27,15 @@ class CameraBsread(CameraEpics):
 
         _logger.info("Collecting bsread camera settings.")
 
-        bsread_source_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_STREAM_ADDRESS
-
-        _logger.debug("Checking camera bsread stream address '%s' PV." % bsread_source_pv)
-
-        self.bsread_stream_address = self.caget(bsread_source_pv)
-        _logger.info("Got stream address: %s" % str(self.bsread_stream_address))
+        self.bsread_stream_address  = self.camera_config.get_configuration().get("url", None)
+        if not self.bsread_stream_address:
+            bsread_source_pv = self.camera_config.get_source() + config.EPICS_PV_SUFFIX_STREAM_ADDRESS
+            _logger.debug("Checking camera bsread stream address '%s' PV." % bsread_source_pv)
+            self.bsread_stream_address = self.caget(bsread_source_pv)
         if not self.bsread_stream_address:
             raise RuntimeError("Could not fetch bsread stream address for cam_server:{}".format(
                 self.camera_config.get_source()))
+        _logger.info("Got stream address: %s" % str(self.bsread_stream_address))
 
     def get_stream(self, timeout=config.ZMQ_RECEIVE_TIMEOUT, data_change_callback=None):
         source_host, source_port = get_host_port_from_stream_address(self.bsread_stream_address)
