@@ -136,7 +136,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
             x_axis, y_axis = camera.get_x_y_axis()
             x_size, y_size = camera.get_geometry()
             enforce_pid = camera.camera_config.parameters.get("enforce_pid", True)
-            enforce_timestamp = camera.camera_config.parameters.get("enforce_pid", True)
+            enforce_timestamp = camera.camera_config.parameters.get("enforce_timestamp", True)
             check_timestamp = camera.camera_config.parameters.get("check_timestamp", True)
 
         def data_change_callback(channels):
