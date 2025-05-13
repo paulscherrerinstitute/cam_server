@@ -224,8 +224,9 @@ For camera configuration, all fields must be specified, and there is no defaulti
 #### Configuration parameters
 
 - **name**: Name of the camera.
-- **source**: Source of the camera (PV prefix, bsread stream)
-- **source_type**: Type of the source (available: epics, bsread, simulation)
+- **source_type**: Type of source: epics, bsread (bsread camera), simulation, array10, 
+                   area_detector, hdf5 or bsstr (bsread stream).
+- **source**: Identifyer of the source: PV prefix, bsread stream, device name, file name, URL...
 - **mirror\_x**: Mirror camera image over X axis.
 - **mirror\_y**: Mirror camera image over Y axis.
 - **rotate**: how many times to rotate the camera image by 90 degrees.

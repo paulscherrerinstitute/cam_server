@@ -555,6 +555,8 @@ source_type_to_sender_function_mapping = {
     "stream": process_standard_camera,
     "hdf5": process_standard_camera,
     "array10": process_standard_camera,
+    "bsstr": process_standard_camera,
+    "stddaq": process_standard_camera,
     "script": process_standard_camera
 }
 

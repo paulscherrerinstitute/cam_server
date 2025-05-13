@@ -8,13 +8,12 @@
  "pipeline_type": "processing",
  "camera_name": "simulation",
  "name": "simulation",
- "_function": "mylib.cpython-39-darwin.so",
- "function": "pipproc.c",
  "_function": "single_photon.c",
  "max_frame_rate": 10.1,
  "group": [
   "simulation"
  ],
- "libs": ["threshold_2d_start600_800.txt"],
- "reload": true
+ "_libs": [
+  "threshold_2d_start600_800.txt"
+ ]
 }

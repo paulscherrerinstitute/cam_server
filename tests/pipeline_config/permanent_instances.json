@@ -1,16 +1,9 @@
 {
-    "#camera_worker1": "camera_worker",
     "#custom_example": "custom_example",
-    "#fanin_camera": "fanin_camera",
-    "#fanin_pipeline": "fanin_pipeline",
-    "#fanout_camera": "fanout_camera",
-    "#fanout_pipeline": "fanout_pipeline",
-    "#merge": "merge",
     "#simulation": "simulation",
     "#simulation2_sp": "simulation2_sp",
     "#simulation3_sp": "simulation3_sp",
     "#source_test_sp": "source_test_sp",
     "#stream_example": "stream_example",
-    "#stream_source_sp": "stream_source_sp",
     "simulation_sp": "simulation_sp"
 }

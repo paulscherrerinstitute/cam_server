@@ -26,6 +26,7 @@ requirements:
       - pillow
       - matplotlib
       - scikit-image
+      - redis
 
 build:
   number: 0

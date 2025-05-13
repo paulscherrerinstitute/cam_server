@@ -335,7 +335,7 @@ class PipelineClientTest(unittest.TestCase):
 
     def test_buffered_pipeline(self):
         instance_id, stream_address = self.pipeline_client.create_instance_from_config(
-            {"camera_name": "simulation", "buffer_size":20, "no_client_timeout": 60, "mode": "PUSH", "queue_size": 1})
+            {"camera_name": "simulation", "buffer_size":20, "no_client_timeoutno_client_timeout": 60, "mode": "PUSH", "queue_size": 1})
         host, port = get_host_port_from_stream_address(stream_address)
         time.sleep(2.0)
         with source(host=host, port=port, mode=PULL) as stream:

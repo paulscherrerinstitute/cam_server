@@ -131,7 +131,7 @@ class Camera:
     def get_dtype(self):
         dtype = self.camera_config.get_configuration().get("dtype")
         if dtype is None:
-            if self.dtype  is None:
+            if self.dtype is None:
                 return "uint16"
             return self.dtype
         return dtype
@@ -364,10 +364,12 @@ class Camera:
         return 0
         # return int(time.time() * 100)
 
+    def get_timestamp(self):
+        return time.time()
+
     def get_data(self):
         image = self.get_image()
-        timestamp = time.time()
-        return image, timestamp, self.get_pulse_id()
+        return image, self.get_timestamp(), self.get_pulse_id()
 
     def register_channels(self, register_type_shape=True):
         # Register the bsread channels - compress only the image.
