@@ -17,7 +17,7 @@ class Array10(Camera):
 
     def connect(self):
         self.input_stream_address = self.camera_config.get_source()
-        self.mode = zmq.PULL if self.camera_config.get_configuration().get("mode", "SUB") else zmq.SUB
+        self.mode = PULL if self.camera_config.get_configuration().get("mode", "SUB") == "PULL" else SUB
         self.ctx = zmq.Context()
         self.receiver = self.ctx.socket(self.mode)
         self.receiver.connect(self.input_stream_address)
