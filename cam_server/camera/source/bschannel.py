@@ -14,7 +14,7 @@ class BsreadChannel(Camera):
         self.source = None
         self.channel = None
         self.mode = None
-        self.receive_timeout = config.ZMQ_RECEIVE_TIMEOUT
+        self.receive_timeout = self.camera_config.get_configuration().get("timeout", -1)
         self.timestamp = None
         self.pulse_id = None
         self.height_raw, self.width_raw = 0,0
