@@ -1,4 +1,4 @@
-from cam_server.camera.source.bsread_stream import BsreadStream
+from cam_server.camera.source.bschannel import BsreadChannel
 from cam_server.utils import get_host_port_from_stream_address
 from logging import getLogger
 import redis
@@ -6,7 +6,7 @@ import redis
 _logger = getLogger(__name__)
 
 
-class StdDaq(BsreadStream):
+class StdDaq(BsreadChannel):
     def __init__(self, camera_config):
         super(StdDaq, self).__init__(camera_config)
         self.url = camera_config.get_configuration().get("url", "sf-daq-6.psi.ch:6379")

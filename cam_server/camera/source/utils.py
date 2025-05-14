@@ -9,7 +9,7 @@ from cam_server.camera.source.simulation import CameraSimulation
 from cam_server.camera.source.stream import CameraStream
 from cam_server.camera.source.hdf5 import Hdf5
 from cam_server.camera.source.array10 import Array10
-from cam_server.camera.source.bsread_stream import BsreadStream
+from cam_server.camera.source.bschannel import BsreadChannel
 from cam_server.camera.source.stddaq import StdDaq
 
 _logger = getLogger(__name__)
@@ -23,7 +23,7 @@ source_type_to_source_class_mapping = {
     "stream": CameraStream,
     "hdf5": Hdf5,
     "array10": Array10,
-    "bsstr": BsreadStream,
+    "bschannel": BsreadChannel,
     "stddaq": StdDaq,
     "script": None
 }

@@ -14,7 +14,7 @@
  "camera_name": "simulation2",
  "name": "simulation2_sp",
  "function": "transparent",
- "max_frame_rate": 1.1,
+ "_max_frame_rate": 1.1,
  "exclude": [],
  "include": [
   "image",
@@ -29,5 +29,7 @@
  "group": [
   "simulation",
   "sp"
- ]
+ ],
+ "mode": "PUB",
+ "block": false
 }

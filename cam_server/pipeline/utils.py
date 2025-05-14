@@ -655,6 +655,8 @@ def send_data(processed_data, global_timestamp, pulse_id):
 def _send_data(processed_data, global_timestamp, pulse_id, message_buffer = None):
     if processed_data is not None:
         pars = get_parameters()
+        #!!!
+
         # Requesting subset of the data
         include = pars.get("include")
         if include:

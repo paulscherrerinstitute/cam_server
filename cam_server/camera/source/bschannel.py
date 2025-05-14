@@ -6,9 +6,9 @@ from cam_server.utils import get_host_port_from_stream_address
 _logger = getLogger(__name__)
 
 
-class BsreadStream(Camera):
+class BsreadChannel(Camera):
     def __init__(self, camera_config):
-        super(BsreadStream, self).__init__(camera_config)
+        super(BsreadChannel, self).__init__(camera_config)
         self.camera_config = camera_config
         self.input_stream_address = None
         self.source = None
