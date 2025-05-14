@@ -31,7 +31,7 @@ class BsreadChannel(Camera):
         self.mode = PULL if mode == "PULL" else SUB
         if not self.channel:
             self.channel = self.camera_config.get_configuration().get("channel", None)
-        _logger.info("Connecting to %s:%s %s" % (str(self.source_host), str(self.source_port) , str(mode)))
+        _logger.info("Connecting to %s:%s %s" % (str(source_host), str(source_port) , str(mode)))
         self.source = Source(host=source_host, port=source_port, mode=self.mode, receive_timeout=self.receive_timeout)
         self.source.connect()
         #Try not read size not to consume first message
