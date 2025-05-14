@@ -26,8 +26,10 @@ class BsreadChannel(Camera):
         if not self.input_stream_address:
             self.input_stream_address = self.camera_config.get_source()
         source_host, source_port = get_host_port_from_stream_address(self.input_stream_address)
-        self.mode = self.camera_config.get_configuration().get("mode", SUB)
-        self.channel = self.camera_config.get_configuration().get("channel", None)
+        self.mode = PULL if self.camera_config.get_configuration().get("mode", "SUB") else SUB
+        if not self.channel:
+            self.channel = self.camera_config.get_configuration().get("channel", None)
+        _logger.info("Connecting to %s:%s" % (str(self.input_stream_address), str(self.channel)))
         self.source = Source(host=source_host, port=source_port, mode=self.mode, receive_timeout=self.receive_timeout)
         self.source.connect()
         #Try not read size not to consume first message

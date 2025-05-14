@@ -16,6 +16,7 @@ class StdDaq(BsreadChannel):
 
     def connect(self):
         self.input_stream_address = self.get_instance_stream(self.device)
+        self.channel = self.camera_config.get_configuration().get("channel", self.device + ":FPICTURE")
         super(StdDaq, self).connect()
 
     def get_instance_stream(self, name):
