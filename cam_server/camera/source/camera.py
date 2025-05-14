@@ -133,7 +133,7 @@ class Camera:
         if dtype is None:
             if self.dtype is None:
                 return "uint16"
-            return self.dtype
+            return str(self.dtype)
         return dtype
 
     def get_debug(self):
