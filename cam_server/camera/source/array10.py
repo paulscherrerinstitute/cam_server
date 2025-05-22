@@ -1,5 +1,6 @@
 import zmq
 from cam_server.camera.source.camera import *
+from bsread import PULL, SUB
 import json
 
 _logger = getLogger(__name__)
@@ -40,7 +41,6 @@ class Array10(Camera):
 
     def __enter__(self):
         self.connect()
-        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.disconnect()
@@ -53,7 +53,9 @@ class Array10(Camera):
             self.dtype = self.header.get("type", "int8")
             data = self.receiver.recv()
             if data is not None:
-                array = numpy.frombuffer(data, dtype=self.dtype)
+                #array = numpy.frombuffer(data, dtype=self.dtype)
+                #array = array.reshape((self.height_raw, self.width_raw))
+                array = numpy.ndarray(shape=(self.height_raw, self.width_raw), dtype=self.dtype, buffer=data)
                 self.pid = self.pid + 1
                 return array
         except Exception as e:
