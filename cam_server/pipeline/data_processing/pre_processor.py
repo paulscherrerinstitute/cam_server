@@ -14,7 +14,9 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, image_
     if (by > 1) or (bx > 1):
         image, x_axis, y_axis = binning(image, x_axis, y_axis, bx, by, bm)
 
-    if image_background_array is not None:
+    if not parameters.get("image_background_ok", True):
+        notify_processing_error("Invalid background image file: " + parameters.get("image_background", ""))
+    elif image_background_array is not None:
         if image.shape != image_background_array.shape:
             error = "Bad background image size: %s instead of %s" % (str(image_background_array.shape), str(image.shape))
             _logger.debug("%s - %s" % (error, str(parameters.get("name"))))
