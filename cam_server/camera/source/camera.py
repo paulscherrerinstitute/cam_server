@@ -72,7 +72,7 @@ class Camera:
         return self._get_compression("forwarder_compression", config.CAMERA_BSREAD_IMAGE_COMPRESSION)
 
 
-    def get_geometry(self):
+    def get_geometry(self, roi=True):
         width, height = self.get_raw_geometry()
         if self.camera_config.parameters.get("binning_y"):
             height = int(height / self.camera_config.parameters.get("binning_y"))
@@ -82,9 +82,12 @@ class Camera:
         rotate = self.camera_config.parameters["rotate"]
         if rotate == 1 or rotate == 3:
             # If rotating by 90 degree, height becomes width.
-            return height, width
-        else:
-            return width, height
+            width, height = height, width
+        if roi and self.camera_config.parameters["roi"]:
+            offset_x, size_x, offset_y, size_y = self.camera_config.parameters["roi"]
+            offset_x, size_x, offset_y, size_y = int(offset_x), int(size_x), int(offset_y), int(size_y)
+            width, height = size_x, size_y
+        return width, height
 
     def get_name(self):
         return self.camera_config.get_name()
@@ -262,7 +265,7 @@ class Camera:
         """
 
         calibration = self.camera_config.parameters["camera_calibration"]
-        width, height = self.get_geometry()
+        width, height = self.get_geometry(False)
 
         if not calibration:
             x_axis = numpy.linspace(0, width - 1, width, dtype='f')
@@ -315,6 +318,7 @@ class Camera:
                     _logger.info("Invalid background shape for camera %s: %s" % (self.camera_config.get_source(), str(background_array.shape)))
                 else:
                     self.camera_config.parameters["background_data"] = background_array.astype("uint16", copy=False)
+
 
         roi = self.camera_config.parameters["roi"]
         if roi is not None:
