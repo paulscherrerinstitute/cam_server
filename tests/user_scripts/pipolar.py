@@ -22,16 +22,14 @@ class PpolPeakValley():
         self.x, self.y = self.ppol_interpol()
 
     def ppol_interpol(self, plot_flag=False):
-        ipv = [32.976, 20.848, 15.306, 12.121, 10.0499899, 8.595, 7.5176, 6.6871, 6.0276, 5.491, 5.0471, 4.673, 4.353,
-               4.0778, 3.837, 3.439, 3.122, 2.865, 2.652, 2.473, 2.32]
-        sig = [3.659, 5.175, 6.338, 7.318, 8.182, 8.963, 9.681, 10.350, 10.978, 11.572, 12.136, 12.676, 13.194, 13.692,
-               14.172, 15.087, 15.950, 16.769, 17.549, 18.296, 19.014]
+        ipv = [0.0, 32.976, 20.848, 15.306, 12.121, 10.050, 8.595, 7.518, 6.687, 6.028, 5.491, 5.047, 4.673, 4.353, 4.078, 3.837, 3.439, 3.122, 2.865, 2.652, 2.473, 2.320]
+        sig = [0.0, 3.659, 5.175, 6.338, 7.318, 8.182, 8.963, 9.681, 10.350, 10.978, 11.572, 12.136, 12.676, 13.194, 13.692, 14.172, 15.087, 15.950, 16.769, 17.549, 18.296, 19.014]
         sig2 = [element * element for element in sig]
         x = np.linspace(0, 999999, 999999)
-        x = [(1 + val) / 1000000 * max(ipv) for val in x]
+        x = [(1+val)/1000000*max(ipv) for val in x]
         interpfunc = interpolate.interp1d(ipv, sig2, kind='quadratic')
         inter_x = interpfunc(x)
-        sqrt_val = [math.sqrt(val) for val in inter_x]
+        sqrt_val = [math.sqrt(val) for  val in inter_x]
         y = [0]
         y.extend(sqrt_val)
         y.append(max(sig))
@@ -44,18 +42,19 @@ class PpolPeakValley():
         emittance = 0
         for i in range(0, len(self.x)):
             if self.x[i] > ratio:
-                self.y[i - 1]
-                return self.y[i - 1]
+                self.y[i-1]
+                return self.y[i-1]
 
-
-# For peak search - delta(h) to max peak value
-DELTA_HEIGHT = 400  # 400
-BG_XRANGE_LOW = [340, 400]  # 100 160 [340, 400]
-BG_XRANGE_HIGH = [460, 520]  # 840 900 [460, 520]
+#For peak search - delta(h) to max peak value
+DELTA_HEIGHT = 400
+BG_XRANGE_LOW = [340, 400] #100 160
+BG_XRANGE_HIGH = [460, 520] #840 900
 
 PEAK_SEARCH_REL_RANGE = [-1, 2]
 VALLEY_SEARCH_REL_RANGE = [-2, 3]
 ppol = PpolPeakValley()
+
+
 
 # abreviations
 BX1 = BG_XRANGE_LOW[0]

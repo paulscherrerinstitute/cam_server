@@ -1,7 +1,10 @@
 from cam_server.camera.source.bschannel import BsreadChannel
 from cam_server.utils import get_host_port_from_stream_address
 from logging import getLogger
-import redis
+try:
+    import redis
+except:
+    redis = None
 
 _logger = getLogger(__name__)
 
@@ -9,6 +12,8 @@ _logger = getLogger(__name__)
 class StdDaq(BsreadChannel):
     def __init__(self, camera_config):
         super(StdDaq, self).__init__(camera_config)
+        if redis is None:
+            raise Exception("Redis is not installed")
         self.url = camera_config.get_configuration().get("url", "sf-daq-6.psi.ch:6379")
         self.host, self.port = get_host_port_from_stream_address(self.url)
         self.db = camera_config.get_configuration().get("db", '0')
