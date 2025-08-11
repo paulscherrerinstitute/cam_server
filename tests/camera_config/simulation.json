@@ -14,7 +14,12 @@
  "mirror_x": false,
  "mirror_y": false,
  "rotate": 0,
- "roi": null,
+ "roi": [
+  441,
+  366,
+  295,
+  324
+ ],
  "image_background": null,
  "source_type": "simulation",
  "name": "simulation",

@@ -3,7 +3,7 @@
     "#simulation": "simulation",
     "#simulation2_sp": "simulation2_sp",
     "#simulation3_sp": "simulation3_sp",
+    "#simulation_sp": "simulation_sp",
     "#source_test_sp": "source_test_sp",
-    "#stream_example": "stream_example",
-    "simulation_sp": "simulation_sp"
+    "#stream_example": "stream_example"
 }

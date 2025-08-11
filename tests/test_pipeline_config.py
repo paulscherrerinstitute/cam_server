@@ -8,8 +8,8 @@ import os
 
 from copy import deepcopy
 
-from cam_server.pipeline.configuration import BackgroundImageManager, PipelineConfig
-from cam_server.instance_management.configuration import UserScriptsManager
+from cam_server.pipeline.configuration import PipelineConfig
+from cam_server.instance_management.configuration import UserScriptsManager, BackgroundImageManager
 from cam_server.utils import update_pipeline_config
 from tests import require_folder
 from tests.helpers.factory import get_test_pipeline_manager

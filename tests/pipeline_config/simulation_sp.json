@@ -1,4 +1,4 @@
- {
+{
  "image_background_enable": true,
  "image_background": "simulation_20240320_144334_156830",
  "image_threshold": null,
@@ -27,7 +27,7 @@
  "_function": "transparent.py",
  "pv_fit_x": "TESTIOC:TESTCALCOUT:Input",
  "pv_fit_y": "TESTIOC:TESTCALCOUT:Output",
- "debug": false,
+ "debug": true,
  "group": [
   "simulation",
   "sp"
@@ -37,7 +37,5 @@
   "test.py",
   "linux.zip"
  ],
- "no_client_timeout": 0,
- "reload": true,
- "data_compression": true
+ "no_client_timeout": 0
 }
