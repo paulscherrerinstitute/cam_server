@@ -7,9 +7,10 @@ _logger = logging.getLogger(__name__)
 
 
 class Manager(ProxyBase):
-    def __init__(self, config_manager, user_scripts_manager, config_str, client_timeout=None, update_timeout=None):
+    def __init__(self, config_manager, background_manager, user_scripts_manager, config_str, client_timeout=None, update_timeout=None):
         ProxyBase.__init__(self, config_manager, config_str,CamClient, client_timeout, update_timeout)
         self.user_scripts_manager = user_scripts_manager
+        self.background_manager = background_manager
         utils._user_scripts_manager = user_scripts_manager
 
     def get_config_names(self):
@@ -22,12 +23,14 @@ class Manager(ProxyBase):
         self.config_manager.save_camera_config(camera_name, new_config)
         server = self.get_server(camera_name)
         if server is not None:
+            self._check_background(server, new_config, camera_name)
             server.set_camera_config(camera_name, new_config)
 
     def on_creating_server_stream(self, server, instance_name, port):
         if (instance_name is not None) and (server is not None):
             # Update volatile config
             config = self.config_manager.get_camera_config(instance_name).get_configuration()
+            self._check_background(server, config, instance_name)
             if port:
                 config["port"] = port
             server.set_camera_config(instance_name, config)
@@ -77,3 +80,18 @@ class Manager(ProxyBase):
                     else:
                         diag["databuffer"] = "inactive"
         return diag
+
+    def _check_background(self, server, configuration, instance_name):
+        image_background = configuration.get("image_background", "")
+        if image_background:
+            if image_background == True:
+                image_background = self.background_manager.get_latest_background_id(configuration.get("name"))
+            else:
+                image_background = str(image_background).strip()
+            try:
+                # Check if the background can be loaded
+                image_array = self.background_manager.get_background(image_background)
+                server.set_background_image_array(image_background, image_array)
+                configuration["image_background"] = image_background
+            except:
+                _logger.error("Bad background file for %s: %s" % (str(configuration.get("name")),str(image_background)))

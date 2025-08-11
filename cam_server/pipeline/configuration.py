@@ -3,14 +3,6 @@ import logging
 from collections import OrderedDict
 
 import copy
-import os
-from datetime import datetime
-from os.path import basename
-from cam_server.ipc import ipc_source
-from cam_server.utils import sum_images, get_host_port_from_stream_address
-from bsread import source, SUB
-
-import numpy
 
 from cam_server import config
 from cam_server.pipeline.transceiver import get_pipeline_function
@@ -92,103 +84,6 @@ class PipelineConfigManager(object):
             raise ValueError("Pipeline '%s' does not exist." % pipeline_name)
 
         self.config_provider.delete_config(pipeline_name)
-
-
-class BackgroundImageManager(object):
-    def __init__(self, background_folder):
-
-        if len(background_folder) > 1 and background_folder[-1] == '/':
-            background_folder = background_folder[:-1]
-
-        self.background_folder = background_folder
-
-    def get_background(self, background_name):
-        if not background_name:
-            return None
-
-        background_filename = os.path.join(self.background_folder, background_name + ".npy")
-
-        if not os.path.exists(background_filename):
-            raise ValueError("Requested background '%s' does not exist." % background_name)
-
-        return numpy.load(background_filename)
-
-    def save_background(self, background_name, image, append_timestamp=True):
-        if append_timestamp:
-            background_name += datetime.now().strftime("_%Y%m%d_%H%M%S_%f")
-
-        background_filename = os.path.join(self.background_folder, background_name + ".npy")
-        numpy.save(background_filename, image)
-
-        return background_name
-
-    def get_cameras_with_background(self):
-        cameras = set()
-        try:
-            files = glob.glob(
-                self.background_folder + '/*_[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9]_[0-9][0-9][0-9][0-9][0-9][0-9].npy')
-            for f in files:
-                cameras.add(os.path.basename(f)[0:-27])
-        except:
-            pass
-        return cameras
-
-    def _get_background_files(self, background_prefix):
-        bg = (background_prefix + "_") if not background_prefix.endswith("_") else background_prefix
-        matching_backgrounds = glob.glob(self.background_folder + '/%s*.npy' % bg)
-        if not matching_backgrounds:
-            raise ValueError("No background matches for the specified prefix '%s'." % background_prefix)
-        return sorted(matching_backgrounds)
-
-    def get_latest_background_id(self, background_prefix):
-        backgrounds=self._get_background_files(background_prefix)
-        latest_background_filename = backgrounds[-1]
-        latest_background_id = os.path.splitext(basename(latest_background_filename))[0]
-        return latest_background_id
-
-    def get_background_ids(self, background_prefix):
-        backgrounds = self._get_background_files(background_prefix)
-        for i in range(len(backgrounds)):
-            backgrounds[i] = os.path.splitext(basename(backgrounds[i]))[0]
-        return backgrounds
-
-
-    def collect_background(self, cam_server_client, camera_name, n_images):
-
-        stream_address = cam_server_client.get_instance_stream(camera_name)
-        ipc = stream_address.startswith("ipc")
-
-        try:
-
-            host, port = get_host_port_from_stream_address(stream_address)
-            accumulator_image = None
-
-            if ipc:
-                for _ in range(n_images):
-                    image = cam_server_client.get_camera_array(camera_name).astype(dtype="uint16")
-                    accumulator_image = sum_images(image, accumulator_image)
-            else:
-                with source(host=host, port=port, mode=SUB) as stream:
-                    for _ in range(n_images):
-                        data = stream.receive()
-                        image = data.data.data["image"].value
-                        accumulator_image = sum_images(image, accumulator_image)
-
-            background_prefix = camera_name
-            background_image = accumulator_image / n_images
-
-            # Convert image to uint16.
-            background_image = background_image.astype(dtype="uint16")
-
-            background_id = self.save_background(background_prefix, background_image)
-
-            return background_id
-
-        except:
-            _logger.exception("Error while collecting background.")
-            raise
-
-
 
 
 class PipelineConfig:

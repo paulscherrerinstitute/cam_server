@@ -4,8 +4,8 @@ import os
 
 from cam_server import config
 from cam_server.camera.configuration import CameraConfigManager
-from cam_server.instance_management.configuration import ConfigFileStorage
-from cam_server.pipeline.configuration import PipelineConfigManager, BackgroundImageManager
+from cam_server.instance_management.configuration import ConfigFileStorage, BackgroundImageManager
+from cam_server.pipeline.configuration import PipelineConfigManager
 
 _logger = logging.getLogger(__name__)
 

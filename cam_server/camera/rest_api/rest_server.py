@@ -1,6 +1,7 @@
 import base64
 import json
 import logging
+import pickle
 
 import bottle
 from bottle import request, response
@@ -199,6 +200,27 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
                 "image": {"bytes": base64_bytes.decode("utf-8"),
                           "shape": image_shape,
                           "dtype": image_dtype}}
+
+    @app.put(api_root_address + '/background/<background_name>/image_bytes')
+    def set_background_image_bytes(background_name):
+        """
+        Sets the bytes of a background file.
+        :param background_name: Background file name.
+        :param image_bytes: Contents of file
+        :return:
+        """
+        try:
+            #Big arrays: request.body is BufferedRandom
+            data = request.body.raw.readall()
+        except:
+            #request.body is  BytesIO
+            data = request.body.getvalue()
+        arr = pickle.loads(data)
+        instance_manager.background_manager.save_background(background_name, arr, False)
+        return {"state": "ok",
+                "status": "Background image %s stored." % background_name,
+                }
+
 
     @app.get(api_root_address + '/script')
     def get_script_list():

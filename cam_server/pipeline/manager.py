@@ -311,7 +311,17 @@ class Manager(ProxyBase):
         if configuration.get("image_background_enable"):
             image_background = configuration.get("image_background")
             if not image_background:
-                image_background = server.get_instance_config(instance_name).get("image_background")
+                try:
+                    image_background = self.background_manager.get_latest_background_id(configuration.get("camera_name"))
+                    if image_background:
+                        configuration["image_background"] = image_background
+                except:
+                    pass
+            if not image_background:
+                try:
+                    image_background = server.get_instance_config(instance_name).get("image_background")
+                except:
+                    pass
             if image_background:
                 try:
                     # Check if the background can be loaded

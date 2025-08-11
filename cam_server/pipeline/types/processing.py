@@ -86,7 +86,7 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
                 background_array = background_manager.get_background(background_id)
                 parameters["image_background_ok"] = True
             except:
-                _logger.warning("Invalid background_id: %s.%s" % (background_id, get_log_tag()))
+                _logger.warning("Invalid background_id: %s.%s" % (str(background_id), get_log_tag()))
                 #if abort_on_error():
                 #    raise
                 parameters["image_background_ok"] = False

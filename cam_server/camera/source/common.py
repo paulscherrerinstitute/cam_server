@@ -31,7 +31,7 @@ def transform_image(image, camera_config):
             background, _, _ = binning(background, None, None, bx, by, bm)
         if background.shape == image.shape:
             mask_for_zeros = (background > image)
-            image = numpy.subtract(image, background)
+            numpy.subtract(image, background, image)
             image[mask_for_zeros] = 0
         else:
             _logger.info("Bad background shape for camera %s: %s instead of %s" % (camera_config.get_source(),background.shape, image.shape))

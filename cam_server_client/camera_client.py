@@ -3,6 +3,7 @@ import base64
 import numpy
 from cam_server_client.client import InstanceManagementClient
 from cam_server_client import config
+import pickle
 
 
 class CamClient(InstanceManagementClient):
@@ -135,6 +136,16 @@ class CamClient(InstanceManagementClient):
         server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return self.validate_response(server_response)["stream"]
 
-
+    def set_background_image_array(self, background_name, image_array):
+        """
+        Sets the array of a background file.
+        :param background_name: Background file name.
+        :param image_array: Numpy array
+        :return:
+        """
+        rest_endpoint = "/background/%s/image_bytes" % background_name
+        data = pickle.dumps(image_array, protocol=0)
+        server_response = requests.put(self.api_address_format % rest_endpoint, data=data, timeout=self.timeout).json()
+        self.validate_response(server_response)
 
 

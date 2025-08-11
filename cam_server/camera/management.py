@@ -7,6 +7,7 @@ from cam_server.camera.sender import get_sender_function
 import cam_server.camera.source.utils as utils
 from cam_server.camera.source.utils import get_source_class
 from cam_server.instance_management.management import InstanceManager, InstanceWrapper
+from cam_server.instance_management.configuration import TempBackgroundImageManager
 
 _logger = getLogger(__name__)
 
@@ -33,6 +34,7 @@ class CameraInstanceManager(InstanceManager):
         self.config_manager = config_manager
         self.user_scripts_manager = user_scripts_manager
         self.hostname = hostname
+        self.background_manager = TempBackgroundImageManager(clear=True)
         utils._user_scripts_manager = user_scripts_manager
 
     def get_camera_list(self):

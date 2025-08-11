@@ -21,6 +21,8 @@ import epics
 import sys
 import signal
 from cam_server import config
+import tempfile
+import atexit
 from cam_server_client.utils import *
 
 
@@ -626,3 +628,28 @@ def synchronise_threads(number_of_threads):
         if _thread_count == number_of_threads:
             _thread_event.set()
     _thread_event.wait()
+
+class AutoCleaningTempDir:
+    def __init__(self, prefix="tmp", suffix="", dir=None):
+        self.path = tempfile.mkdtemp(prefix=prefix, suffix=suffix, dir=dir)
+        self._cleaned = False
+
+        # Register cleanup for normal exit
+        atexit.register(self.cleanup)
+
+        # Register signal handlers for SIGINT (Ctrl+C) and SIGTERM
+        signal.signal(signal.SIGINT, self._handle_signal)
+        signal.signal(signal.SIGTERM, self._handle_signal)
+
+    def cleanup(self):
+        if not self._cleaned:
+            shutil.rmtree(self.path, ignore_errors=True)
+            self._cleaned = True
+            print(f"[AutoCleaningTempDir] Cleaned up temp dir: {self.path}")
+
+    def _handle_signal(self, signum, frame):
+        self.cleanup()
+        sys.exit(0)
+
+    def __str__(self):
+        return self.path

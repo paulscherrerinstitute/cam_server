@@ -7,6 +7,7 @@ from cam_server.camera.sender import *
 from cam_server.camera.source.common import transform_image
 from cam_server.ipc import IpcSender
 from cam_server.utils import update_statistics, on_message_sent, init_statistics, setup_instance_logs, set_log_suffix
+from cam_server.instance_management.configuration import TempBackgroundImageManager
 
 _logger = getLogger(__name__)
 
@@ -309,15 +310,21 @@ class Camera:
             y_axis -= origin_y
             y_axis *= (-pixel_size_y)  # we need the minus to invert the axis
 
-        self.camera_config.parameters["background_data"] = None
         background_filename = self.camera_config.parameters["image_background"]
+        self.camera_config.parameters["background_data"] = None
         if background_filename:
-            background_array = numpy.load(background_filename)
-            if background_array is not None:
-                if ((background_array.shape[1] != x_axis.shape[0]) or (background_array.shape[0] != y_axis.shape[0])):
-                    _logger.info("Invalid background shape for camera %s: %s" % (self.camera_config.get_source(), str(background_array.shape)))
-                else:
-                    self.camera_config.parameters["background_data"] = background_array.astype("uint16", copy=False)
+            background_manager = TempBackgroundImageManager()
+            try:
+                background_array = background_manager.get_background(background_filename)
+                # background_array = numpy.load(background_filename)
+                if background_array is not None:
+                    if ((background_array.shape[1] != x_axis.shape[0]) or (
+                            background_array.shape[0] != y_axis.shape[0])):
+                        raise Exception("Invalid background shape for camera %s: %s" % (self.camera_config.get_source(), str(background_array.shape)))
+                    else:
+                        self.camera_config.parameters["background_data"] = background_array.astype("uint16", copy=False)
+            except Exception as ex:
+                _logger.warning(str(ex))
 
 
         roi = self.camera_config.parameters["roi"]
