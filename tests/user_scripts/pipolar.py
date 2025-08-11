@@ -22,12 +22,10 @@ class PpolPeakValley():
         self.x, self.y = self.ppol_interpol()
 
     def ppol_interpol(self, plot_flag=False):
-        # ipv = [32.98,20.85,15.31,12.12,10.05,8.60,7.52,6.69,6.028,5.49,5.047,4.67,4.35,4.078,3.84,3.44,3.12,2.87,2.65,2.47,2.32]
-        ipv = [0.032771623, 0.045653159, 0.058377743, 0.070933335, 0.083347283, 0.095648417, 0.107858216, 0.119990516,
-               0.132053213, 0.144050065, 0.155982387, 0.167849814, 0.179651077, 0.19138435, 0.203047604, 0.22615558,
-               0.248958238, 0.271440041, 0.293587065, 0.315386908, 0.33682858]
-        sig = [3.66, 5.18, 6.34, 7.32, 8.18, 8.96, 9.68, 10.35, 10.98, 11.57, 12.14, 12.68, 13.19, 13.69, 14.17, 15.09,
-               15.95, 16.77, 17.55, 18.30, 19.014]
+        ipv = [32.976, 20.848, 15.306, 12.121, 10.0499899, 8.595, 7.5176, 6.6871, 6.0276, 5.491, 5.0471, 4.673, 4.353,
+               4.0778, 3.837, 3.439, 3.122, 2.865, 2.652, 2.473, 2.32]
+        sig = [3.659, 5.175, 6.338, 7.318, 8.182, 8.963, 9.681, 10.350, 10.978, 11.572, 12.136, 12.676, 13.194, 13.692,
+               14.172, 15.087, 15.950, 16.769, 17.549, 18.296, 19.014]
         sig2 = [element * element for element in sig]
         x = np.linspace(0, 999999, 999999)
         x = [(1 + val) / 1000000 * max(ipv) for val in x]
@@ -51,11 +49,11 @@ class PpolPeakValley():
 
 
 # For peak search - delta(h) to max peak value
-DELTA_HEIGHT = 40000  # 400
-BG_XRANGE_LOW = [0, 200]  # 100 160 [340, 400]
-BG_XRANGE_HIGH = [1452, 1652]  # 840 900 [460, 520]
+DELTA_HEIGHT = 400  # 400
+BG_XRANGE_LOW = [340, 400]  # 100 160 [340, 400]
+BG_XRANGE_HIGH = [460, 520]  # 840 900 [460, 520]
 
-PEAK_SEARCH_REL_RANGE = [-2, 3]
+PEAK_SEARCH_REL_RANGE = [-1, 2]
 VALLEY_SEARCH_REL_RANGE = [-2, 3]
 ppol = PpolPeakValley()
 
@@ -100,124 +98,121 @@ def calculate_emittance(image, fit_pars):
     _logger.debug("max indices /peaks " + str(max_indices) + " " + str(peaks))
 
     if len(peaks) != 2:
-        mess = "Too few peaks found! " if len(peaks) < 2 else
-        "Too many peaks found "
-    _logger.debug(mess + str(peaks))
-    peaks_buffer = []
-    for val in peaks:
+        mess = "Too few peaks found! " if len(peaks) < 2 else \
+            "Too many peaks found "
+        _logger.debug(mess + str(peaks))
+        peaks_buffer = []
+        for val in peaks:
+            ### COMMENTED BY ALEX
+            # if val > 567 and val < 590:
+            peaks_buffer.append(val)
+
+        # if len(peaks_buffer) ==3:
+        #    peaks = [None] * 2
+        #    peaks[0] = peaks_buffer[0]
+        #    peaks[1] = peaks_buffer[2]
+        if len(peaks_buffer) != 2:
+            return (-1.0, -2.0)
+        else:
+            peaks = peaks_buffer
+
+    if (peaks[1] - peaks[0]) < 6:
+        _logger.debug("Peaks are too close: " + str(peaks[1] - peaks[0]))
+        raise Exception("Peaks are too close")
+
+    # peaks =[569, 577]
+    # Distance to minimum
+    min_element = np.amin(projy[peaks[0]:peaks[1]])
+    min_indices = np.where(projy == min_element)
+
+    min_idx_value = 0  # min_indices[0][0]
+    for val in min_indices[0]:
+        if val > peaks[0] and val < peaks[1]:
+            min_idx_value = val
+            break
+
+    if min_idx_value == 0:
+        raise Exception("min_idx_value == 0")
+
+    for i in range(0, len(peak_array)):
+        peak_array[i] = ydata[peaks[i] + plr[0]: peaks[i] + plr[1]]
+    valley_array = ydata[min_idx_value + vlr[0]: min_idx_value + vlr[1]]
+
+    # print("peaks", peaks, flush=True)
+    # print(np.subtract(peaks, h)*(-1))
+    # print("projections peak, valley", projy[(peaks[0]-1):(peaks[1]+2)], projy[valley_array])
+    # print(peak_array, valley_array, flush=True)
+    # x_bg_center = min_indices[0][0]
+
+    # background
+    bg_y1 = projy[BX1: BX2]
+    bg_y2 = projy[BX3: BX4]
+
+    bg_yS = np.concatenate((bg_y1, bg_y2))
+    bg_xS = list(range(BX1, BX2)) + list(range(BX3, BX4))
+
+    bg_x = []
+    bg_y = []
+
+    for x, y in zip(bg_xS, bg_yS):
         ### COMMENTED BY ALEX
-        # if val > 567 and val < 590:
-        peaks_buffer.append(val)
+        # if y > 800 and y < 1000:
+        bg_x.append(x)
+        bg_y.append(y)
 
-    # if len(peaks_buffer) ==3:
-    #    peaks = [None] * 2
-    #    peaks[0] = peaks_buffer[0]
-    #    peaks[1] = peaks_buffer[2]
-    if len(peaks_buffer) != 2:
-        return (-1.0, -2.0)
-    else:
-        peaks = peaks_buffer
+    # print(bg_x, flush=True)
+    # print(bg_y, flush=True)
+    # fit
+    poly_bg = np.polyfit(bg_x, bg_y, deg=1)
+    array_bg = np.linspace(0, h, 10400)
+    val_bg = np.polyval(poly_bg, array_bg)
 
+    for i in range(0, len(proj_peak_array)):
+        proj_peak_array[i] = projy[peaks[i] + plr[0]: peaks[i] + plr[1]]
+    # proj_peak_array[1] = projy[peaks[1]-1 : peaks[1]+2]
+    proj_valley = projy[min_idx_value + vlr[0]: min_idx_value + vlr[1]]
 
-if (peaks[1] - peaks[0]) < 6:
-    _logger.debug("Peaks are too close: " + str(peaks[1] - peaks[0]))
-    raise Exception("Peaks are too close")
+    # peaks
+    for i in range(0, 2):
+        poly = np.polyfit(peak_array[i], proj_peak_array[i], deg=2)
+        idx = -poly[1] / 2 / poly[0]
+        peak_value[i] = np.polyval(poly, idx)
+        peak_bg[i] = val_bg[int(idx)]
 
-# peaks =[569, 577]
-# Distance to minimum
-min_element = np.amin(projy[peaks[0]:peaks[1]])
-min_indices = np.where(projy == min_element)
+    # valley
+    poly2 = np.polyfit(valley_array, proj_valley, deg=2)
+    # Only works for deg=2
+    minv_idx = -poly2[1] / 2 / poly2[0]
 
-min_idx_value = 0  # min_indices[0][0]
-for val in min_indices[0]:
-    if val > peaks[0] and val < peaks[1]:
-        min_idx_value = val
-        break
+    poly = np.polyfit(valley_array, proj_valley, deg=4)
 
-if min_idx_value == 0:
-    raise Exception("min_idx_value == 0")
+    valley_subarray = np.linspace(valley_array[0], valley_array[-1], 800)
+    poly_array = np.polyval(poly, valley_subarray)
+    valley_fitted_value = min(poly_array)
 
-for i in range(0, len(peak_array)):
-    peak_array[i] = ydata[peaks[i] + plr[0]: peaks[i] + plr[1]]
-valley_array = ydata[min_idx_value + vlr[0]: min_idx_value + vlr[1]]
+    # print("peak value", peak_value, "valley_fitted value", valley_fitted_value, flush=True)
 
-# print("peaks", peaks, flush=True)
-# print(np.subtract(peaks, h)*(-1))
-# print("projections peak, valley", projy[(peaks[0]-1):(peaks[1]+2)], projy[valley_array])
-# print(peak_array, valley_array, flush=True)
-# x_bg_center = min_indices[0][0]
+    valley_bg = val_bg[int(minv_idx)]
+    # print("valley background", valley_bg, "peak background", peak_bg[0], peak_bg[1], flush=True)
 
-# background
-bg_y1 = projy[BX1: BX2]
-bg_y2 = projy[BX3: BX4]
-
-bg_yS = np.concatenate((bg_y1, bg_y2))
-bg_xS = list(range(BX1, BX2)) + list(range(BX3, BX4))
-
-bg_x = []
-bg_y = []
-
-for x, y in zip(bg_xS, bg_yS):
     ### COMMENTED BY ALEX
-    # if y > 800 and y < 1000:
-    bg_x.append(x)
-    bg_y.append(y)
+    # if valley_fitted_value <  valley_bg:
+    #    valley_fitted_value = min( projy[valley_array])
+    #    if valley_fitted_value <  valley_bg:
+    #        raise Exception("valley_fitted_value <  valley_bg")
+    #        #return
 
-# print(bg_x, flush=True)
-# print(bg_y, flush=True)
-# fit
-poly_bg = np.polyfit(bg_x, bg_y, deg=1)
-array_bg = np.linspace(0, h, 10400)
-val_bg = np.polyval(poly_bg, array_bg)
+    ratio_corrected = 2 * (valley_fitted_value - valley_bg) / (
+        abs((peak_value[0] - peak_bg[0]) + (peak_value[1] - peak_bg[1])))
 
-for i in range(0, len(proj_peak_array)):
-    proj_peak_array[i] = projy[peaks[i] + plr[0]: peaks[i] + plr[1]]
-# proj_peak_array[1] = projy[peaks[1]-1 : peaks[1]+2]
-proj_valley = projy[min_idx_value + vlr[0]: min_idx_value + vlr[1]]
+    idx = 0 if abs(peak_value[0] - peak_bg[0]) > abs(peak_value[1] - peak_bg[1]) else 1
+    ratio_max = (valley_fitted_value - valley_bg) / abs(peak_value[idx] - peak_bg[idx])
 
-# peaks
-for i in range(0, 2):
-    poly = np.polyfit(peak_array[i], proj_peak_array[i], deg=2)
-    idx = -poly[1] / 2 / poly[0]
-    peak_value[i] = np.polyval(poly, idx)
-    peak_bg[i] = val_bg[int(idx)]
+    emittance = ppol.get_emittance(ratio_corrected)
+    emittance2 = ppol.get_emittance(ratio_max)
 
-# valley
-poly2 = np.polyfit(valley_array, proj_valley, deg=2)
-# Only works for deg=2
-minv_idx = -poly2[1] / 2 / poly2[0]
-
-poly = np.polyfit(valley_array, proj_valley, deg=4)
-
-valley_subarray = np.linspace(valley_array[0], valley_array[-1], 800)
-poly_array = np.polyval(poly, valley_subarray)
-valley_fitted_value = min(poly_array)
-
-# print("peak value", peak_value, "valley_fitted value", valley_fitted_value, flush=True)
-
-valley_bg = val_bg[int(minv_idx)]
-# print("valley background", valley_bg, "peak background", peak_bg[0], peak_bg[1], flush=True)
-
-### COMMENTED BY ALEX
-# if valley_fitted_value <  valley_bg:
-#    valley_fitted_value = min( projy[valley_array])
-#    if valley_fitted_value <  valley_bg:
-#        raise Exception("valley_fitted_value <  valley_bg")
-#        #return
-
-ratio_corrected = 2 * (valley_fitted_value - valley_bg) / (abs((peak_value[0]) + (peak_value[1])))
-
-# ratio_corrected = 2*(valley_fitted_value-valley_bg)/(
-#    abs((peak_value[0]-peak_bg[0])+(peak_value[1]-peak_bg[1])))
-
-idx = 0 if abs(peak_value[0] - peak_bg[0]) > abs(peak_value[1] - peak_bg[1]) else 1
-ratio_max = (valley_fitted_value - valley_bg) / abs(peak_value[idx] - peak_bg[idx])
-
-emittance = ppol.get_emittance(ratio_corrected)
-emittance2 = ppol.get_emittance(ratio_max)
-
-_logger.debug("ratio=%f emittance %f ratio2=%f emittance2 %f" % (ratio_corrected, emittance, ratio_max, emittance2))
-return (emittance, emittance2)
+    _logger.debug("ratio=%f emittance %f ratio2=%f emittance2 %f" % (ratio_corrected, emittance, ratio_max, emittance2))
+    return (emittance, emittance2)
 
 
 def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata=None):
@@ -242,4 +237,3 @@ def process_image(image, pulse_id, timestamp, x_axis, y_axis, parameters, bsdata
     ret[channel_prefix + ":emmitance2"] = emittance2
     ret[channel_prefix + ":status"] = str(status)
     return ret
-
