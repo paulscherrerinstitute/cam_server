@@ -75,6 +75,7 @@ message_buffer_size = None
 thread_exit_code=0
 thread_exit_code=0
 max_frame_rate=None
+last_processed_timestamp=0
 last_sent_timestamp=0
 camera_name = None
 output_stream_port = 0
@@ -305,7 +306,7 @@ def get_parameters():
 
 def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=None, user_scripts_manager=None, post_processsing_function=None, port=None):
     global _parameters, _parameter_queue, _user_scripts_manager, _parameters_post_proc, _pipeline_config
-    global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout, stream_timeout, max_frame_rate, last_sent_timestamp
+    global pause, pid_range, downsampling, downsampling_counter, function, debug, camera_timeout, stream_timeout, max_frame_rate, last_processed_timestamp, last_sent_timestamp
     global camera_name, output_stream_port, pipeline_name
     camera_name = pipeline_config.get_camera_name()
     pipeline_name = pipeline_config.get_name()
@@ -346,6 +347,7 @@ def init_pipeline_parameters(pipeline_config, parameter_queue =None, logs_queue=
     downsampling = parameters.get("downsampling", None)
     max_frame_rate = parameters.get("max_frame_rate")
     last_sent_timestamp = 0
+    last_processed_timestamp = 0
     downsampling_counter = sys.maxsize  # The first is always sent
 
     stream_timeout = parameters.get("stream_timeout", 10.0)
@@ -653,10 +655,15 @@ def send_data(processed_data, global_timestamp, pulse_id):
         return _send_data(processed_data, global_timestamp, pulse_id, _message_buffer)
 
 def _send_data(processed_data, global_timestamp, pulse_id, message_buffer = None):
+    global last_sent_timestamp
     if processed_data is not None:
         pars = get_parameters()
-        #!!!
-
+        max_output_rate = pars.get("max_output_rate")
+        if max_output_rate:
+            min_interval = 1.0 / max_output_rate
+            if (time.time() - last_sent_timestamp) < min_interval:
+                return
+            last_sent_timestamp = time.time()
         # Requesting subset of the data
         include = pars.get("include")
         if include:
@@ -755,12 +762,12 @@ def get_next_thread_index():
 
 
 def process_data(processing_function, pulse_id, global_timestamp, *args):
-    global number_processing_threads, received_pids, tx_lock, thread_buffers, message_buffer, message_buffer_size, max_frame_rate,  last_sent_timestamp
+    global number_processing_threads, received_pids, tx_lock, thread_buffers, message_buffer, message_buffer_size, max_frame_rate,  last_processed_timestamp
 
     # Check maximum frame rate parameter
     if max_frame_rate:
         min_interval = 1.0 / max_frame_rate
-        if (time.time() - last_sent_timestamp) < min_interval:
+        if (time.time() - last_processed_timestamp) < min_interval:
             return
     try:
         if (not message_buffer_size) and (number_processing_threads > 0):
@@ -800,7 +807,7 @@ def process_data(processing_function, pulse_id, global_timestamp, *args):
         if processed_data is not None:
             _send_data(processed_data, global_timestamp, pulse_id, message_buffer)
     finally:
-        last_sent_timestamp = time.time()
+        last_processed_timestamp = time.time()
 
 
 def _process_data(processing_function, pulse_id, global_timestamp, function, *args):
