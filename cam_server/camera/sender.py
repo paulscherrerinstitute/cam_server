@@ -68,7 +68,7 @@ def process_epics_camera(stop_event, statistics, parameter_queue, logs_queue, ca
                     "x_axis": x_axis,
                     "y_axis": y_axis}
             frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
-            frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
+            frame_shape = str(y_size) + "x" + str(x_size) + "x" + str(image.itemsize)
             update_statistics(sender, -frame_size, 1 if (image is not None) else 0, frame_shape, camera.forwarder)
 
             try:
@@ -356,7 +356,7 @@ def process_bsread_camera(stop_event, statistics, parameter_queue, logs_queue, c
                                 _logger.info("Format error - bad axis size.")
                             return pulse_id, timestamp, None
                         format_error = False
-                        frame_shape = str(width) + "x" + str(height) + "x" + str(image.itemsize)
+                        frame_shape = str(height) + "x" + str(width) + "x" + str(image.itemsize)
                         total_bytes[index] = data.statistics.total_bytes_received
 
                 with stats_lock:

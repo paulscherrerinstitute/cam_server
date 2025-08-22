@@ -699,7 +699,16 @@ def receive_stream(camera=False):
         if camera:
             image = data["image"].value
             if image is not None:
-                frame_shape = str(image.shape[1]) + "x" + str(image.shape[0]) + "x" + str(image.itemsize)
+                if len(image.shape)==1:
+                    x_axis = data["x_axis"].value
+                    if (len(x_axis.shape)==0):
+                        # 1 single col
+                        frame_shape = str(image.shape[0]) + "x1x" + str(image.itemsize)
+                    else:
+                        # 1 single row
+                        frame_shape = "1x" + str(image.shape[0]) + "x" + str(image.itemsize)
+                else:
+                    frame_shape = str(image.shape[0]) + "x" + str(image.shape[1]) + "x" + str(image.itemsize)
         last_rcvd_timestamp = time.time()
         if debug:
             global former_pid, current_pid

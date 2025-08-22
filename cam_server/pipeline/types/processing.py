@@ -215,9 +215,23 @@ def run(stop_event, statistics, parameter_queue, logs_queue,cam_client, pipeline
                 image = data["image"].value
                 if image is None:
                     continue
-
                 x_axis = data["x_axis"].value
                 y_axis = data["y_axis"].value
+
+                if len(image.shape)==1:
+                    if (len(x_axis.shape)==0):
+                        # 1 single col
+                        image = image.reshape((image.shape[0],1))
+                    else:
+                        # 1 single row
+                        image = image.reshape((1, image.shape[0]))
+
+                #If a scalar transform into an array
+                if (len(x_axis.shape) == 0):
+                    x_axis = numpy.array([x_axis], dtype=numpy.float32)
+                if len(y_axis.shape) == 0:
+                    y_axis = numpy.array([y_axis], dtype=numpy.float32)
+
 
                 if pipeline_parameters.get("mirror_x"):
                     x_axis = numpy.flip(x_axis)

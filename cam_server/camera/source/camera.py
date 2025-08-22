@@ -458,7 +458,7 @@ class Camera:
                     start = time.time()
                 image, timestamp, pulse_id = self.get_data()
                 frame_size = ((image.size * image.itemsize) if (image is not None) else 0)
-                frame_shape = str(x_size) + "x" + str(y_size) + "x" + str(image.itemsize)
+                frame_shape = str(y_size) + "x" + str(x_size) + "x" + str(image.itemsize)
                 update_statistics(self.sender, -frame_size, 1 if (image is not None) else 0, frame_shape, self.forwarder)
 
                 # In case of receiving error or timeout, the returned data is None.
