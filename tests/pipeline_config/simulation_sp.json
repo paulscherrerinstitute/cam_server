@@ -1,6 +1,6 @@
 {
- "image_background_enable": true,
- "image_background": "simulation_20240320_144334_156830",
+ "image_background_enable": false,
+ "image_background": "simulation_20251204_161740_750478",
  "image_threshold": null,
  "image_region_of_interest": null,
  "image_good_region": null,
@@ -36,6 +36,5 @@
   "tell_client-0.1-py3.9.egg",
   "test.py",
   "linux.zip"
- ],
- "no_client_timeout": 0
+ ]
 }
