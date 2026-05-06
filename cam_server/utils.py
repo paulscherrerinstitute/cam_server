@@ -3,7 +3,11 @@ import logging
 from itertools import cycle
 
 from bottle import response
-from mflow.tools import ConnectionCountMonitor
+
+try:
+    from mflow.tools import ConnectionCountMonitor
+except:
+    from mflow.utils import ConnectionCountMonitor # Version 1.0
 
 try:
     import psutil

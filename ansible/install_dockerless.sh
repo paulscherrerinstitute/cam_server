@@ -4,8 +4,6 @@ export PY_MAJOR=3
 export PY_MINOR=8
 export PY_PATCH=17
 
-export AFFINITY=2-23,48-71
-
 export PY_VER="${PY_MAJOR}.${PY_MINOR}.${PY_PATCH}"
 export PY_MIN="${PY_MAJOR}.${PY_MINOR}"
 
@@ -36,7 +34,7 @@ make altinstall
 
 #Install Python packages
 /usr/local/bin/python${PY_MIN} -m pip install --upgrade pip
-/usr/local/bin/pip${PY_MIN} install numpy scipy numba requests bottle psutil paste cheroot pyepics h5py pillow matplotlib scikit-image lmfit click pyzmq redis
+/usr/local/bin/pip${PY_MIN} install numpy scipy numba requests bottle psutil paste cheroot pyepics h5py pillow matplotlib scikit-image lmfit click pyzmq redis lz4
 /usr/local/bin/python${PY_MIN} -m pip install urllib3==1.26.6
 
 
@@ -113,7 +111,6 @@ WantedBy=default.target
 
 [Service]
 TimeoutStartSec=0
-CPUAffinity=${AFFINITY}
 ExecStart=/opt/python/bin/start_camera_worker
 Restart=always
 EOF
@@ -128,7 +125,6 @@ WantedBy=default.target
 
 [Service]
 TimeoutStartSec=0
-CPUAffinity=${AFFINITY}
 ExecStart=/opt/python/bin/start_pipeline_worker
 Restart=always
 EOF

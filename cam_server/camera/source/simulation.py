@@ -122,7 +122,7 @@ class CameraSimulation(CameraEpics):
                     if self.shape != (size_y, size_x):
                         self.shape = (size_y, size_x)
                         self.dead_pixels = self._generate_dead_pixels(self.number_of_dead_pixels)
-                    frame_rate = self.camera_config.parameters.get("frame_rate", self.frame_rate)
+                    self.frame_rate = self.camera_config.parameters.get("frame_rate", self.frame_rate)
                     interval = 1.0 / self.frame_rate
 
                         # Same timestamp as used by PyEpics.

@@ -270,7 +270,6 @@ class PipelineClient(InstanceManagementClient):
         :return: JSON with bytes and metadata.
         """
         rest_endpoint = "/background/%s/image_bytes" % background_name
-
         server_response = requests.get(self.api_address_format % rest_endpoint, timeout=self.timeout).json()
         return self.validate_response(server_response)["image"]
 
