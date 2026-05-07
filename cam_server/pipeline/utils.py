@@ -1136,10 +1136,17 @@ def get_lib_file(name):
 
 def import_egg(egg_name):
     egg_path = get_lib_file(egg_name)
-    if (egg_path):
-        import pkg_resources
+    if egg_path and egg_path not in sys.path:
         sys.path.append(egg_path)
-        pkg_resources.working_set.add_entry(egg_path)
+        try:
+            # Legacy setuptools/egg support
+            import pkg_resources
+            pkg_resources.working_set.add_entry(egg_path)
+        except ImportError:
+            #Modern Pythnon
+            from importlib import invalidate_caches
+            invalidate_caches()
+
 
 
 def cleanup(exit_code=0):
