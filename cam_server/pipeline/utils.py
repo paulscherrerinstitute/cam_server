@@ -12,9 +12,9 @@ from importlib import import_module
 from threading import Thread, RLock
 
 import numpy
-from bsread import Source, PUB, SUB, PUSH, PULL, DEFAULT_DISPATCHER_URL
+from bsread import Source, PUB, SUB, PUSH, PULL, DEFAULT_DISPATCHER_URL, BIND, CONNECT
 from bsread import source as bssource
-from bsread.sender import Sender, BIND, CONNECT
+from bsread.sender import Sender
 from cam_server.config import PIPELINE_PROCESSING_ERROR, NOTIFY_ON_ERROR
 
 from cam_server import config, merger

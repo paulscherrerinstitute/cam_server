@@ -1,7 +1,8 @@
 import os
 
 import numpy
-from bsread.sender import Sender, PUB, PUSH
+from bsread import PUB, PUSH
+from bsread.sender import Sender
 
 from cam_server.camera.sender import *
 from cam_server.camera.source.common import transform_image

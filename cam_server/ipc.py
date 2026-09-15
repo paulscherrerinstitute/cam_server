@@ -1,4 +1,4 @@
-from bsread.bsread import *
+from bsread import *
 from bsread.sender import *
 
 

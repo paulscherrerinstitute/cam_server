@@ -5,9 +5,8 @@ from collections import deque
 from logging import getLogger
 from threading import Thread
 
-from bsread import SUB, DEFAULT_DISPATCHER_URL
+from bsread import SUB, DEFAULT_DISPATCHER_URL, CONNECT
 from bsread import source as bssource
-from bsread.sender import CONNECT
 
 from mflow import Statistics, Message
 from bsread.handlers.compact import Message as MessageData
