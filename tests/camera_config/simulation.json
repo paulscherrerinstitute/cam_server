@@ -14,24 +14,21 @@
  "mirror_x": false,
  "mirror_y": false,
  "rotate": 0,
- "roi": [
-  441,
-  366,
-  295,
-  324
- ],
+ "roi": null,
  "image_background": null,
  "source_type": "simulation",
+ "_image_background": "../tests/background_config/simulation_20220217_172655_914633.npy",
  "name": "simulation",
  "source": "",
- "_size_x": 300,
- "_size_y": 300,
+ "_size_x": 1,
+ "_size_y": 1,
  "dtype": "uint16",
- "image_type": "beam",
+ "_image_type": "beam",
  "frame_rate": 2.0,
  "group": [
   "Electrons",
-  "Test"
+  "Test",
+  "Linac"
  ],
  "alias": [
   "c1",
@@ -39,6 +36,5 @@
  ],
  "simulate_pulse_id": true,
  "protocol": "tcp",
- "_image_background": "../tests/background_config/simulation_20220217_172655_914633.npy",
  "no_client_timeout": 0
 }

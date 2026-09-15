@@ -191,7 +191,7 @@ def _gauss_fit(axis, profile, center_of_mass=None):
     else:
         center = axis[profile.argmax()]
 
-    surface = numpy.trapz((profile - offset), x=axis)
+    surface = numpy.trapezoid((profile - offset), x=axis)
     standard_deviation = (surface / (amplitude * numpy.sqrt(2 * numpy.pi))) if amplitude != 0 else 1
 
     try:
@@ -481,7 +481,7 @@ def gauss_fit_psss(profile, axis, **kwargs):
     center = kwargs.get('center', numpy.dot(axis,
                                             profile) / profile.sum())  # Center of mass is a good estimation of center (mu)
     # Consider gaussian integral is amplitude * sigma * sqrt(2*pi)
-    standard_deviation = kwargs.get('standard_deviation', numpy.trapz((profile - offset), x=axis) / (
+    standard_deviation = kwargs.get('standard_deviation', numpy.trapezoid((profile - offset), x=axis) / (
                 amplitude * numpy.sqrt(2 * numpy.pi)))
     maxfev = kwargs.get('maxfev', 20)  # the default is 100 * (N + 1), which is over killing
 

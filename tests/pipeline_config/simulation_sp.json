@@ -1,10 +1,19 @@
 {
  "image_background_enable": false,
- "image_background": "simulation_20251204_161740_750478",
- "image_threshold": null,
- "image_region_of_interest": null,
+ "image_background": "simulation_20260505_161614_331329",
+ "image_threshold": 4000,
+ "image_region_of_interest": [
+  476,
+  394,
+  375,
+  217
+ ],
  "image_good_region": null,
- "image_slices": null,
+ "image_slices": {
+  "number_of_slices": 2,
+  "scale": 3.0,
+  "orientation": "vertical"
+ },
  "pipeline_type": "processing",
  "allow_type_changes": true,
  "allow_shape_changes": true,
@@ -36,5 +45,9 @@
   "tell_client-0.1-py3.9.egg",
   "test.py",
   "linux.zip"
- ]
+ ],
+ "averaging": 1,
+ "max_output_rate": 12.0,
+ "no_client_timeout": 0,
+ "port": "5554"
 }
