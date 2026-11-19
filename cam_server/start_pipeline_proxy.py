@@ -13,7 +13,7 @@ from cam_server.utils import initialize_api_logger, string_to_dict, validate_web
 _logger = logging.getLogger(__name__)
 
 
-def start_pipeline_proxy(host, port, server_config, config_base, background_base, scripts_base, cam_server_api_address,
+def start_pipeline_proxy(host, port, server_config, config_base, background_base, cam_server_api_address,
                            web_server=config.DEFAULT_WEB_SERVER, web_server_args={}):
 
 
@@ -65,7 +65,7 @@ def main():
     logging.basicConfig(level=arguments.log_level)
     initialize_api_logger(arguments.log_level)
     start_pipeline_proxy(arguments.interface, arguments.port, arguments.servers, arguments.base,
-                          arguments.background_base, arguments.scripts_base, arguments.cam_server,
+                          arguments.background_base, arguments.cam_server,
                           arguments.web_server , string_to_dict(arguments.web_server_args))
 
 

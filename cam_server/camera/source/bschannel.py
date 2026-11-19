@@ -60,12 +60,12 @@ class BsreadChannel(Camera):
 
             if self.channel is None:
                 if len(msg.data.data.keys()) == 1:
-                    self.channel = msg.data.data.keys()[0]
+                    self.channel = next(iter(msg.data.data.keys()))
                 else:
                     raise Exception("Undefined channel")
             data = msg.data.data.get(self.channel, None)
-            if not data:
-                raise Exception("Channel not present in messsage")
+            if data is None:
+                raise Exception("Channel not present in message")
 
             image = data.value
             self.height_raw, self.width_raw = image.shape
@@ -80,8 +80,8 @@ class BsreadChannel(Camera):
             raise
 
     def get_pulse_id(self):
-        self.pulse_id
+        return self.pulse_id
 
     def get_timestamp(self):
-        self.timestamp
+        return self.timestamp
 

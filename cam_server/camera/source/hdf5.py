@@ -18,6 +18,8 @@ class Hdf5(Camera):
         self.shape = None
         self.check_data = True
         self.interval = camera_config.get_configuration().get("interval", 1.0)
+        self.dataset = None
+        self.h5 = None
 
     def get_raw_geometry(self):
         return self.width_raw, self.height_raw
@@ -26,6 +28,7 @@ class Hdf5(Camera):
         pass
 
     def connect(self):
+        self.disconnect()
         self.h5 = h5py.File(self.file_name, 'r')
         self.dataset =self.h5[self.path]
         _logger.info("Connecting to "  +str(self.file_name) + ":" + str(self.path) + " - " + str(self.dataset))
@@ -37,9 +40,16 @@ class Hdf5(Camera):
         self.cur_index = 0
 
     def disconnect(self):
-        pass
+        try:
+            if self.h5 is not None:
+                self.h5.close()
+        finally:
+            self.dataset = None
+            self.h5 = None
 
     def read(self):
+        if self.dataset is None:
+            raise RuntimeError("HDF5 dataset is not initialized")
         ret =self.dataset[self.cur_index]
         self.cur_index = self.cur_index+1
         if self.cur_index >=self.num_images:

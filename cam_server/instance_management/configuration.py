@@ -104,7 +104,7 @@ class ConfigFileStorage(object):
 
         with open(target_config_file, 'w') as data_file:
             if isinstance(configuration, str):
-                json.write(configuration)
+                data_file.write(configuration)
             else:
                 json.dump(configuration, data_file, indent=True)
 

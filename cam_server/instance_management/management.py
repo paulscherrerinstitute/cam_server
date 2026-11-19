@@ -52,7 +52,7 @@ class InstanceManager(object):
         finally:
             self.schedule_timer()
 
-    def get_next_available_port(self, instance_id, prefer_same_port = False):
+    def get_next_available_port(self, instance_id, port_range, prefer_same_port = False):
         if self.auto_delete_stopped:
             self.delete_stopped_instances()
 
@@ -64,7 +64,7 @@ class InstanceManager(object):
                 return preferred_port
 
         # Loop over all ports.
-        for _ in range(*config.PIPELINE_STREAM_PORT_RANGE):
+        for _ in range(port_range[0], port_range[1]):
             candidate_port = next(self._port_generator)
 
             if candidate_port not in self._used_ports:

@@ -41,7 +41,7 @@ class PipelineInstanceManager(InstanceManager):
             _logger.info("Creating pipeline on fixed port '%s' for camera '%s'. instance_id=%s" %
                      (stream_port, camera_name, instance_id))
         else:
-            stream_port = self.get_next_available_port(instance_id)
+            stream_port = self.get_next_available_port(instance_id, config.PIPELINE_STREAM_PORT_RANGE)
             _logger.info("Creating pipeline on port '%s' for camera '%s'. instance_id=%s" %
                      (stream_port, camera_name, instance_id))
 

@@ -11,7 +11,7 @@ class CamClient(InstanceManagementClient):
         """
         :param address: Address of the cam API, e.g. http://localhost:10000
         """
-        InstanceManagementClient.__init__(self, address, config.CAMERA_REST_INTERFACE_PREFIX, None)
+        InstanceManagementClient.__init__(self, address, config.CAMERA_REST_INTERFACE_PREFIX, timeout)
 
 
     def get_cameras(self):

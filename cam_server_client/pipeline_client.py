@@ -18,7 +18,7 @@ class PipelineClient(InstanceManagementClient):
         """
         :param address: Address of the pipeline API, e.g. http://localhost:10000
         """
-        InstanceManagementClient.__init__(self, address, config.PIPELINE_REST_INTERFACE_PREFIX, None)
+        InstanceManagementClient.__init__(self, address, config.PIPELINE_REST_INTERFACE_PREFIX, timeout)
 
 
     def get_pipelines(self):

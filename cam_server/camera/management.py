@@ -66,7 +66,7 @@ class CameraInstanceManager(InstanceManager):
                 _logger.info("Creating camera stream on fixed port '%s' for camera '%s" %
                              (stream_port, camera_name))
             else:
-                stream_port = self.get_next_available_port(camera_name, self.prefer_same_port)
+                stream_port = self.get_next_available_port(camera_name, config.CAMERA_STREAM_PORT_RANGE, self.prefer_same_port)
                 _logger.info("Creating camera stream on port '%s' for camera '%s'" %
                              (stream_port, camera_name))
 

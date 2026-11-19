@@ -203,6 +203,9 @@ def register_rest_interface(app, instance_manager, interface_prefix=None):
         except ValueError:
             raise ValueError("n_images must be a number.")
 
+        if number_of_images <= 0:
+            raise ValueError("n_images must be a positive integer.")
+
         background_id = instance_manager.collect_background(camera_name, number_of_images)
 
         return {"state": "ok",
